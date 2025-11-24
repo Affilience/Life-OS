@@ -7,15 +7,15 @@ import { createRequire } from 'module';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Supabase configuration
-const SUPABASE_URL = 'https://pynijtaxxcrdheyzoawv.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5bmlqdGF4eGNyZGhleXpvYXd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzM2NjEyNywiZXhwIjoyMDc4OTQyMTI3fQ.fbeDGjs2WXYQX-92pUDJPpsvXUgll5faY71yJWX0lKA';
+// Supabase configuration - Use environment variables!
+const SUPABASE_URL = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'YOUR_SERVICE_ROLE_KEY';
 
 // Use postgres client for direct SQL execution
 const { Client } = await import('pg');
 
 // Extract connection details from Supabase URL
-const connectionString = `postgresql://postgres.pynijtaxxcrdheyzoawv:${process.env.SUPABASE_DB_PASSWORD || 'LetMeCheckThePassword'}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
+const connectionString = process.env.DATABASE_URL || `postgresql://postgres:${process.env.SUPABASE_DB_PASSWORD}@localhost:5432/postgres`;
 
 async function executeSQL(client, sql) {
   try {
@@ -71,7 +71,7 @@ async function main() {
   }
 
   console.log('\n💡 For direct SQL execution, use Supabase Dashboard SQL Editor:');
-  console.log(`   https://supabase.com/dashboard/project/pynijtaxxcrdheyzoawv/sql\n`);
+  console.log(`   https://supabase.com/dashboard/project/YOUR_PROJECT_ID/sql\n`);
 
   console.log('📋 Migration files ready to paste:\n');
 
