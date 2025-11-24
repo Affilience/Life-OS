@@ -1,0 +1,147 @@
+.sidebar {
+  background: var(--bg-2);
+  border-right: 1px solid var(--border);
+}
+
+.sidebar-header {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.logo svg {
+  color: var(--primary-500);
+}
+
+.logo-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+  font-weight: var(--font-weight-regular);
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: var(--space-4);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Nav Items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--duration-fast) var(--ease-standard);
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--primary-500);
+  color: white;
+}
+
+.nav-icon {
+  width: 20px;
+  min-width: 20px;
+  max-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.nav-label {
+  line-height: 1.5;
+}
+
+/* Module-specific icon colors when not active */
+.nav-item:not(.active) .nav-icon.dashboard {
+  color: var(--primary-500);
+}
+
+.nav-item:not(.active) .nav-icon.productivity {
+  color: var(--primary-500);
+}
+
+.nav-item:not(.active) .nav-icon.health {
+  color: var(--success-500);
+}
+
+.nav-item:not(.active) .nav-icon.knowledge {
+  color: var(--xp-500);
+}
+
+.nav-item:not(.active) .nav-icon.journal {
+  color: var(--color-journal-500);
+}
+
+.nav-item:not(.active) .nav-icon.calendar {
+  color: var(--error-500);
+}
+
+.nav-item:not(.active) .nav-icon.skills {
+  color: var(--color-skills-500);
+}
+
+.nav-item:not(.active) .nav-icon.financial {
+  color: var(--credit-500);
+}
+
+/* Active state - all icons white */
+.nav-item.active .nav-icon {
+  color: white;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: var(--space-2);
+}
+
+.theme-toggle,
+.settings-button {
+  flex: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.theme-toggle:hover,
+.settings-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}

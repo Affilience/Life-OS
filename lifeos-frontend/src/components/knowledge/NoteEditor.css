@@ -1,0 +1,217 @@
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(24, 24, 27, 0.4);
+}
+
+.note-title-input {
+  width: 100%;
+  padding: var(--space-6);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 32px;
+  font-weight: 700;
+  outline: none;
+  font-family: var(--font-family-base);
+}
+
+.note-title-input::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+/* Toolbar */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(39, 39, 42, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.toolbar-group {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.toolbar-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.60);
+  cursor: pointer;
+  transition: all 150ms;
+}
+
+.toolbar-btn:hover {
+  background: rgba(39, 39, 42, 0.4);
+  border-color: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.toolbar-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Editor Container */
+.editor-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-pane,
+.preview-pane {
+  overflow-y: auto;
+  padding: var(--space-6);
+}
+
+.editor-pane.split,
+.preview-pane.split {
+  width: 50%;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.editor-pane.full,
+.preview-pane.full {
+  width: 100%;
+}
+
+/* Markdown Editor (Textarea) */
+.markdown-editor {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.87);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base);
+  line-height: 1.8;
+  resize: none;
+  outline: none;
+}
+
+.markdown-editor::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+/* Preview Pane Markdown Styles */
+.preview-pane {
+  color: rgba(255, 255, 255, 0.87);
+  line-height: 1.8;
+}
+
+.preview-pane .md-h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: var(--space-6) 0 var(--space-4);
+  color: rgba(255, 255, 255, 0.87);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.04);
+  padding-bottom: var(--space-2);
+}
+
+.preview-pane .md-h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: var(--space-5) 0 var(--space-3);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.preview-pane .md-h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: var(--space-4) 0 var(--space-2);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.preview-pane .md-p {
+  margin: var(--space-3) 0;
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.preview-pane .md-ul,
+.preview-pane .md-ol {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-6);
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.preview-pane li {
+  margin: var(--space-2) 0;
+}
+
+.preview-pane .inline-code {
+  padding: 2px 6px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-sm);
+  color: #3b82f6;
+  font-family: var(--font-family-mono);
+  font-size: 0.9em;
+}
+
+.preview-pane .code-block {
+  display: block;
+  padding: var(--space-4);
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.87);
+  font-family: var(--font-family-mono);
+  font-size: 0.9em;
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+}
+
+/* Wiki Links */
+.preview-pane .wiki-link {
+  color: #3b82f6;
+  text-decoration: none;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: all 150ms;
+}
+
+.preview-pane .wiki-link:hover {
+  border-bottom-color: #3b82f6;
+}
+
+.preview-pane .wiki-link.new {
+  color: rgba(255, 255, 255, 0.38);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+}
+
+/* Footer */
+.editor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-6);
+  background: rgba(39, 39, 42, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.38);
+  font-family: var(--font-family-mono);
+}
+
+.footer-info,
+.footer-updated {
+  display: flex;
+  gap: var(--space-4);
+}

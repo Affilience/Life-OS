@@ -1,0 +1,573 @@
+/**
+ * LifeOS Design System - "Refined Dark" Aesthetic
+ *
+ * A modern, dark-mode productivity system with gamification elements.
+ * Inspired by: Linear × Notion × GitHub × Modern Gaming UIs
+ *
+ * Tone: clean, focused, motivating, professional
+ * Core emotional goal: "Level up through focused action."
+ *
+ * Research Sources:
+ * - Dark Mode Best Practices 2025 (Muksalcreative, Appinventiv)
+ * - Notion/Linear/GitHub Color Systems
+ * - Gaming & Gamification Color Palettes
+ */
+
+:root[data-theme="dark"], :root {
+  /* ============================================================================
+     1.1 COLOR PALETTE - Refined Dark Mode
+     ============================================================================ */
+
+  /* Backgrounds (Research-backed for eye comfort) */
+  /* Using #181A1B instead of pure black - reduces eye strain */
+  --bg-0: #0a0a0a;           /* Root background - Deep, not pure black */
+  --bg-1: #111111;           /* Primary surface */
+  --bg-2: #1a1a1a;           /* Card surface - Subtle elevation */
+  --bg-elevated: #222222;    /* Elevated cards/modals */
+  --bg-hover: #2a2a2a;       /* Hover states */
+  --bg-tertiary: #2d2d2d;    /* Additional depth layer */
+
+  /* Text (87/60/38 Opacity System - Material Design standard) */
+  --text-primary: rgba(255, 255, 255, 0.87);    /* High emphasis - 87% */
+  --text-secondary: rgba(255, 255, 255, 0.60);  /* Medium emphasis - 60% */
+  --text-muted: rgba(255, 255, 255, 0.38);      /* Low emphasis - 38% */
+  --text-disabled: rgba(255, 255, 255, 0.24);   /* Disabled - 24% */
+
+  /* Legacy aliases for compatibility */
+  --text-high: var(--text-primary);
+  --text-med: var(--text-secondary);
+  --text-dim: var(--text-muted);
+
+  /* Primary Accents (Electric Blue - Professional yet energizing) */
+  --primary-50: #e3f2fd;
+  --primary-100: #bbdefb;
+  --primary-200: #90caf9;
+  --primary-300: #64b5f6;
+  --primary-400: #42a5f5;
+  --primary-500: #2196f3;     /* Main primary */
+  --primary-600: #1e88e5;
+  --primary-700: #1976d2;
+  --primary-800: #1565c0;
+  --primary-900: #0d47a1;
+
+  /* Success (Vibrant Green - Achievement & Growth) */
+  --success-50: #e8f5e9;
+  --success-100: #c8e6c9;
+  --success-200: #a5d6a7;
+  --success-300: #81c784;
+  --success-400: #66bb6a;
+  --success-500: #4caf50;     /* Main success */
+  --success-600: #43a047;
+  --success-700: #388e3c;
+  --success-800: #2e7d32;
+  --success-900: #1b5e20;
+
+  /* Warning (Warm Amber - Attention without alarm) */
+  --warning-50: #fff8e1;
+  --warning-100: #ffecb3;
+  --warning-200: #ffe082;
+  --warning-300: #ffd54f;
+  --warning-400: #ffca28;
+  --warning-500: #ffc107;     /* Main warning */
+  --warning-600: #ffb300;
+  --warning-700: #ffa000;
+  --warning-800: #ff8f00;
+  --warning-900: #ff6f00;
+
+  /* Error (Soft Red - Clear but not harsh) */
+  --error-50: #ffebee;
+  --error-100: #ffcdd2;
+  --error-200: #ef9a9a;
+  --error-300: #e57373;
+  --error-400: #ef5350;
+  --error-500: #f44336;       /* Main error */
+  --error-600: #e53935;
+  --error-700: #d32f2f;
+  --error-800: #c62828;
+  --error-900: #b71c1c;
+
+  /* XP & Leveling (Vibrant Purple - Gaming/RPG feel) */
+  --xp-50: #f3e5f5;
+  --xp-100: #e1bee7;
+  --xp-200: #ce93d8;
+  --xp-300: #ba68c8;
+  --xp-400: #ab47bc;
+  --xp-500: #9c27b0;          /* Main XP color */
+  --xp-600: #8e24aa;
+  --xp-700: #7b1fa2;
+  --xp-800: #6a1b9a;
+  --xp-900: #4a148c;
+
+  /* Streak & Fire (Orange - Energy & Consistency) */
+  --streak-50: #fff3e0;
+  --streak-100: #ffe0b2;
+  --streak-200: #ffcc80;
+  --streak-300: #ffb74d;
+  --streak-400: #ffa726;
+  --streak-500: #ff9800;      /* Main streak */
+  --streak-600: #fb8c00;
+  --streak-700: #f57c00;
+  --streak-800: #ef6c00;
+  --streak-900: #e65100;
+
+  /* Credits & Currency (Gold - Valuable rewards) */
+  --credit-50: #fffde7;
+  --credit-100: #fff9c4;
+  --credit-200: #fff59d;
+  --credit-300: #fff176;
+  --credit-400: #ffee58;
+  --credit-500: #ffeb3b;      /* Main credit */
+  --credit-600: #fdd835;
+  --credit-700: #fbc02d;
+  --credit-800: #f9a825;
+  --credit-900: #f57f17;
+
+  /* Structural (Refined borders and dividers) */
+  --border: rgba(255, 255, 255, 0.10);        /* Default border */
+  --border-subtle: rgba(255, 255, 255, 0.05); /* Very subtle dividers */
+  --border-strong: rgba(255, 255, 255, 0.15); /* Emphasized borders */
+
+  --shadow: rgba(0, 0, 0, 0.5);               /* Shadow color */
+  --overlay: rgba(0, 0, 0, 0.6);              /* Modal/dialog overlays */
+
+  /* ============================================================================
+     1.2 MODULE-SPECIFIC COLORS
+     ============================================================================ */
+
+  /* Health & Fitness (Green - Vitality) */
+  --color-health-50: var(--success-50);
+  --color-health-100: var(--success-100);
+  --color-health-200: var(--success-200);
+  --color-health-300: var(--success-300);
+  --color-health-400: var(--success-400);
+  --color-health-500: var(--success-500);
+  --color-health-600: var(--success-600);
+  --color-health-700: var(--success-700);
+  --color-health-800: var(--success-800);
+  --color-health-900: var(--success-900);
+
+  /* Productivity & Business (Blue - Focus) */
+  --color-productivity-50: var(--primary-50);
+  --color-productivity-100: var(--primary-100);
+  --color-productivity-200: var(--primary-200);
+  --color-productivity-300: var(--primary-300);
+  --color-productivity-400: var(--primary-400);
+  --color-productivity-500: var(--primary-500);
+  --color-productivity-600: var(--primary-600);
+  --color-productivity-700: var(--primary-700);
+  --color-productivity-800: var(--primary-800);
+  --color-productivity-900: var(--primary-900);
+
+  /* Knowledge & Learning (Purple - Wisdom) */
+  --color-knowledge-50: var(--xp-50);
+  --color-knowledge-100: var(--xp-100);
+  --color-knowledge-200: var(--xp-200);
+  --color-knowledge-300: var(--xp-300);
+  --color-knowledge-400: var(--xp-400);
+  --color-knowledge-500: var(--xp-500);
+  --color-knowledge-600: var(--xp-600);
+  --color-knowledge-700: var(--xp-700);
+  --color-knowledge-800: var(--xp-800);
+  --color-knowledge-900: var(--xp-900);
+
+  /* Financial (Gold/Yellow - Prosperity) */
+  --color-financial-50: var(--credit-50);
+  --color-financial-100: var(--credit-100);
+  --color-financial-200: var(--credit-200);
+  --color-financial-300: var(--credit-300);
+  --color-financial-400: var(--credit-400);
+  --color-financial-500: var(--credit-500);
+  --color-financial-600: var(--credit-600);
+  --color-financial-700: var(--credit-700);
+  --color-financial-800: var(--credit-800);
+  --color-financial-900: var(--credit-900);
+
+  /* Journal & Diary (Teal - Reflection) */
+  --color-journal-50: #e0f2f1;
+  --color-journal-100: #b2dfdb;
+  --color-journal-200: #80cbc4;
+  --color-journal-300: #4db6ac;
+  --color-journal-400: #26a69a;
+  --color-journal-500: #009688;
+  --color-journal-600: #00897b;
+  --color-journal-700: #00796b;
+  --color-journal-800: #00695c;
+  --color-journal-900: #004d40;
+
+  /* Calendar & Time (Red - Urgency & Time) */
+  --color-calendar-50: var(--error-50);
+  --color-calendar-100: var(--error-100);
+  --color-calendar-200: var(--error-200);
+  --color-calendar-300: var(--error-300);
+  --color-calendar-400: var(--error-400);
+  --color-calendar-500: var(--error-500);
+  --color-calendar-600: var(--error-600);
+  --color-calendar-700: var(--error-700);
+  --color-calendar-800: var(--error-800);
+  --color-calendar-900: var(--error-900);
+
+  /* Skills (Cyan - Development) */
+  --color-skills-50: #e0f7fa;
+  --color-skills-100: #b2ebf2;
+  --color-skills-200: #80deea;
+  --color-skills-300: #4dd0e1;
+  --color-skills-400: #26c6da;
+  --color-skills-500: #00bcd4;
+  --color-skills-600: #00acc1;
+  --color-skills-700: #0097a7;
+  --color-skills-800: #00838f;
+  --color-skills-900: #006064;
+
+  /* Legacy compatibility */
+  --color-productivity: var(--primary-500);
+  --color-health: var(--success-500);
+  --color-knowledge: var(--xp-500);
+  --color-journal: var(--color-journal-500);
+  --color-calendar: var(--error-500);
+  --color-skills: var(--color-skills-500);
+  --color-financial: var(--credit-500);
+  --color-dashboard: var(--primary-500);
+
+  /* ============================================================================
+     1.3 TYPOGRAPHY
+     ============================================================================ */
+
+  /* Font Families */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', monospace;
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+
+  /* Legacy aliases */
+  --text-display-56: 3.5rem;
+  --text-display-40: 2.5rem;
+  --text-display-32: 2rem;
+  --text-h1: 1.75rem;
+  --text-h2: 1.5rem;
+  --text-h3: 1.25rem;
+  --text-base: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.8125rem;
+
+  /* Font Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Legacy aliases */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Letter Spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.01em;
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ============================================================================
+     1.4 SPACING & RADIUS
+     ============================================================================ */
+
+  /* Border Radius */
+  --radius-xs: 0.25rem;          /* 4px - inputs, badges */
+  --radius-sm: 0.375rem;         /* 6px - buttons */
+  --radius-md: 0.5rem;           /* 8px - cards, standard */
+  --radius-lg: 0.75rem;          /* 12px - large cards */
+  --radius-xl: 1rem;             /* 16px - modals */
+  --radius-2xl: 1.5rem;          /* 24px - hero elements */
+  --radius-pill: 9999px;         /* Full round */
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;            /* 4px */
+  --space-1-5: 0.375rem;         /* 6px */
+  --space-2: 0.5rem;             /* 8px */
+  --space-3: 0.75rem;            /* 12px */
+  --space-4: 1rem;               /* 16px */
+  --space-5: 1.25rem;            /* 20px */
+  --space-6: 1.5rem;             /* 24px */
+  --space-8: 2rem;               /* 32px */
+  --space-10: 2.5rem;            /* 40px */
+  --space-12: 3rem;              /* 48px */
+  --space-16: 4rem;              /* 64px */
+
+  /* ============================================================================
+     1.5 SHADOWS & ELEVATION
+     ============================================================================ */
+
+  /* Shadows (Subtle, layered on dark) */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.6);
+  --shadow-2xl: 0 24px 48px rgba(0, 0, 0, 0.7);
+
+  /* Legacy aliases */
+  --shadow-z1: var(--shadow-sm);
+  --shadow-z2: var(--shadow-lg);
+
+  /* Colored shadows for accents */
+  --shadow-primary: 0 4px 16px rgba(33, 150, 243, 0.3);
+  --shadow-success: 0 4px 16px rgba(76, 175, 80, 0.3);
+  --shadow-warning: 0 4px 16px rgba(255, 193, 7, 0.3);
+  --shadow-error: 0 4px 16px rgba(244, 67, 54, 0.3);
+  --shadow-xp: 0 4px 16px rgba(156, 39, 176, 0.3);
+
+  /* ============================================================================
+     1.6 MOTION & ANIMATION
+     ============================================================================ */
+
+  /* Easing Functions */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Durations */
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+  --duration-slower: 500ms;
+
+  /* Legacy aliases */
+  --duration-enter: 250ms;
+  --duration-exit: 150ms;
+
+  /* ============================================================================
+     1.7 STATE & INTERACTION
+     ============================================================================ */
+
+  /* Focus Ring */
+  --focus-ring: 0 0 0 3px rgba(33, 150, 243, 0.5);
+
+  /* Hover State */
+  --hover-lift: translateY(-1px);
+
+  /* Active State */
+  --active-compress: translateY(1px);
+
+  /* Disabled State */
+  --disabled-opacity: 0.35;
+}
+
+/* ============================================================================
+   GLOBAL RESETS & BASE STYLES
+   ============================================================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background: var(--bg-0);
+}
+
+html, body, #root {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* ============================================================================
+   TYPOGRAPHY BASE STYLES
+   ============================================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+h1 { font-size: var(--text-h1); }
+h2 { font-size: var(--text-h2); font-weight: var(--font-weight-semibold); }
+h3 { font-size: var(--text-h3); font-weight: var(--font-weight-semibold); }
+
+p {
+  line-height: var(--line-height-relaxed);
+}
+
+/* ============================================================================
+   SCROLLBAR (Modern Dark)
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-0);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--bg-0);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-hover);
+}
+
+/* ============================================================================
+   SELECTION
+   ============================================================================ */
+
+::selection {
+  background: rgba(33, 150, 243, 0.3);
+  color: var(--text-primary);
+}
+
+/* ============================================================================
+   FOCUS STYLES (Accessibility)
+   ============================================================================ */
+
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================================================
+   ANIMATION KEYFRAMES
+   ============================================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+.text-high { color: var(--text-primary); }
+.text-med { color: var(--text-secondary); }
+.text-dim { color: var(--text-muted); }
+
+.bg-0 { background: var(--bg-0); }
+.bg-1 { background: var(--bg-1); }
+.bg-2 { background: var(--bg-2); }
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-enter) var(--ease-standard);
+}
+
+.animate-slide-down {
+  animation: slideDown var(--duration-enter) var(--ease-standard);
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--duration-enter) var(--ease-standard);
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ============================================================================
+   REDUCED MOTION SUPPORT
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

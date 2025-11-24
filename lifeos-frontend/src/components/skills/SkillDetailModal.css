@@ -1,0 +1,461 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-4);
+}
+
+.skill-detail-modal {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border-subtle);
+}
+
+.modal-header {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.skill-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.skill-title-section {
+  margin-bottom: var(--space-3);
+}
+
+.skill-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-2) 0;
+  line-height: 1.2;
+}
+
+.skill-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.skill-category {
+  font-size: var(--font-size-sm);
+  color: var(--color-skills-600);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.skill-level {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.skill-quick-stats {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.quick-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.quick-stat svg {
+  color: var(--color-skills-500);
+}
+
+.modal-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-secondary);
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  background: none;
+  border: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.tab-button:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-tertiary);
+}
+
+.tab-button.active {
+  color: var(--color-skills-600);
+  border-bottom-color: var(--color-skills-500);
+  background: var(--color-bg-primary);
+}
+
+.tab-button.active svg {
+  color: var(--color-skills-500);
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6);
+}
+
+/* Overview Tab */
+.skill-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.overview-stats {
+  background: linear-gradient(135deg, var(--color-skills-50) 0%, var(--color-skills-100) 100%);
+  border: 1px solid var(--color-skills-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.stat-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item.large .stat-value {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-skills-600);
+}
+
+.stat-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-skills-600);
+  margin-bottom: var(--space-1);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.progress-section h4,
+.next-goal-section h4,
+.milestones-section h4 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.progress-bar-bg {
+  flex: 1;
+  height: 12px;
+  background: var(--color-skills-100);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease-in-out;
+}
+
+.progress-percentage {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-skills-700);
+  min-width: 40px;
+  text-align: right;
+}
+
+.goal-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.goal-card svg {
+  color: var(--color-skills-500);
+}
+
+.milestones-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.milestone-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.milestone-item svg {
+  color: var(--color-skills-500);
+  flex-shrink: 0;
+}
+
+/* Practice History Tab */
+.practice-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-header h4 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  align-items: center;
+}
+
+.session-date,
+.session-duration {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.session-date svg,
+.session-duration svg {
+  color: var(--color-skills-500);
+}
+
+.session-notes {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+/* Goals Tab */
+.goals-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.goals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.goals-header h4,
+.achieved-milestones h4 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.goal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.goal-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.goal-text {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.goal-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.goal-date {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.goal-priority {
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.goal-priority.high {
+  background: var(--color-red-100);
+  color: var(--color-red-700);
+}
+
+.goal-priority.medium {
+  background: var(--color-orange-100);
+  color: var(--color-orange-700);
+}
+
+.goal-priority.low {
+  background: var(--color-green-100);
+  color: var(--color-green-700);
+}
+
+.milestone-item.achieved {
+  background: linear-gradient(135deg, var(--color-skills-50) 0%, var(--color-skills-100) 100%);
+  border: 1px solid var(--color-skills-200);
+  justify-content: space-between;
+}
+
+.achievement-date {
+  font-size: var(--font-size-xs);
+  color: var(--color-skills-600);
+  font-weight: var(--font-weight-medium);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: var(--space-2);
+  }
+  
+  .skill-detail-modal {
+    max-height: 95vh;
+  }
+  
+  .modal-header {
+    padding: var(--space-4);
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: stretch;
+  }
+  
+  .modal-tabs {
+    overflow-x: auto;
+  }
+  
+  .tab-button {
+    padding: var(--space-3) var(--space-4);
+    white-space: nowrap;
+  }
+  
+  .modal-content {
+    padding: var(--space-4);
+  }
+  
+  .stat-group {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+  
+  .history-item {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+  
+  .goal-item {
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: stretch;
+  }
+  
+  .goal-meta {
+    gap: var(--space-2);
+  }
+}

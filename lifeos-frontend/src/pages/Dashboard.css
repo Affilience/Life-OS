@@ -1,0 +1,90 @@
+/* Cosmic Dashboard */
+.dashboard {
+  width: 100%;
+  padding: 0;
+  position: relative;
+  animation: fadeIn 250ms ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Main Grid Layout */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1280px) {
+  .dashboard-main-grid {
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+  }
+}
+
+/* Column Layouts */
+.dashboard-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dashboard-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1279px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-left-column,
+  .dashboard-right-column {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 0;
+  }
+
+  .dashboard-main-grid {
+    gap: 1rem;
+  }
+}
+
+/* Smooth Transitions */
+.dashboard * {
+  transition: all 150ms ease;
+}
+
+/* Loading States */
+.dashboard.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Scroll Behavior */
+.dashboard {
+  scroll-behavior: smooth;
+}
+
+/* Performance Optimization */
+.dashboard-left-column,
+.dashboard-right-column {
+  will-change: transform;
+  backface-visibility: hidden;
+}

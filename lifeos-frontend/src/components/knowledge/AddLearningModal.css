@@ -1,0 +1,219 @@
+.add-learning-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.form-row {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  color: rgba(255, 255, 255, 0.87);
+  background: rgba(39, 39, 42, 0.4);
+  transition: border-color 150ms;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+  border-color: var(--color-error);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.form-group textarea {
+  resize: vertical;
+  font-family: var(--font-family-base);
+  line-height: 1.6;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+.form-group input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.form-group input[type="number"]::-webkit-outer-spin-button,
+.form-group input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.error-message {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: var(--space-1);
+}
+
+.help-text {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.38);
+  margin-top: var(--space-1);
+}
+
+/* Rating Input */
+.rating-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rating-star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: all 150ms;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.rating-star:hover {
+  background: rgba(39, 39, 42, 0.4);
+  transform: scale(1.1);
+}
+
+.rating-star.active {
+  color: #3b82f6;
+}
+
+.rating-text {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.60);
+  margin-left: var(--space-2);
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: var(--space-2);
+}
+
+/* Progress Input Styling */
+.form-group input[type="number"] {
+  text-align: center;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Content Type Specific Styling */
+.form-group select option {
+  padding: var(--space-2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+
+  .rating-input {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .add-learning-form {
+    gap: var(--space-4);
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: var(--space-2);
+    font-size: var(--font-size-sm);
+  }
+
+  .rating-star {
+    padding: var(--space-05);
+  }
+
+  .rating-star svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .rating-text {
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Form validation states */
+.form-group.has-error input,
+.form-group.has-error select,
+.form-group.has-error textarea {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-group.has-success input,
+.form-group.has-success select,
+.form-group.has-success textarea {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+/* Conditional field animations */
+.form-group {
+  transition: opacity 150ms, transform 150ms;
+}
+
+.form-group.entering {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.form-group.entered {
+  opacity: 1;
+  transform: translateY(0);
+}

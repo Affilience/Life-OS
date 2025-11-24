@@ -1,0 +1,441 @@
+.avatarContainer {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    inset 0 0 20px rgba(0, 0, 0, 0.3);
+  background: radial-gradient(circle at center, #000033 0%, #000000 100%);
+}
+
+.particleCanvas {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  transition: filter 0.5s ease;
+}
+
+.particleCanvas canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Aura effect for higher levels */
+.auraEffect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  animation: auraPulse 3s ease-in-out infinite;
+}
+
+@keyframes auraPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Level Badge */
+.levelBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  font-weight: bold;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+}
+
+.levelNumber {
+  font-size: 16px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.levelStars {
+  font-size: 12px;
+  filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.8));
+}
+
+/* Progress Overlay Enhanced */
+.progressOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: linear-gradient(to top,
+    rgba(0, 0, 0, 0.95) 0%,
+    rgba(0, 0, 0, 0.7) 50%,
+    transparent 100%);
+  color: white;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.levelHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stageInfo {
+  flex: 1;
+}
+
+.stageName {
+  font-size: 20px;
+  font-weight: 600;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(100, 150, 255, 0.3);
+  margin-bottom: 4px;
+  animation: textGlow 2s ease-in-out infinite;
+}
+
+.stageSubtitle {
+  font-size: 14px;
+  font-style: italic;
+  opacity: 0.8;
+  color: #C0CCFF;
+  margin-bottom: 4px;
+}
+
+.stageSubtext {
+  font-size: 13px;
+  opacity: 0.9;
+  color: #AABfFF;
+  margin-bottom: 4px;
+}
+
+.achievementTitle {
+  font-size: 12px;
+  color: #FFD700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  padding: 4px 8px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  display: inline-block;
+  animation: achievementGlow 2s ease-in-out infinite;
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.8),
+      0 0 20px rgba(100, 150, 255, 0.3);
+  }
+  50% {
+    text-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.8),
+      0 0 30px rgba(100, 150, 255, 0.6),
+      0 0 40px rgba(100, 150, 255, 0.4);
+  }
+}
+
+@keyframes achievementGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  }
+}
+
+/* XP Bar Enhanced */
+.xpBarContainer {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.xpBar {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.xpBarFill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 0 10px currentColor,
+    inset 0 0 5px rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+.xpBarSparkles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, white 0%, transparent 2%),
+    radial-gradient(circle at 40% 50%, white 0%, transparent 2%),
+    radial-gradient(circle at 60% 50%, white 0%, transparent 2%),
+    radial-gradient(circle at 80% 50%, white 0%, transparent 2%);
+  animation: sparkleMove 2s linear infinite;
+}
+
+@keyframes sparkleMove {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.xpText {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Enhancements Row */
+.enhancementsRow {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  opacity: 0.8;
+  flex-wrap: wrap;
+}
+
+.enhancement {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+/* Level Up Effect */
+.levelUpOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 20;
+  animation: levelUpFadeOut 1.5s ease-out forwards;
+}
+
+.levelUpFlash {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300%;
+  height: 300%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(255, 215, 0, 0.8) 0%,
+    rgba(255, 215, 0, 0.4) 30%,
+    transparent 70%);
+  animation: levelUpFlashAnim 0.6s ease-out;
+}
+
+@keyframes levelUpFlashAnim {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+.levelUpText {
+  z-index: 21;
+  text-align: center;
+  animation: levelUpBounce 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.levelUpMain {
+  font-size: 36px;
+  font-weight: 900;
+  color: #FFD700;
+  text-shadow:
+    0 0 20px rgba(255, 215, 0, 0.8),
+    0 0 40px rgba(255, 215, 0, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.levelUpSub {
+  font-size: 18px;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  margin-bottom: 4px;
+}
+
+@keyframes levelUpBounce {
+  0% {
+    transform: scale(0) translateY(50px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) translateY(-10px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes levelUpFadeOut {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Evolution Overlay Enhanced */
+.evolutionOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 25;
+  background: radial-gradient(circle,
+    rgba(100, 150, 255, 0.2) 0%,
+    transparent 60%);
+}
+
+.evolutionText {
+  z-index: 26;
+  text-align: center;
+  animation: evolutionPulse 2s ease-out;
+}
+
+.evolutionMain {
+  font-size: 28px;
+  font-weight: bold;
+  background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 2px 8px rgba(102, 126, 234, 0.6));
+}
+
+.evolutionStage {
+  font-size: 24px;
+  color: white;
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes evolutionPulse {
+  0% {
+    transform: scale(0.5) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Milestone Overlay */
+.milestoneOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 30;
+  background: radial-gradient(circle,
+    rgba(255, 215, 0, 0.3) 0%,
+    transparent 60%);
+  animation: milestoneFade 3s ease-out forwards;
+}
+
+.milestoneText {
+  z-index: 31;
+  text-align: center;
+  animation: milestoneSlide 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.milestoneTrophy {
+  font-size: 64px;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+  animation: trophyBounce 1s ease-out infinite alternate;
+}
+
+@keyframes trophyBounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-10px); }
+}
+
+.milestoneTitle {
+  font-size: 20px;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow:
+    0 0 20px rgba(255, 215, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+  margin-bottom: 8px;
+  letter-spacing: 3px;
+}
+
+.milestoneName {
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes milestoneSlide {
+  0% {
+    transform: scale(0) translateY(100px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes milestoneFade {
+  0%, 80% { opacity: 1; }
+  100% { opacity: 0; }
+}

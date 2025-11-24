@@ -1,0 +1,355 @@
+.calendar-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Page Header */
+.page-header {
+  background: linear-gradient(135deg, #f59e0b 0%, #f59e0b 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-bottom: var(--space-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.page-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.page-icon.calendar {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.page-info {
+  flex: 1;
+}
+
+.page-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: white;
+  margin: 0 0 var(--space-2) 0;
+}
+
+.page-description {
+  font-size: var(--font-size-base);
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Quick Stats */
+.page-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  min-width: 400px;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.stat-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: white;
+  margin-bottom: var(--space-1);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* View Navigation */
+.calendar-nav {
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-list {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 150ms;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: rgba(255, 255, 255, 0.70);
+  position: relative;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-button:hover {
+  background: rgba(39, 39, 42, 0.6);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.nav-button.active {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  font-weight: var(--font-weight-semibold);
+}
+
+.nav-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: #f59e0b;
+  border-radius: var(--radius-full);
+}
+
+/* View Content */
+.view-content {
+  background: rgba(18, 18, 18, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  min-height: 600px;
+  animation: fadeIn 250ms ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .calendar-page {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .page-header {
+    padding: var(--space-5);
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  .page-stats {
+    grid-template-columns: repeat(2, 1fr);
+    min-width: unset;
+    width: 100%;
+  }
+
+  .page-header-content {
+    gap: var(--space-3);
+  }
+
+  .page-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .page-title {
+    font-size: var(--font-size-xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-page {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .page-header {
+    padding: var(--space-4);
+  }
+
+  .page-header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-3);
+  }
+
+  .page-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .page-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .page-description {
+    font-size: var(--font-size-sm);
+  }
+
+  .page-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-list {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .nav-button {
+    justify-content: flex-start;
+    padding: var(--space-3);
+  }
+
+  .nav-button.active::after {
+    display: none;
+  }
+
+  .view-content {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-page {
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .page-header {
+    padding: var(--space-3);
+  }
+
+  .page-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .page-title {
+    font-size: var(--font-size-base);
+  }
+
+  .page-description {
+    font-size: var(--font-size-xs);
+  }
+
+  .calendar-nav {
+    padding: var(--space-1);
+  }
+
+  .nav-button {
+    padding: var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+
+  .view-content {
+    padding: var(--space-3);
+    min-height: 400px;
+  }
+
+  .stat-item {
+    padding: var(--space-3);
+  }
+
+  .stat-value {
+    font-size: var(--font-size-lg);
+  }
+
+  .stat-label {
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .page-header {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  }
+
+  .page-icon.calendar {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .nav-button.active {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+  }
+
+  .nav-button.active::after {
+    background: #fcd34d;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus States for Accessibility */
+.nav-button:focus {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .calendar-page {
+    padding: 0;
+  }
+
+  .page-header {
+    background: none !important;
+    color: black !important;
+    border: 1px solid #ccc;
+  }
+
+  .page-title,
+  .page-description {
+    color: black !important;
+  }
+
+  .calendar-nav {
+    display: none;
+  }
+
+  .view-content {
+    background: none;
+    padding: 0;
+    box-shadow: none;
+  }
+}

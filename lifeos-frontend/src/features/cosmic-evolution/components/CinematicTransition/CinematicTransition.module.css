@@ -1,0 +1,345 @@
+/* Cinematic Stage Transition - Epic Evolution Sequence */
+
+.cinematicOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+  pointer-events: none;
+  overflow: hidden;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Light Burst (Big Bang Moment) */
+.lightBurst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  animation: lightBurstExpand 2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes lightBurstExpand {
+  0% {
+    width: 10px;
+    height: 10px;
+    opacity: 1;
+  }
+  50% {
+    width: 200vw;
+    height: 200vw;
+    opacity: 0.8;
+  }
+  100% {
+    width: 300vw;
+    height: 300vw;
+    opacity: 0;
+  }
+}
+
+/* Expanding Energy Rings */
+.energyRings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.energyRing {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid;
+  border-radius: 50%;
+  animation: ringExpand 2s ease-out forwards;
+}
+
+@keyframes ringExpand {
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 1;
+  }
+  100% {
+    width: 120vw;
+    height: 120vw;
+    opacity: 0;
+  }
+}
+
+/* Particle Explosion */
+.particleExplosion {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.explosionParticle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: particleBurst 1.5s ease-out forwards;
+  animation-delay: var(--delay);
+  box-shadow: 0 0 10px currentColor;
+}
+
+@keyframes particleBurst {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform:
+      translate(
+        calc(cos(var(--angle)) * var(--distance)),
+        calc(sin(var(--angle)) * var(--distance))
+      )
+      scale(0);
+    opacity: 0;
+  }
+}
+
+/* Cosmic Voiceover Text */
+.cosmicText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 10;
+  animation: textReveal 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  min-width: 600px;
+}
+
+@keyframes textReveal {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5) rotateX(90deg);
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotateX(0deg);
+  }
+}
+
+.cosmicAgeLabel {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.5rem;
+  animation: fadeInUp 0.5s ease-out 1.2s backwards;
+}
+
+.cosmicAge {
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.5s ease-out 1.3s backwards;
+}
+
+.evolutionDivider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  animation: fadeInUp 0.5s ease-out 1.4s backwards;
+}
+
+.evolutionLine {
+  flex: 1;
+  height: 2px;
+}
+
+.evolutionIcon {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 20px currentColor);
+  animation: iconPulse 1s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+.stageName {
+  font-size: 3.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, currentColor, rgba(255, 255, 255, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: stageNameReveal 0.8s ease-out 1.5s backwards;
+}
+
+@keyframes stageNameReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.stageSubtitle {
+  font-size: 1.5rem;
+  font-style: italic;
+  font-weight: 300;
+  margin-bottom: 2.5rem;
+  opacity: 0.9;
+  animation: fadeInUp 0.5s ease-out 1.7s backwards;
+}
+
+.evolutionProgress {
+  width: 400px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  margin: 0 auto 2rem;
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease-out 1.8s backwards;
+}
+
+.evolutionProgressBar {
+  height: 100%;
+  border-radius: 2px;
+  box-shadow: 0 0 20px currentColor;
+  animation: progressFill 2s ease-out forwards;
+}
+
+@keyframes progressFill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.philosophyQuote {
+  font-size: 1.125rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.8;
+  animation: fadeInUp 0.6s ease-out 1.9s backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Camera Zoom Effect */
+.zoomOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, transparent 30%, rgba(0, 0, 0, 0.8) 100%);
+  animation: zoomIn 2s ease-out forwards;
+}
+
+@keyframes zoomIn {
+  0% {
+    transform: scale(3);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+}
+
+/* Vignette Effect */
+.vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cosmicText {
+    min-width: 90%;
+  }
+
+  .stageName {
+    font-size: 2rem;
+  }
+
+  .stageSubtitle {
+    font-size: 1rem;
+  }
+
+  .philosophyQuote {
+    font-size: 0.9rem;
+  }
+
+  .evolutionProgress {
+    width: 80%;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .lightBurst,
+  .energyRing,
+  .explosionParticle,
+  .cosmicText,
+  .zoomOverlay {
+    animation: none !important;
+  }
+
+  .cinematicOverlay {
+    animation: fadeIn 0.3s ease-out !important;
+  }
+
+  .lightBurst {
+    opacity: 0.3;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .cosmicText {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

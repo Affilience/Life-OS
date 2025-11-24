@@ -1,0 +1,54 @@
+/**
+ * Minimal Cosmic OS - Design Tokens
+ * Visual identity for the cosmic evolution system
+ */
+
+:root {
+  /* Background Colors - Refined for optimal viewing */
+  --bg-root: #0a0a0a;
+  --bg-surface: #121212;
+  --bg-surface-alt: #1a1a1a;
+
+  /* Foreground Colors - 87/60/38 opacity system */
+  --fg-primary: rgba(255, 255, 255, 0.87);
+  --fg-secondary: rgba(255, 255, 255, 0.60);
+  --fg-muted: rgba(255, 255, 255, 0.38);
+
+  /* Accent Colors - Nebula violet and plasma teal */
+  --accent-main: #8a5cff; /* nebula violet */
+  --accent-main-soft: rgba(138, 92, 255, 0.16);
+  --accent-aux: #4de8e4; /* plasma teal */
+  --accent-aux-soft: rgba(77, 232, 228, 0.16);
+
+  /* Status Colors */
+  --accent-success: #5af29c;
+  --accent-warning: #facc6b;
+  --accent-danger: #ff6584;
+
+  /* Borders - Refined minimal borders */
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  /* Glows and Shadows (More subtle) */
+  --glow-soft: 0 0 40px rgba(138, 92, 255, 0.25);
+  --glow-aux: 0 0 40px rgba(77, 232, 228, 0.20);
+  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  /* Gradients (More subtle for minimal aesthetic) */
+  --grad-cosmic-radial: radial-gradient(
+      circle at 10% -10%,
+      rgba(138, 92, 255, 0.08),
+      rgba(10, 10, 10, 0.0) 50%
+    ),
+    radial-gradient(
+      circle at 90% 120%,
+      rgba(77, 232, 228, 0.06),
+      rgba(10, 10, 10, 0.0) 50%
+    );
+
+  --grad-card: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.00)
+  );
+}

@@ -1,0 +1,253 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Caveat:wght@400;700&display=swap');
+
+/* Journal Page - Realistic Paper */
+.journal-page {
+  background-color: #fefcf5;
+  background-image:
+    /* Red margin line - close to edge */
+    linear-gradient(90deg,
+      transparent 20px,
+      rgba(255, 107, 107, 0.35) 20px,
+      rgba(255, 107, 107, 0.35) 22px,
+      transparent 22px
+    ),
+    /* Horizontal ruled lines - tighter spacing for handwriting */
+    repeating-linear-gradient(
+      transparent,
+      transparent 35px,
+      rgba(168, 213, 226, 0.3) 35px,
+      rgba(168, 213, 226, 0.3) 36px
+    );
+
+  box-shadow:
+    inset 0 0 100px rgba(255, 243, 230, 0.4),
+    0 3px 15px rgba(0, 0, 0, 0.15);
+
+  font-family: 'Caveat', cursive;
+  font-size: 22px;
+  line-height: 36px;
+  color: #2c2c2c;
+
+  padding: 60px 40px 60px 35px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+/* Subtle paper texture */
+.journal-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* Left/Right page asymmetry for book binding */
+.journal-page--left {
+  padding-left: 35px;
+  padding-right: 50px;
+  background-position-x: 20px;
+}
+
+.journal-page--right {
+  padding-left: 50px;
+  padding-right: 35px;
+  background-position-x: 20px;
+}
+
+/* Empty page styling */
+.journal-page--empty {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.journal-page--empty:hover {
+  background-color: #fffef8;
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.page-date {
+  font-size: 13px;
+  color: #666;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+.page-number {
+  font-size: 11px;
+  color: #999;
+  font-family: 'Caveat', cursive;
+  font-weight: 700;
+}
+
+/* Entry Title */
+.entry-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #1a1a1a;
+  font-family: 'Caveat', cursive;
+  letter-spacing: 0.5px;
+}
+
+/* Entry Text */
+.entry-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-bottom: 24px;
+}
+
+.entry-text p {
+  margin: 0 0 32px 0;
+  text-indent: 0;
+}
+
+.entry-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* Tags */
+.entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.tag {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(100, 150, 200, 0.08);
+  border-radius: 12px;
+  color: #4a7c9e;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+/* Page Footer */
+.page-footer {
+  position: absolute;
+  bottom: 40px;
+  left: 60px;
+  right: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #999;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.mood-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mood-emoji {
+  font-size: 14px;
+}
+
+.mood-value {
+  font-size: 10px;
+  color: #aaa;
+}
+
+.word-count {
+  font-size: 10px;
+  color: #aaa;
+  font-style: italic;
+}
+
+/* Empty Page Prompt */
+.empty-page-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100% - 100px);
+  text-align: center;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.journal-page--empty:hover .empty-page-prompt {
+  opacity: 0.8;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #999;
+}
+
+.empty-page-prompt h3 {
+  font-size: 18px;
+  font-weight: 400;
+  color: #666;
+  margin: 0 0 8px 0;
+  font-family: 'Caveat', cursive;
+}
+
+.empty-page-prompt p {
+  font-size: 13px;
+  color: #999;
+  margin: 0;
+}
+
+.page-pen-icon {
+  position: absolute;
+  bottom: 60px;
+  right: 70px;
+  opacity: 0.2;
+  transform: rotate(-15deg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .journal-page {
+    padding: 40px 30px;
+    font-size: 15px;
+    line-height: 30px;
+  }
+
+  .journal-page--left,
+  .journal-page--right {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+
+  .entry-title {
+    font-size: 20px;
+  }
+
+  .page-footer {
+    left: 30px;
+    right: 30px;
+    bottom: 30px;
+  }
+}

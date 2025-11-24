@@ -1,0 +1,136 @@
+.command-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+  z-index: 9999;
+  animation: fadeIn 150ms;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.command-palette {
+  width: 600px;
+  max-height: 500px;
+  background: rgba(24, 24, 27, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  animation: slideDown 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.palette-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.palette-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.87);
+  font-size: var(--font-size-lg);
+  outline: none;
+  font-family: var(--font-family-base);
+}
+
+.palette-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.results-section {
+  margin-bottom: var(--space-2);
+}
+
+.section-label {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.38);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.command-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 150ms;
+}
+
+.command-item:hover,
+.command-item.selected {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.command-item svg {
+  color: rgba(255, 255, 255, 0.60);
+  flex-shrink: 0;
+}
+
+.command-item.selected svg {
+  color: #3b82f6;
+}
+
+.command-label {
+  flex: 1;
+  font-size: var(--font-size-base);
+  color: rgba(255, 255, 255, 0.87);
+  font-weight: 500;
+}
+
+.palette-footer {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.38);
+  text-align: center;
+}
+
+.palette-footer kbd {
+  padding: 2px 6px;
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+}
+
+.no-results {
+  padding: var(--space-8);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.38);
+}

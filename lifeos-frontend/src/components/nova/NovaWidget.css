@@ -1,0 +1,248 @@
+/* Nova AI Companion Widget Styles */
+
+.nova-widget {
+  position: fixed;
+  z-index: 9998;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nova-widget.dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+/* Pixel-perfect rendering for sprites */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* ========================================
+   MINIMIZED STATE (Avatar only)
+   ======================================== */
+
+.nova-minimized {
+  width: 80px;
+  height: 80px;
+  cursor: grab;
+  position: relative;
+  user-select: none;
+}
+
+.nova-minimized:active {
+  cursor: grabbing;
+}
+
+.nova-avatar-container {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 32px rgba(102, 126, 234, 0.4);
+  position: relative;
+  animation: nova-float 3s ease-in-out infinite, nova-glow 2s ease-in-out infinite alternate;
+}
+
+.nova-avatar {
+  width: 64px;
+  height: 64px;
+  animation: nova-breathe 2s ease-in-out infinite;
+}
+
+.nova-notification-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  background: #f44336;
+  border-radius: 50%;
+  border: 2px solid #0a0a0a;
+  animation: nova-pulse 1.5s ease-in-out infinite;
+}
+
+.nova-speech-bubble {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17, 17, 17, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.nova-minimized:hover .nova-speech-bubble {
+  opacity: 1;
+}
+
+.nova-speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(17, 17, 17, 0.95);
+}
+
+/* ========================================
+   EXPANDED STATE (Mini chat)
+   ======================================== */
+
+.nova-expanded {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 320px;
+  height: 480px;
+  background: #111111;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: nova-expand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 9999;
+}
+
+.nova-header {
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nova-chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #0a0a0a;
+}
+
+.nova-chat::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nova-chat::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nova-chat::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 3px;
+}
+
+.nova-chat::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+.nova-input {
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border-top: 1px solid #2a2a2a;
+  display: flex;
+  gap: 8px;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes nova-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes nova-glow {
+  0% {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 32px rgba(102, 126, 234, 0.4);
+  }
+  100% {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 48px rgba(102, 126, 234, 0.6);
+  }
+}
+
+@keyframes nova-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes nova-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+@keyframes nova-expand {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .nova-expanded {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100vw - 32px);
+    max-width: 400px;
+    height: 70vh;
+    max-height: 600px;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .nova-avatar-container,
+  .nova-avatar {
+    animation: none;
+  }
+
+  .nova-widget {
+    transition: none;
+  }
+}

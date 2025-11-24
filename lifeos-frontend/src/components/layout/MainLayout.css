@@ -1,0 +1,14 @@
+.main-layout {
+  height: 100vh;
+  background: var(--color-bg-primary);
+  display: flex;
+}
+
+.content-area {
+  flex: 1;
+  padding: var(--space-8);
+  margin-left: 250px; /* Account for fixed sidebar */
+  margin-top: 60px; /* Account for fixed topbar */
+  overflow-y: auto;
+  min-height: calc(100vh - 60px);
+}

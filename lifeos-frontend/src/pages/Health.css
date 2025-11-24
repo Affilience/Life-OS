@@ -1,0 +1,340 @@
+.health-page {
+  padding: var(--space-6);
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  position: relative;
+  animation: fadeInUp 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Staggered Page Transitions */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.health-page > * {
+  animation: fadeInUp 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+.health-page > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.health-page > *:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.health-page > *:nth-child(3) {
+  animation-delay: 200ms;
+}
+
+.health-page > *:nth-child(4) {
+  animation-delay: 300ms;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.page-header-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.page-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.page-icon.health {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ec4899;
+  border: 1px solid rgba(236, 72, 153, 0.2);
+}
+
+.page-info {
+  flex: 1;
+}
+
+.page-title {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: rgba(255, 255, 255, 0.87);
+  margin: 0 0 var(--space-2) 0;
+  line-height: 1.2;
+}
+
+.page-description {
+  font-size: var(--font-size-lg);
+  color: rgba(255, 255, 255, 0.60);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.health-tabs {
+  border-bottom: 1px solid var(--color-border-muted);
+  margin-bottom: var(--space-2);
+}
+
+.tabs-list {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+}
+
+.tabs-list::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.60);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+  position: relative;
+  min-height: 48px;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.tab-button.active {
+  background: #ec4899;
+  color: white;
+  font-weight: var(--font-weight-semibold);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-health-500);
+  border-radius: var(--radius-full) var(--radius-full) 0 0;
+}
+
+.tab-content {
+  flex: 1;
+  min-height: 600px;
+}
+
+/* Health module specific color overrides */
+.health-page .card {
+  border-color: var(--color-border-default);
+}
+
+.health-page .card:hover {
+  border-color: var(--color-health-300);
+}
+
+.health-page .button-primary {
+  background: var(--color-health-500);
+  border-color: var(--color-health-500);
+}
+
+.health-page .button-primary:hover {
+  background: var(--color-health-600);
+  border-color: var(--color-health-600);
+}
+
+.health-page .stat-card.health {
+  border-color: var(--color-health-200);
+}
+
+.health-page .stat-card.health .stat-icon {
+  background: var(--color-health-100);
+  color: var(--color-health-600);
+}
+
+.health-page .progress-bar.health .progress-fill {
+  background: var(--color-health-500);
+}
+
+.health-page .progress-bar.health .progress-track {
+  background: var(--color-health-100);
+}
+
+/* Loading and error states */
+.tab-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--color-text-secondary);
+}
+
+.tab-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.tab-error-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tab-error-message {
+  text-align: center;
+  max-width: 400px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .health-page {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .page-header-content {
+    gap: var(--space-3);
+  }
+
+  .page-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .page-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .page-description {
+    font-size: var(--font-size-md);
+  }
+
+  .tab-button {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-xs);
+    min-height: 40px;
+  }
+
+  .tabs-list {
+    gap: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .health-page {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .page-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .page-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .page-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .page-description {
+    font-size: var(--font-size-sm);
+  }
+
+  .tab-content {
+    min-height: 500px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .health-page {
+    color: var(--color-text-primary);
+  }
+
+  .page-icon.health {
+    background: var(--color-health-900);
+    color: var(--color-health-300);
+  }
+
+  .tab-button.active {
+    background: var(--color-health-900);
+    color: var(--color-health-300);
+  }
+
+  .health-page .stat-card.health {
+    border-color: var(--color-health-800);
+  }
+
+  .health-page .stat-card.health .stat-icon {
+    background: var(--color-health-900);
+    color: var(--color-health-300);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tab-button {
+    border: 1px solid transparent;
+  }
+
+  .tab-button.active {
+    border-color: var(--color-health-500);
+  }
+
+  .tab-button:focus {
+    outline: 2px solid var(--color-health-500);
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .tab-button,
+  .health-page .card,
+  .health-page .button-primary {
+    transition: none;
+  }
+}

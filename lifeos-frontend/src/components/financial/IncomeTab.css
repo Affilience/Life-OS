@@ -1,0 +1,122 @@
+.income-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+/* Income Table */
+.income-table-container {
+  overflow-x: auto;
+}
+
+.income-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.income-table thead {
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.income-table th {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.income-table tbody tr {
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background var(--duration-fast);
+}
+
+.income-table tbody tr:hover {
+  background: var(--color-bg-elevated);
+}
+
+.income-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.income-table td {
+  padding: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.income-date {
+  font-family: var(--font-family-mono);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.income-source {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.income-amount {
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-success-500);
+  white-space: nowrap;
+}
+
+.income-rate {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.income-notes {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .income-table-container {
+    overflow-x: scroll;
+  }
+
+  .income-table {
+    min-width: 600px;
+  }
+
+  .income-table th,
+  .income-table td {
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .income-table thead {
+    background: var(--color-bg-secondary);
+  }
+
+  .income-table tbody tr:hover {
+    background: var(--color-bg-secondary);
+  }
+}

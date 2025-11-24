@@ -1,0 +1,531 @@
+/* Active Workout Container */
+.active-workout-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #0a0a0a;
+  z-index: 1000;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sticky Header */
+.active-workout-header {
+  position: sticky;
+  top: 0;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+}
+
+.header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.workout-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.87);
+  margin: 0 0 0.5rem 0;
+}
+
+.workout-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.meta-divider {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.cancel-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 0.5rem;
+  color: #ef4444;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.finish-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(to right, #10b981, #059669);
+  border: none;
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.finish-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* Progress Bar */
+.workout-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.workout-progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #8b5cf6, #3b82f6);
+  transition: width 400ms ease;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
+}
+
+/* Main Content */
+.active-workout-content {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Exercise Navigation */
+.exercise-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.nav-arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.70);
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.nav-arrow-btn:hover:not(:disabled) {
+  background: rgba(39, 39, 42, 0.6);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+}
+
+.nav-arrow-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.exercise-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.3) rgba(255, 255, 255, 0.05);
+}
+
+.exercise-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.exercise-tabs::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.exercise-tabs::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 3px;
+}
+
+.exercise-tabs::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+.exercise-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.875rem 1rem;
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.70);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+.exercise-tab:hover {
+  background: rgba(39, 39, 42, 0.6);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.exercise-tab.active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: rgba(255, 255, 255, 0.87);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+.exercise-tab.completed {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.exercise-tab.completed .tab-progress {
+  color: #10b981;
+}
+
+.tab-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.tab-name {
+  font-weight: 600;
+  color: inherit;
+}
+
+.tab-progress {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.60);
+  font-weight: 500;
+}
+
+.add-exercise-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.875rem 1rem;
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px dashed rgba(139, 92, 246, 0.3);
+  border-radius: 0.75rem;
+  color: #a78bfa;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.add-exercise-tab:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* Current Exercise Section */
+.current-exercise-section {
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.exercise-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exercise-icon-large {
+  font-size: 4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.exercise-info {
+  flex: 1;
+}
+
+.exercise-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.87);
+  margin: 0 0 0.5rem 0;
+}
+
+.exercise-muscles {
+  font-size: 0.9375rem;
+  color: #8b5cf6;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.exercise-equipment {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.set-logger-container {
+  /* SetLogger component will have its own styles */
+}
+
+/* No Exercise State */
+.no-exercise-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.no-exercise-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-exercise-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.87);
+  margin: 0 0 0.5rem 0;
+}
+
+.no-exercise-text {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.60);
+  margin: 0 0 1.5rem 0;
+}
+
+.add-exercise-btn-large {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: linear-gradient(to right, #8b5cf6, #3b82f6);
+  border: none;
+  border-radius: 0.75rem;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.add-exercise-btn-large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.4);
+}
+
+/* Workout Notes Section */
+.workout-notes-section {
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.notes-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+.notes-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.87);
+  margin: 0;
+}
+
+.notes-textarea {
+  width: 100%;
+  padding: 0.875rem;
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+  transition: all 150ms ease;
+}
+
+.notes-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.notes-textarea:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  background: rgba(39, 39, 42, 0.6);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .active-workout-header {
+    position: relative;
+  }
+
+  .header-main {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+  }
+
+  .header-info {
+    width: 100%;
+  }
+
+  .workout-title {
+    font-size: 1.25rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .cancel-btn,
+  .finish-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .exercise-navigation {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .nav-arrow-btn {
+    display: none;
+  }
+
+  .exercise-tabs {
+    width: 100%;
+  }
+
+  .current-exercise-section {
+    padding: 1.5rem;
+  }
+
+  .exercise-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .exercise-icon-large {
+    font-size: 3rem;
+  }
+
+  .exercise-name {
+    font-size: 1.5rem;
+  }
+
+  .active-workout-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .workout-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .meta-divider {
+    display: none;
+  }
+
+  .exercise-tab {
+    min-width: 100px;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .tab-icon {
+    font-size: 1.25rem;
+  }
+
+  .tab-name {
+    font-size: 0.75rem;
+  }
+
+  .current-exercise-section {
+    padding: 1.25rem;
+  }
+
+  .exercise-icon-large {
+    font-size: 2.5rem;
+  }
+}

@@ -1,0 +1,206 @@
+.month-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.month-info {
+  flex: 1;
+}
+
+.month-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: rgba(255, 255, 255, 0.87);
+  margin: 0;
+}
+
+.month-nav {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.calendar-header-cell {
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  padding: var(--space-3);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.70);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.calendar-day {
+  background: rgba(39, 39, 42, 0.4);
+  min-height: 100px;
+  padding: var(--space-2);
+  position: relative;
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+}
+
+.calendar-day:not(.empty):hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.calendar-day.empty {
+  background: rgba(24, 24, 27, 0.2);
+  cursor: default;
+}
+
+.calendar-day.today {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.15) 100%);
+  border: 2px solid #f59e0b;
+}
+
+.day-number {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.87);
+  margin-bottom: var(--space-2);
+}
+
+.calendar-day.today .day-number {
+  color: #f59e0b;
+  font-weight: var(--font-weight-bold);
+}
+
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.event-dots {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+.event-more {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: #f59e0b;
+  font-family: var(--font-family-mono);
+}
+
+.month-summary {
+  display: flex;
+  gap: var(--space-8);
+  padding: var(--space-4);
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-md);
+  border-top: 2px solid #f59e0b;
+}
+
+.summary-stat {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.summary-label {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.70);
+  font-weight: var(--font-weight-medium);
+}
+
+.summary-value {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-mono);
+  color: #f59e0b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .month-header {
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  .month-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .calendar-day {
+    min-height: 80px;
+    padding: var(--space-1);
+  }
+
+  .day-number {
+    font-size: 12px;
+  }
+
+  .event-dot {
+    width: 4px;
+    height: 4px;
+  }
+
+  .month-summary {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .calendar-header-cell {
+    padding: var(--space-2);
+    font-size: 10px;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .calendar-day.empty {
+    background: rgba(24, 24, 27, 0.2);
+  }
+
+  .calendar-day:not(.empty):hover {
+    background: rgba(245, 158, 11, 0.15);
+  }
+
+  .calendar-day.today {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.15) 100%);
+    border-color: #f59e0b;
+  }
+
+  .calendar-day.today .day-number {
+    color: #f59e0b;
+  }
+
+  .month-summary {
+    background: rgba(24, 24, 27, 0.4);
+    backdrop-filter: blur(12px);
+  }
+}

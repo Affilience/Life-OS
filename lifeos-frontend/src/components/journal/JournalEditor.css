@@ -1,0 +1,329 @@
+.journal-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--space-6);
+}
+
+/* Editor Main */
+.editor-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.editor-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.date-input {
+  padding: var(--space-2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  background: rgba(39, 39, 42, 0.4);
+  color: rgba(255, 255, 255, 0.87);
+  font-size: var(--font-size-sm);
+  transition: all 150ms;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.word-count {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: rgba(255, 255, 255, 0.60);
+  font-size: var(--font-size-sm);
+}
+
+/* Editor Form */
+.editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title-input {
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(39, 39, 42, 0.4);
+  backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.87);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  transition: all 150ms;
+}
+
+.title-input:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.title-input::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+  font-weight: var(--font-weight-normal);
+}
+
+.content-textarea {
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(39, 39, 42, 0.4);
+  backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.87);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  border-radius: var(--radius-md);
+  resize: vertical;
+  min-height: 300px;
+  font-family: var(--font-family-base);
+  transition: all 150ms;
+}
+
+.content-textarea:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.content-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.editor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tags-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  margin-right: var(--space-4);
+}
+
+.tags-field {
+  flex: 1;
+  padding: var(--space-2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  background: rgba(39, 39, 42, 0.4);
+  backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.87);
+  font-size: var(--font-size-sm);
+  transition: all 150ms;
+}
+
+.tags-field:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.tags-field::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+/* Sidebar */
+.editor-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.prompts-card,
+.stats-card,
+.tips-card {
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+/* Prompts */
+.prompts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.prompt-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 150ms;
+  text-align: left;
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.60);
+  line-height: 1.4;
+}
+
+.prompt-item:hover {
+  background: rgba(39, 39, 42, 0.6);
+  border-color: rgba(6, 182, 212, 0.3);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.prompt-item:active {
+  transform: translateY(1px);
+}
+
+/* Stats */
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.stat-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #06b6d4;
+}
+
+/* Tips */
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tip-item {
+  padding: var(--space-3);
+  background: rgba(6, 182, 212, 0.1);
+  border-left: 3px solid #06b6d4;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.70);
+  line-height: 1.4;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .editor-sidebar {
+    order: -1;
+  }
+
+  .editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .editor-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 768px) {
+  .journal-editor {
+    gap: var(--space-3);
+  }
+
+  .editor-header {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .editor-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  .editor-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .tags-input {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .content-textarea {
+    min-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title-input,
+  .content-textarea {
+    padding: var(--space-3);
+    font-size: var(--font-size-sm);
+  }
+
+  .content-textarea {
+    min-height: 200px;
+  }
+
+  .prompt-item {
+    padding: var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+
+  .tip-item {
+    padding: var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Dark Mode Support (Already applied) */

@@ -1,0 +1,270 @@
+/* Health Modal Forms Shared Styles */
+
+.workout-form,
+.meal-form,
+.sleep-form,
+.recovery-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-4);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.input-label-icon {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.form-select {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-health-500);
+  box-shadow: 0 0 0 3px var(--color-health-100);
+}
+
+.form-select.error {
+  border-color: var(--color-error-500);
+}
+
+.form-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error-600);
+  margin-top: var(--space-1);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-muted);
+}
+
+/* Meal Form Specific */
+.macro-summary {
+  padding: var(--space-4);
+  background: var(--color-health-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-health-200);
+}
+
+.macro-summary h4 {
+  margin: 0 0 var(--space-3) 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-health-700);
+}
+
+.macro-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.macro-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+}
+
+.macro-label {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.macro-value {
+  color: var(--color-health-600);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Sleep Form Specific */
+.duration-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-health-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-health-200);
+}
+
+.duration-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.duration-value {
+  font-size: var(--font-size-sm);
+  color: var(--color-health-600);
+  font-weight: var(--font-weight-bold);
+}
+
+.sleep-stages-section {
+  padding: var(--space-4);
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-lg);
+}
+
+.sleep-stages-section h4 {
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.stages-hint {
+  margin: 0 0 var(--space-4) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.stages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+/* Recovery Form Specific */
+.metrics-section,
+.subjective-section {
+  padding: var(--space-4);
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-lg);
+}
+
+.metrics-section h4,
+.subjective-section h4 {
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.section-hint {
+  margin: 0 0 var(--space-4) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stages-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+
+  .macro-preview {
+    gap: var(--space-3);
+  }
+
+  .macro-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+}
+
+@media (max-width: 480px) {
+  .workout-form,
+  .meal-form,
+  .sleep-form,
+  .recovery-form {
+    gap: var(--space-4);
+  }
+
+  .metrics-section,
+  .subjective-section,
+  .sleep-stages-section {
+    padding: var(--space-3);
+  }
+
+  .macro-summary {
+    padding: var(--space-3);
+  }
+}
+
+/* Health theme colors for form elements */
+.workout-form .form-select:focus,
+.meal-form .form-select:focus,
+.sleep-form .form-select:focus,
+.recovery-form .form-select:focus {
+  border-color: var(--color-health-500);
+  box-shadow: 0 0 0 3px var(--color-health-100);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .macro-summary {
+    background: var(--color-health-900);
+    border-color: var(--color-health-700);
+  }
+
+  .macro-summary h4 {
+    color: var(--color-health-300);
+  }
+
+  .duration-display {
+    background: var(--color-health-900);
+    border-color: var(--color-health-700);
+  }
+
+  .duration-value {
+    color: var(--color-health-300);
+  }
+
+  .metrics-section,
+  .subjective-section,
+  .sleep-stages-section {
+    background: var(--color-bg-elevated);
+  }
+}

@@ -1,0 +1,155 @@
+.day-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.day-info {
+  flex: 1;
+}
+
+.day-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: rgba(255, 255, 255, 0.87);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.day-date {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.70);
+  margin: 0;
+}
+
+.day-nav {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.day-timeline {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: var(--space-3);
+  position: relative;
+}
+
+.time-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-label {
+  height: 60px;
+  display: flex;
+  align-items: flex-start;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-mono);
+  color: rgba(255, 255, 255, 0.70);
+  font-weight: var(--font-weight-medium);
+  padding-top: 2px;
+}
+
+.schedule-column {
+  position: relative;
+  min-height: 600px;
+}
+
+.hour-slot {
+  height: 60px;
+  position: relative;
+}
+
+.hour-divider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.events-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.day-summary {
+  display: flex;
+  gap: var(--space-8);
+  padding: var(--space-4);
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-md);
+  border-top: 2px solid #f59e0b;
+}
+
+.summary-stat {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.summary-label {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.70);
+  font-weight: var(--font-weight-medium);
+}
+
+.summary-value {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-mono);
+  color: #f59e0b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .day-header {
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  .day-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .day-timeline {
+    grid-template-columns: 50px 1fr;
+  }
+
+  .time-label {
+    font-size: 10px;
+  }
+
+  .day-summary {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .hour-divider {
+    background: rgba(255, 255, 255, 0.04);
+    opacity: 1;
+  }
+
+  .day-summary {
+    background: rgba(24, 24, 27, 0.4);
+    backdrop-filter: blur(12px);
+  }
+}

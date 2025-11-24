@@ -1,0 +1,292 @@
+import React, { useState, useEffect } from 'react';
+import { useWorkoutStore } from '../../stores/workoutStore';
+import { EXERCISE_DATABASE } from '../../data/exerciseDatabase';
+import ExerciseSelector from './ExerciseSelector';
+import SetLogger from './SetLogger';
+import RestTimer from './RestTimer';
+import PRBadge from './PRBadge';
+import {
+  X,
+  Check,
+  Plus,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Trophy,
+  StickyNote,
+} from 'lucide-react';
+import './ActiveWorkout.css';
+
+export default function ActiveWorkout() {
+  const {
+    activeWorkout,
+    workoutStartTime,
+    currentExerciseIndex,
+    setCurrentExerciseIndex,
+    addExerciseToWorkout,
+    logSet,
+    finishWorkout,
+    cancelWorkout,
+    updateWorkoutNotes,
+  } = useWorkoutStore();
+
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const [showPRCelebration, setShowPRCelebration] = useState(false);
+  const [prDetails, setPRDetails] = useState(null);
+
+  // Update elapsed time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - workoutStartTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [workoutStartTime]);
+
+  if (!activeWorkout) return null;
+
+  const currentExercise = activeWorkout.exercises[currentExerciseIndex];
+  const exerciseData = currentExercise ? EXERCISE_DATABASE[currentExercise.exerciseId] : null;
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleSetComplete = (setIndex, weight, reps, isPR) => {
+    logSet(currentExerciseIndex, setIndex, weight, reps);
+
+    if (isPR) {
+      setPRDetails({ exercise: exerciseData.name, weight, reps });
+      setShowPRCelebration(true);
+      setTimeout(() => setShowPRCelebration(false), 3000);
+    }
+
+    // Auto-start rest timer
+    setShowRestTimer(true);
+  };
+
+  const handleFinish = () => {
+    const result = finishWorkout();
+    // Could show completion modal here with stats
+  };
+
+  const handleNextExercise = () => {
+    if (currentExerciseIndex < activeWorkout.exercises.length - 1) {
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+    }
+  };
+
+  const handlePrevExercise = () => {
+    if (currentExerciseIndex > 0) {
+      setCurrentExerciseIndex(currentExerciseIndex - 1);
+    }
+  };
+
+  const totalSets = activeWorkout.exercises.reduce((sum, e) => sum + e.sets.length, 0);
+  const completedSets = activeWorkout.exercises.reduce(
+    (sum, e) => sum + e.sets.filter(s => s.completed).length,
+    0
+  );
+
+  const progressPercentage = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
+
+  return (
+    <div className="active-workout-container">
+      {/* Sticky Header */}
+      <div className="active-workout-header">
+        <div className="header-main">
+          <div className="header-info">
+            <h1 className="workout-title">{activeWorkout.name}</h1>
+            <div className="workout-meta">
+              <div className="meta-item">
+                <Clock className="w-4 h-4" />
+                <span>{formatTime(elapsedTime)}</span>
+              </div>
+              <span className="meta-divider">•</span>
+              <div className="meta-item">
+                <span>{completedSets} / {totalSets} sets</span>
+              </div>
+              {activeWorkout.exercises.length > 0 && (
+                <>
+                  <span className="meta-divider">•</span>
+                  <div className="meta-item">
+                    <span>Exercise {currentExerciseIndex + 1} of {activeWorkout.exercises.length}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="header-actions">
+            <button
+              onClick={() => {
+                if (window.confirm('Cancel workout? Progress will be lost.')) {
+                  cancelWorkout();
+                }
+              }}
+              className="cancel-btn"
+            >
+              <X className="w-5 h-5" />
+              Cancel
+            </button>
+            <button onClick={handleFinish} className="finish-btn">
+              <Check className="w-5 h-5" />
+              Finish Workout
+            </button>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="workout-progress-bar">
+          <div
+            className="workout-progress-fill"
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="active-workout-content">
+        {/* Exercise Navigation */}
+        {activeWorkout.exercises.length > 0 && (
+          <div className="exercise-navigation">
+            <button
+              onClick={handlePrevExercise}
+              disabled={currentExerciseIndex === 0}
+              className="nav-arrow-btn"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className="exercise-tabs">
+              {activeWorkout.exercises.map((exercise, index) => {
+                const exData = EXERCISE_DATABASE[exercise.exerciseId];
+                const isActive = index === currentExerciseIndex;
+                const completedSetsCount = exercise.sets.filter(s => s.completed).length;
+                const allCompleted = completedSetsCount === exercise.sets.length;
+
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentExerciseIndex(index)}
+                    className={`exercise-tab ${isActive ? 'active' : ''} ${allCompleted ? 'completed' : ''}`}
+                  >
+                    <span className="tab-icon">{exData?.icon || '💪'}</span>
+                    <span className="tab-name">{exData?.name || 'Exercise'}</span>
+                    <span className="tab-progress">
+                      {completedSetsCount}/{exercise.sets.length}
+                    </span>
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setShowExerciseSelector(true)}
+                className="add-exercise-tab"
+              >
+                <Plus className="w-5 h-5" />
+                Add Exercise
+              </button>
+            </div>
+
+            <button
+              onClick={handleNextExercise}
+              disabled={currentExerciseIndex === activeWorkout.exercises.length - 1}
+              className="nav-arrow-btn"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Current Exercise */}
+        {exerciseData ? (
+          <div className="current-exercise-section">
+            <div className="exercise-header">
+              <div className="exercise-icon-large">{exerciseData.icon}</div>
+              <div className="exercise-info">
+                <h2 className="exercise-name">{exerciseData.name}</h2>
+                <div className="exercise-muscles">
+                  {exerciseData.muscleGroups.join(', ')}
+                </div>
+                <div className="exercise-equipment">
+                  {exerciseData.equipment} • {exerciseData.type}
+                </div>
+              </div>
+            </div>
+
+            {/* Set Logger */}
+            <div className="set-logger-container">
+              <SetLogger
+                exercise={currentExercise}
+                exerciseData={exerciseData}
+                exerciseIndex={currentExerciseIndex}
+                onSetComplete={handleSetComplete}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="no-exercise-state">
+            <div className="no-exercise-icon">💪</div>
+            <h3 className="no-exercise-title">No exercises added yet</h3>
+            <p className="no-exercise-text">Add an exercise to start your workout</p>
+            <button
+              onClick={() => setShowExerciseSelector(true)}
+              className="add-exercise-btn-large"
+            >
+              <Plus className="w-5 h-5" />
+              Add Exercise
+            </button>
+          </div>
+        )}
+
+        {/* Workout Notes */}
+        <div className="workout-notes-section">
+          <div className="notes-header">
+            <StickyNote className="w-5 h-5" />
+            <h3 className="notes-title">Workout Notes</h3>
+          </div>
+          <textarea
+            value={activeWorkout.notes}
+            onChange={(e) => updateWorkoutNotes(e.target.value)}
+            placeholder="How did it feel? Any PRs or observations?"
+            className="notes-textarea"
+            rows="4"
+          />
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showExerciseSelector && (
+        <ExerciseSelector
+          onSelect={(exerciseId) => {
+            addExerciseToWorkout(exerciseId);
+            setShowExerciseSelector(false);
+            // Auto-navigate to new exercise
+            setCurrentExerciseIndex(activeWorkout.exercises.length);
+          }}
+          onClose={() => setShowExerciseSelector(false)}
+        />
+      )}
+
+      {showRestTimer && (
+        <RestTimer
+          onComplete={() => setShowRestTimer(false)}
+          onSkip={() => setShowRestTimer(false)}
+        />
+      )}
+
+      {showPRCelebration && prDetails && (
+        <PRBadge
+          exercise={prDetails.exercise}
+          weight={prDetails.weight}
+          reps={prDetails.reps}
+        />
+      )}
+    </div>
+  );
+}

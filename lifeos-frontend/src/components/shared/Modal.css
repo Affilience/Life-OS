@@ -1,0 +1,117 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+}
+
+.modal-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-4);
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .modal-container {
+    display: block;
+    padding: 0;
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 20, 0.8);
+  backdrop-filter: blur(4px);
+  transition: opacity var(--duration-normal) var(--easing-ease);
+  cursor: pointer;
+}
+
+.modal-content {
+  display: inline-block;
+  width: 100%;
+  max-width: 32rem;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--border-radius-lg);
+  text-align: left;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  transform: scale(1);
+  transition: all var(--duration-normal) var(--easing-ease);
+  position: relative;
+  z-index: 51;
+}
+
+@media (min-width: 640px) {
+  .modal-content {
+    margin: var(--space-8) auto;
+    vertical-align: middle;
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.modal-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-8);
+  height: var(--space-8);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--easing-ease);
+}
+
+.modal-close:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.modal-close:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary-500);
+}
+
+.modal-body {
+  padding: var(--space-6);
+}
+
+/* Animation states */
+.modal-overlay[data-state="open"] .modal-backdrop {
+  opacity: 1;
+}
+
+.modal-overlay[data-state="open"] .modal-content {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.modal-overlay[data-state="closed"] .modal-backdrop {
+  opacity: 0;
+}
+
+.modal-overlay[data-state="closed"] .modal-content {
+  transform: scale(0.95);
+  opacity: 0;
+}

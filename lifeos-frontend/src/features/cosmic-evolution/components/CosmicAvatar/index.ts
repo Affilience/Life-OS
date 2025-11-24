@@ -1,0 +1,1 @@
+export { CosmicAvatar } from './CosmicAvatar';
