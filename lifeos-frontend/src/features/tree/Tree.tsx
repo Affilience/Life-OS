@@ -64,7 +64,7 @@ export const Tree: React.FC<TreeProps> = ({
     <div className="flex flex-col gap-4">
       {/* Tree visualization */}
       <div
-        className="relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800"
+        className="relative bg-[#12101a] rounded-lg overflow-hidden border border-white/10"
         style={{ width, height }}
         role={onOpenCoach ? 'button' : undefined}
         tabIndex={onOpenCoach ? 0 : undefined}
@@ -88,7 +88,7 @@ export const Tree: React.FC<TreeProps> = ({
         />
 
         {/* Stage badge */}
-        <div className="absolute top-4 right-4 px-3 py-1 bg-zinc-800/80 backdrop-blur-sm rounded-full text-xs text-zinc-300 capitalize">
+        <div className="absolute top-4 right-4 px-3 py-1 bg-[#1a1724]/80 backdrop-blur-sm rounded-full text-xs text-zinc-300 capitalize">
           {stage}
         </div>
       </div>

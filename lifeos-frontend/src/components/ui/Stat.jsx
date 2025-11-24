@@ -18,14 +18,14 @@ const Stat = ({
   const deltaColors = {
     positive: 'text-green-400',
     negative: 'text-red-400',
-    neutral: 'text-zinc-400',
+    neutral: 'text-white/60',
   };
 
   return (
     <div className={`flex flex-col gap-1 ${className}`} {...props}>
-      <div className="flex items-center gap-2 text-zinc-400 text-sm">
+      <div className="flex items-center gap-2 text-white/60 text-sm">
         {icon && (
-          <span className="text-zinc-500">
+          <span className="text-white/50">
             {typeof icon === 'function' || (icon && icon.$$typeof)
               ? React.createElement(icon, { size: 16 })
               : icon}

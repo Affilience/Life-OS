@@ -65,7 +65,7 @@ export default function More() {
                   <button
                     key={itemIdx}
                     onClick={() => navigate(item.path)}
-                    className="w-full bg-slate-800/50 hover:bg-slate-800 rounded-xl p-4 flex items-center gap-4 transition-all group border border-slate-700/50 hover:border-slate-600"
+                    className="w-full bg-[#1a1724]/50 hover:bg-[#1a1724] rounded-xl p-4 flex items-center gap-4 transition-all group border border-slate-700/50 hover:border-slate-600"
                   >
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
                       <Icon className="w-6 h-6 text-white" />

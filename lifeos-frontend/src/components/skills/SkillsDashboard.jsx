@@ -68,7 +68,7 @@ export default function SkillsDashboard() {
             <TrendingUp className="w-6 h-6 text-cyan-400" />
             Skills Dashboard
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-white/60 mt-1">
             Track practice, progression, and real-world application
           </p>
         </div>
@@ -114,18 +114,18 @@ export default function SkillsDashboard() {
         </div>
 
         {/* Practice Hours This Week */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-white font-semibold flex items-center gap-2">
                 <Zap className="w-5 h-5 text-cyan-400" />
                 Practice Hours (This Week)
               </h3>
-              <p className="text-xs text-gray-400 mt-1">Daily deliberate practice</p>
+              <p className="text-xs text-white/60 mt-1">Daily deliberate practice</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-white">21h</div>
-              <div className="text-xs text-gray-400">total</div>
+              <div className="text-xs text-white/60">total</div>
             </div>
           </div>
           <div className="h-32">
@@ -141,11 +141,11 @@ export default function SkillsDashboard() {
                 <TrendingUp className="w-5 h-5 text-blue-400" />
                 Overall Progress Trend
               </h3>
-              <p className="text-xs text-gray-400 mt-1">Average skill progression</p>
+              <p className="text-xs text-white/60 mt-1">Average skill progression</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-white">75%</div>
-              <div className="text-xs text-gray-400">current avg</div>
+              <div className="text-xs text-white/60">current avg</div>
             </div>
           </div>
           <div className="h-32">
@@ -154,7 +154,7 @@ export default function SkillsDashboard() {
         </div>
 
         {/* Active Skills with Progress Bars */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Target className="w-5 h-5 text-cyan-400" />
             Active Skills
@@ -172,11 +172,11 @@ export default function SkillsDashboard() {
                       <div className="flex items-start justify-between">
                         <div>
                           <h4 className="text-white font-semibold">{skill.name}</h4>
-                          <p className="text-xs text-gray-400">{skill.category}</p>
+                          <p className="text-xs text-white/60">{skill.category}</p>
                         </div>
                         <div className="text-right">
                           <div className="text-white font-bold">Level {skill.level}</div>
-                          <div className="text-xs text-gray-400">{skill.hours}h</div>
+                          <div className="text-xs text-white/60">{skill.hours}h</div>
                         </div>
                       </div>
                     </div>
@@ -185,7 +185,7 @@ export default function SkillsDashboard() {
                   {/* Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Progress to Level {skill.level + 1}</span>
+                      <span className="text-white/60">Progress to Level {skill.level + 1}</span>
                       <span className="text-white font-semibold">{skill.progress}%</span>
                     </div>
                     <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
@@ -212,11 +212,11 @@ export default function SkillsDashboard() {
               <div key={index} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                 <div>
                   <p className="text-white font-medium">{achievement.title}</p>
-                  <p className="text-xs text-gray-400">{achievement.date}</p>
+                  <p className="text-xs text-white/60">{achievement.date}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-yellow-400 font-bold">+{achievement.xp}</span>
-                  <span className="text-xs text-gray-400">XP</span>
+                  <span className="text-xs text-white/60">XP</span>
                 </div>
               </div>
             ))}

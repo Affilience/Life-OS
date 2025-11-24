@@ -185,7 +185,7 @@ export default function HabitsNew() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white p-6 md:p-8">
+    <div className="min-h-screen bg-[#12101a] text-white p-6 md:p-8">
       {/* Simplified Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -197,13 +197,13 @@ export default function HabitsNew() {
             <h1 className="text-2xl font-bold text-white mb-1">
               Orbit
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-white/50">
               {stats.completedToday}/{stats.totalHabits} completed · {Math.round(stats.completionRate)}% · {stats.longestActiveStreak} day best streak
             </p>
           </div>
 
           {/* Consolidated View Toggle - Smaller */}
-          <div className="flex gap-1 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800">
+          <div className="flex gap-1 bg-[#12101a]/50 p-1 rounded-lg border border-white/10">
             {['today', 'week', 'month'].map((mode) => (
               <button
                 key={mode}
@@ -211,7 +211,7 @@ export default function HabitsNew() {
                 className={`px-3 py-1.5 rounded text-sm transition-all capitalize ${
                   viewMode === mode
                     ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'text-gray-500 hover:text-gray-300'
+                    : 'text-white/50 hover:text-gray-300'
                 }`}
               >
                 {mode}
@@ -264,8 +264,8 @@ function StatCard({ icon: Icon, label, value, subtext, color }) {
         <Icon className={`w-5 h-5 ${iconColorMap[color]}`} />
       </div>
       <div className="text-2xl font-bold mb-1">{value}</div>
-      <div className="text-sm text-gray-400">{label}</div>
-      <div className="text-xs text-gray-500 mt-1">{subtext}</div>
+      <div className="text-sm text-white/60">{label}</div>
+      <div className="text-xs text-white/50 mt-1">{subtext}</div>
     </motion.div>
   );
 }
@@ -293,7 +293,7 @@ function TodayView({ habits, onToggle, onAddClick }) {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={onAddClick}
-        className="w-full p-4 border-2 border-dashed border-zinc-700/50 rounded-xl text-gray-500 hover:border-emerald-500/30 hover:text-emerald-400 transition-all"
+        className="w-full p-4 border-2 border-dashed border-white/15/50 rounded-xl text-white/50 hover:border-emerald-500/30 hover:text-emerald-400 transition-all"
       >
         <Plus className="w-5 h-5 inline mr-2" />
         Add New Habit
@@ -314,10 +314,10 @@ function HabitCard({ habit, onToggle, index }) {
       className="group"
     >
       <div
-        className={`relative bg-zinc-900/50 backdrop-blur-sm border rounded-xl p-5 transition-all ${
+        className={`relative bg-[#12101a]/50 backdrop-blur-sm border rounded-xl p-5 transition-all ${
           habit.completedToday
             ? 'border-emerald-500/50 bg-emerald-500/5'
-            : 'border-zinc-800 hover:border-emerald-500/30'
+            : 'border-white/10 hover:border-emerald-500/30'
         }`}
       >
         {/* Cosmic Glow Effect */}
@@ -331,7 +331,7 @@ function HabitCard({ habit, onToggle, index }) {
             className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
               habit.completedToday
                 ? 'bg-emerald-500/20 border border-emerald-500/30'
-                : 'bg-zinc-800 border border-zinc-700'
+                : 'bg-[#1a1724] border border-white/15'
             }`}
             style={{ backgroundColor: habit.completedToday ? undefined : `${habit.color}20` }}
           >
@@ -342,14 +342,14 @@ function HabitCard({ habit, onToggle, index }) {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-semibold">{habit.name}</h3>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-gray-400">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[#1a1724] text-white/60">
                 {habit.category}
               </span>
             </div>
 
             {/* Progress Bar - Darker to lighter shows progress */}
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-[#1a1724] rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
@@ -357,7 +357,7 @@ function HabitCard({ habit, onToggle, index }) {
                   className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400"
                 />
               </div>
-              <span className="text-xs text-gray-400 min-w-[3rem] text-right">
+              <span className="text-xs text-white/60 min-w-[3rem] text-right">
                 {habit.totalCompletions}/{habit.target}
               </span>
             </div>
@@ -369,7 +369,7 @@ function HabitCard({ habit, onToggle, index }) {
               <Flame className="w-4 h-4 text-orange-500" />
               <span className="text-lg font-bold">{habit.currentStreak}</span>
             </div>
-            <span className="text-xs text-gray-500">streak</span>
+            <span className="text-xs text-white/50">streak</span>
           </div>
 
           {/* Check Button */}
@@ -380,7 +380,7 @@ function HabitCard({ habit, onToggle, index }) {
             className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all ${
               habit.completedToday
                 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                : 'bg-zinc-800 text-gray-400 hover:bg-emerald-500/20 hover:text-emerald-400 hover:border hover:border-emerald-500/30'
+                : 'bg-[#1a1724] text-white/60 hover:bg-emerald-500/20 hover:text-emerald-400 hover:border hover:border-emerald-500/30'
             }`}
           >
             {habit.completedToday ? (
@@ -404,7 +404,7 @@ function WeekView({ habits }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6"
+      className="bg-[#12101a]/30 border border-white/10 rounded-xl p-6"
     >
       <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
         <Calendar className="w-5 h-5 text-purple-400" />
@@ -415,14 +415,14 @@ function WeekView({ habits }) {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-zinc-800">
+            <tr className="border-b border-white/10">
               <th className="text-left pb-4 px-4">Habit</th>
               {days.map(day => (
-                <th key={day} className="text-center pb-4 px-2 text-sm text-gray-400">
+                <th key={day} className="text-center pb-4 px-2 text-sm text-white/60">
                   {day}
                 </th>
               ))}
-              <th className="text-center pb-4 px-4 text-sm text-gray-400">Week</th>
+              <th className="text-center pb-4 px-4 text-sm text-white/60">Week</th>
             </tr>
           </thead>
           <tbody>
@@ -433,7 +433,7 @@ function WeekView({ habits }) {
               const weekCompletion = weekData.filter(Boolean).length;
 
               return (
-                <tr key={habit.id} className="border-b border-zinc-800/50">
+                <tr key={habit.id} className="border-b border-white/10/50">
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${habit.color}20` }}>
@@ -483,14 +483,14 @@ function MonthView({ habits }) {
         const monthData = Array.from({ length: daysInMonth }, () => Math.random());
 
         return (
-          <div key={habit.id} className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6">
+          <div key={habit.id} className="bg-[#12101a]/30 border border-white/10 rounded-xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${habit.color}20` }}>
                 <Icon className="w-5 h-5" style={{ color: habit.color }} />
               </div>
               <div>
                 <h3 className="font-semibold">{habit.name}</h3>
-                <p className="text-sm text-gray-400">Monthly Heat Map</p>
+                <p className="text-sm text-white/60">Monthly Heat Map</p>
               </div>
             </div>
 
@@ -527,7 +527,7 @@ function StatsView({ habits }) {
       className="grid grid-cols-2 gap-6"
     >
       {/* Achievements */}
-      <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6">
+      <div className="bg-[#12101a]/30 border border-white/10 rounded-xl p-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <Trophy className="w-5 h-5 text-yellow-500" />
           Achievements
@@ -544,16 +544,16 @@ function StatsView({ habits }) {
               className={`p-4 rounded-lg border ${
                 achievement.unlocked
                   ? 'bg-yellow-500/10 border-yellow-500/30'
-                  : 'bg-zinc-800/30 border-zinc-700'
+                  : 'bg-[#1a1724]/30 border-white/15'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Trophy className={`w-6 h-6 ${achievement.unlocked ? 'text-yellow-500' : 'text-gray-600'}`} />
+                <Trophy className={`w-6 h-6 ${achievement.unlocked ? 'text-yellow-500' : 'text-white/40'}`} />
                 <div>
-                  <div className={`font-semibold ${achievement.unlocked ? 'text-white' : 'text-gray-500'}`}>
+                  <div className={`font-semibold ${achievement.unlocked ? 'text-white' : 'text-white/50'}`}>
                     {achievement.name}
                   </div>
-                  <div className="text-xs text-gray-500">{achievement.desc}</div>
+                  <div className="text-xs text-white/50">{achievement.desc}</div>
                 </div>
               </div>
             </div>
@@ -562,7 +562,7 @@ function StatsView({ habits }) {
       </div>
 
       {/* Insights */}
-      <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6">
+      <div className="bg-[#12101a]/30 border border-white/10 rounded-xl p-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-purple-500" />
           Insights
@@ -571,17 +571,17 @@ function StatsView({ habits }) {
           <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
             <div className="text-sm font-semibold text-purple-400 mb-1">Best Time</div>
             <div className="text-2xl font-bold">7:00 AM</div>
-            <div className="text-xs text-gray-400">You complete 80% of habits before noon</div>
+            <div className="text-xs text-white/60">You complete 80% of habits before noon</div>
           </div>
           <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
             <div className="text-sm font-semibold text-blue-400 mb-1">Best Day</div>
             <div className="text-2xl font-bold">Monday</div>
-            <div className="text-xs text-gray-400">95% completion rate on Mondays</div>
+            <div className="text-xs text-white/60">95% completion rate on Mondays</div>
           </div>
           <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
             <div className="text-sm font-semibold text-green-400 mb-1">Longest Streak</div>
             <div className="text-2xl font-bold">25 days</div>
-            <div className="text-xs text-gray-400">Morning Meditation - May 2024</div>
+            <div className="text-xs text-white/60">Morning Meditation - May 2024</div>
           </div>
         </div>
       </div>
@@ -651,7 +651,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#1a1a1a] border border-zinc-800 rounded-2xl p-8 max-w-md w-full shadow-2xl"
+          className="bg-[#1a1724] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl"
         >
           <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
             Add New Habit
@@ -660,7 +660,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Habit Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-white/60 mb-2">
                 Habit Name
               </label>
               <input
@@ -668,14 +668,14 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., Morning Meditation"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full bg-[#12101a] border border-white/15 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
                 required
               />
             </div>
 
             {/* Icon Picker */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-white/60 mb-2">
                 Icon
               </label>
               <div className="grid grid-cols-4 gap-2">
@@ -687,7 +687,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
                     className={`p-3 rounded-lg border-2 transition-all ${
                       formData.icon === key
                         ? 'border-emerald-500 bg-emerald-500/10'
-                        : 'border-zinc-700 bg-zinc-900 hover:border-zinc-600'
+                        : 'border-white/15 bg-[#12101a] hover:border-zinc-600'
                     }`}
                     title={name}
                   >
@@ -699,7 +699,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
 
             {/* Color Picker */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-white/60 mb-2">
                 Color Theme
               </label>
               <div className="flex gap-2">
@@ -711,7 +711,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
                     className={`w-10 h-10 rounded-lg border-2 transition-all ${
                       formData.color === hex
                         ? 'border-white scale-110'
-                        : 'border-zinc-700 hover:scale-105'
+                        : 'border-white/15 hover:scale-105'
                     }`}
                     style={{ backgroundColor: hex }}
                     title={name}
@@ -722,7 +722,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-white/60 mb-2">
                 Category
               </label>
               <input
@@ -730,14 +730,14 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 placeholder="e.g., Mind, Body, Productivity"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full bg-[#12101a] border border-white/15 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
                 required
               />
             </div>
 
             {/* Frequency */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-white/60 mb-2">
                 Frequency
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -749,7 +749,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
                     className={`px-4 py-2 rounded-lg border transition-all capitalize ${
                       formData.frequency === freq
                         ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                        : 'border-zinc-700 bg-zinc-900 text-gray-400 hover:border-zinc-600'
+                        : 'border-white/15 bg-[#12101a] text-white/60 hover:border-zinc-600'
                     }`}
                   >
                     {freq}
@@ -760,7 +760,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
 
             {/* Difficulty */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-white/60 mb-2">
                 Difficulty
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -772,7 +772,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
                     className={`px-4 py-2 rounded-lg border transition-all capitalize ${
                       formData.difficulty === diff
                         ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                        : 'border-zinc-700 bg-zinc-900 text-gray-400 hover:border-zinc-600'
+                        : 'border-white/15 bg-[#12101a] text-white/60 hover:border-zinc-600'
                     }`}
                   >
                     {diff}
@@ -786,7 +786,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-3 rounded-lg border border-zinc-700 text-gray-400 hover:border-zinc-600 hover:text-white transition-colors"
+                className="flex-1 px-4 py-3 rounded-lg border border-white/15 text-white/60 hover:border-zinc-600 hover:text-white transition-colors"
               >
                 Cancel
               </button>

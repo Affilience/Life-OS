@@ -44,7 +44,7 @@ export function DiscoveryCard({
       gradient: 'from-gray-500/20 to-gray-600/20',
       border: 'border-gray-500/30',
       glow: '',
-      textColor: 'text-gray-400',
+      textColor: 'text-white/60',
       bgColor: 'bg-gray-500/20',
       label: 'Common',
       icon: <Star className="w-4 h-4" />
@@ -119,18 +119,18 @@ export function DiscoveryCard({
         <div className="absolute inset-0 backdrop-blur-sm rounded-2xl flex items-center justify-center bg-black/40">
           {isSecret ? (
             <div className="text-center">
-              <Lock className="w-12 h-12 text-gray-500 mx-auto mb-2" />
-              <p className="text-gray-400 font-semibold">Secret Discovery</p>
-              <p className="text-xs text-gray-500 mt-1">???</p>
+              <Lock className="w-12 h-12 text-white/50 mx-auto mb-2" />
+              <p className="text-white/60 font-semibold">Secret Discovery</p>
+              <p className="text-xs text-white/50 mt-1">???</p>
             </div>
           ) : (
             <div className="text-center px-4">
-              <Lock className="w-12 h-12 text-gray-500 mx-auto mb-2" />
-              <p className="text-sm text-gray-400 max-w-xs">{description}</p>
+              <Lock className="w-12 h-12 text-white/50 mx-auto mb-2" />
+              <p className="text-sm text-white/60 max-w-xs">{description}</p>
               {progressPercentage > 0 && (
                 <div className="mt-4">
-                  <div className="text-xs text-gray-400 mb-1">{progressPercentage}% Complete</div>
-                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="text-xs text-white/60 mb-1">{progressPercentage}% Complete</div>
+                  <div className="h-2 bg-[#1a1724] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
                       style={{ width: `${progressPercentage}%` }}
@@ -184,19 +184,19 @@ export function DiscoveryCard({
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-400" />
-              <span className="text-gray-400">Points:</span>
+              <span className="text-white/60">Points:</span>
               <span className="font-bold text-white">{pointsValue}</span>
             </div>
             {creditsReward > 0 && (
               <div className="flex items-center gap-1">
                 <span className="text-amber-400 font-bold">+{creditsReward}</span>
-                <span className="text-xs text-gray-400">credits</span>
+                <span className="text-xs text-white/60">credits</span>
               </div>
             )}
           </div>
 
           {unlockedAt && (
-            <div className="mt-2 text-xs text-gray-500 text-center">
+            <div className="mt-2 text-xs text-white/50 text-center">
               Discovered on {new Date(unlockedAt).toLocaleDateString()}
             </div>
           )}

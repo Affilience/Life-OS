@@ -43,16 +43,16 @@ export default function Character() {
   } = useStats();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
+      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
         {/* Title */}
         <div className="px-6 py-4">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-purple-400" />
             Character
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-white/60 mt-1">
             Customize your hero and unlock new abilities
           </p>
         </div>
@@ -73,7 +73,7 @@ export default function Character() {
                   whitespace-nowrap transition-all duration-200
                   ${isActive
                     ? `bg-gradient-to-r ${tab.color} text-white shadow-lg`
-                    : 'bg-[#1a1a1a] text-gray-400 hover:text-white hover:bg-[#222] border border-white/10'
+                    : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10'
                   }
                 `}
               >
@@ -90,7 +90,7 @@ export default function Character() {
         {activeTab === 'avatar' && (
           <div className="space-y-6">
             {/* Avatar Display Card */}
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-8">
+            <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-8">
               {/* Avatar Section */}
               <div className="flex flex-col items-center mb-8">
                 {/* Hero Avatar Sprite */}
@@ -107,7 +107,7 @@ export default function Character() {
                 {/* Character Info */}
                 <div className="text-center mb-6">
                   <h2 className="text-3xl font-bold text-white mb-2">Swordsman</h2>
-                  <p className="text-gray-400">Stage 10 • Level 12</p>
+                  <p className="text-white/60">Stage 10 • Level 12</p>
                 </div>
 
                 {/* Level Progress Bar */}
@@ -117,9 +117,9 @@ export default function Character() {
                       <Sparkles className="w-4 h-4 text-purple-400" />
                       <span className="text-sm font-semibold text-white">Level 12</span>
                     </div>
-                    <span className="text-sm text-gray-400">3,840 / 5,000 XP</span>
+                    <span className="text-sm text-white/60">3,840 / 5,000 XP</span>
                   </div>
-                  <div className="h-3 bg-[#0a0a0a] rounded-full overflow-hidden border border-purple-500/20">
+                  <div className="h-3 bg-[#0c0a10] rounded-full overflow-hidden border border-purple-500/20">
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 relative overflow-hidden"
                       style={{ width: '76.8%' }}
@@ -127,7 +127,7 @@ export default function Character() {
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1 text-center">1,160 XP to Level 13</p>
+                  <p className="text-xs text-white/50 mt-1 text-center">1,160 XP to Level 13</p>
                 </div>
 
                 {/* Stats Bars - Using Unified Stats System */}
@@ -154,7 +154,7 @@ export default function Character() {
                           </span>
                         </div>
                         <div
-                          className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden border"
+                          className="h-2 bg-[#0c0a10] rounded-full overflow-hidden border"
                           style={{ borderColor: `${config.color}33` }}
                         >
                           <div
@@ -196,7 +196,7 @@ export default function Character() {
                         <span className="text-lg">{synergy.icon}</span>
                         <div>
                           <div className="text-sm font-semibold text-white">{synergy.name}</div>
-                          <div className="text-xs text-gray-400">{synergy.description}</div>
+                          <div className="text-xs text-white/60">{synergy.description}</div>
                         </div>
                       </div>
                     ))}
@@ -207,14 +207,14 @@ export default function Character() {
               {/* Evolution Progress */}
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Next Evolution</span>
+                  <span className="text-sm text-white/60">Next Evolution</span>
                   <span className="text-sm text-purple-400 font-medium">Level 15</span>
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white font-semibold">Duelist</span>
-                  <span className="text-xs text-gray-500">Stage 11</span>
+                  <span className="text-xs text-white/50">Stage 11</span>
                 </div>
-                <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+                <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
                     style={{ width: '80%' }}

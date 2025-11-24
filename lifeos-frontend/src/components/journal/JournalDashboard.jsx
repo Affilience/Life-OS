@@ -45,7 +45,7 @@ export default function JournalDashboard() {
             <BookOpen className="w-6 h-6 text-purple-400" />
             Journal Dashboard
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-white/60 mt-1">
             Your journey of reflection and self-discovery
           </p>
         </div>
@@ -100,11 +100,11 @@ export default function JournalDashboard() {
                 <Heart className="w-5 h-5 text-pink-400" />
                 Mood Trend (7 Days)
               </h3>
-              <p className="text-xs text-gray-400 mt-1">Daily emotional patterns</p>
+              <p className="text-xs text-white/60 mt-1">Daily emotional patterns</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-white">7.8</div>
-              <div className="text-xs text-gray-400">avg mood</div>
+              <div className="text-xs text-white/60">avg mood</div>
             </div>
           </div>
           <div className="h-32">
@@ -113,7 +113,7 @@ export default function JournalDashboard() {
         </div>
 
         {/* Top Emotions - with gradient bars */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-400" />
             Top Emotions (This Month)
@@ -125,7 +125,7 @@ export default function JournalDashboard() {
                 <div key={index} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-300">{item.emotion}</span>
-                    <span className="text-gray-400">{item.count} times</span>
+                    <span className="text-white/60">{item.count} times</span>
                   </div>
                   <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                     <div
@@ -140,18 +140,18 @@ export default function JournalDashboard() {
         </div>
 
         {/* Entry Frequency */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-white font-semibold flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-purple-400" />
                 Writing Frequency
               </h3>
-              <p className="text-xs text-gray-400 mt-1">Entries per week</p>
+              <p className="text-xs text-white/60 mt-1">Entries per week</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-white">6.5</div>
-              <div className="text-xs text-gray-400">avg/week</div>
+              <div className="text-xs text-white/60">avg/week</div>
             </div>
           </div>
           <div className="h-24">
@@ -172,7 +172,7 @@ export default function JournalDashboard() {
                   <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
                   <span className="text-gray-300">{item.theme}</span>
                 </div>
-                <span className="text-sm text-gray-400">{item.entries} entries</span>
+                <span className="text-sm text-white/60">{item.entries} entries</span>
               </div>
             ))}
           </div>

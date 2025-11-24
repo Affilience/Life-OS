@@ -22,7 +22,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
 
   if (compact) {
     return (
-      <div className="flex items-center gap-3 bg-gray-800/50 rounded-lg px-3 py-2">
+      <div className="flex items-center gap-3 bg-[#1a1724]/50 rounded-lg px-3 py-2">
         {/* Level Badge */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
@@ -33,7 +33,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
 
         {/* XP Bar */}
         <div className="flex-1 min-w-[100px]">
-          <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-2 bg-[#221e2e] rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
@@ -42,7 +42,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
         </div>
 
         {/* XP Text */}
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-white/60">
           {formatXP(currentXP)}/{formatXP(xpToNextLevel)}
         </span>
       </div>
@@ -50,7 +50,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
   }
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4">
+    <div className="bg-[#1a1724]/50 backdrop-blur-sm rounded-xl border border-white/15/50 p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -59,7 +59,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
               <span className="text-white font-bold text-lg">{level}</span>
             </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-purple-600 border-2 border-gray-800 flex items-center justify-center">
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-purple-600 border-2 border-white/10 flex items-center justify-center">
               <span className="text-white font-bold text-xs">{currentStage}</span>
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
           {/* Level Info */}
           <div>
             <h3 className="text-white font-semibold">Level {level}</h3>
-            <p className="text-sm text-gray-400">Stage {currentStage} Evolution</p>
+            <p className="text-sm text-white/60">Stage {currentStage} Evolution</p>
           </div>
         </div>
 
@@ -83,7 +83,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
 
       {/* XP Progress Bar */}
       <div className="relative mb-2">
-        <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-3 bg-[#221e2e] rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 transition-all duration-500 relative"
             style={{ width: `${progressPercent}%` }}
@@ -95,7 +95,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
 
         {/* Progress text */}
         <div className="flex items-center justify-between mt-1">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-white/60">
             {formatXP(currentXP)} / {formatXP(xpToNextLevel)} XP
           </span>
           <span className="text-xs text-cyan-400 font-semibold">
@@ -106,14 +106,14 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
 
       {/* Stats Row */}
       {showDetails && (totalDefense > 0 || totalStrength > 0) && (
-        <div className="flex items-center gap-4 pt-3 border-t border-gray-700/50">
+        <div className="flex items-center gap-4 pt-3 border-t border-white/15/50">
           {totalDefense > 0 && (
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center">
                 <span className="text-blue-400 text-xs">🛡</span>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Defense</p>
+                <p className="text-xs text-white/60">Defense</p>
                 <p className="text-sm text-white font-semibold">{totalDefense}</p>
               </div>
             </div>
@@ -125,7 +125,7 @@ export default function UnifiedProgressBar({ compact = false, showDetails = true
                 <span className="text-red-400 text-xs">⚔️</span>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Strength</p>
+                <p className="text-xs text-white/60">Strength</p>
                 <p className="text-sm text-white font-semibold">{totalStrength}</p>
               </div>
             </div>

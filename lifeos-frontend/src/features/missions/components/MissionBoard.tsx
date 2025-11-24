@@ -45,7 +45,7 @@ export function MissionBoard() {
           <h2 className="text-3xl font-bold cosmic-title mb-2">
             🎯 Mission Control
           </h2>
-          <p className="text-gray-400">
+          <p className="text-white/60">
             Complete missions to earn Stellar Energy and Cosmic Credits
           </p>
         </div>
@@ -73,7 +73,7 @@ export function MissionBoard() {
               ${
                 activeTab === tab.key
                   ? `bg-gradient-to-r from-${tab.color}-500 to-${tab.color}-600 text-white cosmic-glow shadow-lg`
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
+                  : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
               }
             `}
           >
@@ -100,7 +100,7 @@ export function MissionBoard() {
               ${
                 statusFilter === filter.key
                   ? 'bg-white/20 text-white border border-white/30'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
+                  : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
               }
             `}
           >
@@ -122,7 +122,7 @@ export function MissionBoard() {
           <h3 className="text-xl font-bold text-gray-300 mb-2">
             No {activeTab} missions available
           </h3>
-          <p className="text-gray-500">
+          <p className="text-white/50">
             {activeTab === 'daily'
               ? 'Daily missions refresh every day at midnight'
               : 'Check back later for new missions'}
@@ -156,13 +156,13 @@ export function MissionBoard() {
             <div className="text-2xl font-bold text-blue-400">
               {missions.filter(m => m.status === 'active').length}
             </div>
-            <div className="text-xs text-gray-500">Active Missions</div>
+            <div className="text-xs text-white/50">Active Missions</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-400">
               {missions.filter(m => m.status === 'completed').length}
             </div>
-            <div className="text-xs text-gray-500">Completed</div>
+            <div className="text-xs text-white/50">Completed</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-400">
@@ -170,7 +170,7 @@ export function MissionBoard() {
                 missions.reduce((sum, m) => sum + m.completionPercentage, 0) / missions.length || 0
               )}%
             </div>
-            <div className="text-xs text-gray-500">Avg Progress</div>
+            <div className="text-xs text-white/50">Avg Progress</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-amber-400">
@@ -178,7 +178,7 @@ export function MissionBoard() {
                 return sum + (m.mission?.creditsReward || 0);
               }, 0)}
             </div>
-            <div className="text-xs text-gray-500">Credits Earned</div>
+            <div className="text-xs text-white/50">Credits Earned</div>
           </div>
         </div>
       </div>

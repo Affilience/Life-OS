@@ -213,7 +213,7 @@ export function ConsistencyHeatmap({
                 ${
                   selectedRange === range
                     ? 'bg-violet-500 text-white'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                    : 'bg-[#1a1724] text-white/60 hover:bg-[#221e2e]'
                 }
               `}
             >
@@ -225,13 +225,13 @@ export function ConsistencyHeatmap({
         {/* Streak info */}
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-zinc-400">Current streak:</span>
-            <span className="font-semibold text-white bg-zinc-800 px-2 py-1 rounded">
+            <span className="text-white/60">Current streak:</span>
+            <span className="font-semibold text-white bg-[#1a1724] px-2 py-1 rounded">
               {streaks.current}d
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-zinc-400">Best:</span>
+            <span className="text-white/60">Best:</span>
             <span className="font-semibold text-amber-400">
               {streaks.best}d
             </span>
@@ -340,7 +340,7 @@ export function ConsistencyHeatmap({
       {/* Legend */}
       <div className="mt-4 flex items-center justify-between">
         <ConsistencyLegend />
-        <div className="text-xs text-zinc-500">
+        <div className="text-xs text-white/50">
           Click any cell to view that day
         </div>
       </div>

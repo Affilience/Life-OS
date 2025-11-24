@@ -89,10 +89,10 @@ export default function SearchBar() {
       {/* Search Button - Opens modal */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/50 rounded-lg hover:border-purple-500/30 transition-all duration-200 group"
+        className="flex items-center gap-2 px-4 py-2 bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-lg hover:border-purple-500/30 transition-all duration-200 group"
       >
         <svg
-          className="w-5 h-5 text-zinc-400 group-hover:text-purple-400 transition-colors"
+          className="w-5 h-5 text-white/60 group-hover:text-purple-400 transition-colors"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -104,11 +104,11 @@ export default function SearchBar() {
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
-        <span className="text-sm text-zinc-400 group-hover:text-zinc-300 transition-colors">
+        <span className="text-sm text-white/60 group-hover:text-zinc-300 transition-colors">
           Search
         </span>
         <div className="flex items-center gap-1 ml-auto">
-          <kbd className="px-2 py-1 text-xs bg-zinc-800 text-zinc-400 rounded border border-zinc-700">
+          <kbd className="px-2 py-1 text-xs bg-[#1a1724] text-white/60 rounded border border-white/15">
             ⌘K
           </kbd>
         </div>
@@ -119,13 +119,13 @@ export default function SearchBar() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-32 px-4">
           <div
             ref={modalRef}
-            className="w-full max-w-2xl bg-zinc-900/95 backdrop-blur-md border border-zinc-800/50 rounded-xl shadow-2xl overflow-hidden animate-scale-in"
+            className="w-full max-w-2xl bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-xl shadow-2xl overflow-hidden animate-scale-in"
           >
             {/* Search Input */}
-            <div className="p-4 border-b border-zinc-800/50">
+            <div className="p-4 border-b border-white/10/50">
               <div className="flex items-center gap-3">
                 <svg
-                  className="w-5 h-5 text-zinc-500"
+                  className="w-5 h-5 text-white/50"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -151,10 +151,10 @@ export default function SearchBar() {
                       clearSearch();
                       inputRef.current?.focus();
                     }}
-                    className="p-1 hover:bg-zinc-800 rounded transition-colors"
+                    className="p-1 hover:bg-[#1a1724] rounded transition-colors"
                   >
                     <svg
-                      className="w-5 h-5 text-zinc-500"
+                      className="w-5 h-5 text-white/50"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -183,13 +183,13 @@ export default function SearchBar() {
 
               {searchQuery && isSearching && (
                 <div className="p-8 text-center">
-                  <div className="text-zinc-500 text-sm">Searching...</div>
+                  <div className="text-white/50 text-sm">Searching...</div>
                 </div>
               )}
 
               {searchQuery && !isSearching && searchResults.length === 0 && (
                 <div className="p-8 text-center">
-                  <div className="text-zinc-500 text-sm">
+                  <div className="text-white/50 text-sm">
                     No results found for "{searchQuery}"
                   </div>
                 </div>
@@ -208,7 +208,7 @@ export default function SearchBar() {
                           <button
                             key={note.id}
                             onClick={() => handleResultClick(note)}
-                            className="w-full px-4 py-3 text-left hover:bg-zinc-800/50 transition-colors group"
+                            className="w-full px-4 py-3 text-left hover:bg-[#1a1724]/50 transition-colors group"
                           >
                             <div className="flex items-start gap-3">
                               <div className="p-2 bg-purple-500/10 rounded-lg">
@@ -230,7 +230,7 @@ export default function SearchBar() {
                                 <div className="text-sm font-medium text-white group-hover:text-purple-300 transition-colors">
                                   {note.title}
                                 </div>
-                                <div className="text-xs text-zinc-500 line-clamp-1 mt-1">
+                                <div className="text-xs text-white/50 line-clamp-1 mt-1">
                                   {note.content.substring(0, 100)}...
                                 </div>
                                 {note.tags.length > 0 && (
@@ -264,7 +264,7 @@ export default function SearchBar() {
                           <button
                             key={book.id}
                             onClick={() => handleResultClick(book)}
-                            className="w-full px-4 py-3 text-left hover:bg-zinc-800/50 transition-colors group"
+                            className="w-full px-4 py-3 text-left hover:bg-[#1a1724]/50 transition-colors group"
                           >
                             <div className="flex items-start gap-3">
                               <div className="p-2 bg-blue-500/10 rounded-lg">
@@ -286,7 +286,7 @@ export default function SearchBar() {
                                 <div className="text-sm font-medium text-white group-hover:text-blue-300 transition-colors">
                                   {book.title}
                                 </div>
-                                <div className="text-xs text-zinc-500 mt-1">
+                                <div className="text-xs text-white/50 mt-1">
                                   {book.author}
                                 </div>
                                 <div className="text-xs text-zinc-600 mt-1">
@@ -315,7 +315,7 @@ export default function SearchBar() {
                           <button
                             key={item.id}
                             onClick={() => handleResultClick(item)}
-                            className="w-full px-4 py-3 text-left hover:bg-zinc-800/50 transition-colors group"
+                            className="w-full px-4 py-3 text-left hover:bg-[#1a1724]/50 transition-colors group"
                           >
                             <div className="flex items-start gap-3">
                               <div className="p-2 bg-cyan-500/10 rounded-lg">
@@ -343,7 +343,7 @@ export default function SearchBar() {
                                 <div className="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors">
                                   {item.title}
                                 </div>
-                                <div className="text-xs text-zinc-500 mt-1">
+                                <div className="text-xs text-white/50 mt-1">
                                   {item.creator}
                                 </div>
                                 <div className="flex items-center gap-3 text-xs text-zinc-600 mt-1">
@@ -363,24 +363,24 @@ export default function SearchBar() {
             </div>
 
             {/* Footer Hints */}
-            <div className="px-4 py-3 border-t border-zinc-800/50 bg-zinc-900/50">
+            <div className="px-4 py-3 border-t border-white/10/50 bg-[#12101a]/50">
               <div className="flex items-center justify-between text-xs text-zinc-600">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700">
+                    <kbd className="px-2 py-1 bg-[#1a1724] rounded border border-white/15">
                       ↑↓
                     </kbd>
                     <span>Navigate</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700">
+                    <kbd className="px-2 py-1 bg-[#1a1724] rounded border border-white/15">
                       ↵
                     </kbd>
                     <span>Open</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <kbd className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700">
+                  <kbd className="px-2 py-1 bg-[#1a1724] rounded border border-white/15">
                     esc
                   </kbd>
                   <span>Close</span>

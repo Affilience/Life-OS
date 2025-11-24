@@ -49,12 +49,12 @@ export const RpmCreator: React.FC<RpmCreatorProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-      <div className="relative w-full h-full max-w-4xl max-h-[90vh] bg-zinc-900 rounded-lg overflow-hidden shadow-2xl">
+      <div className="relative w-full h-full max-w-4xl max-h-[90vh] bg-[#12101a] rounded-lg overflow-hidden shadow-2xl">
         {/* Close button */}
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+            className="absolute top-4 right-4 z-10 px-4 py-2 bg-[#1a1724] hover:bg-[#221e2e] text-white rounded-lg transition-colors"
             aria-label="Close avatar creator"
           >
             Close

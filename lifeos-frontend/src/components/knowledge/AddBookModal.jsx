@@ -237,14 +237,14 @@ export default function AddBookModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-zinc-900/95 backdrop-blur-md border border-zinc-800/50 rounded-xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-2xl bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-800/50 bg-zinc-900/50">
+        <div className="px-6 py-4 border-b border-white/10/50 bg-[#12101a]/50">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-white">Add Book</h2>
             <button
               onClick={handleCancel}
-              className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              className="p-2 text-white/60 hover:text-white hover:bg-[#1a1724] rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -266,9 +266,9 @@ export default function AddBookModal({ isOpen, onClose }) {
               onChange={(e) => handleChange('title', e.target.value)}
               placeholder="Enter book title"
               className={`
-                w-full px-4 py-3 bg-zinc-800/30 border rounded-lg text-white placeholder-zinc-600
+                w-full px-4 py-3 bg-[#1a1724]/30 border rounded-lg text-white placeholder-zinc-600
                 focus:outline-none focus:border-blue-500/50 transition-colors
-                ${errors.title ? 'border-red-500/50' : 'border-zinc-700/50'}
+                ${errors.title ? 'border-red-500/50' : 'border-white/15/50'}
               `}
             />
             {errors.title && (
@@ -287,9 +287,9 @@ export default function AddBookModal({ isOpen, onClose }) {
               onChange={(e) => handleChange('author', e.target.value)}
               placeholder="Enter author name"
               className={`
-                w-full px-4 py-3 bg-zinc-800/30 border rounded-lg text-white placeholder-zinc-600
+                w-full px-4 py-3 bg-[#1a1724]/30 border rounded-lg text-white placeholder-zinc-600
                 focus:outline-none focus:border-blue-500/50 transition-colors
-                ${errors.author ? 'border-red-500/50' : 'border-zinc-700/50'}
+                ${errors.author ? 'border-red-500/50' : 'border-white/15/50'}
               `}
             />
             {errors.author && (
@@ -311,7 +311,7 @@ export default function AddBookModal({ isOpen, onClose }) {
                     ${
                       formData.status === status.id
                         ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
-                        : 'bg-zinc-800/30 border-zinc-700/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                        : 'bg-[#1a1724]/30 border-white/15/50 text-white/60 hover:border-zinc-600 hover:text-zinc-200'
                     }
                   `}
                 >
@@ -351,7 +351,7 @@ export default function AddBookModal({ isOpen, onClose }) {
                         ${
                           formData.progressUnit === unit.id
                             ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50'
-                            : 'bg-zinc-800/30 text-zinc-400 border border-zinc-700/50 hover:text-zinc-200'
+                            : 'bg-[#1a1724]/30 text-white/60 border border-white/15/50 hover:text-zinc-200'
                         }
                       `}
                     >
@@ -374,9 +374,9 @@ export default function AddBookModal({ isOpen, onClose }) {
                     onChange={(e) => handleChange('currentProgress', e.target.value)}
                     placeholder="0"
                     className={`
-                      w-full px-4 py-3 bg-zinc-800/30 border rounded-lg text-white placeholder-zinc-600
+                      w-full px-4 py-3 bg-[#1a1724]/30 border rounded-lg text-white placeholder-zinc-600
                       focus:outline-none focus:border-blue-500/50 transition-colors
-                      ${errors.currentProgress ? 'border-red-500/50' : 'border-zinc-700/50'}
+                      ${errors.currentProgress ? 'border-red-500/50' : 'border-white/15/50'}
                     `}
                   />
                   {errors.currentProgress && (
@@ -395,9 +395,9 @@ export default function AddBookModal({ isOpen, onClose }) {
                     onChange={(e) => handleChange('totalProgress', e.target.value)}
                     placeholder="e.g., 350"
                     className={`
-                      w-full px-4 py-3 bg-zinc-800/30 border rounded-lg text-white placeholder-zinc-600
+                      w-full px-4 py-3 bg-[#1a1724]/30 border rounded-lg text-white placeholder-zinc-600
                       focus:outline-none focus:border-blue-500/50 transition-colors
-                      ${errors.totalProgress ? 'border-red-500/50' : 'border-zinc-700/50'}
+                      ${errors.totalProgress ? 'border-red-500/50' : 'border-white/15/50'}
                     `}
                   />
                   {errors.totalProgress && (
@@ -428,7 +428,7 @@ export default function AddBookModal({ isOpen, onClose }) {
             <div className="flex gap-4">
               {/* Cover Preview */}
               <div className="flex-shrink-0">
-                <div className="w-24 h-36 bg-zinc-800/50 border border-zinc-700/50 rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="w-24 h-36 bg-[#1a1724]/50 border border-white/15/50 rounded-lg overflow-hidden flex items-center justify-center">
                   {formData.coverImage || coverPreview ? (
                     <img
                       src={formData.coverImage || coverPreview}
@@ -465,9 +465,9 @@ export default function AddBookModal({ isOpen, onClose }) {
                     }
                   }}
                   placeholder="https://... (auto-fetched from title)"
-                  className="w-full px-4 py-3 bg-zinc-800/30 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  className="w-full px-4 py-3 bg-[#1a1724]/30 border border-white/15/50 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 transition-colors"
                 />
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-white/50">
                   {formData.coverImage && coverPreview ? (
                     <span className="text-green-400">✓ Cover auto-detected from Open Library</span>
                   ) : formData.coverImage ? (
@@ -484,7 +484,7 @@ export default function AddBookModal({ isOpen, onClose }) {
                       setCoverPreview(null);
                       lastFetchedQuery.current = ''; // Allow re-fetch
                     }}
-                    className="text-xs text-zinc-500 hover:text-zinc-300 underline"
+                    className="text-xs text-white/50 hover:text-zinc-300 underline"
                   >
                     Clear cover
                   </button>
@@ -495,7 +495,7 @@ export default function AddBookModal({ isOpen, onClose }) {
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-zinc-800/50 bg-zinc-900/50 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-white/10/50 bg-[#12101a]/50 flex items-center justify-between">
           <p className="text-xs text-zinc-600">
             <span className="text-red-500">*</span> Required fields
           </p>
@@ -503,7 +503,7 @@ export default function AddBookModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              className="px-4 py-2 text-white/60 hover:text-white hover:bg-[#1a1724] rounded-lg transition-colors"
             >
               Cancel
             </button>

@@ -87,7 +87,7 @@ export function CosmicKnowledgeCard({ item, onClick, index }: CosmicKnowledgeCar
         </h3>
 
         {/* Author/Creator - using content field as placeholder */}
-        <p className="text-gray-400 text-xs mb-3 line-clamp-1">
+        <p className="text-white/60 text-xs mb-3 line-clamp-1">
           {item.type === 'note' ? 'Personal note' : 'Unknown author'}
         </p>
 
@@ -103,13 +103,13 @@ export function CosmicKnowledgeCard({ item, onClick, index }: CosmicKnowledgeCar
               </span>
             ))}
             {item.tags.length > 2 && (
-              <span className="text-xs text-gray-500">+{item.tags.length - 2}</span>
+              <span className="text-xs text-white/50">+{item.tags.length - 2}</span>
             )}
           </div>
         )}
 
         {/* Footer stats */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center justify-between text-xs text-white/50">
           <div className="flex items-center gap-1">
             <Star className="w-3 h-3 text-yellow-500" />
             <span>{item.importance || 0}/10</span>

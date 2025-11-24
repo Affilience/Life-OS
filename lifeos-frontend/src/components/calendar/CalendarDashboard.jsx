@@ -50,7 +50,7 @@ export default function CalendarDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Header with time-themed aesthetic */}
       <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-900/20 via-purple-900/20 to-indigo-900/20 backdrop-blur-md border-b border-indigo-500/20">
         <div className="px-6 py-6">
@@ -58,7 +58,7 @@ export default function CalendarDashboard() {
             <Calendar className="w-6 h-6 text-indigo-400" />
             Calendar Dashboard
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-white/60 mt-1">
             Time blocking, energy mapping, and execution tracking
           </p>
         </div>
@@ -104,18 +104,18 @@ export default function CalendarDashboard() {
         </div>
 
         {/* Time Blocked Per Day */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-white font-semibold flex items-center gap-2">
                 <Clock className="w-5 h-5 text-indigo-400" />
                 Time Blocked Per Day
               </h3>
-              <p className="text-xs text-gray-400 mt-1">Hours scheduled this week</p>
+              <p className="text-xs text-white/60 mt-1">Hours scheduled this week</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-white">7.0h</div>
-              <div className="text-xs text-gray-400">avg/day</div>
+              <div className="text-xs text-white/60">avg/day</div>
             </div>
           </div>
           <div className="h-32">
@@ -131,11 +131,11 @@ export default function CalendarDashboard() {
                 <Zap className="w-5 h-5 text-purple-400" />
                 Energy Pattern
               </h3>
-              <p className="text-xs text-gray-400 mt-1">Average energy throughout day</p>
+              <p className="text-xs text-white/60 mt-1">Average energy throughout day</p>
             </div>
             <div className="flex items-center gap-2">
               <Sun className="w-4 h-4 text-orange-400" />
-              <span className="text-xs text-gray-400">Peak: 12pm</span>
+              <span className="text-xs text-white/60">Peak: 12pm</span>
             </div>
           </div>
           <div className="h-32">
@@ -144,7 +144,7 @@ export default function CalendarDashboard() {
         </div>
 
         {/* Planned vs Actual (This Week) */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-indigo-400" />
             Planned vs Actual (This Week)
@@ -160,7 +160,7 @@ export default function CalendarDashboard() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-300">{item.category}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-gray-500">Plan: {item.planned}h</span>
+                      <span className="text-white/50">Plan: {item.planned}h</span>
                       <span className="text-white font-semibold">Actual: {item.actual}h</span>
                       <span className={`text-xs ${efficiency >= 80 ? 'text-green-400' : 'text-yellow-400'}`}>
                         {efficiency}%
@@ -193,14 +193,14 @@ export default function CalendarDashboard() {
             {upcomingBlocks.map((block, index) => (
               <div
                 key={index}
-                className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 hover:border-indigo-500/30 transition-all"
+                className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-indigo-500/30 transition-all"
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-1 h-full bg-gradient-to-b ${getTypeColor(block.type)} rounded-full`} />
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-indigo-400 font-mono">{block.time}</span>
-                      <span className="text-xs px-2 py-1 bg-white/5 text-gray-400 rounded">
+                      <span className="text-xs px-2 py-1 bg-white/5 text-white/60 rounded">
                         {block.energy} energy
                       </span>
                     </div>

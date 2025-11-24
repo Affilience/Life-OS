@@ -45,7 +45,7 @@ export function KpiGauge({ value, max = 100, height = 120 }: KpiGaugeProps) {
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
           <div className="text-3xl font-bold text-white">{value.toFixed(0)}</div>
-          <div className="text-xs text-zinc-500">/ {max}</div>
+          <div className="text-xs text-white/50">/ {max}</div>
         </div>
       </div>
     </div>

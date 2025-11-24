@@ -58,7 +58,7 @@ export function MomentumChainCard({
           <div className="text-4xl">{icon}</div>
           <div>
             <h3 className="text-xl font-bold text-white">{moduleName}</h3>
-            <p className="text-sm text-gray-400 capitalize">{chainType.replace('_', ' ')}</p>
+            <p className="text-sm text-white/60 capitalize">{chainType.replace('_', ' ')}</p>
           </div>
         </div>
 
@@ -78,10 +78,10 @@ export function MomentumChainCard({
       {/* Current Streak - Big Display */}
       <div className="mb-6 text-center py-6 cosmic-card rounded-xl">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Flame className={`w-8 h-8 ${currentStreak > 0 ? 'text-orange-400 animate-pulse' : 'text-gray-600'}`} />
+          <Flame className={`w-8 h-8 ${currentStreak > 0 ? 'text-orange-400 animate-pulse' : 'text-white/40'}`} />
           <span className="text-5xl font-bold cosmic-title">{currentStreak}</span>
         </div>
-        <p className="text-gray-400">Day Streak</p>
+        <p className="text-white/60">Day Streak</p>
         <div className={`mt-2 inline-block px-3 py-1 rounded-full bg-gradient-to-r ${streakLevel.color} text-white text-xs font-bold`}>
           {streakLevel.tier}
         </div>
@@ -90,10 +90,10 @@ export function MomentumChainCard({
       {/* Progress to Next Milestone */}
       <div className="mb-4">
         <div className="flex items-center justify-between text-sm mb-2">
-          <span className="text-gray-400">Next Milestone</span>
+          <span className="text-white/60">Next Milestone</span>
           <span className="text-white font-semibold">{nextMilestone} days</span>
         </div>
-        <div className="h-2 bg-gray-800/50 rounded-full overflow-hidden">
+        <div className="h-2 bg-[#1a1724]/50 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progressToNext}%` }}
@@ -124,7 +124,7 @@ export function MomentumChainCard({
             <span className="ml-2 text-white font-semibold">{shieldsAvailable}/3</span>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-white/50 mt-1">
           Shields protect your streak if you miss a day (earn every 7 days)
         </p>
       </div>
@@ -134,18 +134,18 @@ export function MomentumChainCard({
         <div className="cosmic-card rounded-lg p-3">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="w-4 h-4 text-purple-400" />
-            <span className="text-xs text-gray-400">Longest</span>
+            <span className="text-xs text-white/60">Longest</span>
           </div>
           <div className="text-xl font-bold text-white">{longestStreak}</div>
-          <div className="text-xs text-gray-500">days</div>
+          <div className="text-xs text-white/50">days</div>
         </div>
         <div className="cosmic-card rounded-lg p-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs text-gray-400">Total Active</span>
+            <span className="text-xs text-white/60">Total Active</span>
           </div>
           <div className="text-xl font-bold text-white">{totalDaysActive}</div>
-          <div className="text-xs text-gray-500">days</div>
+          <div className="text-xs text-white/50">days</div>
         </div>
       </div>
 

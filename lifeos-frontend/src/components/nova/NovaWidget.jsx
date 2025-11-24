@@ -190,19 +190,19 @@ Instructions:
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 bg-[#0a0a0a] z-[9999] flex flex-col">
+      <div className="fixed inset-0 bg-[#0c0a10] z-[9999] flex flex-col">
         {/* Header */}
-        <div className="bg-[#111111] border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
+        <div className="bg-[#12101a] border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={spritePath} alt="Nova" className="w-12 h-12 pixelated" />
             <div>
               <h2 className="text-lg font-bold">Nova - {EVOLUTION_STAGES[currentStage].name}</h2>
-              <p className="text-sm text-gray-400">Your AI Life Coach</p>
+              <p className="text-sm text-white/60">Your AI Life Coach</p>
             </div>
           </div>
           <button
             onClick={() => setIsFullscreen(false)}
-            className="p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors"
+            className="p-2 hover:bg-[#2a2538] rounded-lg transition-colors"
           >
             <Minimize2 size={20} />
           </button>
@@ -211,7 +211,7 @@ Instructions:
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {messages.length === 0 ? (
-            <div className="text-center text-gray-400 mt-20">
+            <div className="text-center text-white/60 mt-20">
               <Sparkles size={48} className="mx-auto mb-4 text-blue-400" />
               <p>Hi! I'm Nova, your AI companion.</p>
               <p className="text-sm">Ask me anything about LifeOS!</p>
@@ -229,7 +229,7 @@ Instructions:
                   className={`max-w-[70%] rounded-lg px-4 py-2 ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-[#1a1a1a] text-gray-100 border border-[#2a2a2a]'
+                      : 'bg-[#1a1724] text-gray-100 border border-[#2a2a2a]'
                   }`}
                 >
                   {msg.content}
@@ -240,7 +240,7 @@ Instructions:
         </div>
 
         {/* Input Area */}
-        <div className="bg-[#111111] border-t border-[#2a2a2a] px-6 py-4">
+        <div className="bg-[#12101a] border-t border-[#2a2a2a] px-6 py-4">
           <div className="flex gap-2">
             <input
               type="text"
@@ -249,12 +249,12 @@ Instructions:
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask Nova anything..."
               disabled={isLoading}
-              className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+              className="flex-1 bg-[#1a1724] border border-[#2a2a2a] rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:opacity-50"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed px-6 py-2 rounded-lg font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-[#221e2e] disabled:cursor-not-allowed px-6 py-2 rounded-lg font-medium transition-colors"
             >
               {isLoading ? '...' : 'Send'}
             </button>
@@ -310,20 +310,20 @@ Instructions:
               <img src={spritePath} alt="Nova" className="w-8 h-8 pixelated" />
               <div>
                 <div className="font-bold text-sm">Nova</div>
-                <div className="text-xs text-gray-400">{EVOLUTION_STAGES[currentStage].name}</div>
+                <div className="text-xs text-white/60">{EVOLUTION_STAGES[currentStage].name}</div>
               </div>
             </div>
             <div className="flex gap-1">
               <button
                 onClick={() => setIsFullscreen(true)}
-                className="p-1 hover:bg-[#2a2a2a] rounded transition-colors"
+                className="p-1 hover:bg-[#2a2538] rounded transition-colors"
                 title="Fullscreen"
               >
                 <Maximize2 size={16} />
               </button>
               <button
                 onClick={() => setIsExpanded(false)}
-                className="p-1 hover:bg-[#2a2a2a] rounded transition-colors"
+                className="p-1 hover:bg-[#2a2538] rounded transition-colors"
                 title="Minimize"
               >
                 <X size={16} />
@@ -334,7 +334,7 @@ Instructions:
           {/* Quick Chat */}
           <div className="nova-chat">
             {messages.length === 0 ? (
-              <div className="text-center text-gray-400 text-sm py-8">
+              <div className="text-center text-white/60 text-sm py-8">
                 <MessageCircle size={32} className="mx-auto mb-2 opacity-50" />
                 <p>Ask me anything!</p>
               </div>
@@ -351,7 +351,7 @@ Instructions:
                       className={`inline-block px-3 py-1.5 rounded-lg ${
                         msg.role === 'user'
                           ? 'bg-blue-600 text-white'
-                          : 'bg-[#1a1a1a] text-gray-100'
+                          : 'bg-[#1a1724] text-gray-100'
                       }`}
                     >
                       {msg.content}
@@ -371,12 +371,12 @@ Instructions:
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type a message..."
               disabled={isLoading}
-              className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50"
+              className="flex-1 bg-[#1a1724] border border-[#2a2a2a] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-[#221e2e] disabled:cursor-not-allowed px-3 py-1.5 rounded text-sm font-medium transition-colors"
             >
               →
             </button>

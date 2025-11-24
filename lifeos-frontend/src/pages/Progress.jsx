@@ -23,7 +23,7 @@ export default function Progress() {
   return (
     <div className="progress-page min-h-screen">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800">
+      <div className="sticky top-0 z-10 bg-[#12101a]/95 backdrop-blur-sm border-b border-slate-800">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -34,7 +34,7 @@ export default function Progress() {
                 className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
                   activeTab === tab.id
                     ? 'bg-purple-500/20 text-purple-400 border-b-2 border-purple-500'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -70,7 +70,7 @@ export default function Progress() {
             </div>
 
             {/* Level & XP */}
-            <div className="bg-slate-800/50 rounded-xl p-6 space-y-4">
+            <div className="bg-[#1a1724]/50 rounded-xl p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Level</span>
                 <span className="text-2xl font-bold text-purple-400">{level}</span>
@@ -92,7 +92,7 @@ export default function Progress() {
             {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(stats).map(([stat, value]) => (
-                <div key={stat} className="bg-slate-800/50 rounded-lg p-4 text-center">
+                <div key={stat} className="bg-[#1a1724]/50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-purple-400">{value}</div>
                   <div className="text-xs text-slate-400 capitalize">{stat}</div>
                 </div>

@@ -84,7 +84,7 @@ export default function JournalMonth() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6 animate-fade-in">
+    <div className="min-h-screen bg-[#0c0a10] text-white p-6 animate-fade-in">
       {/* Page Header */}
       <div className="mb-6">
         {/* Breadcrumb Navigation */}
@@ -96,7 +96,7 @@ export default function JournalMonth() {
             Journal
           </button>
           <span className="text-zinc-600">/</span>
-          <span className="text-zinc-400">{monthLabel}</span>
+          <span className="text-white/60">{monthLabel}</span>
         </div>
 
         <div className="flex items-center justify-between mb-2">
@@ -108,7 +108,7 @@ export default function JournalMonth() {
               <h1 className="text-3xl font-bold text-white tracking-tight">
                 {monthLabel}
               </h1>
-              <p className="text-zinc-400 mt-1">
+              <p className="text-white/60 mt-1">
                 {entryCount} {entryCount === 1 ? 'entry' : 'entries'} this month
               </p>
             </div>
@@ -118,14 +118,14 @@ export default function JournalMonth() {
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrevMonth}
-              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg bg-[#1a1724] hover:bg-[#221e2e] text-white/60 hover:text-white transition-colors"
               aria-label="Previous month"
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={handleNextMonth}
-              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg bg-[#1a1724] hover:bg-[#221e2e] text-white/60 hover:text-white transition-colors"
               aria-label="Next month"
             >
               <ChevronRight size={20} />
@@ -137,15 +137,15 @@ export default function JournalMonth() {
       {/* Stats - Minimal inline display */}
       <div className="flex items-center gap-8 mb-8 text-sm">
         <div className="flex items-center gap-2">
-          <span className="text-zinc-500">Entries:</span>
+          <span className="text-white/50">Entries:</span>
           <span className="text-white font-semibold">{entryCount}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-zinc-500">Total Words:</span>
+          <span className="text-white/50">Total Words:</span>
           <span className="text-white font-semibold">{totalWords.toLocaleString()}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-zinc-500">Avg Words:</span>
+          <span className="text-white/50">Avg Words:</span>
           <span className="text-white font-semibold">{avgWords}</span>
         </div>
       </div>

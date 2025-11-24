@@ -140,7 +140,7 @@ export default function QuickCapture() {
           />
 
           {/* Menu - using portal-like fixed positioning to escape overflow clipping */}
-          <div className="absolute top-full right-0 mt-2 w-64 bg-zinc-900 border border-zinc-800/50 rounded-lg shadow-2xl z-[9999] animate-scale-in">
+          <div className="absolute top-full right-0 mt-2 w-64 bg-[#12101a] border border-white/10/50 rounded-lg shadow-2xl z-[9999] animate-scale-in">
             <div className="p-2">
               {actions.map((action) => (
                 <button
@@ -168,14 +168,14 @@ export default function QuickCapture() {
                     <div className="text-sm font-medium text-white group-hover:text-white">
                       {action.label}
                     </div>
-                    <div className="text-xs text-zinc-500 mt-0.5">
+                    <div className="text-xs text-white/50 mt-0.5">
                       {action.id === 'note' && 'Create a new note'}
                       {action.id === 'book' && 'Track a book you\'re reading'}
                       {action.id === 'media' && 'Save video, podcast, or article'}
                     </div>
                   </div>
                   <svg
-                    className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors"
+                    className="w-4 h-4 text-zinc-600 group-hover:text-white/60 transition-colors"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -192,11 +192,11 @@ export default function QuickCapture() {
             </div>
 
             {/* Keyboard Hints */}
-            <div className="px-4 py-3 bg-zinc-900/50 border-t border-zinc-800/50">
+            <div className="px-4 py-3 bg-[#12101a]/50 border-t border-white/10/50">
               <div className="flex items-center justify-between text-xs text-zinc-600">
                 <span>Quick Actions</span>
                 <div className="flex items-center gap-2">
-                  <kbd className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700">
+                  <kbd className="px-2 py-1 bg-[#1a1724] rounded border border-white/15">
                     N
                   </kbd>
                   <span>Note</span>

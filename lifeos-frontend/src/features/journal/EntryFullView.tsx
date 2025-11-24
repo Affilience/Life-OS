@@ -112,7 +112,7 @@ export function EntryFullView({ dateISO, open, onClose }: EntryFullViewProps) {
           onKeyDown={handleKeyDown}
         >
           <motion.div
-            className="relative w-full max-w-5xl h-[90vh] bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl flex flex-col"
+            className="relative w-full max-w-5xl h-[90vh] bg-[#12101a] rounded-2xl border border-white/10 shadow-2xl flex flex-col"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
@@ -120,17 +120,17 @@ export function EntryFullView({ dateISO, open, onClose }: EntryFullViewProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+            <div className="flex items-center justify-between p-6 border-b border-white/10">
               <div>
                 <h2 className="text-2xl font-bold text-white">{dateLabel}</h2>
                 {entry?.wordCount && (
-                  <p className="text-sm text-zinc-400 mt-1">{entry.wordCount} words</p>
+                  <p className="text-sm text-white/60 mt-1">{entry.wordCount} words</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleEdit}
-                  className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 hover:text-white transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-[#1a1724] text-zinc-300 rounded-lg hover:bg-[#221e2e] hover:text-white transition-colors flex items-center gap-2"
                 >
                   <Edit3 size={16} />
                   <span>Edit</span>
@@ -146,14 +146,14 @@ export function EntryFullView({ dateISO, open, onClose }: EntryFullViewProps) {
                 {entry && (
                   <button
                     onClick={handleDelete}
-                    className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-red-900 hover:text-white transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-[#1a1724] text-zinc-300 rounded-lg hover:bg-red-900 hover:text-white transition-colors flex items-center gap-2"
                   >
                     <Trash2 size={16} />
                   </button>
                 )}
                 <button
                   onClick={handleClose}
-                  className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                  className="p-2 text-white/60 hover:text-white hover:bg-[#1a1724] rounded-lg transition-colors"
                 >
                   <X size={24} />
                 </button>
@@ -188,14 +188,14 @@ export function EntryFullView({ dateISO, open, onClose }: EntryFullViewProps) {
               </div>
 
               {/* AI Insights Panel */}
-              <div className="w-80 border-l border-zinc-800 p-6 overflow-y-auto bg-zinc-950">
+              <div className="w-80 border-l border-white/10 p-6 overflow-y-auto bg-[#0c0a10]">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles size={18} className="text-violet-400" />
                   <h3 className="text-lg font-semibold text-white">AI Insights</h3>
                 </div>
 
                 {entry ? (
-                  <div className="space-y-4 text-sm text-zinc-400">
+                  <div className="space-y-4 text-sm text-white/60">
                     <div>
                       <div className="font-medium text-zinc-300 mb-1">Summary</div>
                       <p>This entry captures your thoughts and progress for the day.</p>
@@ -234,7 +234,7 @@ export function EntryFullView({ dateISO, open, onClose }: EntryFullViewProps) {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-500 italic">Start writing to see AI insights...</p>
+                  <p className="text-sm text-white/50 italic">Start writing to see AI insights...</p>
                 )}
               </div>
             </div>

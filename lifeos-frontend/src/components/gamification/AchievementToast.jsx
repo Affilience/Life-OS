@@ -34,7 +34,7 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
           className="fixed top-20 right-6 z-50 w-96 max-w-[90vw]"
         >
           <div
-            className="bg-gray-900 border-2 rounded-xl p-4 shadow-2xl overflow-hidden relative"
+            className="bg-[#12101a] border-2 rounded-xl p-4 shadow-2xl overflow-hidden relative"
             style={{ borderColor: rarityColor }}
           >
             {/* Background glow */}
@@ -70,13 +70,13 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
 
                 {/* Title & Description */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                  <p className="text-xs text-white/60 uppercase tracking-wider mb-1">
                     Achievement Unlocked
                   </p>
                   <h4 className="text-white font-bold text-lg leading-tight mb-1">
                     {achievement.title || achievement.name}
                   </h4>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-white/60 text-sm">
                     {achievement.description}
                   </p>
                 </div>
@@ -84,7 +84,7 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
                 {/* Close button */}
                 <button
                   onClick={onClose}
-                  className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
+                  className="flex-shrink-0 text-white/60 hover:text-white transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -94,7 +94,7 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
 
               {/* Rewards */}
               {(achievement.xp_reward > 0 || achievement.credit_reward > 0) && (
-                <div className="flex items-center gap-3 pt-3 border-t border-gray-700/50">
+                <div className="flex items-center gap-3 pt-3 border-t border-white/15/50">
                   {achievement.xp_reward > 0 && (
                     <div className="flex items-center gap-1.5 text-sm">
                       <span className="text-cyan-400">⚡</span>

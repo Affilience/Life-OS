@@ -85,7 +85,7 @@ export default function HealthDashboard() {
           <Icon className={`w-6 h-6 text-${color}-400 mb-1`} />
           <p className="text-2xl font-bold text-white">{value}{unit}</p>
         </div>
-        <p className="text-xs text-gray-400 mt-2 text-center">{label}</p>
+        <p className="text-xs text-white/60 mt-2 text-center">{label}</p>
       </div>
     );
   };
@@ -98,7 +98,7 @@ export default function HealthDashboard() {
           <Dumbbell className="w-6 h-6 text-green-400" />
           Health & Fitness
         </h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-sm text-white/60 mt-1">
           Body vitals, workouts, nutrition & recovery
         </p>
       </div>
@@ -112,7 +112,7 @@ export default function HealthDashboard() {
               <p className="text-sm text-green-300">Keep pushing! 💪</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-400">7-day streak</p>
+              <p className="text-sm text-white/60">7-day streak</p>
               <p className="text-2xl font-bold text-green-400">🔥</p>
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function HealthDashboard() {
 
         {/* Body Vitals Grid */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#1a1a1a] border border-red-500/30 rounded-xl p-4">
+          <div className="bg-[#1a1724] border border-red-500/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Heart className="w-5 h-5 text-red-400" />
               <h4 className="text-sm font-semibold text-white">Heart Rate</h4>
@@ -155,16 +155,16 @@ export default function HealthDashboard() {
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
                 <p className="text-3xl font-bold text-white">72</p>
-                <p className="text-sm text-gray-400">bpm</p>
+                <p className="text-sm text-white/60">bpm</p>
               </div>
               <div className="flex gap-2 text-xs">
                 <span className="bg-red-500/20 text-red-300 px-2 py-1 rounded">Resting</span>
-                <span className="text-gray-500">↓ 3 from avg</span>
+                <span className="text-white/50">↓ 3 from avg</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#1a1a1a] border border-blue-500/30 rounded-xl p-4">
+          <div className="bg-[#1a1724] border border-blue-500/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Droplet className="w-5 h-5 text-blue-400" />
               <h4 className="text-sm font-semibold text-white">Hydration</h4>
@@ -172,15 +172,15 @@ export default function HealthDashboard() {
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
                 <p className="text-3xl font-bold text-white">2.4</p>
-                <p className="text-sm text-gray-400">/ 3L</p>
+                <p className="text-sm text-white/60">/ 3L</p>
               </div>
-              <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+              <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 w-[80%]" />
               </div>
             </div>
           </div>
 
-          <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-xl p-4">
+          <div className="bg-[#1a1724] border border-yellow-500/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Apple className="w-5 h-5 text-yellow-400" />
               <h4 className="text-sm font-semibold text-white">Calories In</h4>
@@ -188,13 +188,13 @@ export default function HealthDashboard() {
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
                 <p className="text-3xl font-bold text-white">2,200</p>
-                <p className="text-sm text-gray-400">kcal</p>
+                <p className="text-sm text-white/60">kcal</p>
               </div>
-              <p className="text-xs text-gray-500">Target: 2,400 kcal</p>
+              <p className="text-xs text-white/50">Target: 2,400 kcal</p>
             </div>
           </div>
 
-          <div className="bg-[#1a1a1a] border border-purple-500/30 rounded-xl p-4">
+          <div className="bg-[#1a1724] border border-purple-500/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Activity className="w-5 h-5 text-purple-400" />
               <h4 className="text-sm font-semibold text-white">Recovery</h4>
@@ -202,7 +202,7 @@ export default function HealthDashboard() {
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
                 <p className="text-3xl font-bold text-white">87</p>
-                <p className="text-sm text-gray-400">/ 100</p>
+                <p className="text-sm text-white/60">/ 100</p>
               </div>
               <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Ready</span>
             </div>
@@ -217,7 +217,7 @@ export default function HealthDashboard() {
                 <Flame className="w-5 h-5 text-orange-400" />
                 Calories Burned
               </h3>
-              <p className="text-sm text-gray-400 mt-1">Active energy this week</p>
+              <p className="text-sm text-white/60 mt-1">Active energy this week</p>
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-white">19.8k</p>
@@ -235,7 +235,7 @@ export default function HealthDashboard() {
                 <Moon className="w-5 h-5 text-indigo-400" />
                 Sleep Quality
               </h3>
-              <p className="text-sm text-gray-400 mt-1">Hours per night</p>
+              <p className="text-sm text-white/60 mt-1">Hours per night</p>
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-white">7.7h</p>
@@ -246,7 +246,7 @@ export default function HealthDashboard() {
         </div>
 
         {/* Macros Breakdown */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <h3 className="text-lg font-semibold text-white mb-4">Nutrition Macros</h3>
           <div className="space-y-4">
             {[
@@ -259,9 +259,9 @@ export default function HealthDashboard() {
                 <div key={index} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-white">{macro.name}</span>
-                    <span className="text-sm text-gray-400">{macro.value}/{macro.target}{macro.unit}</span>
+                    <span className="text-sm text-white/60">{macro.value}/{macro.target}{macro.unit}</span>
                   </div>
-                  <div className="h-3 bg-[#0a0a0a] rounded-full overflow-hidden">
+                  <div className="h-3 bg-[#0c0a10] rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r from-${macro.color}-500 to-${macro.color}-600 transition-all duration-500 relative`}
                       style={{ width: `${Math.min(percentage, 100)}%` }}
@@ -278,7 +278,7 @@ export default function HealthDashboard() {
         </div>
 
         {/* Recent Workouts */}
-        <div className="bg-[#1a1a1a] border border-green-500/20 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-green-500/20 rounded-2xl p-5">
           <h3 className="text-lg font-semibold text-white mb-4">Recent Workouts</h3>
           <div className="space-y-3">
             {[
@@ -286,12 +286,12 @@ export default function HealthDashboard() {
               { type: 'Cardio Run', duration: '30 min', calories: 280, time: 'Yesterday', icon: '🏃' },
               { type: 'Leg Day', duration: '60 min', calories: 420, time: '2 days ago', icon: '🦵' }
             ].map((workout, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg border border-white/5 hover:border-green-500/30 transition-colors">
+              <div key={index} className="flex items-center justify-between p-3 bg-[#0c0a10] rounded-lg border border-white/5 hover:border-green-500/30 transition-colors">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{workout.icon}</span>
                   <div>
                     <p className="text-sm font-semibold text-white">{workout.type}</p>
-                    <p className="text-xs text-gray-500">{workout.time}</p>
+                    <p className="text-xs text-white/50">{workout.time}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -308,7 +308,7 @@ export default function HealthDashboard() {
           <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 rounded-xl font-semibold hover:opacity-90 transition-opacity">
             Log Workout
           </button>
-          <button className="bg-[#1a1a1a] border border-green-500/30 text-white p-4 rounded-xl font-semibold hover:bg-green-500/10 transition-colors">
+          <button className="bg-[#1a1724] border border-green-500/30 text-white p-4 rounded-xl font-semibold hover:bg-green-500/10 transition-colors">
             Track Meal
           </button>
         </div>

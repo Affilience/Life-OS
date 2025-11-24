@@ -30,7 +30,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-zinc-400">Project not found</p>
+          <p className="text-white/60">Project not found</p>
           <button
             onClick={onBack}
             className="mt-4 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all"
@@ -105,7 +105,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
         <div className="flex items-center gap-4 mb-4">
           <button
             onClick={onBack}
-            className="p-2 hover:bg-zinc-800 rounded-lg transition-all text-zinc-400 hover:text-white"
+            className="p-2 hover:bg-[#1a1724] rounded-lg transition-all text-white/60 hover:text-white"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -117,7 +117,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
                 type="text"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
-                className="flex-1 text-3xl font-bold bg-zinc-800 border border-purple-500 rounded-lg px-4 py-2 text-white focus:outline-none"
+                className="flex-1 text-3xl font-bold bg-[#1a1724] border border-purple-500 rounded-lg px-4 py-2 text-white focus:outline-none"
                 autoFocus
                 onKeyPress={(e) => e.key === 'Enter' && handleSaveTitle()}
               />
@@ -129,7 +129,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
               </button>
               <button
                 onClick={handleCancelEditTitle}
-                className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-lg transition-all"
+                className="p-2 bg-[#1a1724] hover:bg-[#221e2e] text-white/60 rounded-lg transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -139,7 +139,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
               <h1 className="text-3xl font-bold text-white">{project.title}</h1>
               <button
                 onClick={handleStartEditTitle}
-                className="p-1.5 hover:bg-zinc-800 rounded-lg transition-all text-zinc-500 hover:text-white"
+                className="p-1.5 hover:bg-[#1a1724] rounded-lg transition-all text-white/50 hover:text-white"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
@@ -169,14 +169,14 @@ export default function ProjectDetailView({ projectId, onBack }) {
           </div>
 
           {project.targetDate && (
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <div className="flex items-center gap-2 text-sm text-white/60">
               <Calendar className="w-4 h-4" />
               <span>Target: {new Date(project.targetDate).toLocaleDateString()}</span>
             </div>
           )}
 
           {totalTasks > 0 && (
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <div className="flex items-center gap-2 text-sm text-white/60">
               <CheckCircle2 className="w-4 h-4" />
               <span>
                 {completedTasks}/{totalTasks} tasks ({progress}%)
@@ -189,7 +189,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
               {project.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2 py-1 bg-zinc-800/50 text-zinc-400 text-xs rounded"
+                  className="px-2 py-1 bg-[#1a1724]/50 text-white/60 text-xs rounded"
                 >
                   #{tag}
                 </span>
@@ -216,12 +216,12 @@ export default function ProjectDetailView({ projectId, onBack }) {
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
               placeholder="Add a new task..."
-              className="flex-1 px-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all"
+              className="flex-1 px-4 py-2 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all"
             />
             <button
               onClick={handleAddTask}
               disabled={!newTaskTitle.trim()}
-              className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white rounded-lg flex items-center gap-2 transition-all"
+              className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-[#221e2e] disabled:cursor-not-allowed text-white rounded-lg flex items-center gap-2 transition-all"
             >
               <Plus className="w-4 h-4" />
               Add
@@ -239,7 +239,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
               project.tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-3 hover:border-zinc-700 transition-all group"
+                  className="bg-[#12101a]/60 border border-white/10 rounded-lg p-3 hover:border-white/15 transition-all group"
                 >
                   <div className="flex items-center gap-3">
                     <button
@@ -256,7 +256,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
                     <span
                       className={`flex-1 ${
                         task.completed
-                          ? 'text-zinc-500 line-through'
+                          ? 'text-white/50 line-through'
                           : 'text-white'
                       }`}
                     >
@@ -288,7 +288,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
               value={project.goal || ''}
               onChange={(e) => handleUpdateGoal(e.target.value)}
               placeholder="What's the main goal or objective of this project?"
-              className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all resize-none"
+              className="w-full px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all resize-none"
               rows={3}
             />
           </div>
@@ -303,7 +303,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
               value={project.notes || ''}
               onChange={(e) => handleUpdateNotes(e.target.value)}
               placeholder="Add notes, ideas, or details about this project..."
-              className="flex-1 px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all resize-none"
+              className="flex-1 px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all resize-none"
             />
           </div>
         </div>

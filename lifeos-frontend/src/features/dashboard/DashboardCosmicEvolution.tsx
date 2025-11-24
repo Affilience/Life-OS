@@ -23,7 +23,7 @@ export function DashboardCosmicEvolution({ user }: DashboardCosmicEvolutionProps
   };
 
   return (
-    <section className="relative rounded-2xl border border-white/10 bg-[#0a0e1a] p-6 overflow-hidden">
+    <section className="relative rounded-2xl border border-white/10 bg-[#0c0a10] p-6 overflow-hidden">
       <div className="relative flex flex-col lg:flex-row gap-6 items-center">
         <div className="relative">
           <CosmicAvatar
@@ -38,15 +38,15 @@ export function DashboardCosmicEvolution({ user }: DashboardCosmicEvolutionProps
 
           <div className="flex gap-4 text-sm">
             <div>
-              <span className="text-gray-400">Streak:</span>{' '}
+              <span className="text-white/60">Streak:</span>{' '}
               <span className="text-amber-400 font-semibold">{user.streakDays} days</span>
             </div>
             <div>
-              <span className="text-gray-400">Season:</span>{' '}
+              <span className="text-white/60">Season:</span>{' '}
               <span className="text-violet-400 font-semibold capitalize">{user.season}</span>
             </div>
             <div>
-              <span className="text-gray-400">Mood:</span>{' '}
+              <span className="text-white/60">Mood:</span>{' '}
               <span className="text-cyan-400 font-semibold capitalize">{user.mood}</span>
             </div>
           </div>

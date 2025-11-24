@@ -53,7 +53,7 @@ export default function RewardMarketplace() {
           <h2 className="text-3xl font-bold cosmic-title mb-2">
             🛒 Reward Marketplace
           </h2>
-          <p className="text-gray-400">
+          <p className="text-white/60">
             Spend your hard-earned Cosmic Credits on rewards you define
           </p>
         </div>
@@ -77,12 +77,12 @@ export default function RewardMarketplace() {
               <Coins className="w-6 h-6 text-amber-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-400">Your Cosmic Credits</p>
+              <p className="text-sm text-white/60">Your Cosmic Credits</p>
               <p className="text-2xl font-bold text-amber-300">{userCredits.toLocaleString()}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-500">Lifetime earned</p>
+            <p className="text-xs text-white/50">Lifetime earned</p>
             <div className="flex items-center gap-1 text-green-400 text-sm">
               <TrendingUp className="w-4 h-4" />
               <span>{currency?.lifetime_credits_earned?.toLocaleString() || 0}</span>
@@ -104,7 +104,7 @@ export default function RewardMarketplace() {
               transition-all duration-200
               ${activeCategory === cat.key
                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white cosmic-glow'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
+                : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
               }
             `}
           >
@@ -125,7 +125,7 @@ export default function RewardMarketplace() {
           <h3 className="text-xl font-bold text-gray-300 mb-2">
             No rewards in this category yet
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-white/50 mb-4">
             Create your first reward to get started!
           </p>
           <motion.button
@@ -164,25 +164,25 @@ export default function RewardMarketplace() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-400">{rewards?.length || 0}</div>
-            <div className="text-xs text-gray-500">Total Rewards</div>
+            <div className="text-xs text-white/50">Total Rewards</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-400">
               {rewards?.filter(r => userCredits >= r.cost).length || 0}
             </div>
-            <div className="text-xs text-gray-500">Available Now</div>
+            <div className="text-xs text-white/50">Available Now</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-amber-400">
               {currency?.total_credits_spent || 0}
             </div>
-            <div className="text-xs text-gray-500">Total Spent</div>
+            <div className="text-xs text-white/50">Total Spent</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-400">
               {rewards && rewards.length > 0 ? Math.min(...rewards.map(r => r.cost)) : 0}
             </div>
-            <div className="text-xs text-gray-500">Cheapest Reward</div>
+            <div className="text-xs text-white/50">Cheapest Reward</div>
           </div>
         </div>
       </div>
@@ -196,7 +196,7 @@ export default function RewardMarketplace() {
             className="cosmic-panel cosmic-border rounded-2xl p-6 max-w-md w-full mx-4"
           >
             <h3 className="text-2xl font-bold cosmic-title mb-4">Add Custom Reward</h3>
-            <p className="text-gray-400 mb-4">
+            <p className="text-white/60 mb-4">
               Custom reward creation coming soon! Define your own rewards and set their credit cost.
             </p>
             <button

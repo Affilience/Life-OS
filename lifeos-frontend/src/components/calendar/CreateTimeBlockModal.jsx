@@ -102,7 +102,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 border border-purple-500/30 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden">
+      <div className="bg-[#12101a] border border-purple-500/30 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden">
         {/* Header */}
         <div
           className="border-b border-purple-500/30 p-6"
@@ -120,7 +120,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-white">Create Time Block</h2>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-white/60">
                   Schedule time for focused work
                 </p>
               </div>
@@ -129,7 +129,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
               onClick={onClose}
               className="p-2 hover:bg-white/10 rounded-lg transition-all"
             >
-              <X className="w-5 h-5 text-zinc-400" />
+              <X className="w-5 h-5 text-white/60" />
             </button>
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
               placeholder="e.g., Write project proposal, Code review, Gym workout..."
-              className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all"
+              className="w-full px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all"
               autoFocus
             />
           </div>
@@ -162,7 +162,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleChange('date', e.target.value)}
-                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-all"
+                className="w-full px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-all"
               />
             </div>
             <div>
@@ -173,7 +173,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
                 type="time"
                 value={formData.startTime}
                 onChange={(e) => handleChange('startTime', e.target.value)}
-                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-all"
+                className="w-full px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-all"
               />
             </div>
             <div>
@@ -184,13 +184,13 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
                 type="time"
                 value={formData.endTime}
                 onChange={(e) => handleChange('endTime', e.target.value)}
-                className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-all"
+                className="w-full px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-all"
               />
             </div>
           </div>
 
           {/* Duration indicator */}
-          <div className="flex items-center gap-2 text-sm text-zinc-400 bg-zinc-800/30 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-sm text-white/60 bg-[#1a1724]/30 rounded-lg p-3">
             <Clock className="w-4 h-4" />
             <span>Duration: {duration} minutes ({(duration / 60).toFixed(1)} hours)</span>
             {duration > 120 && (
@@ -215,7 +215,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
                   className={`p-3 rounded-lg border-2 transition-all ${
                     formData.module === module.id
                       ? 'border-current'
-                      : 'border-zinc-700 hover:border-zinc-600'
+                      : 'border-white/15 hover:border-zinc-600'
                   }`}
                   style={{
                     backgroundColor:
@@ -244,11 +244,11 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
                   className={`p-3 rounded-lg border-2 text-left transition-all ${
                     formData.type === type.id
                       ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                      : 'border-zinc-700 bg-zinc-800/30 text-zinc-400 hover:border-zinc-600'
+                      : 'border-white/15 bg-[#1a1724]/30 text-white/60 hover:border-zinc-600'
                   }`}
                 >
                   <div className="text-sm font-semibold">{type.label}</div>
-                  <div className="text-xs text-zinc-500 mt-0.5">{type.description}</div>
+                  <div className="text-xs text-white/50 mt-0.5">{type.description}</div>
                 </button>
               ))}
             </div>
@@ -270,7 +270,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       formData.priority === priority
                         ? 'bg-purple-500/20 text-purple-300 border-2 border-purple-500'
-                        : 'bg-zinc-800/30 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600'
+                        : 'bg-[#1a1724]/30 text-white/60 border-2 border-white/15 hover:border-zinc-600'
                     }`}
                   >
                     {priority.charAt(0).toUpperCase() + priority.slice(1)}
@@ -293,7 +293,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       formData.energyLevel === energy
                         ? 'bg-purple-500/20 text-purple-300 border-2 border-purple-500'
-                        : 'bg-zinc-800/30 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600'
+                        : 'bg-[#1a1724]/30 text-white/60 border-2 border-white/15 hover:border-zinc-600'
                     }`}
                   >
                     {energy.charAt(0).toUpperCase() + energy.slice(1)}
@@ -313,7 +313,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
               onChange={(e) => handleChange('notes', e.target.value)}
               placeholder="Any additional context or details..."
               rows={2}
-              className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all resize-none"
+              className="w-full px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all resize-none"
             />
           </div>
 
@@ -328,7 +328,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
               value={formData.tags}
               onChange={(e) => handleChange('tags', e.target.value)}
               placeholder="project-alpha, urgent, review (comma separated)"
-              className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all"
+              className="w-full px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all"
             />
           </div>
 
@@ -337,7 +337,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-medium transition-all"
+              className="flex-1 px-4 py-3 bg-[#1a1724] hover:bg-[#221e2e] text-zinc-300 rounded-lg font-medium transition-all"
             >
               Cancel
             </button>

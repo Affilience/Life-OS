@@ -1,49 +1,59 @@
 /**
- * Minimal Cosmic OS - Design Tokens
- * Visual identity for the cosmic evolution system
+ * LifeOS - Cosmic Violet Theme
+ * Unified design tokens for the cosmic evolution system
  */
 
 :root {
-  /* Background Colors - Refined for optimal viewing */
-  --bg-root: #0a0a0a;
-  --bg-surface: #121212;
-  --bg-surface-alt: #1a1a1a;
+  /* Background Colors - Dark with visible violet undertone */
+  --bg-root: #0c0a10;
+  --bg-surface: #12101a;
+  --bg-surface-alt: #1a1724;
 
-  /* Foreground Colors - 87/60/38 opacity system */
-  --fg-primary: rgba(255, 255, 255, 0.87);
-  --fg-secondary: rgba(255, 255, 255, 0.60);
-  --fg-muted: rgba(255, 255, 255, 0.38);
+  /* Foreground Colors - Enhanced contrast for dark mode */
+  --fg-primary: rgba(255, 255, 255, 0.92);
+  --fg-secondary: rgba(255, 255, 255, 0.64);
+  --fg-muted: rgba(255, 255, 255, 0.40);
 
-  /* Accent Colors - Nebula violet and plasma teal */
-  --accent-main: #8a5cff; /* nebula violet */
-  --accent-main-soft: rgba(138, 92, 255, 0.16);
-  --accent-aux: #4de8e4; /* plasma teal */
-  --accent-aux-soft: rgba(77, 232, 228, 0.16);
+  /* Accent Colors - Primary Violet */
+  --accent: #8b5cf6;               /* Primary violet */
+  --accent-2: #a855f7;             /* Lighter violet */
+  --accent-3: #7c3aed;             /* Darker violet */
+  --accent-4: #6d28d9;             /* Deep violet */
+  --accent-main: #8b5cf6;          /* Primary violet (legacy) */
+  --accent-main-soft: rgba(139, 92, 246, 0.16);
+  --accent-aux: #06b6d4;           /* Cyan for contrast */
+  --accent-aux-soft: rgba(6, 182, 212, 0.12);
 
-  /* Status Colors */
-  --accent-success: #5af29c;
-  --accent-warning: #facc6b;
-  --accent-danger: #ff6584;
+  /* Status Colors (Harmonized) */
+  --success: #10b981;              /* Emerald */
+  --warning: #f59e0b;              /* Amber */
+  --error: #f43f5e;                /* Rose */
+  --accent-success: #10b981;
+  --accent-warning: #f59e0b;
+  --accent-danger: #f43f5e;
+  --muted: rgba(255, 255, 255, 0.40);
 
-  /* Borders - Refined minimal borders */
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  /* Borders - Subtle, refined */
+  --border: rgba(255, 255, 255, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.15);
 
-  /* Glows and Shadows (More subtle) */
-  --glow-soft: 0 0 40px rgba(138, 92, 255, 0.25);
-  --glow-aux: 0 0 40px rgba(77, 232, 228, 0.20);
-  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* Glows and Shadows (Violet-tinted) */
+  --glow-soft: 0 0 40px rgba(139, 92, 246, 0.20);
+  --glow-aux: 0 0 40px rgba(6, 182, 212, 0.15);
+  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 4px 20px rgba(139, 92, 246, 0.25);
 
-  /* Gradients (More subtle for minimal aesthetic) */
+  /* Gradients (Subtle violet cosmic effect) */
   --grad-cosmic-radial: radial-gradient(
       circle at 10% -10%,
-      rgba(138, 92, 255, 0.08),
-      rgba(10, 10, 10, 0.0) 50%
+      rgba(139, 92, 246, 0.06),
+      transparent 50%
     ),
     radial-gradient(
       circle at 90% 120%,
-      rgba(77, 232, 228, 0.06),
-      rgba(10, 10, 10, 0.0) 50%
+      rgba(6, 182, 212, 0.04),
+      transparent 50%
     );
 
   --grad-card: linear-gradient(
@@ -51,4 +61,7 @@
     rgba(255, 255, 255, 0.02),
     rgba(255, 255, 255, 0.00)
   );
+
+  /* XP/Progress Gradient */
+  --grad-xp: linear-gradient(90deg, #8b5cf6 0%, #06b6d4 100%);
 }

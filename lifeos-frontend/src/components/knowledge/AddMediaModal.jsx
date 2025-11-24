@@ -233,14 +233,14 @@ export default function AddMediaModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-zinc-900/95 backdrop-blur-md border border-zinc-800/50 rounded-xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-2xl bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-800/50 bg-zinc-900/50">
+        <div className="px-6 py-4 border-b border-white/10/50 bg-[#12101a]/50">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-white">Add Media</h2>
             <button
               onClick={handleCancel}
-              className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              className="p-2 text-white/60 hover:text-white hover:bg-[#1a1724] rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -265,7 +265,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
                     ${
                       formData.type === type.id
                         ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300'
-                        : 'bg-zinc-800/30 border-zinc-700/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                        : 'bg-[#1a1724]/30 border-white/15/50 text-white/60 hover:border-zinc-600 hover:text-zinc-200'
                     }
                   `}
                 >
@@ -287,9 +287,9 @@ export default function AddMediaModal({ isOpen, onClose }) {
               onChange={(e) => handleChange('title', e.target.value)}
               placeholder="Enter title"
               className={`
-                w-full px-4 py-3 bg-zinc-800/30 border rounded-lg text-white placeholder-zinc-600
+                w-full px-4 py-3 bg-[#1a1724]/30 border rounded-lg text-white placeholder-zinc-600
                 focus:outline-none focus:border-cyan-500/50 transition-colors
-                ${errors.title ? 'border-red-500/50' : 'border-zinc-700/50'}
+                ${errors.title ? 'border-red-500/50' : 'border-white/15/50'}
               `}
             />
             {errors.title && (
@@ -308,9 +308,9 @@ export default function AddMediaModal({ isOpen, onClose }) {
               onChange={(e) => handleChange('creator', e.target.value)}
               placeholder={formData.type === 'article' ? 'Enter author name' : 'Enter creator/channel name'}
               className={`
-                w-full px-4 py-3 bg-zinc-800/30 border rounded-lg text-white placeholder-zinc-600
+                w-full px-4 py-3 bg-[#1a1724]/30 border rounded-lg text-white placeholder-zinc-600
                 focus:outline-none focus:border-cyan-500/50 transition-colors
-                ${errors.creator ? 'border-red-500/50' : 'border-zinc-700/50'}
+                ${errors.creator ? 'border-red-500/50' : 'border-white/15/50'}
               `}
             />
             {errors.creator && (
@@ -329,9 +329,9 @@ export default function AddMediaModal({ isOpen, onClose }) {
               onChange={(e) => handleChange('url', e.target.value)}
               placeholder="https://..."
               className={`
-                w-full px-4 py-3 bg-zinc-800/30 border rounded-lg text-white placeholder-zinc-600
+                w-full px-4 py-3 bg-[#1a1724]/30 border rounded-lg text-white placeholder-zinc-600
                 focus:outline-none focus:border-cyan-500/50 transition-colors
-                ${errors.url ? 'border-red-500/50' : 'border-zinc-700/50'}
+                ${errors.url ? 'border-red-500/50' : 'border-white/15/50'}
               `}
             />
             {errors.url && (
@@ -350,9 +350,9 @@ export default function AddMediaModal({ isOpen, onClose }) {
               onChange={(e) => handleChange('duration', e.target.value)}
               placeholder={formData.type === 'article' ? '5 min read' : '45:30'}
               className={`
-                w-full px-4 py-3 bg-zinc-800/30 border rounded-lg text-white placeholder-zinc-600
+                w-full px-4 py-3 bg-[#1a1724]/30 border rounded-lg text-white placeholder-zinc-600
                 focus:outline-none focus:border-cyan-500/50 transition-colors
-                ${errors.duration ? 'border-red-500/50' : 'border-zinc-700/50'}
+                ${errors.duration ? 'border-red-500/50' : 'border-white/15/50'}
               `}
             />
             {errors.duration && (
@@ -385,7 +385,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
             <div className="flex gap-4">
               {/* Thumbnail Preview */}
               <div className="flex-shrink-0">
-                <div className="w-32 h-20 bg-zinc-800/50 border border-zinc-700/50 rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="w-32 h-20 bg-[#1a1724]/50 border border-white/15/50 rounded-lg overflow-hidden flex items-center justify-center">
                   {formData.thumbnailUrl || thumbnailPreview ? (
                     <img
                       src={formData.thumbnailUrl || thumbnailPreview}
@@ -422,9 +422,9 @@ export default function AddMediaModal({ isOpen, onClose }) {
                     }
                   }}
                   placeholder={formData.type === 'video' ? 'Auto-detected from YouTube/Vimeo' : 'https://...'}
-                  className="w-full px-4 py-3 bg-zinc-800/30 border border-zinc-700/50 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                  className="w-full px-4 py-3 bg-[#1a1724]/30 border border-white/15/50 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
                 />
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-white/50">
                   {detectedPlatform ? (
                     <span className="text-green-400">
                       ✓ Thumbnail auto-detected from {detectedPlatform === 'youtube' ? 'YouTube' : 'Vimeo'}
@@ -446,7 +446,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
                       setDetectedPlatform(null);
                       lastFetchedUrl.current = ''; // Allow re-fetch
                     }}
-                    className="text-xs text-zinc-500 hover:text-zinc-300 underline"
+                    className="text-xs text-white/50 hover:text-zinc-300 underline"
                   >
                     Clear thumbnail
                   </button>
@@ -457,7 +457,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-zinc-800/50 bg-zinc-900/50 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-white/10/50 bg-[#12101a]/50 flex items-center justify-between">
           <p className="text-xs text-zinc-600">
             <span className="text-red-500">*</span> Required fields
           </p>
@@ -465,7 +465,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              className="px-4 py-2 text-white/60 hover:text-white hover:bg-[#1a1724] rounded-lg transition-colors"
             >
               Cancel
             </button>

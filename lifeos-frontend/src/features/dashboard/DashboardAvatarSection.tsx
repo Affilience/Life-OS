@@ -35,7 +35,7 @@ export function DashboardAvatarSection({ user }: { user: UserStats }) {
   });
 
   return (
-    <section className="relative rounded-2xl border border-white/10 bg-[#0a0e1a] p-6 overflow-hidden">
+    <section className="relative rounded-2xl border border-white/10 bg-[#0c0a10] p-6 overflow-hidden">
       <div className="relative flex flex-col lg:flex-row gap-6 items-center">
         <div className="relative">
           <RealisticCosmicAvatar
@@ -56,7 +56,7 @@ export function DashboardAvatarSection({ user }: { user: UserStats }) {
         <div className="flex-1 space-y-3 min-w-0">
           <div>
             <div className="text-2xl font-bold text-white mb-1">Level {user.level}</div>
-            <div className="text-sm text-gray-400">{user.xp} / {user.xpToNext} XP</div>
+            <div className="text-sm text-white/60">{user.xp} / {user.xpToNext} XP</div>
           </div>
 
           <div className="relative h-3 bg-white/5 rounded-full overflow-hidden">
@@ -68,15 +68,15 @@ export function DashboardAvatarSection({ user }: { user: UserStats }) {
 
           <div className="flex gap-4 text-sm">
             <div>
-              <span className="text-gray-400">Streak:</span>{' '}
+              <span className="text-white/60">Streak:</span>{' '}
               <span className="text-amber-400 font-semibold">{user.streakDays} days</span>
             </div>
             <div>
-              <span className="text-gray-400">Season:</span>{' '}
+              <span className="text-white/60">Season:</span>{' '}
               <span className="text-violet-400 font-semibold capitalize">{user.season}</span>
             </div>
             <div>
-              <span className="text-gray-400">Mood:</span>{' '}
+              <span className="text-white/60">Mood:</span>{' '}
               <span className="text-cyan-400 font-semibold capitalize">{user.mood}</span>
             </div>
           </div>

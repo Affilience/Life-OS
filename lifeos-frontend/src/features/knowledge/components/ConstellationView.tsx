@@ -100,7 +100,7 @@ export function ConstellationView({ constellations, connections, onStarClick, se
                 />
                 <div>
                   <h3 className="text-white font-semibold">{hoveredStar.title}</h3>
-                  <p className="text-xs text-gray-400">{hoveredStar.collectionName}</p>
+                  <p className="text-xs text-white/60">{hoveredStar.collectionName}</p>
                 </div>
               </div>
             </div>
@@ -112,7 +112,7 @@ export function ConstellationView({ constellations, connections, onStarClick, se
       <div className="absolute top-6 left-6 z-10">
         <div className="cosmic-panel cosmic-border rounded-xl p-4 backdrop-blur-md">
           <h2 className="text-xl font-bold cosmic-title mb-2">Knowledge Cosmos</h2>
-          <p className="text-sm text-gray-400 mb-3">
+          <p className="text-sm text-white/60 mb-3">
             {constellations.reduce((sum, c) => sum + c.stars.length, 0)} stars across{' '}
             {constellations.length} constellations
           </p>
@@ -124,7 +124,7 @@ export function ConstellationView({ constellations, connections, onStarClick, se
                   style={{ backgroundColor: constellation.color }}
                 />
                 <span className="text-xs text-gray-300">{constellation.name}</span>
-                <span className="text-xs text-gray-500">({constellation.stars.length})</span>
+                <span className="text-xs text-white/50">({constellation.stars.length})</span>
               </div>
             ))}
           </div>
@@ -134,7 +134,7 @@ export function ConstellationView({ constellations, connections, onStarClick, se
       {/* Controls hint */}
       <div className="absolute bottom-6 right-6 z-10">
         <div className="cosmic-panel cosmic-border rounded-xl p-4 backdrop-blur-md">
-          <p className="text-xs text-gray-400 mb-2">Controls:</p>
+          <p className="text-xs text-white/60 mb-2">Controls:</p>
           <p className="text-xs text-gray-300">🖱️ Drag to rotate</p>
           <p className="text-xs text-gray-300">🔍 Scroll to zoom</p>
           <p className="text-xs text-gray-300">✨ Click stars to expand</p>

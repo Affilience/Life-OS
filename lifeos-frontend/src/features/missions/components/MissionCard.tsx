@@ -110,16 +110,16 @@ export function MissionCard({ mission, onComplete, onUpdateProgress }: MissionCa
             <div key={objective.id} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <Target className={`w-4 h-4 ${completed ? 'text-green-400' : 'text-gray-400'}`} />
+                  <Target className={`w-4 h-4 ${completed ? 'text-green-400' : 'text-white/60'}`} />
                   <span className={completed ? 'text-green-300' : 'text-gray-300'}>
                     {objective.description}
                   </span>
                 </div>
-                <span className={`font-semibold ${completed ? 'text-green-400' : 'text-gray-400'}`}>
+                <span className={`font-semibold ${completed ? 'text-green-400' : 'text-white/60'}`}>
                   {progress}/{objective.target}
                 </span>
               </div>
-              <div className="h-2 bg-gray-800/50 rounded-full overflow-hidden">
+              <div className="h-2 bg-[#1a1724]/50 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
@@ -153,7 +153,7 @@ export function MissionCard({ mission, onComplete, onUpdateProgress }: MissionCa
         {/* Time / Complete Button */}
         <div className="flex items-center gap-3">
           {mission.expiresAt && !isCompleted && (
-            <div className="flex items-center gap-1 text-xs text-gray-400">
+            <div className="flex items-center gap-1 text-xs text-white/60">
               <Clock className="w-3 h-3" />
               {getTimeRemaining()}
             </div>

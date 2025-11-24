@@ -48,8 +48,8 @@ export function QuestCard({
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2 }}
       className={`
-        relative bg-zinc-900 rounded-lg border border-zinc-800
-        ${isActive ? 'hover:border-zinc-700 hover:shadow-lg' : ''}
+        relative bg-[#12101a] rounded-lg border border-white/10
+        ${isActive ? 'hover:border-white/15 hover:shadow-lg' : ''}
         transition-all duration-200
       `}
       style={{
@@ -67,7 +67,7 @@ export function QuestCard({
         {!isClaimed && (
           <div
             {...dragHandleProps}
-            className="cursor-grab active:cursor-grabbing text-zinc-600 hover:text-zinc-400 transition-colors pt-1"
+            className="cursor-grab active:cursor-grabbing text-zinc-600 hover:text-white/60 transition-colors pt-1"
           >
             <GripVertical size={16} />
           </div>
@@ -104,7 +104,7 @@ export function QuestCard({
           <h3
             className={`
               font-semibold text-base leading-tight
-              ${isCompleted || isClaimed ? 'line-through text-zinc-500' : 'text-white'}
+              ${isCompleted || isClaimed ? 'line-through text-white/50' : 'text-white'}
             `}
           >
             {quest.title}
@@ -114,7 +114,7 @@ export function QuestCard({
           </h3>
 
           {/* Metadata */}
-          <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-400">
+          <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60">
             <span className={QUEST_KIND_COLORS[quest.kind]}>
               {QUEST_KIND_LABELS[quest.kind]}
             </span>
@@ -133,7 +133,7 @@ export function QuestCard({
             <div className="mt-2">
               <button
                 onClick={() => setShowNotes(!showNotes)}
-                className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-400 transition-colors"
+                className="flex items-center gap-1 text-xs text-white/50 hover:text-white/60 transition-colors"
               >
                 {showNotes ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 Notes
@@ -143,7 +143,7 @@ export function QuestCard({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="mt-1 text-sm text-zinc-400"
+                  className="mt-1 text-sm text-white/60"
                 >
                   {quest.notes}
                 </motion.p>
@@ -165,7 +165,7 @@ export function QuestCard({
 
           {/* Claimed badge */}
           {isClaimed && (
-            <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-xs rounded-full">
+            <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 bg-[#1a1724] text-white/50 text-xs rounded-full">
               <Check size={12} />
               Claimed
             </div>
@@ -177,7 +177,7 @@ export function QuestCard({
           <div className="relative flex-shrink-0">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1 text-zinc-600 hover:text-zinc-400 rounded transition-colors"
+              className="p-1 text-zinc-600 hover:text-white/60 rounded transition-colors"
             >
               <MoreVertical size={16} />
             </button>
@@ -191,14 +191,14 @@ export function QuestCard({
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute right-0 top-8 z-20 w-32 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden"
+                  className="absolute right-0 top-8 z-20 w-32 bg-[#1a1724] border border-white/15 rounded-lg shadow-xl overflow-hidden"
                 >
                   <button
                     onClick={() => {
                       onEdit();
                       setShowMenu(false);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 flex items-center gap-2 transition-colors"
+                    className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-[#221e2e] flex items-center gap-2 transition-colors"
                   >
                     <Edit2 size={14} />
                     Edit
@@ -208,7 +208,7 @@ export function QuestCard({
                       onDelete();
                       setShowMenu(false);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-zinc-700 flex items-center gap-2 transition-colors"
+                    className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#221e2e] flex items-center gap-2 transition-colors"
                   >
                     <Trash2 size={14} />
                     Delete

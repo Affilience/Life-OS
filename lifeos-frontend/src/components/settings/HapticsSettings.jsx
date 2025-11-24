@@ -22,14 +22,14 @@ const HapticsSettings = () => {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
+    <div className="flex items-center justify-between p-4 bg-[#12101a]/50 rounded-lg border border-white/10">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
           <Vibrate size={20} className="text-purple-400" />
         </div>
         <div>
           <h3 className="text-sm font-medium text-white">Haptic Feedback</h3>
-          <p className="text-xs text-zinc-500">Physical vibration on interactions</p>
+          <p className="text-xs text-white/50">Physical vibration on interactions</p>
         </div>
       </div>
 
@@ -38,7 +38,7 @@ const HapticsSettings = () => {
         onClick={handleToggle}
         className={`
           relative w-12 h-6 rounded-full transition-colors duration-200
-          ${enabled ? 'bg-purple-500' : 'bg-zinc-700'}
+          ${enabled ? 'bg-purple-500' : 'bg-[#221e2e]'}
         `}
       >
         <div

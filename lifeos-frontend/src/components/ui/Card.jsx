@@ -16,9 +16,9 @@ const Card = ({
   ...props
 }) => {
   const baseStyles = `
-    bg-zinc-900/40
+    bg-[#12101a]/40
     backdrop-blur-sm
-    border border-zinc-800/50
+    border border-white/10/50
     transition-all duration-[250ms]
   `;
 
@@ -54,7 +54,7 @@ const Card = ({
 Card.Header = ({ children, className = '', ...props }) => {
   return (
     <div
-      className={`pb-4 mb-4 border-b border-zinc-800/50 ${className}`}
+      className={`pb-4 mb-4 border-b border-white/10/50 ${className}`}
       {...props}
     >
       {children}

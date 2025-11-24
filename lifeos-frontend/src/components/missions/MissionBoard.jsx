@@ -24,7 +24,7 @@ export default function MissionBoard() {
       case 'cosmic':
         return 'text-orange-400 border-orange-500/30 bg-orange-500/10';
       default:
-        return 'text-gray-400 border-gray-500/30 bg-gray-500/10';
+        return 'text-white/60 border-gray-500/30 bg-gray-500/10';
     }
   };
 
@@ -79,13 +79,13 @@ export default function MissionBoard() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
             Mission Control
           </h1>
-          <p className="text-gray-400 mt-2">Complete missions to earn XP and Cosmic Credits</p>
+          <p className="text-white/60 mt-2">Complete missions to earn XP and Cosmic Credits</p>
         </div>
-        <div className="bg-[#1a1a1a] border border-purple-500/30 rounded-xl px-6 py-3">
+        <div className="bg-[#1a1724] border border-purple-500/30 rounded-xl px-6 py-3">
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-yellow-400" />
             <span className="text-xl font-bold text-white">{currency?.cosmic_credits || 0}</span>
-            <span className="text-gray-400 text-sm">Credits</span>
+            <span className="text-white/60 text-sm">Credits</span>
           </div>
         </div>
       </div>
@@ -105,13 +105,13 @@ export default function MissionBoard() {
               return (
                 <div
                   key={userMission.id}
-                  className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6 hover:border-purple-500/50 transition-all cursor-pointer"
+                  className="bg-[#1a1724] border border-white/10 rounded-xl p-6 hover:border-purple-500/50 transition-all cursor-pointer"
                 >
                   {/* Mission Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-white mb-1">{mission.title}</h3>
-                      <p className="text-sm text-gray-400 line-clamp-2">{mission.description}</p>
+                      <p className="text-sm text-white/60 line-clamp-2">{mission.description}</p>
                     </div>
                     <div className={`p-2 rounded-lg border ${getDifficultyColor(mission.difficulty)}`}>
                       {getDifficultyIcon(mission.difficulty)}
@@ -121,10 +121,10 @@ export default function MissionBoard() {
                   {/* Progress Bar */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-gray-400">Progress</span>
+                      <span className="text-white/60">Progress</span>
                       <span className="text-purple-400 font-medium">{userMission.completion_percentage}%</span>
                     </div>
-                    <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+                    <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
                         style={{ width: `${userMission.completion_percentage}%` }}
@@ -153,7 +153,7 @@ export default function MissionBoard() {
                     className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${
                       userMission.completion_percentage >= 100
                         ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
-                        : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                        : 'bg-[#221e2e] text-white/60 cursor-not-allowed'
                     }`}
                   >
                     {completeMission.isPending ? (
@@ -185,13 +185,13 @@ export default function MissionBoard() {
           {availableMissions.map((mission) => (
             <div
               key={mission.id}
-              className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6 hover:border-purple-500/50 transition-all"
+              className="bg-[#1a1724] border border-white/10 rounded-xl p-6 hover:border-purple-500/50 transition-all"
             >
               {/* Mission Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-white mb-1">{mission.title}</h3>
-                  <p className="text-sm text-gray-400 line-clamp-3">{mission.description}</p>
+                  <p className="text-sm text-white/60 line-clamp-3">{mission.description}</p>
                 </div>
                 <div className={`p-2 rounded-lg border ${getDifficultyColor(mission.difficulty)}`}>
                   {getDifficultyIcon(mission.difficulty)}
@@ -242,8 +242,8 @@ export default function MissionBoard() {
 
         {availableMissions.length === 0 && (
           <div className="text-center py-12">
-            <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400">No new missions available. Complete active missions to unlock more!</p>
+            <Trophy className="w-16 h-16 text-white/40 mx-auto mb-4" />
+            <p className="text-white/60">No new missions available. Complete active missions to unlock more!</p>
           </div>
         )}
       </div>

@@ -59,14 +59,14 @@ const Button = ({
       active:translate-y-[1px] active:shadow-[0_4px_16px_rgba(0,0,0,0.3)]
     `,
     secondary: `
-      bg-zinc-900 text-white border border-zinc-800
-      hover:bg-zinc-800 hover:border-zinc-700 hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)]
+      bg-[#12101a] text-white border border-white/10
+      hover:bg-[#1a1724] hover:border-white/15 hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)]
       active:translate-y-[1px]
     `,
     ghost: `
-      bg-transparent text-zinc-400
-      hover:bg-zinc-800/50 hover:text-zinc-200
-      active:bg-zinc-800
+      bg-transparent text-white/60
+      hover:bg-[#1a1724]/50 hover:text-zinc-200
+      active:bg-[#1a1724]
     `,
     danger: `
       bg-red-500 text-white

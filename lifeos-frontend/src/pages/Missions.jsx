@@ -46,37 +46,37 @@ const Missions = () => {
   return (
     <div className="min-h-screen pb-24 md:pb-8">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
+      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
         <div className="max-w-7xl mx-auto p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
                 Quest Hub
               </h1>
-              <p className="text-gray-400 text-sm md:text-base mt-1">Your daily missions, achievements, and challenges</p>
+              <p className="text-white/60 text-sm md:text-base mt-1">Your daily missions, achievements, and challenges</p>
             </div>
 
             {/* Quick Stats */}
             <div className="hidden md:flex items-center gap-4">
-              <div className="bg-[#1a1a1a] border border-yellow-500/30 rounded-xl px-4 py-2">
+              <div className="bg-[#1a1724] border border-yellow-500/30 rounded-xl px-4 py-2">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-yellow-400" />
                   <span className="text-lg font-bold text-white">1,240</span>
-                  <span className="text-xs text-gray-400">Credits</span>
+                  <span className="text-xs text-white/60">Credits</span>
                 </div>
               </div>
-              <div className="bg-[#1a1a1a] border border-orange-500/30 rounded-xl px-4 py-2">
+              <div className="bg-[#1a1724] border border-orange-500/30 rounded-xl px-4 py-2">
                 <div className="flex items-center gap-2">
                   <Flame className="w-4 h-4 text-orange-400" />
                   <span className="text-lg font-bold text-white">14</span>
-                  <span className="text-xs text-gray-400">Day Streak</span>
+                  <span className="text-xs text-white/60">Day Streak</span>
                 </div>
               </div>
-              <div className="bg-[#1a1a1a] border border-purple-500/30 rounded-xl px-4 py-2">
+              <div className="bg-[#1a1724] border border-purple-500/30 rounded-xl px-4 py-2">
                 <div className="flex items-center gap-2">
                   <Trophy className="w-4 h-4 text-purple-400" />
                   <span className="text-lg font-bold text-white">37</span>
-                  <span className="text-xs text-gray-400">Achievements</span>
+                  <span className="text-xs text-white/60">Achievements</span>
                 </div>
               </div>
             </div>
@@ -97,7 +97,7 @@ const Missions = () => {
                     whitespace-nowrap transition-all duration-200
                     ${isActive
                       ? `bg-gradient-to-r ${tab.color} text-white shadow-lg`
-                      : 'bg-[#1a1a1a] text-gray-400 hover:text-white hover:bg-[#222] border border-white/10'
+                      : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10'
                     }
                   `}
                 >

@@ -51,7 +51,7 @@ export default function MediaDetailView({ mediaId }) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="text-zinc-500 mb-4">Media not found</div>
+          <div className="text-white/50 mb-4">Media not found</div>
           <button
             onClick={() => setActiveView('media')}
             className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors"
@@ -150,11 +150,11 @@ export default function MediaDetailView({ mediaId }) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="border-b border-zinc-800/50 bg-zinc-900/20 backdrop-blur-sm px-8 py-4">
+      <div className="border-b border-white/10/50 bg-[#12101a]/20 backdrop-blur-sm px-8 py-4">
         <div className="flex items-center justify-between">
           <button
             onClick={() => setActiveView('media')}
-            className="flex items-center gap-2 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-all duration-150"
+            className="flex items-center gap-2 px-3 py-2 text-white/60 hover:text-white hover:bg-[#1a1724]/50 rounded-lg transition-all duration-150"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -163,7 +163,7 @@ export default function MediaDetailView({ mediaId }) {
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 text-xs text-zinc-500 mr-2">
+            <div className="flex items-center gap-2 text-xs text-white/50 mr-2">
               {isSaving ? (
                 <>
                   <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
@@ -179,7 +179,7 @@ export default function MediaDetailView({ mediaId }) {
 
             <button
               onClick={handleDelete}
-              className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all duration-150"
+              className="p-2 text-white/60 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all duration-150"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -198,10 +198,10 @@ export default function MediaDetailView({ mediaId }) {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-8 py-8">
           {/* Media Card */}
-          <div className="bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/50 rounded-xl overflow-hidden mb-8">
+          <div className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-xl overflow-hidden mb-8">
             <div className="grid md:grid-cols-[300px_1fr] gap-6 p-6">
               {/* Thumbnail */}
-              <div className="relative aspect-video md:aspect-[3/4] rounded-lg overflow-hidden bg-zinc-900">
+              <div className="relative aspect-video md:aspect-[3/4] rounded-lg overflow-hidden bg-[#12101a]">
                 {media.thumbnailUrl ? (
                   <img
                     src={media.thumbnailUrl}
@@ -223,16 +223,16 @@ export default function MediaDetailView({ mediaId }) {
                       {media.type}
                     </div>
                     <h1 className="text-2xl font-bold text-white mb-2">{media.title}</h1>
-                    <p className="text-lg text-zinc-400 mb-4">{media.creator}</p>
+                    <p className="text-lg text-white/60 mb-4">{media.creator}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-zinc-800/30 rounded-lg p-4">
+                  <div className="bg-[#1a1724]/30 rounded-lg p-4">
                     <div className="text-xs text-zinc-600 mb-1">Duration</div>
                     <div className="text-sm font-medium text-white">{media.duration}</div>
                   </div>
-                  <div className="bg-zinc-800/30 rounded-lg p-4">
+                  <div className="bg-[#1a1724]/30 rounded-lg p-4">
                     <div className="text-xs text-zinc-600 mb-1">Added</div>
                     <div className="text-sm font-medium text-white">
                       {new Date(media.addedAt).toLocaleDateString()}
@@ -261,9 +261,9 @@ export default function MediaDetailView({ mediaId }) {
           </div>
 
           {/* Notes Section */}
-          <div className="bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/50 rounded-xl p-6">
+          <div className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-4">
-              <svg className="w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -278,7 +278,7 @@ export default function MediaDetailView({ mediaId }) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add your notes, key takeaways, or reflections here..."
-              className="w-full min-h-[300px] text-base text-zinc-200 bg-zinc-800/20 border border-zinc-700/50 rounded-lg p-4 outline-none placeholder-zinc-700 resize-none font-mono leading-relaxed focus:border-cyan-500/50 transition-colors"
+              className="w-full min-h-[300px] text-base text-zinc-200 bg-[#1a1724]/20 border border-white/15/50 rounded-lg p-4 outline-none placeholder-zinc-700 resize-none font-mono leading-relaxed focus:border-cyan-500/50 transition-colors"
               style={{ fontFamily: 'ui-monospace, monospace' }}
             />
 
@@ -288,7 +288,7 @@ export default function MediaDetailView({ mediaId }) {
           </div>
 
           {/* Metadata */}
-          <div className="mt-6 pt-6 border-t border-zinc-800/50">
+          <div className="mt-6 pt-6 border-t border-white/10/50">
             <div className="flex items-center gap-4 text-xs text-zinc-600">
               <span>Created {new Date(media.addedAt).toLocaleString()}</span>
               <span>•</span>

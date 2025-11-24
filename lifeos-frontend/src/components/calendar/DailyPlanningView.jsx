@@ -75,32 +75,32 @@ export default function DailyPlanningView() {
           <Moon className="w-8 h-8 text-purple-400" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">Yesterday's Reflection</h2>
-        <p className="text-zinc-400">Review what you accomplished</p>
+        <p className="text-white/60">Review what you accomplished</p>
       </div>
 
       {yesterdaysBlocks.length === 0 ? (
-        <div className="text-center py-12 text-zinc-500">
+        <div className="text-center py-12 text-white/50">
           <p>No data from yesterday</p>
         </div>
       ) : (
         <>
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-4 text-center">
+            <div className="bg-[#12101a]/60 border border-white/10 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-green-400">
                 {completedYesterday}
               </div>
-              <div className="text-sm text-zinc-500 mt-1">Completed</div>
+              <div className="text-sm text-white/50 mt-1">Completed</div>
             </div>
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-4 text-center">
+            <div className="bg-[#12101a]/60 border border-white/10 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-white">{totalYesterday}</div>
-              <div className="text-sm text-zinc-500 mt-1">Total Blocks</div>
+              <div className="text-sm text-white/50 mt-1">Total Blocks</div>
             </div>
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-4 text-center">
+            <div className="bg-[#12101a]/60 border border-white/10 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-purple-400">
                 {Math.round((completedYesterday / totalYesterday) * 100)}%
               </div>
-              <div className="text-sm text-zinc-500 mt-1">Success Rate</div>
+              <div className="text-sm text-white/50 mt-1">Success Rate</div>
             </div>
           </div>
 
@@ -113,12 +113,12 @@ export default function DailyPlanningView() {
                 .map((block) => (
                   <div
                     key={block.id}
-                    className="flex items-center gap-3 bg-zinc-900/40 border border-zinc-800 rounded-lg p-3"
+                    className="flex items-center gap-3 bg-[#12101a]/40 border border-white/10 rounded-lg p-3"
                   >
                     <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
                     <div className="flex-1">
                       <div className="text-white font-medium">{block.title}</div>
-                      <div className="text-sm text-zinc-500">
+                      <div className="text-sm text-white/50">
                         {block.actualDuration || block.plannedDuration} minutes
                       </div>
                     </div>
@@ -146,12 +146,12 @@ export default function DailyPlanningView() {
           <Sparkles className="w-8 h-8 text-blue-400" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">Import Tasks</h2>
-        <p className="text-zinc-400">Pull in tasks from your projects</p>
+        <p className="text-white/60">Pull in tasks from your projects</p>
       </div>
 
       {unscheduledTasks.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-zinc-400 mb-4">No unscheduled tasks found</p>
+          <p className="text-white/60 mb-4">No unscheduled tasks found</p>
           <button
             onClick={() => setPlanningStep('plan')}
             className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all"
@@ -165,12 +165,12 @@ export default function DailyPlanningView() {
             {unscheduledTasks.slice(0, 10).map((task) => (
               <div
                 key={task.id}
-                className="flex items-start gap-3 bg-zinc-900/40 border border-zinc-800 hover:border-purple-500/50 rounded-lg p-3 cursor-pointer transition-all"
+                className="flex items-start gap-3 bg-[#12101a]/40 border border-white/10 hover:border-purple-500/50 rounded-lg p-3 cursor-pointer transition-all"
               >
                 <Circle className="w-5 h-5 text-zinc-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <div className="text-white font-medium">{task.title}</div>
-                  <div className="text-sm text-zinc-500">{task.projectTitle}</div>
+                  <div className="text-sm text-white/50">{task.projectTitle}</div>
                 </div>
                 <button className="px-3 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded text-sm transition-all">
                   Schedule
@@ -198,7 +198,7 @@ export default function DailyPlanningView() {
           <Sun className="w-8 h-8 text-orange-400" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">Today's Plan</h2>
-        <p className="text-zinc-400">Your schedule for today</p>
+        <p className="text-white/60">Your schedule for today</p>
       </div>
 
       {/* Capacity Check */}
@@ -225,7 +225,7 @@ export default function DailyPlanningView() {
             <div className="text-white font-semibold">
               {plannedMinutes} minutes planned / {availableMinutes} available
             </div>
-            <div className="text-sm text-zinc-400">
+            <div className="text-sm text-white/60">
               {bufferPercentage.toFixed(0)}% buffer time remaining
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function DailyPlanningView() {
           Scheduled blocks ({todaysBlocks.length}):
         </h3>
         {todaysBlocks.length === 0 ? (
-          <div className="text-center py-8 text-zinc-500">
+          <div className="text-center py-8 text-white/50">
             <p>No blocks scheduled yet</p>
             <p className="text-sm mt-2">Click "Add Time Block" to get started</p>
           </div>
@@ -255,12 +255,12 @@ export default function DailyPlanningView() {
               .map((block) => (
                 <div
                   key={block.id}
-                  className="flex items-center gap-3 bg-zinc-900/40 border border-zinc-800 rounded-lg p-3"
+                  className="flex items-center gap-3 bg-[#12101a]/40 border border-white/10 rounded-lg p-3"
                 >
-                  <Clock className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                  <Clock className="w-4 h-4 text-white/50 flex-shrink-0" />
                   <div className="flex-1">
                     <div className="text-white font-medium">{block.title}</div>
-                    <div className="text-sm text-zinc-500">
+                    <div className="text-sm text-white/50">
                       {block.startTime} - {block.endTime} ({block.plannedDuration}m)
                     </div>
                   </div>
@@ -297,34 +297,34 @@ export default function DailyPlanningView() {
 
       <div>
         <h2 className="text-3xl font-bold text-white mb-2">You're All Set!</h2>
-        <p className="text-lg text-zinc-400">
+        <p className="text-lg text-white/60">
           Your cosmic day is planned. Time to execute!
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-4">
+        <div className="bg-[#12101a]/60 border border-white/10 rounded-lg p-4">
           <div className="text-2xl font-bold text-purple-400">{todaysBlocks.length}</div>
-          <div className="text-sm text-zinc-500 mt-1">Time Blocks</div>
+          <div className="text-sm text-white/50 mt-1">Time Blocks</div>
         </div>
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-4">
+        <div className="bg-[#12101a]/60 border border-white/10 rounded-lg p-4">
           <div className="text-2xl font-bold text-blue-400">
             {(plannedMinutes / 60).toFixed(1)}h
           </div>
-          <div className="text-sm text-zinc-500 mt-1">Planned Work</div>
+          <div className="text-sm text-white/50 mt-1">Planned Work</div>
         </div>
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-4">
+        <div className="bg-[#12101a]/60 border border-white/10 rounded-lg p-4">
           <div className="text-2xl font-bold text-green-400">
             {bufferPercentage.toFixed(0)}%
           </div>
-          <div className="text-sm text-zinc-500 mt-1">Buffer Time</div>
+          <div className="text-sm text-white/50 mt-1">Buffer Time</div>
         </div>
       </div>
 
       <div className="pt-6">
         <button
           onClick={() => setPlanningStep('reflect')}
-          className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-all"
+          className="px-6 py-3 bg-[#1a1724] hover:bg-[#221e2e] text-zinc-300 rounded-lg transition-all"
         >
           Start Over
         </button>
@@ -345,16 +345,16 @@ export default function DailyPlanningView() {
                   : index <
                     ['reflect', 'import', 'plan', 'ready'].indexOf(planningStep)
                   ? 'bg-purple-500'
-                  : 'bg-zinc-700'
+                  : 'bg-[#221e2e]'
               }`}
             />
-            {index < 3 && <div className="w-8 h-0.5 bg-zinc-700" />}
+            {index < 3 && <div className="w-8 h-0.5 bg-[#221e2e]" />}
           </React.Fragment>
         ))}
       </div>
 
       {/* Content */}
-      <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6">
+      <div className="bg-[#12101a]/40 border border-white/10 rounded-xl p-6">
         {planningStep === 'reflect' && renderReflectStep()}
         {planningStep === 'import' && renderImportStep()}
         {planningStep === 'plan' && renderPlanStep()}

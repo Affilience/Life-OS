@@ -71,7 +71,7 @@ export function MomentumChainsBoard() {
         <h2 className="text-3xl font-bold cosmic-title mb-2">
           🔥 Momentum Chains
         </h2>
-        <p className="text-gray-400">
+        <p className="text-white/60">
           Build consistency across all life areas. Shields protect your streaks from breaks.
         </p>
       </div>
@@ -87,7 +87,7 @@ export function MomentumChainsBoard() {
               <Flame className="w-5 h-5 text-orange-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Total Streak Days</p>
+              <p className="text-xs text-white/60">Total Streak Days</p>
               <p className="text-2xl font-bold text-white">{totalStreakDays}</p>
             </div>
           </div>
@@ -102,7 +102,7 @@ export function MomentumChainsBoard() {
               <TrendingUp className="w-5 h-5 text-purple-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Longest Active</p>
+              <p className="text-xs text-white/60">Longest Active</p>
               <p className="text-2xl font-bold text-white">{longestActiveStreak}</p>
             </div>
           </div>
@@ -117,7 +117,7 @@ export function MomentumChainsBoard() {
               <CalendarIcon className="w-5 h-5 text-green-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Active Chains</p>
+              <p className="text-xs text-white/60">Active Chains</p>
               <p className="text-2xl font-bold text-white">{activeChains}/{chains.length}</p>
             </div>
           </div>
@@ -132,7 +132,7 @@ export function MomentumChainsBoard() {
               <Award className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Total Shields</p>
+              <p className="text-xs text-white/60">Total Shields</p>
               <p className="text-2xl font-bold text-white">{totalShields}</p>
             </div>
           </div>
@@ -191,7 +191,7 @@ export function MomentumChainsBoard() {
               `}
             >
               <div className="text-2xl font-bold text-white mb-1">{milestone.days}</div>
-              <div className="text-xs text-gray-400 mb-1">{milestone.tier}</div>
+              <div className="text-xs text-white/60 mb-1">{milestone.tier}</div>
               <div className="text-xs font-semibold text-green-400">{milestone.reward}</div>
             </div>
           ))}

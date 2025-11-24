@@ -163,14 +163,14 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 px-6 py-4">
+      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5 px-6 py-4">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
           <SettingsIcon className="w-6 h-6 text-purple-400" />
           Settings
         </h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-sm text-white/60 mt-1">
           Manage your account and preferences
         </p>
       </div>
@@ -184,7 +184,7 @@ export default function Settings() {
             </div>
             <div className="flex-1">
               <h3 className="text-white font-semibold mb-1">Privacy First</h3>
-              <p className="text-sm text-gray-400 mb-3">
+              <p className="text-sm text-white/60 mb-3">
                 All data is encrypted and stored locally. You own everything.
               </p>
               <div className="flex gap-2">
@@ -207,7 +207,7 @@ export default function Settings() {
           return (
             <div
               key={section.id}
-              className="bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden"
+              className="bg-[#1a1724] border border-white/10 rounded-xl overflow-hidden"
             >
               {/* Section Header */}
               <button
@@ -220,11 +220,11 @@ export default function Settings() {
                   </div>
                   <div className="text-left">
                     <h3 className="text-white font-semibold">{section.title}</h3>
-                    <p className="text-xs text-gray-500">{section.items.length} options</p>
+                    <p className="text-xs text-white/50">{section.items.length} options</p>
                   </div>
                 </div>
                 <ChevronRight
-                  className={`w-5 h-5 text-gray-400 transition-transform ${
+                  className={`w-5 h-5 text-white/60 transition-transform ${
                     isExpanded ? 'rotate-90' : ''
                   }`}
                 />
@@ -243,7 +243,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="text-white font-medium">{item.label}</div>
-                          <div className="text-sm text-gray-400 mt-0.5">{item.description}</div>
+                          <div className="text-sm text-white/60 mt-0.5">{item.description}</div>
                         </div>
 
                         {item.toggle ? (
@@ -262,7 +262,7 @@ export default function Settings() {
                             />
                           </button>
                         ) : (
-                          <ChevronRight className="w-5 h-5 text-gray-500" />
+                          <ChevronRight className="w-5 h-5 text-white/50" />
                         )}
                       </div>
                     </div>
@@ -274,13 +274,13 @@ export default function Settings() {
         })}
 
         {/* Danger Zone */}
-        <div className="bg-[#1a1a1a] border border-red-500/20 rounded-xl overflow-hidden">
+        <div className="bg-[#1a1724] border border-red-500/20 rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-red-500/20 bg-red-500/5">
             <h3 className="text-white font-semibold flex items-center gap-2">
               <Shield className="w-5 h-5 text-red-400" />
               Danger Zone
             </h3>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-white/60 mt-1">
               Irreversible actions - proceed with caution
             </p>
           </div>
@@ -299,10 +299,10 @@ export default function Settings() {
                       <Icon className={`w-5 h-5 text-${item.color}-400`} />
                       <div>
                         <div className={`text-white font-medium`}>{item.label}</div>
-                        <div className="text-sm text-gray-400 mt-0.5">{item.description}</div>
+                        <div className="text-sm text-white/60 mt-0.5">{item.description}</div>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-500" />
+                    <ChevronRight className="w-5 h-5 text-white/50" />
                   </div>
                 </button>
               );
@@ -311,7 +311,7 @@ export default function Settings() {
         </div>
 
         {/* Version Info */}
-        <div className="text-center text-sm text-gray-500 pt-4">
+        <div className="text-center text-sm text-white/50 pt-4">
           <p>Quanta v1.0.0 Beta</p>
           <p className="text-xs mt-1">Personal Operating System</p>
         </div>

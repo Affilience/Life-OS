@@ -62,14 +62,14 @@ export function QuestAddInline({ defaultXp = 50, onCreate, prefill }: QuestAddIn
     <motion.form
       layout
       onSubmit={handleSubmit}
-      className="bg-zinc-900 rounded-lg border border-zinc-800 p-3 transition-all duration-200"
+      className="bg-[#12101a] rounded-lg border border-white/10 p-3 transition-all duration-200"
       style={{
         boxShadow: isFocused ? '0 0 0 2px rgba(122, 92, 255, 0.3)' : 'none',
       }}
     >
       {/* Title input */}
       <div className="flex items-center gap-2">
-        <Plus size={18} className="text-zinc-500" />
+        <Plus size={18} className="text-white/50" />
         <input
           ref={inputRef}
           type="text"
@@ -90,15 +90,15 @@ export function QuestAddInline({ defaultXp = 50, onCreate, prefill }: QuestAddIn
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="mt-3 flex flex-wrap items-center gap-3 pt-3 border-t border-zinc-800"
+            className="mt-3 flex flex-wrap items-center gap-3 pt-3 border-t border-white/10"
           >
             {/* Kind select */}
             <div className="flex items-center gap-2">
-              <label className="text-xs text-zinc-500">Type:</label>
+              <label className="text-xs text-white/50">Type:</label>
               <select
                 value={kind}
                 onChange={(e) => setKind(e.target.value as QuestKind)}
-                className="bg-zinc-800 text-white text-sm rounded px-2 py-1 border border-zinc-700 focus:border-violet-500 focus:outline-none"
+                className="bg-[#1a1724] text-white text-sm rounded px-2 py-1 border border-white/15 focus:border-violet-500 focus:outline-none"
               >
                 {Object.entries(QUEST_KIND_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -110,11 +110,11 @@ export function QuestAddInline({ defaultXp = 50, onCreate, prefill }: QuestAddIn
 
             {/* Priority select */}
             <div className="flex items-center gap-2">
-              <label className="text-xs text-zinc-500">Priority:</label>
+              <label className="text-xs text-white/50">Priority:</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as QuestPriority)}
-                className="bg-zinc-800 text-white text-sm rounded px-2 py-1 border border-zinc-700 focus:border-violet-500 focus:outline-none"
+                className="bg-[#1a1724] text-white text-sm rounded px-2 py-1 border border-white/15 focus:border-violet-500 focus:outline-none"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -124,11 +124,11 @@ export function QuestAddInline({ defaultXp = 50, onCreate, prefill }: QuestAddIn
 
             {/* XP select */}
             <div className="flex items-center gap-2">
-              <label className="text-xs text-zinc-500">XP:</label>
+              <label className="text-xs text-white/50">XP:</label>
               <select
                 value={xp}
                 onChange={(e) => setXp(Number(e.target.value))}
-                className="bg-zinc-800 text-white text-sm rounded px-2 py-1 border border-zinc-700 focus:border-violet-500 focus:outline-none"
+                className="bg-[#1a1724] text-white text-sm rounded px-2 py-1 border border-white/15 focus:border-violet-500 focus:outline-none"
               >
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -139,12 +139,12 @@ export function QuestAddInline({ defaultXp = 50, onCreate, prefill }: QuestAddIn
 
             {/* Due time */}
             <div className="flex items-center gap-2">
-              <label className="text-xs text-zinc-500">Due:</label>
+              <label className="text-xs text-white/50">Due:</label>
               <input
                 type="time"
                 value={dueTime}
                 onChange={(e) => setDueTime(e.target.value)}
-                className="bg-zinc-800 text-white text-sm rounded px-2 py-1 border border-zinc-700 focus:border-violet-500 focus:outline-none"
+                className="bg-[#1a1724] text-white text-sm rounded px-2 py-1 border border-white/15 focus:border-violet-500 focus:outline-none"
               />
             </div>
 

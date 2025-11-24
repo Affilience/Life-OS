@@ -86,7 +86,7 @@ export default function JournalNew() {
   const hasActiveFilters = filters.search || filters.tags.length > 0;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6 md:p-8 animate-fade-in">
+    <div className="min-h-screen bg-[#0c0a10] text-white p-6 md:p-8 animate-fade-in">
       {/* Simplified Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -94,7 +94,7 @@ export default function JournalNew() {
             <h1 className="text-2xl font-bold text-white mb-1">
               Starlog
             </h1>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-white/50">
               {entryCount} entries · {weeklyEntries} this week
               {streakInfo.current > 0 && ` · ${streakInfo.current} day streak 🔥`}
             </p>
@@ -114,7 +114,7 @@ export default function JournalNew() {
       <div className="mb-6 space-y-4">
         <div className="flex items-center gap-3">
           {/* Search Input */}
-          <div className="flex-1 flex items-center gap-2 bg-zinc-900/50 border border-zinc-800/50 rounded-lg px-4 py-2.5 focus-within:border-violet-500/30 transition-colors">
+          <div className="flex-1 flex items-center gap-2 bg-[#12101a]/50 border border-white/10/50 rounded-lg px-4 py-2.5 focus-within:border-violet-500/30 transition-colors">
             <Search size={18} className="text-zinc-600" />
             <input
               type="text"
@@ -130,7 +130,7 @@ export default function JournalNew() {
                   setSearchInput('');
                   setFilters({ search: '' });
                 }}
-                className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                className="text-zinc-600 hover:text-white/60 transition-colors"
               >
                 <X size={16} />
               </button>
@@ -143,7 +143,7 @@ export default function JournalNew() {
             className={`px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors text-sm ${
               showFilters || filters.tags.length > 0
                 ? 'bg-violet-500/20 border border-violet-500/30 text-violet-400'
-                : 'bg-zinc-900/50 border border-zinc-800/50 text-zinc-400 hover:text-white'
+                : 'bg-[#12101a]/50 border border-white/10/50 text-white/60 hover:text-white'
             }`}
           >
             <TagIcon size={16} />
@@ -159,7 +159,7 @@ export default function JournalNew() {
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="px-4 py-2.5 bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+              className="px-4 py-2.5 bg-[#1a1724]/50 hover:bg-[#221e2e]/50 text-white/60 hover:text-white rounded-lg transition-colors text-sm flex items-center gap-2"
             >
               <X size={16} />
               <span>Clear</span>
@@ -169,7 +169,7 @@ export default function JournalNew() {
 
         {/* Tag Filter Pills */}
         {showFilters && availableTags.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-4 bg-zinc-900/30 rounded-lg border border-zinc-800/30">
+          <div className="flex flex-wrap gap-2 p-4 bg-[#12101a]/30 rounded-lg border border-white/10/30">
             <span className="text-xs text-zinc-600 mr-2">Filter by tag:</span>
             {availableTags.map((tag) => (
               <button
@@ -178,7 +178,7 @@ export default function JournalNew() {
                 className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
                   filters.tags.includes(tag)
                     ? 'bg-violet-500/20 border border-violet-500/30 text-violet-400'
-                    : 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600/50'
+                    : 'bg-[#1a1724]/50 border border-white/15/50 text-white/50 hover:text-zinc-300 hover:border-zinc-600/50'
                 }`}
               >
                 #{tag}
@@ -189,10 +189,10 @@ export default function JournalNew() {
 
         {/* Active Filters Display */}
         {hasActiveFilters && (
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="flex items-center gap-2 text-xs text-white/50">
             <span>Active filters:</span>
             {filters.search && (
-              <span className="px-2 py-1 bg-zinc-800/50 rounded text-zinc-400">
+              <span className="px-2 py-1 bg-[#1a1724]/50 rounded text-white/60">
                 Search: "{filters.search}"
               </span>
             )}

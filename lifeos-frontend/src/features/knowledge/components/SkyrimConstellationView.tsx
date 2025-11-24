@@ -193,7 +193,7 @@ export function SkyrimConstellationView({
                 />
                 <div>
                   <h3 className="text-white font-semibold text-lg">{hoveredStar.title}</h3>
-                  <p className="text-sm text-gray-400">{hoveredStar.type}</p>
+                  <p className="text-sm text-white/60">{hoveredStar.type}</p>
                 </div>
               </div>
             </div>

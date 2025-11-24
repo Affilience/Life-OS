@@ -97,7 +97,7 @@ function UniverseView({
         <h1 className="text-5xl font-bold cosmic-title mb-2">
           Knowledge Universe
         </h1>
-        <p className="text-gray-400 text-lg">
+        <p className="text-white/60 text-lg">
           Click any constellation to explore its knowledge
         </p>
       </motion.div>
@@ -397,7 +397,7 @@ function GridView({
               </motion.button>
               <div>
                 <h2 className="text-3xl font-bold cosmic-title">{constellation.name}</h2>
-                <p className="text-gray-400">{constellation.stars.length} items in this collection</p>
+                <p className="text-white/60">{constellation.stars.length} items in this collection</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -429,8 +429,8 @@ function GridView({
         {/* Empty state */}
         {constellation.stars.length === 0 && (
           <div className="text-center py-20">
-            <Grid3x3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400">No items in this constellation yet</p>
+            <Grid3x3 className="w-16 h-16 text-white/40 mx-auto mb-4" />
+            <p className="text-white/60">No items in this constellation yet</p>
           </div>
         )}
       </div>

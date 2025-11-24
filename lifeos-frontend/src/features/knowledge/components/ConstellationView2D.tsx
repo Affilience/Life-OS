@@ -137,7 +137,7 @@ export function ConstellationView2D({
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: constellation.color }}
                   />
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-white/60">
                     {constellation.stars.length} {constellation.stars.length === 1 ? 'star' : 'stars'}
                   </span>
                 </div>
@@ -195,7 +195,7 @@ export function ConstellationView2D({
                 />
                 <div>
                   <h3 className="text-white font-semibold">{hoveredStar.title}</h3>
-                  <p className="text-xs text-gray-400">{hoveredStar.collectionName}</p>
+                  <p className="text-xs text-white/60">{hoveredStar.collectionName}</p>
                 </div>
               </div>
             </div>

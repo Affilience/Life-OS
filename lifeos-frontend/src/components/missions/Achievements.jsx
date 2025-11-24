@@ -257,7 +257,7 @@ export default function Achievements() {
             <h2 className="text-2xl font-bold text-white mb-1">
               Achievement Collection
             </h2>
-            <p className="text-gray-400">
+            <p className="text-white/60">
               {unlockedCount}/{ACHIEVEMENTS.length} achievements unlocked
             </p>
           </div>
@@ -267,20 +267,20 @@ export default function Achievements() {
                 <Trophy className="w-6 h-6" />
                 <span className="text-3xl font-bold">{unlockedCount}</span>
               </div>
-              <p className="text-xs text-gray-400">Unlocked</p>
+              <p className="text-xs text-white/60">Unlocked</p>
             </div>
             <div className="text-right">
               <div className="flex items-center gap-2 text-green-400">
                 <TrendingUp className="w-6 h-6" />
                 <span className="text-3xl font-bold">+{totalXP}</span>
               </div>
-              <p className="text-xs text-gray-400">Total XP</p>
+              <p className="text-xs text-white/60">Total XP</p>
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="mt-4 h-3 bg-[#0a0a0a] rounded-full overflow-hidden">
+        <div className="mt-4 h-3 bg-[#0c0a10] rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 transition-all duration-500"
             style={{ width: `${(unlockedCount / ACHIEVEMENTS.length) * 100}%` }}
@@ -306,7 +306,7 @@ export default function Achievements() {
                 whitespace-nowrap transition-all duration-200
                 ${isActive
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                  : 'bg-[#1a1a1a] text-gray-400 hover:text-white hover:bg-[#222] border border-white/10'
+                  : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10'
                 }
               `}
             >
@@ -334,7 +334,7 @@ export default function Achievements() {
             <div
               key={achievement.id}
               className={`
-                relative bg-[#1a1a1a] border rounded-xl p-5 transition-all duration-200
+                relative bg-[#1a1724] border rounded-xl p-5 transition-all duration-200
                 ${achievement.unlocked
                   ? `border-${rarity.glow.split('-')[1]} ${rarity.glow} hover:scale-[1.02]`
                   : 'border-white/10 opacity-75'
@@ -357,13 +357,13 @@ export default function Achievements() {
                   relative p-4 rounded-xl
                   ${achievement.unlocked
                     ? `bg-gradient-to-br ${achievement.color}`
-                    : 'bg-gray-800'
+                    : 'bg-[#1a1724]'
                   }
                 `}>
                   {achievement.unlocked ? (
                     <Icon className="w-8 h-8 text-white" />
                   ) : (
-                    <Lock className="w-8 h-8 text-gray-600" />
+                    <Lock className="w-8 h-8 text-white/40" />
                   )}
 
                   {achievement.unlocked && achievement.rarity === 'legendary' && (
@@ -375,7 +375,7 @@ export default function Achievements() {
                   <h4 className="text-lg font-semibold text-white mb-1">
                     {achievement.title}
                   </h4>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-white/60">
                     {achievement.description}
                   </p>
                 </div>
@@ -385,12 +385,12 @@ export default function Achievements() {
               {!achievement.unlocked && achievement.total > 0 && (
                 <div className="mb-4 space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Progress</span>
+                    <span className="text-white/60">Progress</span>
                     <span className="text-purple-400 font-medium">
                       {achievement.progress}/{achievement.total}
                     </span>
                   </div>
-                  <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+                  <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r ${achievement.color} transition-all duration-300`}
                       style={{ width: `${progress}%` }}
@@ -413,7 +413,7 @@ export default function Achievements() {
                 </div>
 
                 {achievement.unlocked && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-white/50">
                     {new Date(achievement.unlockedAt).toLocaleDateString()}
                   </span>
                 )}

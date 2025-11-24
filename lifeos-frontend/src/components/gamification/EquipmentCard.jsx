@@ -40,7 +40,7 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
   return (
     <motion.div
       whileHover={{ scale: 1.03, y: -4 }}
-      className="bg-gray-800/50 backdrop-blur-sm rounded-xl border-2 p-4 relative overflow-hidden cursor-pointer"
+      className="bg-[#1a1724]/50 backdrop-blur-sm rounded-xl border-2 p-4 relative overflow-hidden cursor-pointer"
       style={{ borderColor: rarityColor }}
       onClick={isEquipped ? onUnequip : onEquip}
     >
@@ -60,7 +60,7 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
       {/* Content */}
       <div className="relative z-10">
         {/* Item image */}
-        <div className="w-full aspect-square rounded-lg bg-gray-900/50 mb-3 flex items-center justify-center overflow-hidden border border-gray-700/50">
+        <div className="w-full aspect-square rounded-lg bg-[#12101a]/50 mb-3 flex items-center justify-center overflow-hidden border border-white/15/50">
           {item.image_path ? (
             <img
               src={item.image_path}
@@ -82,7 +82,7 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
             >
               {item.name}
             </h3>
-            <span className="text-xs text-gray-400 uppercase">
+            <span className="text-xs text-white/60 uppercase">
               {item.slot}
             </span>
           </div>
@@ -100,7 +100,7 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
               {item.rarity}
             </span>
             {item.required_level > 1 && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-white/60">
                 Req. Level {item.required_level}
               </span>
             )}
@@ -109,7 +109,7 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
 
         {/* Description */}
         {item.description && (
-          <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+          <p className="text-sm text-white/60 mb-3 line-clamp-2">
             {item.description}
           </p>
         )}
@@ -136,17 +136,17 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
 
         {/* Set bonus info */}
         {item.set_name && (
-          <div className="pt-3 border-t border-gray-700/50">
+          <div className="pt-3 border-t border-white/15/50">
             <p className="text-xs text-amber-400 font-semibold mb-1">
               ✨ {item.set_name} Set
             </p>
             {item.set_bonus_3pc && (
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-white/60">
                 (3) {item.set_bonus_3pc}
               </p>
             )}
             {item.set_bonus_5pc && (
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-white/60">
                 (5) {item.set_bonus_5pc}
               </p>
             )}
@@ -155,8 +155,8 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
 
         {/* Lore text */}
         {item.lore_text && (
-          <div className="mt-3 pt-3 border-t border-gray-700/50">
-            <p className="text-xs text-gray-500 italic">
+          <div className="mt-3 pt-3 border-t border-white/15/50">
+            <p className="text-xs text-white/50 italic">
               "{item.lore_text}"
             </p>
           </div>
@@ -191,7 +191,7 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
 export function EquipmentGrid({ equipment = [], equippedIds = [], onEquip, onUnequip, columns = 3 }) {
   if (!equipment || equipment.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-white/60">
         <div className="text-6xl mb-3">📦</div>
         <p className="text-lg">No equipment yet</p>
         <p className="text-sm mt-1">Unlock equipment by leveling up and completing achievements!</p>

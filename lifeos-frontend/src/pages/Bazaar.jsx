@@ -187,15 +187,15 @@ export default function Bazaar() {
   const filteredRewards = getFilteredRewards();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
+      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
         <div className="px-6 py-4">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <ShoppingBag className="w-6 h-6 text-yellow-400" />
             Reward Bazaar
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-white/60 mt-1">
             Spend your hard-earned credits on rewards
           </p>
         </div>
@@ -205,7 +205,7 @@ export default function Bazaar() {
           <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-gray-400">Available Credits</div>
+                <div className="text-sm text-white/60">Available Credits</div>
                 <div className="text-3xl font-bold text-white flex items-center gap-2">
                   <Sparkles className="w-6 h-6 text-yellow-400" />
                   {userCredits.toLocaleString()}
@@ -222,13 +222,13 @@ export default function Bazaar() {
         <div className="px-6 pb-3 space-y-3">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
             <input
               type="text"
               placeholder="Search rewards..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#1a1a1a] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
+              className="w-full pl-10 pr-4 py-2 bg-[#1a1724] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
             />
           </div>
 
@@ -239,7 +239,7 @@ export default function Bazaar() {
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
                 sortBy === 'affordable'
                   ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                  : 'bg-[#1a1a1a] text-gray-400 border border-white/10 hover:border-white/20'
+                  : 'bg-[#1a1724] text-white/60 border border-white/10 hover:border-white/20'
               }`}
             >
               <CheckCircle className="w-4 h-4" />
@@ -247,7 +247,7 @@ export default function Bazaar() {
             </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-[#1a1a1a] text-gray-400 border border-white/10 hover:border-white/20 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-[#1a1724] text-white/60 border border-white/10 hover:border-white/20 transition-colors"
             >
               <Filter className="w-4 h-4" />
               Sort
@@ -272,7 +272,7 @@ export default function Bazaar() {
                   className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
                     sortBy === option.id
                       ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                      : 'bg-[#1a1a1a] text-gray-400 border border-white/10'
+                      : 'bg-[#1a1724] text-white/60 border border-white/10'
                   }`}
                 >
                   {option.label}
@@ -297,7 +297,7 @@ export default function Bazaar() {
                   whitespace-nowrap transition-all duration-200
                   ${isActive
                     ? 'bg-white/10 text-white shadow-lg border border-white/20'
-                    : 'bg-[#1a1a1a] text-gray-400 hover:text-white hover:bg-[#222] border border-white/10'
+                    : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10'
                   }
                 `}
                 style={isActive ? { borderColor: cat.color + '40', backgroundColor: cat.color + '20' } : {}}
@@ -326,7 +326,7 @@ export default function Bazaar() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ y: -4, scale: 1.02 }}
-                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5 cursor-pointer transition-all hover:border-white/20"
+                className="bg-[#1a1724] border border-white/10 rounded-2xl p-5 cursor-pointer transition-all hover:border-white/20"
                 style={{
                   boxShadow: canAfford ? `0 0 20px ${affordability.color}20` : 'none'
                 }}
@@ -337,15 +337,15 @@ export default function Bazaar() {
 
                 {/* Reward Details */}
                 <h3 className="text-base font-semibold text-white mb-1">{reward.name}</h3>
-                <p className="text-xs text-gray-400 mb-4 line-clamp-2">{reward.description}</p>
+                <p className="text-xs text-white/60 mb-4 line-clamp-2">{reward.description}</p>
 
                 {/* Progress Bar */}
                 <div className="mb-3">
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-gray-500">{affordability.message}</span>
-                    <span className="text-gray-400">{Math.floor(progress)}%</span>
+                    <span className="text-white/50">{affordability.message}</span>
+                    <span className="text-white/60">{Math.floor(progress)}%</span>
                   </div>
-                  <div className="h-1.5 bg-[#0a0a0a] rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-[#0c0a10] rounded-full overflow-hidden">
                     <div
                       className="h-full transition-all duration-300"
                       style={{
@@ -367,7 +367,7 @@ export default function Bazaar() {
                       flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
                       ${canAfford
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
-                        : 'bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed'
+                        : 'bg-white/5 text-white/50 border border-white/10 cursor-not-allowed'
                       }
                     `}
                     disabled={!canAfford}
@@ -384,8 +384,8 @@ export default function Bazaar() {
         {filteredRewards.length === 0 && (
           <div className="text-center py-20">
             <ShoppingBag className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-            <p className="text-gray-500">No rewards found</p>
-            <p className="text-sm text-gray-600 mt-2">Try adjusting your filters</p>
+            <p className="text-white/50">No rewards found</p>
+            <p className="text-sm text-white/40 mt-2">Try adjusting your filters</p>
           </div>
         )}
       </div>
@@ -404,24 +404,24 @@ export default function Bazaar() {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 max-w-md w-full"
+              className="bg-[#1a1724] border border-white/10 rounded-2xl p-6 max-w-md w-full"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Reward Preview */}
               <div className="text-center mb-6">
                 <div className="text-6xl mb-3">{selectedReward.icon}</div>
                 <h2 className="text-xl font-bold text-white mb-2">{selectedReward.name}</h2>
-                <p className="text-sm text-gray-400">{selectedReward.description}</p>
+                <p className="text-sm text-white/60">{selectedReward.description}</p>
               </div>
 
               {/* Cost Breakdown */}
-              <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-4 mb-6 space-y-2">
+              <div className="bg-[#0c0a10] border border-white/10 rounded-xl p-4 mb-6 space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Current Balance:</span>
+                  <span className="text-white/60">Current Balance:</span>
                   <span className="text-white font-medium">{userCredits} credits</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Reward Cost:</span>
+                  <span className="text-white/60">Reward Cost:</span>
                   <span className="text-red-400 font-medium">-{selectedReward.cost} credits</span>
                 </div>
                 <div className="h-px bg-white/10 my-2" />
@@ -448,7 +448,7 @@ export default function Bazaar() {
                     flex-1 px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2
                     ${userCredits >= selectedReward.cost
                       ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:opacity-90 text-white'
-                      : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                      : 'bg-white/5 text-white/40 cursor-not-allowed'
                     }
                   `}
                 >

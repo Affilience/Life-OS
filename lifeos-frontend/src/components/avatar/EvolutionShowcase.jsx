@@ -60,13 +60,13 @@ export default function EvolutionShowcase() {
   const isUnlocked = (requiredLevel) => currentLevel >= requiredLevel;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
+      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
         <div className="px-6 py-4">
           <button
             onClick={() => navigate('/character')}
-            className="flex items-center gap-2 text-gray-400 hover:text-white mb-3 transition-colors"
+            className="flex items-center gap-2 text-white/60 hover:text-white mb-3 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm">Back to Character</span>
@@ -76,25 +76,25 @@ export default function EvolutionShowcase() {
             <Crown className="w-6 h-6 text-purple-400" />
             Evolution Gallery
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-white/60 mt-1">
             All 40 evolution stages • Current: Stage 10 (Swordsman)
           </p>
         </div>
 
         {/* Level Progress */}
         <div className="px-6 pb-4">
-          <div className="bg-[#1a1a1a] border border-purple-500/30 rounded-xl p-4">
+          <div className="bg-[#1a1724] border border-purple-500/30 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">Your Progress</span>
+              <span className="text-sm text-white/60">Your Progress</span>
               <span className="text-sm font-semibold text-white">Level {currentLevel}</span>
             </div>
-            <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+            <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
                 style={{ width: `${(currentLevel / 80) * 100}%` }}
               />
             </div>
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-xs text-white/50">
               {V3_STAGES.filter(s => isUnlocked(s.level)).length} / {V3_STAGES.length} stages unlocked
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function EvolutionShowcase() {
                 key={stage.stage}
                 onClick={() => setSelectedStage(stage)}
                 className={`
-                  bg-[#1a1a1a] border rounded-2xl p-4 cursor-pointer transition-all
+                  bg-[#1a1724] border rounded-2xl p-4 cursor-pointer transition-all
                   hover:transform hover:-translate-y-1
                   ${isSelected
                     ? 'border-purple-500 shadow-lg shadow-purple-500/20'
@@ -137,7 +137,7 @@ export default function EvolutionShowcase() {
                 </div>
 
                 {/* Avatar Sprite */}
-                <div className="aspect-square bg-[#0a0a0a] rounded-xl mb-3 flex items-center justify-center overflow-hidden relative">
+                <div className="aspect-square bg-[#0c0a10] rounded-xl mb-3 flex items-center justify-center overflow-hidden relative">
                   <img
                     src={getSpritePath(stage)}
                     alt={stage.name}
@@ -161,7 +161,7 @@ export default function EvolutionShowcase() {
                 {/* Level Requirement */}
                 <div className="flex items-center gap-1 text-xs">
                   <Zap className="w-3 h-3 text-purple-400" />
-                  <span className="text-gray-400">
+                  <span className="text-white/60">
                     Level {stage.level}
                   </span>
                 </div>
@@ -178,11 +178,11 @@ export default function EvolutionShowcase() {
           onClick={() => setSelectedStage(null)}
         >
           <div
-            className="bg-[#1a1a1a] border border-purple-500/30 rounded-2xl p-6 max-w-md w-full"
+            className="bg-[#1a1724] border border-purple-500/30 rounded-2xl p-6 max-w-md w-full"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Large Avatar */}
-            <div className="aspect-square bg-[#0a0a0a] rounded-xl mb-4 flex items-center justify-center overflow-hidden">
+            <div className="aspect-square bg-[#0c0a10] rounded-xl mb-4 flex items-center justify-center overflow-hidden">
               <img
                 src={getSpritePath(selectedStage)}
                 alt={selectedStage.name}
@@ -199,7 +199,7 @@ export default function EvolutionShowcase() {
               <h2 className="text-2xl font-bold text-white mb-2">
                 {selectedStage.name}
               </h2>
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-400 mb-4">
+              <div className="flex items-center justify-center gap-2 text-sm text-white/60 mb-4">
                 <Zap className="w-4 h-4 text-purple-400" />
                 <span>Unlocks at Level {selectedStage.level}</span>
               </div>

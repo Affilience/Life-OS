@@ -47,7 +47,7 @@ export default function ProjectsView() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">Stellar Pipeline</h2>
-            <p className="text-zinc-400 text-sm">
+            <p className="text-white/60 text-sm">
               Projects evolve through cosmic stages: Nebula (planning) → Nova (active) → Cosmos (complete)
             </p>
           </div>
@@ -127,11 +127,11 @@ function PipelineColumn({ title, subtitle, color, icon, projects, onMoveProject,
           <h3 className="text-lg font-bold" style={{ color }}>
             {title}
           </h3>
-          <span className="ml-auto text-sm text-zinc-500 bg-zinc-900/50 px-2 py-0.5 rounded">
+          <span className="ml-auto text-sm text-white/50 bg-[#12101a]/50 px-2 py-0.5 rounded">
             {projects.length}
           </span>
         </div>
-        <p className="text-xs text-zinc-500">{subtitle}</p>
+        <p className="text-xs text-white/50">{subtitle}</p>
       </div>
 
       {/* Projects List */}
@@ -172,7 +172,7 @@ function ProjectCard({ project, color, onMove, onDelete, onSelect }) {
 
   return (
     <div
-      className="bg-zinc-900/60 backdrop-blur-sm border border-zinc-800 rounded-lg p-4 hover:border-purple-500/50 transition-all duration-200 cursor-pointer group relative"
+      className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:border-purple-500/50 transition-all duration-200 cursor-pointer group relative"
       onClick={() => onSelect(project.id)}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
@@ -192,19 +192,19 @@ function ProjectCard({ project, color, onMove, onDelete, onSelect }) {
 
       {/* Project Goal */}
       {project.goal && (
-        <p className="text-xs text-zinc-400 mb-3 line-clamp-2">{project.goal}</p>
+        <p className="text-xs text-white/60 mb-3 line-clamp-2">{project.goal}</p>
       )}
 
       {/* Tasks Progress */}
       {totalTasks > 0 && (
         <div className="mb-3">
-          <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
+          <div className="flex items-center justify-between text-xs text-white/50 mb-1">
             <span>Tasks</span>
             <span>
               {completedTasks}/{totalTasks}
             </span>
           </div>
-          <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-[#1a1724] rounded-full overflow-hidden">
             <div
               className="h-full transition-all duration-300 rounded-full"
               style={{
@@ -223,7 +223,7 @@ function ProjectCard({ project, color, onMove, onDelete, onSelect }) {
           {project.tags.slice(0, 2).map((tag) => (
             <span
               key={tag}
-              className="px-2 py-0.5 bg-zinc-800/50 text-zinc-500 text-xs rounded"
+              className="px-2 py-0.5 bg-[#1a1724]/50 text-white/50 text-xs rounded"
             >
               #{tag}
             </span>
@@ -238,7 +238,7 @@ function ProjectCard({ project, color, onMove, onDelete, onSelect }) {
 
       {/* Target Date */}
       {project.targetDate && (
-        <div className="flex items-center gap-1 text-xs text-zinc-500">
+        <div className="flex items-center gap-1 text-xs text-white/50">
           <Calendar className="w-3 h-3" />
           <span>{new Date(project.targetDate).toLocaleDateString()}</span>
         </div>
@@ -246,7 +246,7 @@ function ProjectCard({ project, color, onMove, onDelete, onSelect }) {
 
       {/* Move Actions */}
       {showActions && (
-        <div className="mt-3 pt-3 border-t border-zinc-800 flex gap-2">
+        <div className="mt-3 pt-3 border-t border-white/10 flex gap-2">
           {project.status !== 'nebula' && (
             <button
               onClick={(e) => {
@@ -254,7 +254,7 @@ function ProjectCard({ project, color, onMove, onDelete, onSelect }) {
                 const newStatus = project.status === 'cosmos' ? 'nova' : 'nebula';
                 onMove(project.id, newStatus);
               }}
-              className="flex-1 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded transition-all"
+              className="flex-1 px-2 py-1 bg-[#1a1724] hover:bg-[#221e2e] text-zinc-300 text-xs rounded transition-all"
             >
               ← Move Back
             </button>

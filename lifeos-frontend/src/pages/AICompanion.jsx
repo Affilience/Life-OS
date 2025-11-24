@@ -153,16 +153,16 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-white">
+    <div className="min-h-screen flex flex-col bg-[#0c0a10] text-white">
       {/* Header */}
-      <div className="border-b border-[#2a2a2a] bg-[#111111] px-6 py-4">
+      <div className="border-b border-[#2a2a2a] bg-[#12101a] px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
             <Sparkles size={20} className="text-white" />
           </div>
           <div>
             <h1 className="text-xl font-bold">AI Companion</h1>
-            <p className="text-sm text-gray-400">Your personal LifeOS assistant</p>
+            <p className="text-sm text-white/60">Your personal LifeOS assistant</p>
           </div>
         </div>
       </div>
@@ -184,7 +184,7 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
               className={`max-w-[80%] md:max-w-[60%] rounded-lg px-4 py-3 ${
                 msg.role === 'user'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-[#1a1a1a] text-gray-100 border border-[#2a2a2a]'
+                  : 'bg-[#1a1724] text-gray-100 border border-[#2a2a2a]'
               }`}
             >
               <p className="whitespace-pre-wrap break-words">{msg.content}</p>
@@ -194,7 +194,7 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
             </div>
 
             {msg.role === 'user' && (
-              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#221e2e] flex items-center justify-center flex-shrink-0">
                 <User size={16} className="text-white" />
               </div>
             )}
@@ -207,7 +207,7 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
               <Bot size={16} className="text-white" />
             </div>
-            <div className="max-w-[80%] md:max-w-[60%] rounded-lg px-4 py-3 bg-[#1a1a1a] text-gray-100 border border-[#2a2a2a]">
+            <div className="max-w-[80%] md:max-w-[60%] rounded-lg px-4 py-3 bg-[#1a1724] text-gray-100 border border-[#2a2a2a]">
               <p className="whitespace-pre-wrap break-words">{streamingText}</p>
               <div className="flex items-center gap-1 mt-2">
                 <Loader2 size={12} className="animate-spin text-blue-400" />
@@ -221,7 +221,7 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-[#2a2a2a] bg-[#111111] px-4 py-4">
+      <div className="border-t border-[#2a2a2a] bg-[#12101a] px-4 py-4">
         <div className="max-w-4xl mx-auto flex gap-2">
           <input
             ref={inputRef}
@@ -231,12 +231,12 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
             onKeyPress={handleKeyPress}
             placeholder="Ask me anything about LifeOS..."
             disabled={isLoading}
-            className="flex-1 bg-[#1a1a1a] text-white border border-[#2a2a2a] rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-[#1a1724] text-white border border-[#2a2a2a] rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg px-6 py-3 font-medium transition-colors flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-[#221e2e] disabled:cursor-not-allowed text-white rounded-lg px-6 py-3 font-medium transition-colors flex items-center gap-2"
           >
             {isLoading ? (
               <Loader2 size={20} className="animate-spin" />
@@ -245,7 +245,7 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
             )}
           </button>
         </div>
-        <p className="text-xs text-gray-500 text-center mt-2">
+        <p className="text-xs text-white/50 text-center mt-2">
           Powered by Claude 3.5 Sonnet
         </p>
       </div>

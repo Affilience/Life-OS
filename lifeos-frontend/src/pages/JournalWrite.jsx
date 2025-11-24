@@ -123,7 +123,7 @@ export default function JournalWrite() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0c0a10] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500" />
       </div>
     );
@@ -131,16 +131,16 @@ export default function JournalWrite() {
 
   return (
     <motion.div
-      className="min-h-screen bg-zinc-950 text-white"
+      className="min-h-screen bg-[#0c0a10] text-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
       onKeyDown={handleKeyDown}
     >
       {/* Minimal Header - accounts for sidebar */}
-      <div className="fixed top-16 left-[280px] right-0 z-50 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/30">
+      <div className="fixed top-16 left-[280px] right-0 z-50 bg-[#0c0a10]/95 backdrop-blur-sm border-b border-white/10/30">
         <div className="max-w-5xl mx-auto px-8 py-5 flex items-center justify-between">
-          <div className="text-sm text-zinc-500">{dateLabel}</div>
+          <div className="text-sm text-white/50">{dateLabel}</div>
 
           <div className="flex items-center gap-3">
             <button
@@ -154,7 +154,7 @@ export default function JournalWrite() {
 
             <button
               onClick={handleClose}
-              className="p-2.5 text-zinc-500 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors"
+              className="p-2.5 text-white/50 hover:text-white hover:bg-[#1a1724]/50 rounded-lg transition-colors"
             >
               <X size={20} />
             </button>
@@ -190,7 +190,7 @@ export default function JournalWrite() {
           />
 
           {/* Tags Section */}
-          <div className="pt-8 border-t border-zinc-800/30">
+          <div className="pt-8 border-t border-white/10/30">
             <div className="flex items-center gap-2 mb-3">
               <TagIcon size={16} className="text-zinc-600" />
               <span className="text-sm text-zinc-600">Tags</span>
@@ -224,12 +224,12 @@ export default function JournalWrite() {
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagInputKeyDown}
                 placeholder="Add a tag..."
-                className="flex-1 px-4 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-lg text-zinc-300 placeholder-zinc-700 focus:outline-none focus:border-violet-500/30 transition-colors text-sm"
+                className="flex-1 px-4 py-2 bg-[#12101a]/50 border border-white/10/50 rounded-lg text-zinc-300 placeholder-zinc-700 focus:outline-none focus:border-violet-500/30 transition-colors text-sm"
               />
               <button
                 onClick={handleAddTag}
                 disabled={!tagInput.trim()}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#1a1724] hover:bg-[#221e2e] text-white/60 hover:text-white rounded-lg transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 Add
               </button>

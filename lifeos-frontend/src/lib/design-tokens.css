@@ -1,36 +1,37 @@
 /**
- * LifeOS Design System - "Refined Dark" Aesthetic
+ * LifeOS Design System - "Cosmic Violet" Aesthetic
  *
  * A modern, dark-mode productivity system with gamification elements.
- * Inspired by: Linear × Notion × GitHub × Modern Gaming UIs
+ * Inspired by: Linear × Discord × Arc Browser × Modern Gaming UIs
  *
- * Tone: clean, focused, motivating, professional
+ * Tone: immersive, focused, premium, cosmic
  * Core emotional goal: "Level up through focused action."
  *
- * Research Sources:
- * - Dark Mode Best Practices 2025 (Muksalcreative, Appinventiv)
- * - Notion/Linear/GitHub Color Systems
- * - Gaming & Gamification Color Palettes
+ * Color Philosophy:
+ * - Violet/Purple as primary accent (gaming, progression, wisdom)
+ * - Subtle blue tint in dark backgrounds (reduces eye strain)
+ * - Desaturated module colors for harmony
+ * - Consistent depth through layered backgrounds
  */
 
 :root[data-theme="dark"], :root {
   /* ============================================================================
-     1.1 COLOR PALETTE - Refined Dark Mode
+     1.1 COLOR PALETTE - Cosmic Violet Theme
      ============================================================================ */
 
-  /* Backgrounds (Research-backed for eye comfort) */
-  /* Using #181A1B instead of pure black - reduces eye strain */
-  --bg-0: #0a0a0a;           /* Root background - Deep, not pure black */
-  --bg-1: #111111;           /* Primary surface */
-  --bg-2: #1a1a1a;           /* Card surface - Subtle elevation */
-  --bg-elevated: #222222;    /* Elevated cards/modals */
-  --bg-hover: #2a2a2a;       /* Hover states */
-  --bg-tertiary: #2d2d2d;    /* Additional depth layer */
+  /* Backgrounds (Dark with visible violet undertone) */
+  --bg-0: #0c0a10;           /* Root background - Deep purple-black */
+  --bg-1: #12101a;           /* Primary surface - Noticeable violet tint */
+  --bg-2: #1a1724;           /* Card surface - Elevated with purple */
+  --bg-elevated: #221e2e;    /* Modals, dropdowns */
+  --bg-hover: #2a2538;       /* Hover states */
+  --bg-tertiary: #322c42;    /* Additional depth layer */
+  --bg-active: #3a3350;      /* Active/pressed states */
 
   /* Text (87/60/38 Opacity System - Material Design standard) */
-  --text-primary: rgba(255, 255, 255, 0.87);    /* High emphasis - 87% */
-  --text-secondary: rgba(255, 255, 255, 0.60);  /* Medium emphasis - 60% */
-  --text-muted: rgba(255, 255, 255, 0.38);      /* Low emphasis - 38% */
+  --text-primary: rgba(255, 255, 255, 0.92);    /* High emphasis - 92% */
+  --text-secondary: rgba(255, 255, 255, 0.64);  /* Medium emphasis - 64% */
+  --text-muted: rgba(255, 255, 255, 0.40);      /* Low emphasis - 40% */
   --text-disabled: rgba(255, 255, 255, 0.24);   /* Disabled - 24% */
 
   /* Legacy aliases for compatibility */
@@ -38,89 +39,89 @@
   --text-med: var(--text-secondary);
   --text-dim: var(--text-muted);
 
-  /* Primary Accents (Electric Blue - Professional yet energizing) */
-  --primary-50: #e3f2fd;
-  --primary-100: #bbdefb;
-  --primary-200: #90caf9;
-  --primary-300: #64b5f6;
-  --primary-400: #42a5f5;
-  --primary-500: #2196f3;     /* Main primary */
-  --primary-600: #1e88e5;
-  --primary-700: #1976d2;
-  --primary-800: #1565c0;
-  --primary-900: #0d47a1;
+  /* Primary Accent (Violet - Premium, gaming, wisdom) */
+  --primary-50: #f3e8ff;
+  --primary-100: #e9d5ff;
+  --primary-200: #d8b4fe;
+  --primary-300: #c084fc;
+  --primary-400: #a855f7;
+  --primary-500: #8b5cf6;     /* Main primary - Vibrant violet */
+  --primary-600: #7c3aed;
+  --primary-700: #6d28d9;
+  --primary-800: #5b21b6;
+  --primary-900: #4c1d95;
 
-  /* Success (Vibrant Green - Achievement & Growth) */
-  --success-50: #e8f5e9;
-  --success-100: #c8e6c9;
-  --success-200: #a5d6a7;
-  --success-300: #81c784;
-  --success-400: #66bb6a;
-  --success-500: #4caf50;     /* Main success */
-  --success-600: #43a047;
-  --success-700: #388e3c;
-  --success-800: #2e7d32;
-  --success-900: #1b5e20;
+  /* Success (Emerald - Achievement & Growth, desaturated for dark mode) */
+  --success-50: #ecfdf5;
+  --success-100: #d1fae5;
+  --success-200: #a7f3d0;
+  --success-300: #6ee7b7;
+  --success-400: #34d399;
+  --success-500: #10b981;     /* Main success - Emerald */
+  --success-600: #059669;
+  --success-700: #047857;
+  --success-800: #065f46;
+  --success-900: #064e3b;
 
-  /* Warning (Warm Amber - Attention without alarm) */
-  --warning-50: #fff8e1;
-  --warning-100: #ffecb3;
-  --warning-200: #ffe082;
-  --warning-300: #ffd54f;
-  --warning-400: #ffca28;
-  --warning-500: #ffc107;     /* Main warning */
-  --warning-600: #ffb300;
-  --warning-700: #ffa000;
-  --warning-800: #ff8f00;
-  --warning-900: #ff6f00;
+  /* Warning (Amber - Warm attention, works well on dark) */
+  --warning-50: #fffbeb;
+  --warning-100: #fef3c7;
+  --warning-200: #fde68a;
+  --warning-300: #fcd34d;
+  --warning-400: #fbbf24;
+  --warning-500: #f59e0b;     /* Main warning - Amber */
+  --warning-600: #d97706;
+  --warning-700: #b45309;
+  --warning-800: #92400e;
+  --warning-900: #78350f;
 
-  /* Error (Soft Red - Clear but not harsh) */
-  --error-50: #ffebee;
-  --error-100: #ffcdd2;
-  --error-200: #ef9a9a;
-  --error-300: #e57373;
-  --error-400: #ef5350;
-  --error-500: #f44336;       /* Main error */
-  --error-600: #e53935;
-  --error-700: #d32f2f;
-  --error-800: #c62828;
-  --error-900: #b71c1c;
+  /* Error (Rose - Softer red, easier on eyes in dark mode) */
+  --error-50: #fff1f2;
+  --error-100: #ffe4e6;
+  --error-200: #fecdd3;
+  --error-300: #fda4af;
+  --error-400: #fb7185;
+  --error-500: #f43f5e;       /* Main error - Rose */
+  --error-600: #e11d48;
+  --error-700: #be123c;
+  --error-800: #9f1239;
+  --error-900: #881337;
 
-  /* XP & Leveling (Vibrant Purple - Gaming/RPG feel) */
-  --xp-50: #f3e5f5;
-  --xp-100: #e1bee7;
-  --xp-200: #ce93d8;
-  --xp-300: #ba68c8;
-  --xp-400: #ab47bc;
-  --xp-500: #9c27b0;          /* Main XP color */
-  --xp-600: #8e24aa;
-  --xp-700: #7b1fa2;
-  --xp-800: #6a1b9a;
-  --xp-900: #4a148c;
+  /* XP & Leveling (Uses primary violet for consistency) */
+  --xp-50: var(--primary-50);
+  --xp-100: var(--primary-100);
+  --xp-200: var(--primary-200);
+  --xp-300: var(--primary-300);
+  --xp-400: var(--primary-400);
+  --xp-500: var(--primary-500);   /* Main XP - Same as primary */
+  --xp-600: var(--primary-600);
+  --xp-700: var(--primary-700);
+  --xp-800: var(--primary-800);
+  --xp-900: var(--primary-900);
 
-  /* Streak & Fire (Orange - Energy & Consistency) */
-  --streak-50: #fff3e0;
-  --streak-100: #ffe0b2;
-  --streak-200: #ffcc80;
-  --streak-300: #ffb74d;
-  --streak-400: #ffa726;
-  --streak-500: #ff9800;      /* Main streak */
-  --streak-600: #fb8c00;
-  --streak-700: #f57c00;
-  --streak-800: #ef6c00;
-  --streak-900: #e65100;
+  /* Streak & Fire (Orange/Coral - Energy & Consistency) */
+  --streak-50: #fff7ed;
+  --streak-100: #ffedd5;
+  --streak-200: #fed7aa;
+  --streak-300: #fdba74;
+  --streak-400: #fb923c;
+  --streak-500: #f97316;      /* Main streak - Orange */
+  --streak-600: #ea580c;
+  --streak-700: #c2410c;
+  --streak-800: #9a3412;
+  --streak-900: #7c2d12;
 
-  /* Credits & Currency (Gold - Valuable rewards) */
-  --credit-50: #fffde7;
-  --credit-100: #fff9c4;
-  --credit-200: #fff59d;
-  --credit-300: #fff176;
-  --credit-400: #ffee58;
-  --credit-500: #ffeb3b;      /* Main credit */
-  --credit-600: #fdd835;
-  --credit-700: #fbc02d;
-  --credit-800: #f9a825;
-  --credit-900: #f57f17;
+  /* Credits & Currency (Gold/Amber - Valuable rewards) */
+  --credit-50: #fefce8;
+  --credit-100: #fef9c3;
+  --credit-200: #fef08a;
+  --credit-300: #fde047;
+  --credit-400: #facc15;
+  --credit-500: #eab308;      /* Main credit - Yellow */
+  --credit-600: #ca8a04;
+  --credit-700: #a16207;
+  --credit-800: #854d0e;
+  --credit-900: #713f12;
 
   /* Structural (Refined borders and dividers) */
   --border: rgba(255, 255, 255, 0.10);        /* Default border */
@@ -131,101 +132,113 @@
   --overlay: rgba(0, 0, 0, 0.6);              /* Modal/dialog overlays */
 
   /* ============================================================================
-     1.2 MODULE-SPECIFIC COLORS
+     1.2 MODULE-SPECIFIC COLORS (Harmonized, desaturated for dark mode)
      ============================================================================ */
 
-  /* Health & Fitness (Green - Vitality) */
-  --color-health-50: var(--success-50);
-  --color-health-100: var(--success-100);
-  --color-health-200: var(--success-200);
-  --color-health-300: var(--success-300);
-  --color-health-400: var(--success-400);
-  --color-health-500: var(--success-500);
-  --color-health-600: var(--success-600);
-  --color-health-700: var(--success-700);
-  --color-health-800: var(--success-800);
-  --color-health-900: var(--success-900);
+  /* Health & Fitness (Emerald - Vitality & Growth) */
+  --color-health-50: #ecfdf5;
+  --color-health-100: #d1fae5;
+  --color-health-200: #a7f3d0;
+  --color-health-300: #6ee7b7;
+  --color-health-400: #34d399;
+  --color-health-500: #10b981;     /* Emerald */
+  --color-health-600: #059669;
+  --color-health-700: #047857;
+  --color-health-800: #065f46;
+  --color-health-900: #064e3b;
 
-  /* Productivity & Business (Blue - Focus) */
-  --color-productivity-50: var(--primary-50);
-  --color-productivity-100: var(--primary-100);
-  --color-productivity-200: var(--primary-200);
-  --color-productivity-300: var(--primary-300);
-  --color-productivity-400: var(--primary-400);
-  --color-productivity-500: var(--primary-500);
-  --color-productivity-600: var(--primary-600);
-  --color-productivity-700: var(--primary-700);
-  --color-productivity-800: var(--primary-800);
-  --color-productivity-900: var(--primary-900);
+  /* Productivity & Business (Indigo - Focus & Depth) */
+  --color-productivity-50: #eef2ff;
+  --color-productivity-100: #e0e7ff;
+  --color-productivity-200: #c7d2fe;
+  --color-productivity-300: #a5b4fc;
+  --color-productivity-400: #818cf8;
+  --color-productivity-500: #6366f1;     /* Indigo */
+  --color-productivity-600: #4f46e5;
+  --color-productivity-700: #4338ca;
+  --color-productivity-800: #3730a3;
+  --color-productivity-900: #312e81;
 
-  /* Knowledge & Learning (Purple - Wisdom) */
-  --color-knowledge-50: var(--xp-50);
-  --color-knowledge-100: var(--xp-100);
-  --color-knowledge-200: var(--xp-200);
-  --color-knowledge-300: var(--xp-300);
-  --color-knowledge-400: var(--xp-400);
-  --color-knowledge-500: var(--xp-500);
-  --color-knowledge-600: var(--xp-600);
-  --color-knowledge-700: var(--xp-700);
-  --color-knowledge-800: var(--xp-800);
-  --color-knowledge-900: var(--xp-900);
+  /* Knowledge & Learning (Violet - Wisdom, uses primary) */
+  --color-knowledge-50: var(--primary-50);
+  --color-knowledge-100: var(--primary-100);
+  --color-knowledge-200: var(--primary-200);
+  --color-knowledge-300: var(--primary-300);
+  --color-knowledge-400: var(--primary-400);
+  --color-knowledge-500: var(--primary-500);
+  --color-knowledge-600: var(--primary-600);
+  --color-knowledge-700: var(--primary-700);
+  --color-knowledge-800: var(--primary-800);
+  --color-knowledge-900: var(--primary-900);
 
-  /* Financial (Gold/Yellow - Prosperity) */
-  --color-financial-50: var(--credit-50);
-  --color-financial-100: var(--credit-100);
-  --color-financial-200: var(--credit-200);
-  --color-financial-300: var(--credit-300);
-  --color-financial-400: var(--credit-400);
-  --color-financial-500: var(--credit-500);
-  --color-financial-600: var(--credit-600);
-  --color-financial-700: var(--credit-700);
-  --color-financial-800: var(--credit-800);
-  --color-financial-900: var(--credit-900);
+  /* Financial (Amber - Prosperity & Wealth) */
+  --color-financial-50: #fffbeb;
+  --color-financial-100: #fef3c7;
+  --color-financial-200: #fde68a;
+  --color-financial-300: #fcd34d;
+  --color-financial-400: #fbbf24;
+  --color-financial-500: #f59e0b;     /* Amber */
+  --color-financial-600: #d97706;
+  --color-financial-700: #b45309;
+  --color-financial-800: #92400e;
+  --color-financial-900: #78350f;
 
-  /* Journal & Diary (Teal - Reflection) */
-  --color-journal-50: #e0f2f1;
-  --color-journal-100: #b2dfdb;
-  --color-journal-200: #80cbc4;
-  --color-journal-300: #4db6ac;
-  --color-journal-400: #26a69a;
-  --color-journal-500: #009688;
-  --color-journal-600: #00897b;
-  --color-journal-700: #00796b;
-  --color-journal-800: #00695c;
-  --color-journal-900: #004d40;
+  /* Journal & Diary (Slate/Cool Gray - Reflection & Calm) */
+  --color-journal-50: #f8fafc;
+  --color-journal-100: #f1f5f9;
+  --color-journal-200: #e2e8f0;
+  --color-journal-300: #cbd5e1;
+  --color-journal-400: #94a3b8;
+  --color-journal-500: #64748b;     /* Slate - Neutral, calming */
+  --color-journal-600: #475569;
+  --color-journal-700: #334155;
+  --color-journal-800: #1e293b;
+  --color-journal-900: #0f172a;
 
-  /* Calendar & Time (Red - Urgency & Time) */
-  --color-calendar-50: var(--error-50);
-  --color-calendar-100: var(--error-100);
-  --color-calendar-200: var(--error-200);
-  --color-calendar-300: var(--error-300);
-  --color-calendar-400: var(--error-400);
-  --color-calendar-500: var(--error-500);
-  --color-calendar-600: var(--error-600);
-  --color-calendar-700: var(--error-700);
-  --color-calendar-800: var(--error-800);
-  --color-calendar-900: var(--error-900);
+  /* Calendar & Time (Rose - Attention without harsh red) */
+  --color-calendar-50: #fff1f2;
+  --color-calendar-100: #ffe4e6;
+  --color-calendar-200: #fecdd3;
+  --color-calendar-300: #fda4af;
+  --color-calendar-400: #fb7185;
+  --color-calendar-500: #f43f5e;     /* Rose */
+  --color-calendar-600: #e11d48;
+  --color-calendar-700: #be123c;
+  --color-calendar-800: #9f1239;
+  --color-calendar-900: #881337;
 
-  /* Skills (Cyan - Development) */
-  --color-skills-50: #e0f7fa;
-  --color-skills-100: #b2ebf2;
-  --color-skills-200: #80deea;
-  --color-skills-300: #4dd0e1;
-  --color-skills-400: #26c6da;
-  --color-skills-500: #00bcd4;
-  --color-skills-600: #00acc1;
-  --color-skills-700: #0097a7;
-  --color-skills-800: #00838f;
-  --color-skills-900: #006064;
+  /* Skills (Cyan - Development & Learning) */
+  --color-skills-50: #ecfeff;
+  --color-skills-100: #cffafe;
+  --color-skills-200: #a5f3fc;
+  --color-skills-300: #67e8f9;
+  --color-skills-400: #22d3ee;
+  --color-skills-500: #06b6d4;     /* Cyan */
+  --color-skills-600: #0891b2;
+  --color-skills-700: #0e7490;
+  --color-skills-800: #155e75;
+  --color-skills-900: #164e63;
+
+  /* Dashboard (Primary Violet - Unified) */
+  --color-dashboard-50: var(--primary-50);
+  --color-dashboard-100: var(--primary-100);
+  --color-dashboard-200: var(--primary-200);
+  --color-dashboard-300: var(--primary-300);
+  --color-dashboard-400: var(--primary-400);
+  --color-dashboard-500: var(--primary-500);
+  --color-dashboard-600: var(--primary-600);
+  --color-dashboard-700: var(--primary-700);
+  --color-dashboard-800: var(--primary-800);
+  --color-dashboard-900: var(--primary-900);
 
   /* Legacy compatibility */
-  --color-productivity: var(--primary-500);
-  --color-health: var(--success-500);
-  --color-knowledge: var(--xp-500);
+  --color-productivity: var(--color-productivity-500);
+  --color-health: var(--color-health-500);
+  --color-knowledge: var(--primary-500);
   --color-journal: var(--color-journal-500);
-  --color-calendar: var(--error-500);
+  --color-calendar: var(--color-calendar-500);
   --color-skills: var(--color-skills-500);
-  --color-financial: var(--credit-500);
+  --color-financial: var(--color-financial-500);
   --color-dashboard: var(--primary-500);
 
   /* ============================================================================
@@ -321,12 +334,12 @@
   --shadow-z1: var(--shadow-sm);
   --shadow-z2: var(--shadow-lg);
 
-  /* Colored shadows for accents */
-  --shadow-primary: 0 4px 16px rgba(33, 150, 243, 0.3);
-  --shadow-success: 0 4px 16px rgba(76, 175, 80, 0.3);
-  --shadow-warning: 0 4px 16px rgba(255, 193, 7, 0.3);
-  --shadow-error: 0 4px 16px rgba(244, 67, 54, 0.3);
-  --shadow-xp: 0 4px 16px rgba(156, 39, 176, 0.3);
+  /* Colored shadows for accents (using new palette) */
+  --shadow-primary: 0 4px 16px rgba(139, 92, 246, 0.25);   /* Violet */
+  --shadow-success: 0 4px 16px rgba(16, 185, 129, 0.25);   /* Emerald */
+  --shadow-warning: 0 4px 16px rgba(245, 158, 11, 0.25);   /* Amber */
+  --shadow-error: 0 4px 16px rgba(244, 63, 94, 0.25);      /* Rose */
+  --shadow-xp: 0 4px 16px rgba(139, 92, 246, 0.3);         /* Violet glow */
 
   /* ============================================================================
      1.6 MOTION & ANIMATION
@@ -353,8 +366,8 @@
      1.7 STATE & INTERACTION
      ============================================================================ */
 
-  /* Focus Ring */
-  --focus-ring: 0 0 0 3px rgba(33, 150, 243, 0.5);
+  /* Focus Ring (Violet to match primary) */
+  --focus-ring: 0 0 0 3px rgba(139, 92, 246, 0.4);
 
   /* Hover State */
   --hover-lift: translateY(-1px);
@@ -443,7 +456,7 @@ p {
    ============================================================================ */
 
 ::selection {
-  background: rgba(33, 150, 243, 0.3);
+  background: rgba(139, 92, 246, 0.3);
   color: var(--text-primary);
 }
 

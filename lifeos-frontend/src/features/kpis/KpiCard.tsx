@@ -89,7 +89,7 @@ export function KpiCard({ definition }: KpiCardProps) {
   return (
     <div
       onClick={() => navigate(definition.detailRoute)}
-      className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 hover:border-zinc-700 hover:shadow-lg transition-all duration-200 cursor-pointer"
+      className="bg-[#12101a] rounded-xl border border-white/10 p-6 hover:border-white/15 hover:shadow-lg transition-all duration-200 cursor-pointer"
       role="button"
       tabIndex={0}
       onKeyPress={(e) => e.key === 'Enter' && navigate(definition.detailRoute)}
@@ -112,7 +112,7 @@ export function KpiCard({ definition }: KpiCardProps) {
                 e.stopPropagation();
                 setRange(definition.id, e.target.value as KpiRange);
               }}
-              className="text-xs bg-zinc-800 text-zinc-400 rounded px-2 py-1 border border-zinc-700 focus:border-violet-500 focus:outline-none"
+              className="text-xs bg-[#1a1724] text-white/60 rounded px-2 py-1 border border-white/15 focus:border-violet-500 focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             >
               {definition.ranges.map((range) => (
@@ -131,7 +131,7 @@ export function KpiCard({ definition }: KpiCardProps) {
           <div className="text-4xl font-bold text-white">
             {formatStat(data.stat, data.meta)}
           </div>
-          <div className="text-sm text-zinc-500 mt-1">{definition.description}</div>
+          <div className="text-sm text-white/50 mt-1">{definition.description}</div>
         </div>
       )}
 
@@ -162,7 +162,7 @@ export function KpiCard({ definition }: KpiCardProps) {
             <div>
               <KpiLine data={data.series} height={100} />
               {data.meta?.goal && (
-                <div className="mt-2 text-xs text-zinc-500">
+                <div className="mt-2 text-xs text-white/50">
                   Goal: {formatHours(data.meta.goal)}/week
                 </div>
               )}

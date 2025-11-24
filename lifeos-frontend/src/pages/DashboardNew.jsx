@@ -112,20 +112,20 @@ export default function DashboardNew() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Top Status Bar - Streak & Credits */}
-      <div className="sticky top-0 z-20 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
+      <div className="sticky top-0 z-20 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-400" />
               <span className="text-sm font-bold text-white">{streak}</span>
-              <span className="text-xs text-gray-400">day streak</span>
+              <span className="text-xs text-white/60">day streak</span>
             </div>
             <div className="flex items-center gap-2">
               <Coins className="w-5 h-5 text-yellow-400" />
               <span className="text-sm font-bold text-white">{credits}</span>
-              <span className="text-xs text-gray-400">credits</span>
+              <span className="text-xs text-white/60">credits</span>
             </div>
           </div>
           <button
@@ -147,7 +147,7 @@ export default function DashboardNew() {
               className="flex-shrink-0 cursor-pointer hover:scale-105 transition-transform relative"
               onClick={() => navigate('/character')}
             >
-              <div className="relative w-44 h-44 bg-[#0a0a0a] rounded-xl flex items-center justify-center p-4">
+              <div className="relative w-44 h-44 bg-[#0c0a10] rounded-xl flex items-center justify-center p-4">
                 {/* Avatar */}
                 <img
                   src="/assets/avatar/evolution/hero_v3_stage_10_swordsman.png"
@@ -184,18 +184,18 @@ export default function DashboardNew() {
                 <span className="text-lg text-purple-400 font-semibold">Lv.{level}</span>
               </div>
 
-              <p className="text-sm text-gray-400 mb-3">
+              <p className="text-sm text-white/60 mb-3">
                 Stage {evolutionStage?.stage || 10} • Warrior Path
                 {activePet && <span className="ml-2 text-purple-400">• with {activePet.name}</span>}
               </p>
 
               {/* XP Bar */}
               <div>
-                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                <div className="flex justify-between text-xs text-white/60 mb-1">
                   <span>{currentXP} XP</span>
                   <span>{xpToNextLevel} XP to Level {level + 1}</span>
                 </div>
-                <div className="h-2.5 bg-[#0a0a0a] rounded-full overflow-hidden border border-purple-500/20">
+                <div className="h-2.5 bg-[#0c0a10] rounded-full overflow-hidden border border-purple-500/20">
                   <div
                     className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 relative overflow-hidden"
                     style={{ width: `${xpPercentage}%` }}
@@ -211,7 +211,7 @@ export default function DashboardNew() {
         {/* Today's Tasks */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-400 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white/60 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" />
               Today's Tasks
             </h3>
@@ -221,7 +221,7 @@ export default function DashboardNew() {
           </div>
 
           {/* Progress Ring */}
-          <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-3">
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4 mb-3">
             <div className="flex items-center gap-4">
               <div className="relative w-16 h-16">
                 <svg className="transform -rotate-90 w-16 h-16">
@@ -253,7 +253,7 @@ export default function DashboardNew() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-white font-medium mb-1">Daily Progress</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-white/60">
                   {completedTasks === totalTasks
                     ? "Perfect! All tasks completed 🎉"
                     : `${totalTasks - completedTasks} task${totalTasks - completedTasks !== 1 ? 's' : ''} remaining`}
@@ -263,7 +263,7 @@ export default function DashboardNew() {
           </div>
 
           {/* Task List */}
-          <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 space-y-3">
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4 space-y-3">
             {todaysTasks.map((task) => (
               <div key={task.id} className="flex items-center gap-3 group">
                 <button
@@ -277,11 +277,11 @@ export default function DashboardNew() {
                   {task.done && <CheckCircle2 className="w-3 h-3 text-white" />}
                 </button>
                 <div className="flex-1">
-                  <p className={`text-sm ${task.done ? 'line-through text-gray-500' : 'text-white'}`}>
+                  <p className={`text-sm ${task.done ? 'line-through text-white/50' : 'text-white'}`}>
                     {task.title}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-gray-400">{task.module}</span>
+                    <span className="text-xs text-white/60">{task.module}</span>
                     <span className="text-xs text-purple-400">+{task.xp} XP</span>
                   </div>
                 </div>
@@ -292,7 +292,7 @@ export default function DashboardNew() {
 
         {/* Weekly Insights */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-white/60 mb-3 flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             Weekly Insights
           </h3>
@@ -303,12 +303,12 @@ export default function DashboardNew() {
                 <div key={insight.label} className={`${insight.bgColor} border border-white/10 rounded-xl p-4`}>
                   <div className="flex items-start justify-between mb-2">
                     <Icon className={`w-5 h-5 ${insight.color}`} />
-                    <span className={`text-xs font-medium ${insight.trend === 'up' ? 'text-green-400' : 'text-gray-400'}`}>
+                    <span className={`text-xs font-medium ${insight.trend === 'up' ? 'text-green-400' : 'text-white/60'}`}>
                       {insight.change}
                     </span>
                   </div>
                   <div className="text-2xl font-bold text-white mb-1">{insight.value}</div>
-                  <div className="text-xs text-gray-400">{insight.label}</div>
+                  <div className="text-xs text-white/60">{insight.label}</div>
                 </div>
               );
             })}
@@ -317,7 +317,7 @@ export default function DashboardNew() {
 
         {/* Module Health - All Modules */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-white/60 mb-3 flex items-center gap-2">
             <Zap className="w-4 h-4" />
             Module Health
           </h3>
@@ -327,7 +327,7 @@ export default function DashboardNew() {
               return (
                 <div
                   key={module.name}
-                  className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 hover:border-purple-500/30 cursor-pointer transition-all"
+                  className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-purple-500/30 cursor-pointer transition-all"
                   onClick={() => navigate(module.route)}
                 >
                   <div className="flex items-center gap-3 mb-3">
@@ -335,11 +335,11 @@ export default function DashboardNew() {
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-400 mb-0.5">{module.name}</div>
+                      <div className="text-xs text-white/60 mb-0.5">{module.name}</div>
                       <div className="text-xl font-bold text-white">{module.score}</div>
                     </div>
                   </div>
-                  <div className="h-1.5 bg-[#0a0a0a] rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-[#0c0a10] rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r ${module.color} transition-all duration-500`}
                       style={{ width: `${module.score}%` }}

@@ -16,7 +16,7 @@ export default function StreakCard({ streak, compact = false }) {
   const nextMilestone = getNextMilestone(streak.current_streak);
 
   const tierColors = {
-    common: 'text-gray-400',
+    common: 'text-white/60',
     uncommon: 'text-green-400',
     rare: 'text-blue-400',
     epic: 'text-purple-400',
@@ -32,7 +32,7 @@ export default function StreakCard({ streak, compact = false }) {
   };
 
   const tierBgColors = {
-    common: 'bg-gray-800/50',
+    common: 'bg-[#1a1724]/50',
     uncommon: 'bg-green-500/10',
     rare: 'bg-blue-500/10',
     epic: 'bg-purple-500/10',
@@ -57,7 +57,7 @@ export default function StreakCard({ streak, compact = false }) {
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
-      className={`bg-gray-800/50 backdrop-blur-sm rounded-xl border ${tierBorderColors[tier]} p-4 relative overflow-hidden`}
+      className={`bg-[#1a1724]/50 backdrop-blur-sm rounded-xl border ${tierBorderColors[tier]} p-4 relative overflow-hidden`}
     >
       {/* Danger indicator */}
       {inDanger && (
@@ -76,7 +76,7 @@ export default function StreakCard({ streak, compact = false }) {
           <h3 className="text-white font-semibold capitalize">
             {streak.module_id?.replace('_', ' ')}
           </h3>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-white/60 mt-0.5">
             {streak.is_global ? 'Global Streak' : 'Module Streak'}
           </p>
         </div>
@@ -93,15 +93,15 @@ export default function StreakCard({ streak, compact = false }) {
           <p className="text-3xl font-bold text-white">
             {streak.current_streak}
           </p>
-          <p className="text-sm text-gray-400">day streak</p>
+          <p className="text-sm text-white/60">day streak</p>
         </div>
       </div>
 
       {/* Stats row */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-700/50">
+      <div className="flex items-center justify-between pt-3 border-t border-white/15/50">
         {/* Best streak */}
         <div>
-          <p className="text-xs text-gray-400">Best</p>
+          <p className="text-xs text-white/60">Best</p>
           <p className="text-sm text-white font-semibold">
             {streak.longest_streak} days
           </p>
@@ -112,7 +112,7 @@ export default function StreakCard({ streak, compact = false }) {
           <div className="flex items-center gap-2">
             <ShieldCheckIcon className="w-5 h-5 text-cyan-400" />
             <div>
-              <p className="text-xs text-gray-400">Shields</p>
+              <p className="text-xs text-white/60">Shields</p>
               <p className="text-sm text-cyan-400 font-semibold">
                 {streak.shield_count}
               </p>
@@ -123,7 +123,7 @@ export default function StreakCard({ streak, compact = false }) {
         {/* Next milestone */}
         {nextMilestone && (
           <div>
-            <p className="text-xs text-gray-400">Next</p>
+            <p className="text-xs text-white/60">Next</p>
             <p className="text-sm text-purple-400 font-semibold">
               {nextMilestone} days
             </p>
@@ -158,7 +158,7 @@ export default function StreakCard({ streak, compact = false }) {
 export function StreakGrid({ streaks, columns = 2 }) {
   if (!streaks || streaks.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-white/60">
         <FireIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
         <p>No active streaks yet</p>
         <p className="text-sm mt-1">Complete daily activities to build streaks!</p>

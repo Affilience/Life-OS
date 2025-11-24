@@ -83,7 +83,7 @@ export default function MediaLibrary() {
                 ${
                   filterType === option.id
                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                    : 'bg-zinc-800/30 text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200 border border-transparent'
+                    : 'bg-[#1a1724]/30 text-white/60 hover:bg-[#1a1724]/50 hover:text-zinc-200 border border-transparent'
                 }
               `}
             >
@@ -95,11 +95,11 @@ export default function MediaLibrary() {
 
         {/* Sort Dropdown */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-500">Sort by:</span>
+          <span className="text-sm text-white/50">Sort by:</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 bg-zinc-800/30 border border-zinc-700/50 rounded-lg text-sm text-zinc-300 focus:outline-none focus:border-cyan-500/50 transition-colors"
+            className="px-3 py-2 bg-[#1a1724]/30 border border-white/15/50 rounded-lg text-sm text-zinc-300 focus:outline-none focus:border-cyan-500/50 transition-colors"
           >
             {sortOptions.map((option) => (
               <option key={option.id} value={option.id}>
@@ -134,7 +134,7 @@ export default function MediaLibrary() {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-zinc-400 mb-2">
+          <h3 className="text-lg font-medium text-white/60 mb-2">
             No {filterType !== 'all' ? filterType + 's' : 'media'} yet
           </h3>
           <p className="text-sm text-zinc-600">
@@ -147,10 +147,10 @@ export default function MediaLibrary() {
             <div
               key={item.id}
               onClick={() => handleMediaClick(item.id)}
-              className="bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/50 rounded-lg overflow-hidden hover:border-cyan-500/30 transition-all duration-200 cursor-pointer group"
+              className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-lg overflow-hidden hover:border-cyan-500/30 transition-all duration-200 cursor-pointer group"
             >
               {/* Thumbnail */}
-              <div className="relative aspect-video bg-zinc-900">
+              <div className="relative aspect-video bg-[#12101a]">
                 {item.thumbnailUrl ? (
                   <img
                     src={item.thumbnailUrl}
@@ -236,7 +236,7 @@ export default function MediaLibrary() {
                 <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2 group-hover:text-cyan-300 transition-colors">
                   {item.title}
                 </h3>
-                <p className="text-xs text-zinc-500 mb-3">{item.creator}</p>
+                <p className="text-xs text-white/50 mb-3">{item.creator}</p>
 
                 <div className="flex items-center justify-between text-xs text-zinc-600">
                   <span>{new Date(item.addedAt).toLocaleDateString()}</span>
@@ -267,7 +267,7 @@ export default function MediaLibrary() {
 
       {/* Stats Summary */}
       {sortedMedia.length > 0 && (
-        <div className="pt-4 border-t border-zinc-800/50">
+        <div className="pt-4 border-t border-white/10/50">
           <div className="text-sm text-zinc-600">
             Showing {sortedMedia.length} of {media.length} items
           </div>

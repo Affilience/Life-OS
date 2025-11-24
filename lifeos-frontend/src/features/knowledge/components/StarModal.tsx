@@ -117,8 +117,8 @@ export function StarModal({ star, onClose }: StarModalProps) {
                     </div>
                   </motion.div>
                   <div>
-                    <p className="text-sm text-gray-400">{getTypeLabel(star.type)}</p>
-                    <p className="text-xs text-gray-500">{star.collectionName}</p>
+                    <p className="text-sm text-white/60">{getTypeLabel(star.type)}</p>
+                    <p className="text-xs text-white/50">{star.collectionName}</p>
                   </div>
                 </div>
 
@@ -140,13 +140,13 @@ export function StarModal({ star, onClose }: StarModalProps) {
                   className="relative flex flex-wrap gap-4 text-sm"
                 >
                   {star.createdAt && (
-                    <div className="flex items-center gap-2 text-gray-400">
+                    <div className="flex items-center gap-2 text-white/60">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(star.createdAt).toLocaleDateString()}</span>
                     </div>
                   )}
                   {star.connections.length > 0 && (
-                    <div className="flex items-center gap-2 text-gray-400">
+                    <div className="flex items-center gap-2 text-white/60">
                       <LinkIcon className="w-4 h-4" />
                       <span>{star.connections.length} connections</span>
                     </div>
@@ -154,7 +154,7 @@ export function StarModal({ star, onClose }: StarModalProps) {
                   {star.importance !== undefined && (
                     <div className="flex items-center gap-2">
                       <Star className="w-4 h-4" style={{ color: star.color }} />
-                      <span className="text-gray-400">Importance: {star.importance}/10</span>
+                      <span className="text-white/60">Importance: {star.importance}/10</span>
                     </div>
                   )}
                 </motion.div>
@@ -255,7 +255,7 @@ export function StarModal({ star, onClose }: StarModalProps) {
                   </div>
                   <button
                     onClick={onClose}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-white/60 hover:text-white transition-colors"
                   >
                     Press ESC to close
                   </button>

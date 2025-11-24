@@ -84,7 +84,7 @@ export default function PurposeDashboard() {
             <Compass className="w-6 h-6 text-orange-400" />
             Purpose & Values
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-white/60 mt-1">
             Life vision, core values, and long-term direction
           </p>
         </div>
@@ -135,11 +135,11 @@ export default function PurposeDashboard() {
                 <TrendingUp className="w-5 h-5 text-orange-400" />
                 Values Alignment (6 Weeks)
               </h3>
-              <p className="text-xs text-gray-400 mt-1">How well actions align with values</p>
+              <p className="text-xs text-white/60 mt-1">How well actions align with values</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-orange-400">82%</div>
-              <div className="text-xs text-gray-400">current</div>
+              <div className="text-xs text-white/60">current</div>
             </div>
           </div>
           <div className="h-32">
@@ -148,7 +148,7 @@ export default function PurposeDashboard() {
         </div>
 
         {/* Core Values with Alignment */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Heart className="w-5 h-5 text-red-400" />
             Core Values
@@ -166,11 +166,11 @@ export default function PurposeDashboard() {
                       <div className="flex items-start justify-between mb-1">
                         <div>
                           <h4 className="text-white font-semibold">{value.name}</h4>
-                          <p className="text-xs text-gray-400">{value.description}</p>
+                          <p className="text-xs text-white/60">{value.description}</p>
                         </div>
                         <div className="text-right">
                           <div className="text-white font-bold">{value.alignment}%</div>
-                          <div className="text-xs text-gray-400">alignment</div>
+                          <div className="text-xs text-white/60">alignment</div>
                         </div>
                       </div>
                     </div>
@@ -195,18 +195,18 @@ export default function PurposeDashboard() {
           </h3>
           <div className="space-y-4">
             {longTermGoals.map((item, index) => (
-              <div key={index} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4">
+              <div key={index} className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h4 className="text-white font-semibold mb-1">{item.goal}</h4>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <div className="flex items-center gap-2 text-xs text-white/60">
                       <CheckCircle2 className="w-3 h-3 text-green-400" />
                       <span>Latest: {item.milestone}</span>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-white font-bold">{item.progress}%</div>
-                    <div className="text-xs text-gray-400">{item.timeline}</div>
+                    <div className="text-xs text-white/60">{item.timeline}</div>
                   </div>
                 </div>
 
@@ -218,7 +218,7 @@ export default function PurposeDashboard() {
                     />
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-gray-400">Next:</span>
+                    <span className="text-white/60">Next:</span>
                     <span className="text-gray-300">{item.nextStep}</span>
                   </div>
                 </div>
@@ -228,7 +228,7 @@ export default function PurposeDashboard() {
         </div>
 
         {/* Recent Reviews */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Star className="w-5 h-5 text-yellow-400" />
             Recent Reviews
@@ -238,11 +238,11 @@ export default function PurposeDashboard() {
               <div key={index} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                 <div>
                   <p className="text-white font-medium">{review.type}</p>
-                  <p className="text-xs text-gray-400">{review.date}</p>
+                  <p className="text-xs text-white/60">{review.date}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-2xl font-bold text-yellow-400">{review.score}</div>
-                  <div className="text-xs text-gray-400">/ 10</div>
+                  <div className="text-xs text-white/60">/ 10</div>
                 </div>
               </div>
             ))}

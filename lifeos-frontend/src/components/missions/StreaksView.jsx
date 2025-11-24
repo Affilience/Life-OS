@@ -94,7 +94,7 @@ export default function StreaksView() {
             <h2 className="text-2xl font-bold text-white mb-1">
               Momentum Chains
             </h2>
-            <p className="text-gray-400">
+            <p className="text-white/60">
               {totalActiveStreaks} active streaks
             </p>
           </div>
@@ -104,14 +104,14 @@ export default function StreaksView() {
                 <Flame className="w-6 h-6" />
                 <span className="text-3xl font-bold">{longestCurrentStreak}</span>
               </div>
-              <p className="text-xs text-gray-400">Longest Streak</p>
+              <p className="text-xs text-white/60">Longest Streak</p>
             </div>
             <div className="text-right">
               <div className="flex items-center gap-2 text-green-400">
                 <TrendingUp className="w-6 h-6" />
                 <span className="text-3xl font-bold">{totalActiveStreaks}</span>
               </div>
-              <p className="text-xs text-gray-400">Active</p>
+              <p className="text-xs text-white/60">Active</p>
             </div>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function StreaksView() {
             <div
               key={habit.id}
               className={`
-                bg-[#1a1a1a] border rounded-xl p-5 transition-all duration-200
+                bg-[#1a1724] border rounded-xl p-5 transition-all duration-200
                 ${habit.active
                   ? 'border-orange-500/30 hover:border-orange-500/50'
                   : 'border-white/10 opacity-75'
@@ -141,7 +141,7 @@ export default function StreaksView() {
                     <h4 className="text-lg font-semibold text-white">
                       {habit.name}
                     </h4>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-white/60">
                       {habit.totalCompletions} total completions
                     </p>
                   </div>
@@ -161,7 +161,7 @@ export default function StreaksView() {
 
               {/* Week View */}
               <div className="mb-4">
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+                <div className="flex items-center justify-between text-xs text-white/60 mb-2">
                   <span>Last 7 days</span>
                   <span>{habit.weekData.filter(Boolean).length}/7 days</span>
                 </div>
@@ -173,14 +173,14 @@ export default function StreaksView() {
                         flex-1 h-10 rounded flex items-center justify-center
                         ${completed
                           ? `bg-gradient-to-br ${habit.color}`
-                          : 'bg-[#0a0a0a] border border-white/10'
+                          : 'bg-[#0c0a10] border border-white/10'
                         }
                       `}
                     >
                       {completed ? (
                         <CheckCircle2 className="w-4 h-4 text-white" />
                       ) : (
-                        <Circle className="w-4 h-4 text-gray-600" />
+                        <Circle className="w-4 h-4 text-white/40" />
                       )}
                     </div>
                   ))}
@@ -193,19 +193,19 @@ export default function StreaksView() {
                   <div className="text-2xl font-bold text-white">
                     {habit.currentStreak}
                   </div>
-                  <div className="text-xs text-gray-400">Current</div>
+                  <div className="text-xs text-white/60">Current</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-400">
                     {habit.longestStreak}
                   </div>
-                  <div className="text-xs text-gray-400">Best</div>
+                  <div className="text-xs text-white/60">Best</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-400">
                     {completionRate}%
                   </div>
-                  <div className="text-xs text-gray-400">7-day</div>
+                  <div className="text-xs text-white/60">7-day</div>
                 </div>
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function StreaksView() {
           Streak Milestones
         </h3>
 
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6">
+        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-6">
           <div className="space-y-4">
             {MILESTONES.map((milestone, index) => (
               <div key={index} className="flex items-center gap-4">
@@ -229,13 +229,13 @@ export default function StreaksView() {
                   w-10 h-10 rounded-full flex items-center justify-center
                   ${milestone.reached
                     ? 'bg-gradient-to-br from-orange-500 to-red-500'
-                    : 'bg-[#0a0a0a] border border-white/10'
+                    : 'bg-[#0c0a10] border border-white/10'
                   }
                 `}>
                   {milestone.reached ? (
                     <CheckCircle2 className="w-5 h-5 text-white" />
                   ) : (
-                    <Circle className="w-5 h-5 text-gray-600" />
+                    <Circle className="w-5 h-5 text-white/40" />
                   )}
                 </div>
 
@@ -245,11 +245,11 @@ export default function StreaksView() {
                     <div>
                       <div className={`
                         text-lg font-semibold
-                        ${milestone.reached ? 'text-white' : 'text-gray-500'}
+                        ${milestone.reached ? 'text-white' : 'text-white/50'}
                       `}>
                         {milestone.streak} Days - {milestone.label}
                       </div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-white/60">
                         Reward: {milestone.reward}
                       </div>
                     </div>
@@ -280,7 +280,7 @@ export default function StreaksView() {
           <Zap className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="font-semibold text-white mb-1">Streak Tips</h4>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-white/60">
               Maintain your streaks to earn bonus XP multipliers! Each consecutive day completed increases your XP by 2%.
               A 30-day streak gives you a massive 60% XP boost!
             </p>

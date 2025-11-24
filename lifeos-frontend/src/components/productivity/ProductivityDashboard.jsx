@@ -80,14 +80,14 @@ export default function ProductivityDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 px-6 py-4">
+      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5 px-6 py-4">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
           <Zap className="w-6 h-6 text-yellow-400" />
           Productivity Dashboard
         </h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-sm text-white/60 mt-1">
           Deep work, tasks, projects & business metrics
         </p>
       </div>
@@ -143,7 +143,7 @@ export default function ProductivityDashboard() {
                   <Clock className="w-5 h-5 text-purple-400" />
                   Deep Work Hours
                 </h3>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/60 mt-1">
                   Uninterrupted focus time this week
                 </p>
               </div>
@@ -171,13 +171,13 @@ export default function ProductivityDashboard() {
                   <CheckCircle2 className="w-5 h-5 text-green-400" />
                   Tasks Completed
                 </h3>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/60 mt-1">
                   Daily completion rate
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-green-300">60</p>
-                <p className="text-sm text-gray-400">tasks this week</p>
+                <p className="text-sm text-white/60">tasks this week</p>
               </div>
             </div>
             <div className="h-40">
@@ -196,7 +196,7 @@ export default function ProductivityDashboard() {
                   <TrendingUp className="w-5 h-5 text-cyan-400" />
                   Weekly Trend
                 </h3>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-white/60 mt-1">
                   Productivity score over time
                 </p>
               </div>
@@ -216,27 +216,27 @@ export default function ProductivityDashboard() {
 
         {/* Context Switches & Distractions */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#1a1a1a] border border-yellow-500/20 rounded-xl p-4">
+          <div className="bg-[#1a1724] border border-yellow-500/20 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="w-5 h-5 text-yellow-400" />
               <h4 className="text-sm font-semibold text-white">Context Switches</h4>
             </div>
             <p className="text-2xl font-bold text-white">18</p>
-            <p className="text-xs text-gray-400 mt-1">avg/day (↓ 22% from last week)</p>
+            <p className="text-xs text-white/60 mt-1">avg/day (↓ 22% from last week)</p>
           </div>
 
-          <div className="bg-[#1a1a1a] border border-orange-500/20 rounded-xl p-4">
+          <div className="bg-[#1a1724] border border-orange-500/20 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Target className="w-5 h-5 text-orange-400" />
               <h4 className="text-sm font-semibold text-white">Work In Progress</h4>
             </div>
             <p className="text-2xl font-bold text-white">3</p>
-            <p className="text-xs text-gray-400 mt-1">active projects</p>
+            <p className="text-xs text-white/60 mt-1">active projects</p>
           </div>
         </div>
 
         {/* Active Projects */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <h3 className="text-lg font-semibold text-white mb-4">Active Projects</h3>
           <div className="space-y-3">
             {[
@@ -247,16 +247,16 @@ export default function ProductivityDashboard() {
               <div key={index} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-white">{project.name}</span>
-                  <span className="text-xs text-gray-400">{project.deadline}</span>
+                  <span className="text-xs text-white/60">{project.deadline}</span>
                 </div>
-                <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+                <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
                   <div
                     className={`h-full bg-gradient-to-r from-${project.color}-500 to-${project.color}-600 transition-all duration-500`}
                     style={{ width: `${project.progress}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-500">{project.progress}% complete</span>
+                  <span className="text-white/50">{project.progress}% complete</span>
                   <span className={`text-${project.color}-400 font-medium`}>On track</span>
                 </div>
               </div>
@@ -285,7 +285,7 @@ export default function ProductivityDashboard() {
           )}
           <button
             onClick={handleLogTask}
-            className="bg-[#1a1a1a] border border-white/20 text-white p-4 rounded-xl font-semibold hover:bg-white/5 transition-all flex items-center justify-center gap-2 active:scale-95"
+            className="bg-[#1a1724] border border-white/20 text-white p-4 rounded-xl font-semibold hover:bg-white/5 transition-all flex items-center justify-center gap-2 active:scale-95"
           >
             <Plus className="w-5 h-5" />
             Log Task
@@ -305,14 +305,14 @@ export default function ProductivityDashboard() {
               </div>
               <div>
                 <h3 className="text-white font-semibold">Deep Work In Progress</h3>
-                <p className="text-sm text-gray-400">Stay focused and avoid distractions</p>
+                <p className="text-sm text-white/60">Stay focused and avoid distractions</p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-purple-300">
                 {Math.floor(deepWorkDuration / 60)}:{String(deepWorkDuration % 60).padStart(2, '0')}
               </p>
-              <p className="text-xs text-gray-400">minutes elapsed</p>
+              <p className="text-xs text-white/60">minutes elapsed</p>
             </div>
           </div>
         )}
@@ -320,9 +320,9 @@ export default function ProductivityDashboard() {
         {/* Task Modal Placeholder */}
         {showTaskModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1a1a1a] border border-white/20 rounded-2xl p-6 max-w-md w-full">
+            <div className="bg-[#1a1724] border border-white/20 rounded-2xl p-6 max-w-md w-full">
               <h3 className="text-xl font-bold text-white mb-4">Log Task</h3>
-              <p className="text-gray-400 mb-4">Task logging interface coming soon...</p>
+              <p className="text-white/60 mb-4">Task logging interface coming soon...</p>
               <button
                 onClick={() => setShowTaskModal(false)}
                 className="w-full bg-purple-500 text-white py-3 rounded-xl font-semibold hover:bg-purple-600 transition-colors"

@@ -215,7 +215,7 @@ const Skills = () => {
               placeholder="Search skills..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-purple-500/50"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#1a1724]/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-purple-500/50"
             />
           </div>
 
@@ -226,7 +226,7 @@ const Skills = () => {
               className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 filterCategory === 'all'
                   ? 'bg-purple-500 text-white'
-                  : 'bg-slate-800/50 text-slate-400 hover:text-white'
+                  : 'bg-[#1a1724]/50 text-slate-400 hover:text-white'
               }`}
             >
               All Categories
@@ -238,7 +238,7 @@ const Skills = () => {
                 className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   filterCategory === cat.id
                     ? `bg-${cat.color}-500 text-white`
-                    : 'bg-slate-800/50 text-slate-400 hover:text-white'
+                    : 'bg-[#1a1724]/50 text-slate-400 hover:text-white'
                 }`}
               >
                 <span>{cat.icon}</span>
@@ -254,7 +254,7 @@ const Skills = () => {
               className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filterLevel === 'all'
                   ? 'bg-slate-700 text-white'
-                  : 'bg-slate-800/50 text-slate-500 hover:text-white'
+                  : 'bg-[#1a1724]/50 text-slate-500 hover:text-white'
               }`}
             >
               All Levels
@@ -266,7 +266,7 @@ const Skills = () => {
                 className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   filterLevel === level.id
                     ? `bg-${level.color}-500/20 text-${level.color}-400 border border-${level.color}-500/30`
-                    : 'bg-slate-800/50 text-slate-500 hover:text-white'
+                    : 'bg-[#1a1724]/50 text-slate-500 hover:text-white'
                 }`}
               >
                 {level.name}
@@ -285,7 +285,7 @@ const Skills = () => {
             return (
               <div
                 key={skill.id}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-5 hover:border-purple-500/30 transition-all cursor-pointer group"
+                className="bg-[#1a1724]/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-5 hover:border-purple-500/30 transition-all cursor-pointer group"
                 onClick={() => setSelectedSkill(skill)}
               >
                 {/* Header */}
@@ -398,7 +398,7 @@ const Skills = () => {
       {/* Log Practice Modal */}
       {showLogPractice && logPracticeSkill && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
+          <div className="bg-[#12101a] border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="text-3xl">{logPracticeSkill.icon}</div>
@@ -431,7 +431,7 @@ const Skills = () => {
                   value={practiceMinutes}
                   onChange={(e) => setPracticeMinutes(e.target.value)}
                   placeholder="30"
-                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                  className="w-full px-4 py-2.5 bg-[#1a1724] border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
                   autoFocus
                 />
               </div>
@@ -445,7 +445,7 @@ const Skills = () => {
                   onChange={(e) => setPracticeNotes(e.target.value)}
                   placeholder="What did you work on?"
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 resize-none"
+                  className="w-full px-4 py-2.5 bg-[#1a1724] border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 resize-none"
                 />
               </div>
 
@@ -457,7 +457,7 @@ const Skills = () => {
                     setPracticeMinutes('');
                     setPracticeNotes('');
                   }}
-                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-white font-medium transition-colors"
+                  className="flex-1 py-2.5 bg-[#1a1724] hover:bg-slate-700 border border-slate-700 rounded-lg text-white font-medium transition-colors"
                 >
                   Cancel
                 </button>
@@ -476,7 +476,7 @@ const Skills = () => {
       {/* Add Skill Modal (Placeholder) */}
       {showAddSkill && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
+          <div className="bg-[#12101a] border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-white">Add New Skill</h3>
               <button

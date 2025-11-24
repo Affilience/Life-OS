@@ -228,8 +228,8 @@ export const RpmViewer = forwardRef<RpmViewerRef, RpmViewerProps>(
         {/* Stats overlay */}
         <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end text-xs">
           <div className="flex flex-col gap-1">
-            <span className="text-zinc-400">Level {level}</span>
-            <div className="w-32 h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <span className="text-white/60">Level {level}</span>
+            <div className="w-32 h-1 bg-[#1a1724] rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500"
                 style={{ width: `${(xp / xpToNext) * 100}%` }}

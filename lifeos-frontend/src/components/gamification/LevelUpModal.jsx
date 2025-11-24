@@ -40,7 +40,7 @@ export default function LevelUpModal({ isOpen, onClose, data }) {
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
           >
-            <div className="bg-gray-900 rounded-2xl border-2 border-cyan-500/50 p-8 max-w-md w-full pointer-events-auto relative overflow-hidden">
+            <div className="bg-[#12101a] rounded-2xl border-2 border-cyan-500/50 p-8 max-w-md w-full pointer-events-auto relative overflow-hidden">
               {/* Animated background particles */}
               <div className="absolute inset-0 overflow-hidden">
                 {[...Array(20)].map((_, i) => (
@@ -74,7 +74,7 @@ export default function LevelUpModal({ isOpen, onClose, data }) {
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
@@ -100,8 +100,8 @@ export default function LevelUpModal({ isOpen, onClose, data }) {
                   className="my-8 flex items-center justify-center gap-4"
                 >
                   {/* Old Level */}
-                  <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center border-2 border-gray-600">
-                    <span className="text-gray-400 font-bold text-2xl">
+                  <div className="w-20 h-20 rounded-full bg-[#221e2e] flex items-center justify-center border-2 border-gray-600">
+                    <span className="text-white/60 font-bold text-2xl">
                       {oldLevel}
                     </span>
                   </div>
@@ -143,7 +143,7 @@ export default function LevelUpModal({ isOpen, onClose, data }) {
                     <p className="text-white text-lg">
                       Stage {oldStage} → Stage {newStage}
                     </p>
-                    <p className="text-gray-400 text-sm mt-1">
+                    <p className="text-white/60 text-sm mt-1">
                       Your avatar has evolved!
                     </p>
                   </motion.div>

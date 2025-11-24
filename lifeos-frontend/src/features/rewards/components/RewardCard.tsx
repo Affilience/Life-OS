@@ -111,7 +111,7 @@ export function RewardCard({
         <div className="flex items-center gap-2">
           <Coins className="w-5 h-5 text-amber-400" />
           <span className="text-lg font-bold text-amber-300">{cost}</span>
-          <span className="text-sm text-gray-400">Credits</span>
+          <span className="text-sm text-white/60">Credits</span>
         </div>
 
         <motion.button
@@ -124,7 +124,7 @@ export function RewardCard({
             transition-all duration-200
             ${canPurchase
               ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white cosmic-glow cursor-pointer'
-              : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+              : 'bg-[#221e2e]/50 text-white/50 cursor-not-allowed'
             }
           `}
         >

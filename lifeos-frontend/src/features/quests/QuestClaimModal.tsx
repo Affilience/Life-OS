@@ -61,10 +61,10 @@ export function QuestClaimModal({ quest, open, onClose, onConfirm }: QuestClaimM
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl max-w-md w-full overflow-hidden pointer-events-auto"
+              className="bg-[#12101a] border border-white/10 rounded-xl shadow-2xl max-w-md w-full overflow-hidden pointer-events-auto"
             >
               {/* Header */}
-              <div className="relative bg-gradient-to-br from-violet-600/20 to-purple-600/20 p-6 border-b border-zinc-800">
+              <div className="relative bg-gradient-to-br from-violet-600/20 to-purple-600/20 p-6 border-b border-white/10">
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -77,7 +77,7 @@ export function QuestClaimModal({ quest, open, onClose, onConfirm }: QuestClaimM
                 <h2 className="text-2xl font-bold text-center text-white mb-2">
                   Quest Complete!
                 </h2>
-                <p className="text-center text-zinc-400 text-sm">
+                <p className="text-center text-white/60 text-sm">
                   {quest.title}
                 </p>
               </div>
@@ -103,7 +103,7 @@ export function QuestClaimModal({ quest, open, onClose, onConfirm }: QuestClaimM
                 <div className="flex gap-3">
                   <button
                     onClick={onClose}
-                    className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2.5 bg-[#1a1724] hover:bg-[#221e2e] text-white rounded-lg transition-colors"
                   >
                     Cancel
                   </button>

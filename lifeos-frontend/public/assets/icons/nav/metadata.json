@@ -1,0 +1,43 @@
+{
+  "generated": "2025-11-24T21:34:12.577Z",
+  "theme": "Cosmic Violet",
+  "totalIcons": 6,
+  "icons": [
+    {
+      "key": "home",
+      "name": "Home",
+      "filename": "nav_home.png",
+      "path": "/assets/icons/nav/nav_home.png"
+    },
+    {
+      "key": "modules",
+      "name": "Modules",
+      "filename": "nav_modules.png",
+      "path": "/assets/icons/nav/nav_modules.png"
+    },
+    {
+      "key": "character",
+      "name": "Character",
+      "filename": "nav_character.png",
+      "path": "/assets/icons/nav/nav_character.png"
+    },
+    {
+      "key": "social",
+      "name": "Social",
+      "filename": "nav_social.png",
+      "path": "/assets/icons/nav/nav_social.png"
+    },
+    {
+      "key": "quests",
+      "name": "Quests",
+      "filename": "nav_quests.png",
+      "path": "/assets/icons/nav/nav_quests.png"
+    },
+    {
+      "key": "settings",
+      "name": "Settings",
+      "filename": "nav_settings.png",
+      "path": "/assets/icons/nav/nav_settings.png"
+    }
+  ]
+}

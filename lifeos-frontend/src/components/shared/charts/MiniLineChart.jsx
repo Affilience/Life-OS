@@ -113,7 +113,7 @@ export default function MiniLineChart({ data, color = 'purple', filled = true, s
       <div className="flex justify-between mt-2 px-2">
         {data.map((item, index) => (
           index % Math.ceil(data.length / 5) === 0 && (
-            <span key={index} className="text-xs font-medium text-gray-400">
+            <span key={index} className="text-xs font-medium text-white/60">
               {item.label}
             </span>
           )

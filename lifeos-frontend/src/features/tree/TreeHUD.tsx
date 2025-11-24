@@ -24,7 +24,7 @@ export const TreeHUD: React.FC<TreeHUDProps> = ({
   return (
     <div className="flex flex-col gap-2 text-sm">
       {/* Level and XP text */}
-      <div className="flex items-center justify-between text-zinc-400">
+      <div className="flex items-center justify-between text-white/60">
         <span>
           Level {level} • {xp.toLocaleString()} / {xpToNext.toLocaleString()} XP
         </span>
@@ -36,7 +36,7 @@ export const TreeHUD: React.FC<TreeHUDProps> = ({
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-[#1a1724] rounded-full overflow-hidden">
         <motion.div
           className="h-full bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500"
           initial={{ width: '0%' }}

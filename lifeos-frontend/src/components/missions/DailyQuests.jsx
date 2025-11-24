@@ -138,7 +138,7 @@ export default function DailyQuests() {
             <h2 className="text-2xl font-bold text-white mb-1">
               Daily Progress
             </h2>
-            <p className="text-gray-400">
+            <p className="text-white/60">
               {completedCount}/{quests.length} quests completed
             </p>
           </div>
@@ -148,20 +148,20 @@ export default function DailyQuests() {
                 <Trophy className="w-5 h-5" />
                 <span className="text-2xl font-bold">+{totalXP}</span>
               </div>
-              <p className="text-xs text-gray-400">XP earned</p>
+              <p className="text-xs text-white/60">XP earned</p>
             </div>
             <div className="text-right">
               <div className="flex items-center gap-2 text-yellow-400">
                 <Zap className="w-5 h-5" />
                 <span className="text-2xl font-bold">+{totalCredits}</span>
               </div>
-              <p className="text-xs text-gray-400">Credits earned</p>
+              <p className="text-xs text-white/60">Credits earned</p>
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="relative h-3 bg-[#0a0a0a] rounded-full overflow-hidden">
+        <div className="relative h-3 bg-[#0c0a10] rounded-full overflow-hidden">
           <div
             className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
             style={{ width: `${(completedCount / quests.length) * 100}%` }}
@@ -172,7 +172,7 @@ export default function DailyQuests() {
         </div>
 
         {/* Time Remaining */}
-        <div className="flex items-center gap-2 mt-4 text-gray-400 text-sm">
+        <div className="flex items-center gap-2 mt-4 text-white/60 text-sm">
           <Clock className="w-4 h-4" />
           <span>Resets in 8 hours 23 minutes</span>
         </div>
@@ -194,7 +194,7 @@ export default function DailyQuests() {
                 key={quest.id}
                 onClick={() => handleToggleQuest(quest.id)}
                 className={`
-                  relative bg-[#1a1a1a] border rounded-xl p-5 text-left
+                  relative bg-[#1a1724] border rounded-xl p-5 text-left
                   transition-all duration-200 hover:scale-[1.02]
                   ${quest.completed
                     ? 'border-green-500/50 bg-green-500/5'
@@ -207,7 +207,7 @@ export default function DailyQuests() {
                   {quest.completed ? (
                     <CheckCircle2 className="w-6 h-6 text-green-400" />
                   ) : (
-                    <Circle className="w-6 h-6 text-gray-600" />
+                    <Circle className="w-6 h-6 text-white/40" />
                   )}
                 </div>
 
@@ -223,11 +223,11 @@ export default function DailyQuests() {
                 <div className="pr-8">
                   <h4 className={`
                     text-lg font-semibold mb-1
-                    ${quest.completed ? 'text-gray-400 line-through' : 'text-white'}
+                    ${quest.completed ? 'text-white/60 line-through' : 'text-white'}
                   `}>
                     {quest.title}
                   </h4>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-sm text-white/50 mb-4">
                     {quest.description}
                   </p>
 
@@ -276,7 +276,7 @@ export default function DailyQuests() {
             return (
               <div
                 key={bonus.id}
-                className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5"
+                className="bg-[#1a1724] border border-white/10 rounded-xl p-5"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className={`
@@ -301,19 +301,19 @@ export default function DailyQuests() {
                 <h4 className="text-lg font-semibold text-white mb-1">
                   {bonus.title}
                 </h4>
-                <p className="text-sm text-gray-400 mb-4">
+                <p className="text-sm text-white/60 mb-4">
                   {bonus.description}
                 </p>
 
                 {/* Progress */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Progress</span>
+                    <span className="text-white/60">Progress</span>
                     <span className="text-purple-400 font-medium">
                       {bonus.progress}/{bonus.total}
                     </span>
                   </div>
-                  <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+                  <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r ${bonus.color} transition-all duration-300`}
                       style={{ width: `${progress}%` }}

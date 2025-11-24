@@ -124,7 +124,7 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1 }) {
             />
 
             {/* Time */}
-            <span className="text-xs text-zinc-400 flex-shrink-0">
+            <span className="text-xs text-white/60 flex-shrink-0">
               {block.startTime}
             </span>
 
@@ -156,13 +156,13 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1 }) {
             {block.title}
           </h4>
           {block.notes && (
-            <p className="text-xs text-zinc-500 line-clamp-1 mt-1">{block.notes}</p>
+            <p className="text-xs text-white/50 line-clamp-1 mt-1">{block.notes}</p>
           )}
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-2 mt-1">
-          <div className="flex items-center gap-1 text-xs text-zinc-500">
+          <div className="flex items-center gap-1 text-xs text-white/50">
             <Clock className="w-3 h-3" />
             <span>{block.plannedDuration}m</span>
           </div>
@@ -183,15 +183,15 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1 }) {
 
         {/* Hover Actions */}
         {showActions && (
-          <div className="absolute top-1 right-1 flex gap-1 bg-zinc-900/90 backdrop-blur-sm rounded-lg p-1 border border-zinc-800">
+          <div className="absolute top-1 right-1 flex gap-1 bg-[#12101a]/90 backdrop-blur-sm rounded-lg p-1 border border-white/10">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 // TODO: Open edit modal
               }}
-              className="p-1 hover:bg-zinc-800 rounded transition-all"
+              className="p-1 hover:bg-[#1a1724] rounded transition-all"
             >
-              <Edit2 className="w-3 h-3 text-zinc-400" />
+              <Edit2 className="w-3 h-3 text-white/60" />
             </button>
             <button
               onClick={handleDelete}

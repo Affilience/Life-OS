@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Home,
-  Grid3x3,
-  User,
-  Users,
-  Target,
-  Settings,
   Sparkles,
   X,
   Menu
 } from 'lucide-react';
+
+// Pixel art nav icons
+const NAV_ICONS = {
+  home: '/assets/icons/nav/nav_home.png',
+  modules: '/assets/icons/nav/nav_modules.png',
+  character: '/assets/icons/nav/nav_character.png',
+  social: '/assets/icons/nav/nav_social.png',
+  quests: '/assets/icons/nav/nav_quests.png',
+  settings: '/assets/icons/nav/nav_settings.png',
+};
 
 /**
  * ONYXOS Sidebar
@@ -25,11 +29,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
 
   const navigationItems = [
-    { path: '/', label: 'Home', icon: Home, color: 'accent-2' },
-    { path: '/modules', label: 'Modules', icon: Grid3x3, color: 'accent' },
-    { path: '/character', label: 'Character', icon: User, color: 'accent-3' },
-    { path: '/social', label: 'Social', icon: Users, color: 'primary-500' },
-    { path: '/quests', label: 'Quests', icon: Target, color: 'warning' },
+    { path: '/', label: 'Home', iconKey: 'home', color: 'accent-2' },
+    { path: '/modules', label: 'Modules', iconKey: 'modules', color: 'accent' },
+    { path: '/character', label: 'Character', iconKey: 'character', color: 'accent-3' },
+    { path: '/social', label: 'Social', iconKey: 'social', color: 'primary-500' },
+    { path: '/quests', label: 'Quests', iconKey: 'quests', color: 'warning' },
   ];
 
   const isActive = (path) => {
@@ -86,7 +90,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <div className="space-y-1">
             {navigationItems.map((item) => {
-              const Icon = item.icon;
               const active = isActive(item.path);
 
               return (
@@ -103,13 +106,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                     }
                   `}
                 >
-                  <Icon
-                    size={18}
+                  <img
+                    src={NAV_ICONS[item.iconKey]}
+                    alt={item.label}
                     className={`
-                      flex-shrink-0 transition-all duration-fast
-                      ${active ? `text-${item.color}` : 'text-text-dim group-hover:text-text-med'}
+                      w-6 h-6 flex-shrink-0 transition-all duration-fast
+                      ${active ? 'scale-110 drop-shadow-[0_0_6px_rgba(139,92,246,0.6)]' : 'opacity-70 group-hover:opacity-100 group-hover:scale-105'}
                     `}
-                    style={active ? { color: `var(--${item.color})` } : {}}
+                    style={{ imageRendering: 'pixelated' }}
                   />
                   <span className="truncate">{item.label}</span>
                 </Link>
@@ -124,13 +128,18 @@ const Sidebar = ({ isOpen, onClose }) => {
             to="/settings"
             onClick={onClose}
             className="
-              flex items-center gap-3 px-3 py-2.5 rounded-md
+              group flex items-center gap-3 px-3 py-2.5 rounded-md
               text-sm font-medium text-fg-secondary
               hover:bg-accent-mainSoft hover:text-fg-primary
               transition-all duration-fast
             "
           >
-            <Settings size={18} />
+            <img
+              src={NAV_ICONS.settings}
+              alt="Settings"
+              className="w-6 h-6 opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-fast"
+              style={{ imageRendering: 'pixelated' }}
+            />
             <span>Settings</span>
           </Link>
         </div>

@@ -27,24 +27,24 @@ export default function Sidebar() {
     <div
       className={`
         ${sidebarCollapsed ? 'w-16' : 'w-72'}
-        bg-zinc-900/40 backdrop-blur-md
-        border-r border-zinc-800/50
+        bg-[#12101a]/40 backdrop-blur-md
+        border-r border-white/10/50
         flex flex-col
         transition-all duration-300 ease-in-out
       `}
     >
       {/* Collapse Toggle */}
-      <div className="p-4 border-b border-zinc-800/50 flex items-center justify-between">
+      <div className="p-4 border-b border-white/10/50 flex items-center justify-between">
         {!sidebarCollapsed && (
           <h2 className="text-lg font-semibold text-white">Knowledge</h2>
         )}
         <button
           onClick={toggleSidebar}
-          className="p-2 hover:bg-zinc-800/50 rounded-lg transition-all duration-150"
+          className="p-2 hover:bg-[#1a1724]/50 rounded-lg transition-all duration-150"
         >
           {sidebarCollapsed ? (
             <svg
-              className="w-5 h-5 text-zinc-400"
+              className="w-5 h-5 text-white/60"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -58,7 +58,7 @@ export default function Sidebar() {
             </svg>
           ) : (
             <svg
-              className="w-5 h-5 text-zinc-400"
+              className="w-5 h-5 text-white/60"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -87,7 +87,7 @@ export default function Sidebar() {
                 ${
                   activeView === 'all-notes'
                     ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                    : 'text-white/60 hover:bg-[#1a1724]/50 hover:text-zinc-200'
                 }
               `}
             >
@@ -117,7 +117,7 @@ export default function Sidebar() {
                 ${
                   activeView === 'projects'
                     ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                    : 'text-white/60 hover:bg-[#1a1724]/50 hover:text-zinc-200'
                 }
               `}
             >
@@ -135,7 +135,7 @@ export default function Sidebar() {
                 ${
                   activeView === 'content'
                     ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                    : 'text-white/60 hover:bg-[#1a1724]/50 hover:text-zinc-200'
                 }
               `}
             >
@@ -153,7 +153,7 @@ export default function Sidebar() {
                 ${
                   activeView === 'books'
                     ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                    : 'text-white/60 hover:bg-[#1a1724]/50 hover:text-zinc-200'
                 }
               `}
             >
@@ -183,7 +183,7 @@ export default function Sidebar() {
                 ${
                   activeView === 'media'
                     ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                    : 'text-white/60 hover:bg-[#1a1724]/50 hover:text-zinc-200'
                 }
               `}
             >
@@ -219,7 +219,7 @@ export default function Sidebar() {
                 ${
                   activeView === 'collections'
                     ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                    : 'text-white/60 hover:bg-[#1a1724]/50 hover:text-zinc-200'
                 }
               `}
             >
@@ -254,7 +254,7 @@ export default function Sidebar() {
                   <button
                     key={collection.id}
                     onClick={() => setActiveView('collections', collection.id)}
-                    className="w-full px-3 py-2 rounded-lg text-sm text-left flex items-center gap-3 text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200 transition-all duration-150"
+                    className="w-full px-3 py-2 rounded-lg text-sm text-left flex items-center gap-3 text-white/60 hover:bg-[#1a1724]/50 hover:text-zinc-200 transition-all duration-150"
                   >
                     <span className="text-lg">{collection.icon}</span>
                     <span className="flex-1 truncate">{collection.name}</span>

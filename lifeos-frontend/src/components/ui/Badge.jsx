@@ -20,7 +20,7 @@ const Badge = ({
   `;
 
   const variants = {
-    default: 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50',
+    default: 'bg-[#1a1724]/50 text-white/60 border border-white/15/50',
     accent: 'bg-purple-500/10 text-purple-300 border border-purple-500/20',
     success: 'bg-green-500/10 text-green-400 border border-green-500/20',
     warning: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',

@@ -121,7 +121,7 @@ export default function Challenges() {
               <Sparkles className="w-6 h-6 text-pink-400" />
               Active Challenges
             </h2>
-            <p className="text-gray-400">
+            <p className="text-white/60">
               Compete with others and earn exclusive rewards
             </p>
           </div>
@@ -131,14 +131,14 @@ export default function Challenges() {
                 <Trophy className="w-6 h-6" />
                 <span className="text-3xl font-bold">{ACTIVE_CHALLENGES.length}</span>
               </div>
-              <p className="text-xs text-gray-400">Active</p>
+              <p className="text-xs text-white/60">Active</p>
             </div>
             <div className="text-right">
               <div className="flex items-center gap-2 text-purple-400">
                 <Users className="w-6 h-6" />
                 <span className="text-3xl font-bold">4.2K</span>
               </div>
-              <p className="text-xs text-gray-400">Players</p>
+              <p className="text-xs text-white/60">Players</p>
             </div>
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function Challenges() {
           return (
             <div
               key={challenge.id}
-              className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6 hover:border-purple-500/50 transition-all"
+              className="bg-[#1a1724] border border-white/10 rounded-xl p-6 hover:border-purple-500/50 transition-all"
             >
               <div className="flex items-start gap-4">
                 {/* Icon */}
@@ -171,10 +171,10 @@ export default function Challenges() {
                       <h3 className="text-xl font-bold text-white mb-1">
                         {challenge.title}
                       </h3>
-                      <p className="text-gray-400 text-sm mb-2">
+                      <p className="text-white/60 text-sm mb-2">
                         {challenge.description}
                       </p>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 text-xs text-white/50">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {challenge.timeRemaining} left
@@ -209,12 +209,12 @@ export default function Challenges() {
                   {/* Progress Bar */}
                   <div className="mb-3">
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-gray-400">Progress</span>
+                      <span className="text-white/60">Progress</span>
                       <span className={`font-medium ${isNearComplete ? 'text-green-400' : 'text-purple-400'}`}>
                         {challenge.progress}/{challenge.target}
                       </span>
                     </div>
-                    <div className="relative h-3 bg-[#0a0a0a] rounded-full overflow-hidden">
+                    <div className="relative h-3 bg-[#0c0a10] rounded-full overflow-hidden">
                       <div
                         className={`h-full bg-gradient-to-r ${challenge.color} transition-all duration-500`}
                         style={{ width: `${progress}%` }}
@@ -246,9 +246,9 @@ export default function Challenges() {
           Global Leaderboard
         </h3>
 
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden">
+        <div className="bg-[#1a1724] border border-white/10 rounded-xl overflow-hidden">
           <div className="p-4 border-b border-white/10 bg-gradient-to-r from-yellow-500/5 to-orange-500/5">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-white/60">
               Top performers across all challenges this month
             </p>
           </div>
@@ -270,7 +270,7 @@ export default function Challenges() {
                     ${player.rank === 1 ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white' :
                       player.rank === 2 ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white' :
                       player.rank === 3 ? 'bg-gradient-to-br from-amber-700 to-amber-600 text-white' :
-                      'bg-[#0a0a0a] text-gray-400'}
+                      'bg-[#0c0a10] text-white/60'}
                   `}>
                     {player.rank === 1 && <Crown className="w-4 h-4" />}
                     {player.rank !== 1 && player.rank}
@@ -293,7 +293,7 @@ export default function Challenges() {
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-white/60">
                         {player.score.toLocaleString()} points
                       </div>
                     </div>
@@ -305,7 +305,7 @@ export default function Challenges() {
                   flex items-center gap-1 text-sm font-medium
                   ${player.change.startsWith('+') ? 'text-green-400' :
                     player.change.startsWith('-') ? 'text-red-400' :
-                    'text-gray-400'}
+                    'text-white/60'}
                 `}>
                   {player.change !== '0' && (
                     <TrendingUp className="w-4 h-4" />
@@ -329,7 +329,7 @@ export default function Challenges() {
           {UPCOMING_CHALLENGES.map((challenge) => (
             <div
               key={challenge.id}
-              className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 opacity-75 hover:opacity-100 transition-opacity"
+              className="bg-[#1a1724] border border-white/10 rounded-xl p-5 opacity-75 hover:opacity-100 transition-opacity"
             >
               <div className="flex items-start gap-3 mb-4">
                 <div className={`
@@ -342,14 +342,14 @@ export default function Challenges() {
                   <h4 className="text-lg font-semibold text-white mb-1">
                     {challenge.title}
                   </h4>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-white/60">
                     {challenge.description}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-white/50">
                   Starts in {challenge.startsIn}
                 </span>
                 <div className="flex items-center gap-3 text-sm">

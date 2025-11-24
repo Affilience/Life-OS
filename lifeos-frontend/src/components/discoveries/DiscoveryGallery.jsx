@@ -58,7 +58,7 @@ export default function DiscoveryGallery() {
         <h2 className="text-3xl font-bold cosmic-title mb-2">
           🔭 Cosmic Discoveries
         </h2>
-        <p className="text-gray-400">
+        <p className="text-white/60">
           Unlock achievements across your cosmic journey. Each discovery grants points and rewards.
         </p>
       </div>
@@ -74,7 +74,7 @@ export default function DiscoveryGallery() {
               <Trophy className="w-5 h-5 text-purple-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Unlocked</p>
+              <p className="text-xs text-white/60">Unlocked</p>
               <p className="text-2xl font-bold text-white">{unlockedCount}/{totalDiscoveries}</p>
             </div>
           </div>
@@ -89,7 +89,7 @@ export default function DiscoveryGallery() {
               <Star className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Total Points</p>
+              <p className="text-xs text-white/60">Total Points</p>
               <p className="text-2xl font-bold text-white">{totalPoints.toLocaleString()}</p>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function DiscoveryGallery() {
               <TrendingUp className="w-5 h-5 text-green-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Completion</p>
+              <p className="text-xs text-white/60">Completion</p>
               <p className="text-2xl font-bold text-white">{completionPercentage}%</p>
             </div>
           </div>
@@ -119,7 +119,7 @@ export default function DiscoveryGallery() {
               <Award className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Rarest</p>
+              <p className="text-xs text-white/60">Rarest</p>
               <p className="text-sm font-bold text-purple-400">
                 {discoveries.filter(d => d.isUnlocked && d.rarity === 'cosmic').length > 0 ? 'Cosmic' :
                  discoveries.filter(d => d.isUnlocked && d.rarity === 'legendary').length > 0 ? 'Legendary' :
@@ -143,7 +143,7 @@ export default function DiscoveryGallery() {
                 px-4 py-2 rounded-xl text-sm font-semibold transition-all capitalize
                 ${statusFilter === filter
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white cosmic-glow'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
+                  : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
                 }
               `}
             >
@@ -162,7 +162,7 @@ export default function DiscoveryGallery() {
                 px-3 py-2 rounded-xl text-xs font-semibold transition-all capitalize
                 ${rarityFilter === rarity
                   ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
+                  : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
                 }
               `}
             >
@@ -191,8 +191,8 @@ export default function DiscoveryGallery() {
 
       {filteredDiscoveries.length === 0 && (
         <div className="text-center py-16">
-          <Filter className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400">No discoveries match your filters</p>
+          <Filter className="w-16 h-16 text-white/40 mx-auto mb-4" />
+          <p className="text-white/60">No discoveries match your filters</p>
         </div>
       )}
     </div>

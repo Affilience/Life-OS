@@ -25,7 +25,7 @@ export function JournalToolbar({
     <div className="flex items-center justify-between gap-4">
       {/* Range selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-zinc-400">Range:</span>
+        <span className="text-sm text-white/60">Range:</span>
         {ranges.map((range) => (
           <button
             key={range}
@@ -35,7 +35,7 @@ export function JournalToolbar({
               ${
                 rangeWeeks === range
                   ? 'bg-violet-500 text-white'
-                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                  : 'bg-[#1a1724] text-white/60 hover:bg-[#221e2e]'
               }
             `}
           >
@@ -50,7 +50,7 @@ export function JournalToolbar({
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Search entries..."
-        className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
+        className="px-4 py-2 bg-[#1a1724] border border-white/15 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
       />
     </div>
   );

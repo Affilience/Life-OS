@@ -19,9 +19,9 @@ function MainCanvas() {
   const { activeView, activeItemId, notes, books, media, collections, setActiveView } = useKnowledgeStore();
 
   return (
-    <div className="flex-1 flex flex-col bg-[#0a0a0a] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-[#0c0a10] overflow-hidden">
       {/* Header */}
-      <div className="border-b border-zinc-800/50 bg-zinc-900/20 backdrop-blur-sm overflow-visible relative z-20">
+      <div className="border-b border-white/10/50 bg-[#12101a]/20 backdrop-blur-sm overflow-visible relative z-20">
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-white">
             {activeView === 'all-notes' && 'All Notes'}
@@ -55,7 +55,7 @@ function MainCanvas() {
               <div
                 key={note.id}
                 onClick={() => setActiveView('note-detail', note.id)}
-                className="bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/50 rounded-lg p-4 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
+                className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-lg p-4 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
@@ -71,14 +71,14 @@ function MainCanvas() {
                     </svg>
                   )}
                 </div>
-                <p className="text-sm text-zinc-400 line-clamp-3 mb-3">
+                <p className="text-sm text-white/60 line-clamp-3 mb-3">
                   {note.content.substring(0, 150)}...
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {note.tags.slice(0, 3).map((tag) => (
                     <span
                       key={tag}
-                      className="px-2 py-1 bg-zinc-800/50 text-xs text-zinc-400 rounded"
+                      className="px-2 py-1 bg-[#1a1724]/50 text-xs text-white/60 rounded"
                     >
                       #{tag}
                     </span>
@@ -102,7 +102,7 @@ function MainCanvas() {
                 key={book.id}
                 className="group cursor-pointer"
               >
-                <div className="relative aspect-[2/3] mb-3 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800/50 group-hover:border-purple-500/50 transition-all duration-200">
+                <div className="relative aspect-[2/3] mb-3 rounded-lg overflow-hidden bg-[#12101a] border border-white/10/50 group-hover:border-purple-500/50 transition-all duration-200">
                   {book.coverImage ? (
                     <img
                       src={book.coverImage}
@@ -127,7 +127,7 @@ function MainCanvas() {
                     </div>
                   )}
                   {book.status === 'reading' && (
-                    <div className="absolute inset-x-0 bottom-0 h-1 bg-zinc-800">
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-[#1a1724]">
                       <div
                         className="h-full bg-purple-500"
                         style={{
@@ -142,7 +142,7 @@ function MainCanvas() {
                 <h3 className="text-sm font-medium text-white line-clamp-2 mb-1 group-hover:text-purple-300 transition-colors">
                   {book.title}
                 </h3>
-                <p className="text-xs text-zinc-500">{book.author}</p>
+                <p className="text-xs text-white/50">{book.author}</p>
               </div>
             ))}
           </div>
@@ -157,7 +157,7 @@ function MainCanvas() {
             {collections.map((collection) => (
               <div
                 key={collection.id}
-                className="bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/50 rounded-lg p-6 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
+                className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-lg p-6 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
                 style={{ borderLeftColor: collection.color, borderLeftWidth: '3px' }}
               >
                 <div className="flex items-start gap-4">
@@ -166,7 +166,7 @@ function MainCanvas() {
                     <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">
                       {collection.name}
                     </h3>
-                    <p className="text-sm text-zinc-500 mb-3">
+                    <p className="text-sm text-white/50 mb-3">
                       {collection.description}
                     </p>
                     <div className="text-xs text-zinc-600">
@@ -196,7 +196,7 @@ function MainCanvas() {
 // Main KnowledgeModule Container
 export default function KnowledgeModule() {
   return (
-    <div className="flex h-screen w-full bg-[#0a0a0a]">
+    <div className="flex h-screen w-full bg-[#0c0a10]">
       <Sidebar />
       <MainCanvas />
     </div>

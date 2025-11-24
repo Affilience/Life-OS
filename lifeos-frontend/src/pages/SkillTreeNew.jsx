@@ -324,7 +324,7 @@ function ConstellationOverview({ stats, characterData, onSelectStat }) {
           className="flex items-center justify-center gap-3"
         >
           <div className="h-px w-12 bg-gradient-to-r from-transparent to-gray-600" />
-          <span className="text-lg text-gray-400 font-medium">Level {characterData.level}</span>
+          <span className="text-lg text-white/60 font-medium">Level {characterData.level}</span>
           <div className="h-px w-12 bg-gradient-to-l from-transparent to-gray-600" />
         </motion.div>
       </div>
@@ -347,7 +347,7 @@ function ConstellationOverview({ stats, characterData, onSelectStat }) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="text-center mt-16 text-gray-500 text-xs tracking-widest uppercase"
+        className="text-center mt-16 text-white/50 text-xs tracking-widest uppercase"
       >
         Select a constellation to explore perks
       </motion.div>
@@ -442,17 +442,17 @@ function ConstellationCard({ stat, data, index, onClick }) {
           >
             {stat.name}
           </h2>
-          <p className="text-xs text-gray-400 mb-4 font-medium">{stat.subtitle}</p>
+          <p className="text-xs text-white/60 mb-4 font-medium">{stat.subtitle}</p>
 
           {/* Level and Progress */}
           <div className="space-y-2.5">
             <div className="flex justify-between text-sm">
               <span className="text-gray-300 font-medium">Lv. {data.level}</span>
-              <span className="text-gray-500 text-xs">{data.perksUnlocked} perks</span>
+              <span className="text-white/50 text-xs">{data.perksUnlocked} perks</span>
             </div>
 
             {/* XP Bar with refined styling */}
-            <div className="relative h-1.5 bg-gray-900/60 rounded-full overflow-hidden backdrop-blur-sm">
+            <div className="relative h-1.5 bg-[#12101a]/60 rounded-full overflow-hidden backdrop-blur-sm">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
@@ -472,7 +472,7 @@ function ConstellationCard({ stat, data, index, onClick }) {
               </motion.div>
             </div>
 
-            <div className="text-xs text-gray-500 text-right font-mono">
+            <div className="text-xs text-white/50 text-right font-mono">
               {data.xp.toLocaleString()} / {data.xpToNext.toLocaleString()}
             </div>
           </div>
@@ -590,11 +590,11 @@ function SkillTreeView({ stat, characterData, onBack }) {
       className="relative z-10 h-screen flex flex-col"
     >
       {/* Header with stat info */}
-      <div className="p-6 border-b border-gray-800">
+      <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="tracking-wider">BACK</span>
@@ -622,7 +622,7 @@ function SkillTreeView({ stat, characterData, onBack }) {
                 >
                   {stat.name}
                 </h2>
-                <p className="text-sm text-gray-500">{stat.subtitle}</p>
+                <p className="text-sm text-white/50">{stat.subtitle}</p>
               </div>
             </div>
 
@@ -630,7 +630,7 @@ function SkillTreeView({ stat, characterData, onBack }) {
               <div className="text-3xl font-bold" style={{ color: stat.color }}>
                 {data.level}
               </div>
-              <div className="text-xs text-gray-500">LEVEL</div>
+              <div className="text-xs text-white/50">LEVEL</div>
             </div>
           </div>
 
@@ -646,15 +646,15 @@ function SkillTreeView({ stat, characterData, onBack }) {
               >
                 {perkPoints}
               </div>
-              <div className="text-xs text-gray-500 tracking-wide">PERK POINTS</div>
+              <div className="text-xs text-white/50 tracking-wide">PERK POINTS</div>
             </div>
 
             {/* XP Progress */}
             <div className="w-48">
-              <div className="text-xs text-gray-400 mb-1">
+              <div className="text-xs text-white/60 mb-1">
                 {data.xp.toLocaleString()} / {data.xpToNext.toLocaleString()} XP
               </div>
-              <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div className="h-2 bg-[#1a1724] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full"
                   style={{
@@ -834,7 +834,7 @@ function PerkConstellation({ perkTree, color, onPerkClick, characterLevel, unloc
             </div>
 
             {/* Tier and Type */}
-            <div className="text-xs text-gray-400 uppercase mb-3 tracking-wider">
+            <div className="text-xs text-white/60 uppercase mb-3 tracking-wider">
               {hoveredPerk.tier} • {hoveredPerk.type}
             </div>
 
@@ -870,7 +870,7 @@ function PerkConstellation({ perkTree, color, onPerkClick, characterLevel, unloc
       )}
 
       {/* Instructions */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center text-gray-500 text-sm tracking-widest">
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center text-white/50 text-sm tracking-widest">
         HOVER OVER STARS TO VIEW PERK DETAILS
       </div>
     </div>

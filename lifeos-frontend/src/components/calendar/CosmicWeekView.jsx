@@ -109,7 +109,7 @@ export default function CosmicWeekView() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#0a0a0a] relative overflow-hidden">
+    <div className="h-full flex flex-col bg-[#0c0a10] relative overflow-hidden">
       {/* Cosmic Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Nebula gradients */}
@@ -128,24 +128,24 @@ export default function CosmicWeekView() {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 p-6 border-b border-zinc-800/50 bg-zinc-900/20 backdrop-blur-sm">
+      <div className="relative z-10 p-6 border-b border-white/10/50 bg-[#12101a]/20 backdrop-blur-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigateWeek(-1)}
-              className="p-2 hover:bg-purple-500/20 rounded-lg transition-all text-zinc-400 hover:text-purple-300"
+              className="p-2 hover:bg-purple-500/20 rounded-lg transition-all text-white/60 hover:text-purple-300"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
 
             <div className="text-center">
               <h2 className="text-2xl font-bold text-white">{formatWeekRange()}</h2>
-              <p className="text-sm text-zinc-500">Week {getWeekNumber(weekStart)}</p>
+              <p className="text-sm text-white/50">Week {getWeekNumber(weekStart)}</p>
             </div>
 
             <button
               onClick={() => navigateWeek(1)}
-              className="p-2 hover:bg-purple-500/20 rounded-lg transition-all text-zinc-400 hover:text-purple-300"
+              className="p-2 hover:bg-purple-500/20 rounded-lg transition-all text-white/60 hover:text-purple-300"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -154,7 +154,7 @@ export default function CosmicWeekView() {
           <div className="flex items-center gap-3">
             <button
               onClick={goToToday}
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-all text-sm font-medium"
+              className="px-4 py-2 bg-[#1a1724] hover:bg-[#221e2e] text-zinc-300 rounded-lg transition-all text-sm font-medium"
             >
               Today
             </button>
@@ -170,29 +170,29 @@ export default function CosmicWeekView() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
+          <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
               <Sun className="w-3 h-3" />
               <span>Peak Energy</span>
             </div>
             <div className="text-lg font-bold text-white">9-11 AM</div>
           </div>
-          <div className="bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
+          <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
               <Zap className="w-3 h-3" />
               <span>Deep Work</span>
             </div>
             <div className="text-lg font-bold text-purple-400">4.5h</div>
           </div>
-          <div className="bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
+          <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
               <TrendingUp className="w-3 h-3" />
               <span>Planning Accuracy</span>
             </div>
             <div className="text-lg font-bold text-green-400">87%</div>
           </div>
-          <div className="bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
+          <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
               <Calendar className="w-3 h-3" />
               <span>Buffer Time</span>
             </div>
@@ -205,12 +205,12 @@ export default function CosmicWeekView() {
       <div className="flex-1 overflow-auto relative z-10">
         <div className="min-w-[1200px] flex">
           {/* Time Column */}
-          <div className="w-20 flex-shrink-0 border-r border-zinc-800/50 bg-zinc-900/20">
-            <div className="h-12 border-b border-zinc-800/50" />
+          <div className="w-20 flex-shrink-0 border-r border-white/10/50 bg-[#12101a]/20">
+            <div className="h-12 border-b border-white/10/50" />
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="h-16 border-b border-zinc-800/30 flex items-start justify-center pt-2"
+                className="h-16 border-b border-white/10/30 flex items-start justify-center pt-2"
               >
                 <span className="text-xs text-zinc-600 font-medium">
                   {hour.toString().padStart(2, '0')}:00
@@ -228,7 +228,7 @@ export default function CosmicWeekView() {
             return (
               <div
                 key={dayIndex}
-                className="flex-1 border-r border-zinc-800/50 relative"
+                className="flex-1 border-r border-white/10/50 relative"
                 style={{
                   background: today
                     ? 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, transparent 100%)'
@@ -237,11 +237,11 @@ export default function CosmicWeekView() {
               >
                 {/* Day Header */}
                 <div
-                  className={`h-12 border-b border-zinc-800/50 flex flex-col items-center justify-center ${
-                    today ? 'bg-purple-500/10' : 'bg-zinc-900/20'
+                  className={`h-12 border-b border-white/10/50 flex flex-col items-center justify-center ${
+                    today ? 'bg-purple-500/10' : 'bg-[#12101a]/20'
                   }`}
                 >
-                  <div className="text-xs text-zinc-500 uppercase">
+                  <div className="text-xs text-white/50 uppercase">
                     {date.toLocaleDateString('en-GB', { weekday: 'short' })}
                   </div>
                   <div
@@ -262,7 +262,7 @@ export default function CosmicWeekView() {
                     <div
                       key={hour}
                       onClick={() => handleSlotClick(date, hour)}
-                      className="h-16 border-b border-zinc-800/30 hover:bg-purple-500/5 transition-all cursor-pointer group relative"
+                      className="h-16 border-b border-white/10/30 hover:bg-purple-500/5 transition-all cursor-pointer group relative"
                     >
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-purple-400 font-medium">

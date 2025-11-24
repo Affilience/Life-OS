@@ -18,9 +18,9 @@ export default function Health() {
   ];
 
   return (
-    <div className="health-page min-h-screen bg-[#0a0a0a]">
+    <div className="health-page min-h-screen bg-[#0c0a10]">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800">
+      <div className="sticky top-0 z-10 bg-[#12101a]/95 backdrop-blur-sm border-b border-slate-800">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -31,7 +31,7 @@ export default function Health() {
                 className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
                   activeTab === tab.id
                     ? 'bg-green-500/20 text-green-400 border-b-2 border-green-500'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
                 }`}
               >
                 <Icon className="w-5 h-5" />

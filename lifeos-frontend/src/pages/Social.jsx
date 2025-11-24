@@ -161,19 +161,19 @@ export default function Social() {
       'Character': 'text-pink-400',
       'Social': 'text-yellow-400'
     };
-    return colors[module] || 'text-gray-400';
+    return colors[module] || 'text-white/60';
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5">
+      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
         <div className="px-6 py-4">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-blue-400" />
             Social
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-white/60 mt-1">
             Connect, compete, and conquer together
           </p>
         </div>
@@ -193,7 +193,7 @@ export default function Social() {
                   whitespace-nowrap transition-all duration-200
                   ${isActive
                     ? 'bg-blue-500 text-white shadow-lg'
-                    : 'bg-[#1a1a1a] text-gray-400 hover:text-white hover:bg-[#222] border border-white/10'
+                    : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10'
                   }
                 `}
               >
@@ -218,19 +218,19 @@ export default function Social() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">{userStats.level}</div>
-                  <div className="text-xs text-gray-400">Level</div>
+                  <div className="text-xs text-white/60">Level</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-400">{userStats.streak}</div>
-                  <div className="text-xs text-gray-400">Day Streak</div>
+                  <div className="text-xs text-white/60">Day Streak</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-400">{userStats.xp.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400">Total XP</div>
+                  <div className="text-xs text-white/60">Total XP</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-400">#{userStats.rank}</div>
-                  <div className="text-xs text-gray-400">Global Rank</div>
+                  <div className="text-xs text-white/60">Global Rank</div>
                 </div>
               </div>
             </div>
@@ -243,7 +243,7 @@ export default function Social() {
               </h3>
               <div className="space-y-3">
                 {activityFeed.map((activity) => (
-                  <div key={activity.id} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
+                  <div key={activity.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-xl flex-shrink-0">
                         {activity.avatar}
@@ -252,14 +252,14 @@ export default function Social() {
                         <p className="text-sm text-white">
                           <span className="font-semibold">{activity.user}</span>
                           {' '}
-                          <span className="text-gray-400">{activity.action}</span>
+                          <span className="text-white/60">{activity.action}</span>
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`text-xs ${getModuleColor(activity.module)}`}>
                             {activity.module}
                           </span>
-                          <span className="text-xs text-gray-500">•</span>
-                          <span className="text-xs text-gray-500">{activity.time}</span>
+                          <span className="text-xs text-white/50">•</span>
+                          <span className="text-xs text-white/50">{activity.time}</span>
                         </div>
                       </div>
                     </div>
@@ -278,13 +278,13 @@ export default function Social() {
               <button className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium whitespace-nowrap">
                 Global
               </button>
-              <button className="px-4 py-2 bg-[#1a1a1a] text-gray-400 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
+              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
                 Friends
               </button>
-              <button className="px-4 py-2 bg-[#1a1a1a] text-gray-400 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
+              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
                 Guild
               </button>
-              <button className="px-4 py-2 bg-[#1a1a1a] text-gray-400 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
+              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
                 This Week
               </button>
             </div>
@@ -298,7 +298,7 @@ export default function Social() {
                     flex items-center gap-4 p-4 rounded-xl transition-all
                     ${user.isYou
                       ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500/50'
-                      : 'bg-[#1a1a1a] border border-white/10 hover:border-blue-500/30'
+                      : 'bg-[#1a1724] border border-white/10 hover:border-blue-500/30'
                     }
                   `}
                 >
@@ -311,7 +311,7 @@ export default function Social() {
                         'text-orange-400'
                       }`} />
                     ) : (
-                      <span className="text-gray-400 font-semibold">#{user.rank}</span>
+                      <span className="text-white/60 font-semibold">#{user.rank}</span>
                     )}
                   </div>
 
@@ -326,7 +326,7 @@ export default function Social() {
                       {user.name}
                       {user.isYou && <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded">You</span>}
                     </div>
-                    <div className="text-sm text-gray-400">Level {user.level}</div>
+                    <div className="text-sm text-white/60">Level {user.level}</div>
                   </div>
 
                   {/* Stats */}
@@ -363,7 +363,7 @@ export default function Social() {
                     </div>
                     <div className="flex-1">
                       <h4 className="text-xl font-bold text-white mb-1">{guilds[0].name}</h4>
-                      <p className="text-sm text-gray-400 mb-3">{guilds[0].description}</p>
+                      <p className="text-sm text-white/60 mb-3">{guilds[0].description}</p>
                       <div className="flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4 text-green-400" />
@@ -407,17 +407,17 @@ export default function Social() {
 
               <div className="space-y-3">
                 {guilds.filter(g => !g.isMember).map((guild) => (
-                  <div key={guild.id} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
+                  <div key={guild.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
                     <div className="flex items-start gap-4">
                       <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-2xl flex-shrink-0">
                         {guild.icon}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-lg font-semibold text-white mb-1">{guild.name}</h4>
-                        <p className="text-sm text-gray-400 mb-3">{guild.description}</p>
+                        <p className="text-sm text-white/60 mb-3">{guild.description}</p>
                         <div className="flex items-center gap-4 text-sm mb-3">
                           <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4 text-gray-400" />
+                            <Users className="w-4 h-4 text-white/60" />
                             <span className="text-gray-300">{guild.members}/{guild.maxMembers}</span>
                           </div>
                           <div className="flex items-center gap-1">
@@ -453,14 +453,14 @@ export default function Social() {
                 </h3>
                 <div className="space-y-3">
                   {pendingRequests.map((request) => (
-                    <div key={request.id} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4">
+                    <div key={request.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-2xl flex-shrink-0">
                           {request.avatar}
                         </div>
                         <div className="flex-1">
                           <div className="font-semibold text-white">{request.name}</div>
-                          <div className="text-sm text-gray-400">Level {request.level} • {request.mutualFriends} mutual friends</div>
+                          <div className="text-sm text-white/60">Level {request.level} • {request.mutualFriends} mutual friends</div>
                         </div>
                         <div className="flex gap-2">
                           <button className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
@@ -479,11 +479,11 @@ export default function Social() {
 
             {/* Search Friends */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
               <input
                 type="text"
                 placeholder="Search for friends..."
-                className="w-full pl-10 pr-4 py-3 bg-[#1a1a1a] border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-blue-500/50 focus:outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-[#1a1724] border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-blue-500/50 focus:outline-none"
               />
             </div>
 
@@ -495,7 +495,7 @@ export default function Social() {
               </h3>
               <div className="space-y-3">
                 {friends.map((friend) => (
-                  <div key={friend.id} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
+                  <div key={friend.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
                     <div className="flex items-center gap-4">
                       <div className="relative">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-2xl flex-shrink-0">
@@ -507,12 +507,12 @@ export default function Social() {
                       </div>
                       <div className="flex-1">
                         <div className="font-semibold text-white">{friend.name}</div>
-                        <div className="text-sm text-gray-400">{friend.relationship}</div>
+                        <div className="text-sm text-white/60">{friend.relationship}</div>
                       </div>
                       <div className="flex items-center gap-4 text-sm">
                         <div className="text-center">
                           <div className="text-white font-medium">Lv.{friend.level}</div>
-                          <div className="text-xs text-gray-500">Level</div>
+                          <div className="text-xs text-white/50">Level</div>
                         </div>
                         <div className="flex items-center gap-1">
                           <Flame className="w-4 h-4 text-orange-400" />
@@ -541,7 +541,7 @@ export default function Social() {
               </h3>
               <div className="space-y-4">
                 {activeChallenges.map((challenge) => (
-                  <div key={challenge.id} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 hover:border-orange-500/30 transition-all">
+                  <div key={challenge.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-5 hover:border-orange-500/30 transition-all">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -554,7 +554,7 @@ export default function Social() {
                             {challenge.type === 'guild' ? 'Guild' : 'Individual'}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-400 mb-3">{challenge.description}</p>
+                        <p className="text-sm text-white/60 mb-3">{challenge.description}</p>
                         <div className="flex items-center gap-4 text-sm">
                           <div className="flex items-center gap-1 text-gray-300">
                             <Users className="w-4 h-4" />
@@ -575,7 +575,7 @@ export default function Social() {
                     {/* Progress Bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-gray-400">Progress</span>
+                        <span className="text-white/60">Progress</span>
                         <span className="text-white font-medium">
                           {challenge.type === 'guild'
                             ? `${challenge.progress.toLocaleString()} / ${challenge.total.toLocaleString()} XP`
@@ -583,7 +583,7 @@ export default function Social() {
                           }
                         </span>
                       </div>
-                      <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+                      <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500"
                           style={{ width: `${(challenge.progress / challenge.total) * 100}%` }}
@@ -600,7 +600,7 @@ export default function Social() {
             </div>
 
             {/* Browse More Challenges */}
-            <button className="w-full px-6 py-3 bg-[#1a1a1a] border border-white/10 text-white rounded-xl font-medium hover:border-orange-500/30 hover:bg-[#222] transition-all flex items-center justify-center gap-2">
+            <button className="w-full px-6 py-3 bg-[#1a1724] border border-white/10 text-white rounded-xl font-medium hover:border-orange-500/30 hover:bg-[#221e2e] transition-all flex items-center justify-center gap-2">
               Browse More Challenges
               <ChevronRight className="w-5 h-5" />
             </button>

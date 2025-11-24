@@ -12,7 +12,7 @@ export function ConsistencyLegend() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-zinc-400">Less</span>
+      <span className="text-xs text-white/60">Less</span>
       <div className="flex items-center gap-1">
         {legendSteps.map((step, index) => (
           <div
@@ -23,7 +23,7 @@ export function ConsistencyLegend() {
           />
         ))}
       </div>
-      <span className="text-xs text-zinc-400">More</span>
+      <span className="text-xs text-white/60">More</span>
     </div>
   );
 }

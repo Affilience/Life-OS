@@ -45,7 +45,7 @@ export default function MissionCard({ mission, onComplete }) {
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
-      className={`bg-gray-800/50 backdrop-blur-sm rounded-xl border ${frequencyBorders[mission.frequency]} p-4 relative overflow-hidden`}
+      className={`bg-[#1a1724]/50 backdrop-blur-sm rounded-xl border ${frequencyBorders[mission.frequency]} p-4 relative overflow-hidden`}
     >
       {/* Background gradient */}
       <div
@@ -64,7 +64,7 @@ export default function MissionCard({ mission, onComplete }) {
                 {mission.frequency}
               </span>
               {mission.expiry_date && !isCompleted && (
-                <div className="flex items-center gap-1 text-xs text-gray-400">
+                <div className="flex items-center gap-1 text-xs text-white/60">
                   <ClockIcon className="w-3.5 h-3.5" />
                   <span>{formatTimeRemaining(mission.expiry_date)}</span>
                 </div>
@@ -81,7 +81,7 @@ export default function MissionCard({ mission, onComplete }) {
               <CheckCircleSolidIcon className="w-8 h-8 text-green-400" />
             ) : (
               <div className="w-8 h-8 rounded-full border-2 border-gray-600 flex items-center justify-center">
-                <span className="text-gray-400 text-xs font-semibold">
+                <span className="text-white/60 text-xs font-semibold">
                   {Math.floor(progressPercent)}%
                 </span>
               </div>
@@ -91,7 +91,7 @@ export default function MissionCard({ mission, onComplete }) {
 
         {/* Description */}
         {mission.description && (
-          <p className="text-sm text-gray-400 mb-3">
+          <p className="text-sm text-white/60 mb-3">
             {mission.description}
           </p>
         )}
@@ -100,12 +100,12 @@ export default function MissionCard({ mission, onComplete }) {
         {!isCompleted && (
           <div className="mb-3">
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-gray-400">Progress</span>
+              <span className="text-white/60">Progress</span>
               <span className={frequencyText[mission.frequency]}>
                 {progress}/{target}
               </span>
             </div>
-            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-[#221e2e] rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
@@ -120,7 +120,7 @@ export default function MissionCard({ mission, onComplete }) {
         )}
 
         {/* Rewards */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-700/50">
+        <div className="flex items-center justify-between pt-3 border-t border-white/15/50">
           <div className="flex items-center gap-3">
             {mission.xp_reward > 0 && (
               <div className="flex items-center gap-1.5">
@@ -156,7 +156,7 @@ export default function MissionCard({ mission, onComplete }) {
 
         {/* Completed timestamp */}
         {isCompleted && mission.completed_at && (
-          <div className="mt-3 pt-3 border-t border-gray-700/50 text-xs text-gray-400">
+          <div className="mt-3 pt-3 border-t border-white/15/50 text-xs text-white/60">
             Completed {new Date(mission.completed_at).toLocaleDateString()}
           </div>
         )}
@@ -171,7 +171,7 @@ export default function MissionCard({ mission, onComplete }) {
 export function MissionGrid({ missions, onComplete, columns = 1 }) {
   if (!missions || missions.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-white/60">
         <div className="text-6xl mb-3">🎯</div>
         <p className="text-lg">No active missions</p>
         <p className="text-sm mt-1">New missions will appear here</p>
@@ -229,12 +229,12 @@ export function MissionTabs({ missions, onComplete }) {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all ${
                 isActive
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
-                  : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-700/50'
+                  : 'bg-[#1a1724]/50 text-white/60 hover:text-white hover:bg-[#221e2e]/50'
               }`}
             >
               <span>{tab.icon}</span>
               <span>{tab.label}</span>
-              <span className={`px-1.5 py-0.5 rounded text-xs ${isActive ? 'bg-white/20' : 'bg-gray-700'}`}>
+              <span className={`px-1.5 py-0.5 rounded text-xs ${isActive ? 'bg-white/20' : 'bg-[#221e2e]'}`}>
                 {count}
               </span>
             </button>

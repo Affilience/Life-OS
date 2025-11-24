@@ -45,7 +45,7 @@ export function KpiRing({ data, height = 160 }: KpiRingProps) {
                   backgroundColor: item.color || COLORS[i % COLORS.length],
                 }}
               />
-              <span className="text-zinc-400">{item.label}</span>
+              <span className="text-white/60">{item.label}</span>
             </div>
             <span className="text-white font-medium">£{item.value}</span>
           </div>

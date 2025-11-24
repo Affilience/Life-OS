@@ -37,18 +37,18 @@ export function ConsistencyTooltip({
   return (
     <div
       style={tooltipStyle}
-      className="bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl p-3 min-w-[220px]"
+      className="bg-[#12101a] border border-white/15 rounded-lg shadow-xl p-3 min-w-[220px]"
     >
       {/* Date */}
       <div className="text-sm font-semibold text-white mb-2">{dateLabel}</div>
 
       {/* Score bar */}
       <div className="mb-3">
-        <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
+        <div className="flex items-center justify-between text-xs text-white/60 mb-1">
           <span>Consistency Score</span>
           <span className="font-mono text-white">{day.score}</span>
         </div>
-        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[#1a1724] rounded-full overflow-hidden">
           <div
             className="h-full bg-violet-500 rounded-full transition-all"
             style={{ width: `${day.score}%` }}
@@ -77,7 +77,7 @@ export function ConsistencyTooltip({
           <MetricRow icon="🚶" label="Steps" value={day.steps.toLocaleString()} />
         </div>
       ) : (
-        <div className="text-xs text-zinc-500 italic">No activity recorded</div>
+        <div className="text-xs text-white/50 italic">No activity recorded</div>
       )}
     </div>
   );
@@ -94,7 +94,7 @@ function MetricRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-zinc-400 flex items-center gap-1.5">
+      <span className="text-white/60 flex items-center gap-1.5">
         <span className="w-4 text-center">{icon}</span>
         {label}
       </span>

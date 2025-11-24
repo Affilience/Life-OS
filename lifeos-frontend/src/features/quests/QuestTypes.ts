@@ -49,7 +49,7 @@ export const QUEST_KIND_COLORS: Record<QuestKind, string> = {
   health: 'text-green-400',
   study: 'text-cyan-400',
   finance: 'text-yellow-400',
-  custom: 'text-zinc-400',
+  custom: 'text-white/60',
 };
 
 export const PRIORITY_COLORS: Record<QuestPriority, string> = {
