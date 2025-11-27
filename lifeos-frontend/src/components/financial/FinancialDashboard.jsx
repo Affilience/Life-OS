@@ -6,6 +6,7 @@ import {
   PieChart,
   Target,
   Wallet,
+  PiggyBank,
 } from 'lucide-react';
 import Card from '../ui/Card';
 import OverviewTab from './OverviewTab';
@@ -13,15 +14,19 @@ import IncomeTab from './IncomeTab';
 import ExpensesTab from './ExpensesTab';
 import NetWorthTab from './NetWorthTab';
 import GoalsTab from './GoalsTab';
+import EnvelopeBudgetTab from './EnvelopeBudgetTab';
+import SinkingFundsTab from './SinkingFundsTab';
 
 const FinancialDashboard = () => {
   const [activeView, setActiveView] = useState('overview');
 
   const views = [
     { id: 'overview', label: 'Overview', icon: DollarSign },
+    { id: 'budget', label: 'Budget', icon: Wallet },
+    { id: 'sinking', label: 'Sinking Funds', icon: PiggyBank },
     { id: 'income', label: 'Income', icon: TrendingUp },
     { id: 'expenses', label: 'Expenses', icon: TrendingDown },
-    { id: 'networth', label: 'Net Worth', icon: Wallet },
+    { id: 'networth', label: 'Net Worth', icon: PieChart },
     { id: 'goals', label: 'Goals', icon: Target },
   ];
 
@@ -29,6 +34,10 @@ const FinancialDashboard = () => {
     switch (activeView) {
       case 'overview':
         return <OverviewTab />;
+      case 'budget':
+        return <EnvelopeBudgetTab />;
+      case 'sinking':
+        return <SinkingFundsTab />;
       case 'income':
         return <IncomeTab />;
       case 'expenses':

@@ -3,35 +3,48 @@
  * Apple Notes + Obsidian hybrid for notes, books, and media
  */
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import Sidebar from './Sidebar';
 import SearchBar from './SearchBar';
 import QuickCapture from './QuickCapture';
 import NoteEditor from './NoteEditor';
-import MediaLibrary from './MediaLibrary';
 import MediaDetailView from './MediaDetailView';
 import ProjectsView from './ProjectsView';
-import ContentView from './ContentView';
+import LibraryView from './LibraryView';
+import BooksView from './BooksView';
+import PodcastsView from './PodcastsView';
+import VideosView from './VideosView';
+import CoursesView from './CoursesView';
 
 // MainCanvas component - Main content area
 function MainCanvas() {
   const { activeView, activeItemId, notes, books, media, collections, setActiveView } = useKnowledgeStore();
 
+  // Get view title
+  const getViewTitle = () => {
+    switch (activeView) {
+      case 'all-notes': return 'All Notes';
+      case 'projects': return 'Projects';
+      case 'library': return 'Library';
+      case 'books': return 'Books';
+      case 'podcasts': return 'Podcasts';
+      case 'videos': return 'Videos';
+      case 'courses': return 'Courses';
+      case 'collections': return 'Collections';
+      case 'note-detail': return 'Note';
+      case 'media-detail': return 'Media';
+      default: return 'Knowledge';
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-[#0c0a10] overflow-hidden">
       {/* Header */}
-      <div className="border-b border-white/10/50 bg-[#12101a]/20 backdrop-blur-sm overflow-visible relative z-20">
-        <div className="px-8 py-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-white">
-            {activeView === 'all-notes' && 'All Notes'}
-            {activeView === 'projects' && 'Projects'}
-            {activeView === 'content' && 'Content Consumption'}
-            {activeView === 'books' && 'Books'}
-            {activeView === 'media' && 'Media Library'}
-            {activeView === 'collections' && 'Collections'}
-            {activeView === 'note-detail' && 'Note'}
-            {activeView === 'media-detail' && 'Media'}
+      <div className="border-b border-white/5 bg-[#0c0a10] overflow-visible relative z-20">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-white">
+            {getViewTitle()}
           </h1>
           <div className="flex items-center gap-3">
             <SearchBar />
@@ -41,12 +54,24 @@ function MainCanvas() {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-6">
         {/* Projects View */}
         {activeView === 'projects' && <ProjectsView />}
 
-        {/* Content Consumption View */}
-        {activeView === 'content' && <ContentView />}
+        {/* Library View - Overview of all content */}
+        {activeView === 'library' && <LibraryView />}
+
+        {/* Books View */}
+        {activeView === 'books' && <BooksView />}
+
+        {/* Podcasts View */}
+        {activeView === 'podcasts' && <PodcastsView />}
+
+        {/* Videos View */}
+        {activeView === 'videos' && <VideosView />}
+
+        {/* Courses View */}
+        {activeView === 'courses' && <CoursesView />}
 
         {/* All Notes View */}
         {activeView === 'all-notes' && (
@@ -55,7 +80,7 @@ function MainCanvas() {
               <div
                 key={note.id}
                 onClick={() => setActiveView('note-detail', note.id)}
-                className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-lg p-4 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
+                className="bg-[#12101a]/40 backdrop-blur-sm border border-white/5 rounded-lg p-4 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
@@ -84,7 +109,7 @@ function MainCanvas() {
                     </span>
                   ))}
                   {note.tags.length > 3 && (
-                    <span className="px-2 py-1 text-xs text-zinc-600">
+                    <span className="px-2 py-1 text-xs text-white/40">
                       +{note.tags.length - 3} more
                     </span>
                   )}
@@ -94,70 +119,13 @@ function MainCanvas() {
           </div>
         )}
 
-        {/* Books View */}
-        {activeView === 'books' && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {books.map((book) => (
-              <div
-                key={book.id}
-                className="group cursor-pointer"
-              >
-                <div className="relative aspect-[2/3] mb-3 rounded-lg overflow-hidden bg-[#12101a] border border-white/10/50 group-hover:border-purple-500/50 transition-all duration-200">
-                  {book.coverImage ? (
-                    <img
-                      src={book.coverImage}
-                      alt={book.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <svg
-                        className="w-12 h-12 text-zinc-700"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                  {book.status === 'reading' && (
-                    <div className="absolute inset-x-0 bottom-0 h-1 bg-[#1a1724]">
-                      <div
-                        className="h-full bg-purple-500"
-                        style={{
-                          width: `${
-                            (book.progress.current / book.progress.total) * 100
-                          }%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-sm font-medium text-white line-clamp-2 mb-1 group-hover:text-purple-300 transition-colors">
-                  {book.title}
-                </h3>
-                <p className="text-xs text-white/50">{book.author}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Media View */}
-        {activeView === 'media' && <MediaLibrary />}
-
         {/* Collections View */}
         {activeView === 'collections' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {collections.map((collection) => (
               <div
                 key={collection.id}
-                className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-lg p-6 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
+                className="bg-[#12101a]/40 backdrop-blur-sm border border-white/5 rounded-lg p-6 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
                 style={{ borderLeftColor: collection.color, borderLeftWidth: '3px' }}
               >
                 <div className="flex items-start gap-4">
@@ -169,7 +137,7 @@ function MainCanvas() {
                     <p className="text-sm text-white/50 mb-3">
                       {collection.description}
                     </p>
-                    <div className="text-xs text-zinc-600">
+                    <div className="text-xs text-white/40">
                       {collection.items.length} items
                     </div>
                   </div>

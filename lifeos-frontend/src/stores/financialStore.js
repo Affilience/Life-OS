@@ -1,6 +1,6 @@
 /**
  * Financial Store - Zustand state management for financial tracking
- * Manages transactions, budgets, savings goals, and accounts
+ * Manages transactions, budgets, savings goals, accounts, and envelope budgeting
  */
 
 import { create } from 'zustand';
@@ -13,6 +13,210 @@ import {
   CATEGORIES,
 } from '../data/financialData';
 
+// ============================================================
+// ENVELOPE BUDGET CATEGORIES
+// ============================================================
+export const ENVELOPE_CATEGORIES = {
+  // Fixed Expenses (Needs)
+  housing: {
+    id: 'housing',
+    name: 'Housing',
+    type: 'fixed',
+    icon: '🏠',
+    color: 'from-slate-500 to-slate-600',
+    bgColor: 'bg-slate-500/10',
+    description: 'Rent, mortgage, property taxes',
+  },
+  utilities: {
+    id: 'utilities',
+    name: 'Utilities',
+    type: 'fixed',
+    icon: '💡',
+    color: 'from-yellow-500 to-amber-500',
+    bgColor: 'bg-yellow-500/10',
+    description: 'Electric, gas, water, internet',
+  },
+  insurance: {
+    id: 'insurance',
+    name: 'Insurance',
+    type: 'fixed',
+    icon: '🛡️',
+    color: 'from-blue-500 to-blue-600',
+    bgColor: 'bg-blue-500/10',
+    description: 'Health, car, life insurance',
+  },
+  subscriptions: {
+    id: 'subscriptions',
+    name: 'Subscriptions',
+    type: 'fixed',
+    icon: '📱',
+    color: 'from-purple-500 to-purple-600',
+    bgColor: 'bg-purple-500/10',
+    description: 'Streaming, software, memberships',
+  },
+
+  // Variable Expenses (Needs)
+  food: {
+    id: 'food',
+    name: 'Food & Groceries',
+    type: 'variable',
+    icon: '🛒',
+    color: 'from-green-500 to-emerald-500',
+    bgColor: 'bg-green-500/10',
+    description: 'Groceries and household essentials',
+  },
+  transportation: {
+    id: 'transportation',
+    name: 'Transport',
+    type: 'variable',
+    icon: '🚗',
+    color: 'from-cyan-500 to-cyan-600',
+    bgColor: 'bg-cyan-500/10',
+    description: 'Fuel, public transport, parking',
+  },
+  health: {
+    id: 'health',
+    name: 'Health & Fitness',
+    type: 'variable',
+    icon: '💪',
+    color: 'from-red-500 to-rose-500',
+    bgColor: 'bg-red-500/10',
+    description: 'Gym, medical, pharmacy',
+  },
+
+  // Wants
+  dining: {
+    id: 'dining',
+    name: 'Dining Out',
+    type: 'wants',
+    icon: '🍽️',
+    color: 'from-orange-500 to-orange-600',
+    bgColor: 'bg-orange-500/10',
+    description: 'Restaurants, takeaway, coffee',
+  },
+  entertainment: {
+    id: 'entertainment',
+    name: 'Entertainment',
+    type: 'wants',
+    icon: '🎮',
+    color: 'from-pink-500 to-pink-600',
+    bgColor: 'bg-pink-500/10',
+    description: 'Games, movies, events',
+  },
+  shopping: {
+    id: 'shopping',
+    name: 'Shopping',
+    type: 'wants',
+    icon: '🛍️',
+    color: 'from-violet-500 to-violet-600',
+    bgColor: 'bg-violet-500/10',
+    description: 'Clothes, electronics, personal items',
+  },
+  personal: {
+    id: 'personal',
+    name: 'Personal Care',
+    type: 'wants',
+    icon: '✨',
+    color: 'from-fuchsia-500 to-fuchsia-600',
+    bgColor: 'bg-fuchsia-500/10',
+    description: 'Haircuts, skincare, grooming',
+  },
+
+  // Growth & Learning
+  education: {
+    id: 'education',
+    name: 'Learning',
+    type: 'growth',
+    icon: '📚',
+    color: 'from-indigo-500 to-indigo-600',
+    bgColor: 'bg-indigo-500/10',
+    description: 'Courses, books, education',
+  },
+
+  // Wants
+  travel: {
+    id: 'travel',
+    name: 'Travel',
+    type: 'wants',
+    icon: '✈️',
+    color: 'from-teal-500 to-teal-600',
+    bgColor: 'bg-teal-500/10',
+    description: 'Trips, holidays, adventures',
+  },
+
+  // Savings & Investments
+  savings: {
+    id: 'savings',
+    name: 'Savings',
+    type: 'savings',
+    icon: '💰',
+    color: 'from-emerald-500 to-green-500',
+    bgColor: 'bg-emerald-500/10',
+    description: 'General savings, building wealth',
+  },
+  emergency_fund: {
+    id: 'emergency_fund',
+    name: 'Emergency Fund',
+    type: 'savings',
+    icon: '🛟',
+    color: 'from-amber-500 to-orange-500',
+    bgColor: 'bg-amber-500/10',
+    description: 'Rainy day fund, 3-6 months expenses',
+  },
+  investments: {
+    id: 'investments',
+    name: 'Investments',
+    type: 'savings',
+    icon: '📈',
+    color: 'from-blue-500 to-cyan-500',
+    bgColor: 'bg-blue-500/10',
+    description: 'Stocks, ETFs, crypto, retirement',
+  },
+  travel_fund: {
+    id: 'travel_fund',
+    name: 'Travel Fund',
+    type: 'savings',
+    icon: '🏝️',
+    color: 'from-cyan-500 to-teal-500',
+    bgColor: 'bg-cyan-500/10',
+    description: 'Saving for trips and holidays',
+  },
+  big_purchases: {
+    id: 'big_purchases',
+    name: 'Big Purchases',
+    type: 'savings',
+    icon: '🎯',
+    color: 'from-purple-500 to-violet-500',
+    bgColor: 'bg-purple-500/10',
+    description: 'Car, laptop, furniture, etc.',
+  },
+
+  // Other
+  gifts: {
+    id: 'gifts',
+    name: 'Gifts',
+    type: 'other',
+    icon: '🎁',
+    color: 'from-pink-500 to-rose-500',
+    bgColor: 'bg-pink-500/10',
+    description: 'Birthday, holiday, and other gifts',
+  },
+  other: {
+    id: 'other',
+    name: 'Other',
+    type: 'other',
+    icon: '📦',
+    color: 'from-gray-500 to-gray-600',
+    bgColor: 'bg-gray-500/10',
+    description: 'Miscellaneous expenses',
+  },
+};
+
+// Helper to get month key
+const getMonthKey = (date = new Date()) => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+};
+
 export const useFinancialStore = create(
   persist(
     (set, get) => ({
@@ -24,6 +228,12 @@ export const useFinancialStore = create(
       selectedPeriod: 'month', // 'week' | 'month' | 'year' | 'all'
       selectedAccount: 'all',
       selectedCategory: 'all',
+
+      // Envelope budgeting state
+      envelopeBudgets: {}, // { '2025-01': { food: 300, transport: 100, ... } }
+      monthlyIncomeTarget: 3000, // Expected monthly income for zero-based budgeting
+      envelopeSettings: {}, // { categoryId: { rollover: true, ... } }
+      sinkingFunds: [], // For irregular expenses
 
       // Transaction CRUD
       addTransaction: (transaction) => {
@@ -340,6 +550,220 @@ export const useFinancialStore = create(
         return transactions.filter((txn) => txn.recurring);
       },
 
+      // ============================================================
+      // ENVELOPE BUDGETING METHODS
+      // ============================================================
+
+      // Set budget for a category in a specific month
+      setEnvelopeBudget: (categoryId, amount, monthKey = getMonthKey()) => {
+        set((state) => ({
+          envelopeBudgets: {
+            ...state.envelopeBudgets,
+            [monthKey]: {
+              ...(state.envelopeBudgets[monthKey] || {}),
+              [categoryId]: amount,
+            },
+          },
+        }));
+      },
+
+      // Set all envelopes for a month at once
+      setMonthlyEnvelopes: (budgets, monthKey = getMonthKey()) => {
+        set((state) => ({
+          envelopeBudgets: {
+            ...state.envelopeBudgets,
+            [monthKey]: budgets,
+          },
+        }));
+      },
+
+      // Copy envelopes from one month to another
+      copyEnvelopesFromMonth: (sourceMonth, targetMonth = getMonthKey()) => {
+        const { envelopeBudgets } = get();
+        const sourceBudgets = envelopeBudgets[sourceMonth] || {};
+
+        set((state) => ({
+          envelopeBudgets: {
+            ...state.envelopeBudgets,
+            [targetMonth]: { ...sourceBudgets },
+          },
+        }));
+      },
+
+      // Set monthly income target
+      setMonthlyIncomeTarget: (amount) => {
+        set({ monthlyIncomeTarget: amount });
+      },
+
+      // Get envelope status for all categories in a month
+      getEnvelopeStatus: (monthKey = getMonthKey()) => {
+        const { envelopeBudgets, transactions } = get();
+        const budgets = envelopeBudgets[monthKey] || {};
+
+        // Get spending by category for the month
+        const monthTransactions = transactions.filter((t) => {
+          const transactionMonth = getMonthKey(new Date(t.date));
+          return transactionMonth === monthKey && t.type === 'expense';
+        });
+
+        const spending = {};
+        monthTransactions.forEach((t) => {
+          const category = t.category;
+          spending[category] = (spending[category] || 0) + Math.abs(t.amount);
+        });
+
+        // Build envelope status for each category
+        const envelopes = {};
+        Object.keys(ENVELOPE_CATEGORIES).forEach((categoryId) => {
+          const allocated = budgets[categoryId] || 0;
+          const spent = spending[categoryId] || 0;
+          const remaining = allocated - spent;
+          const percentUsed = allocated > 0 ? (spent / allocated) * 100 : 0;
+
+          let status = 'healthy'; // green
+          if (percentUsed >= 100) status = 'over'; // red
+          else if (percentUsed >= 80) status = 'warning'; // yellow
+          else if (percentUsed >= 50) status = 'caution'; // blue
+
+          envelopes[categoryId] = {
+            categoryId,
+            ...ENVELOPE_CATEGORIES[categoryId],
+            allocated,
+            spent,
+            remaining,
+            percentUsed: Math.round(percentUsed),
+            status,
+          };
+        });
+
+        return envelopes;
+      },
+
+      // Get envelope summary for the month
+      getEnvelopeSummary: (monthKey = getMonthKey()) => {
+        const { envelopeBudgets, monthlyIncomeTarget, transactions } = get();
+        const budgets = envelopeBudgets[monthKey] || {};
+
+        // Calculate totals
+        const totalAllocated = Object.values(budgets).reduce((sum, amt) => sum + amt, 0);
+        const unallocated = monthlyIncomeTarget - totalAllocated;
+
+        // Get actual income and expenses for the month
+        const monthTransactions = transactions.filter((t) => {
+          const transactionMonth = getMonthKey(new Date(t.date));
+          return transactionMonth === monthKey;
+        });
+
+        const totalIncome = monthTransactions
+          .filter((t) => t.type === 'income')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const totalExpenses = monthTransactions
+          .filter((t) => t.type === 'expense')
+          .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+        const netIncome = totalIncome - totalExpenses;
+        const savingsRate = totalIncome > 0 ? Math.round((netIncome / totalIncome) * 100) : 0;
+
+        // Categories by type
+        const envelopes = get().getEnvelopeStatus(monthKey);
+        const categorizedEnvelopes = {
+          fixed: [],
+          variable: [],
+          wants: [],
+          growth: [],
+          savings: [],
+          other: [],
+        };
+
+        Object.values(envelopes).forEach((env) => {
+          if (env.allocated > 0 || env.spent > 0) {
+            const type = ENVELOPE_CATEGORIES[env.categoryId]?.type || 'other';
+            categorizedEnvelopes[type].push(env);
+          }
+        });
+
+        return {
+          monthlyIncomeTarget,
+          totalAllocated,
+          unallocated,
+          totalIncome,
+          totalExpenses,
+          netIncome,
+          savingsRate,
+          categorizedEnvelopes,
+          isZeroBased: Math.abs(unallocated) < 1, // Within £1 of zero
+        };
+      },
+
+      // Check if month has envelopes set up
+      hasEnvelopesForMonth: (monthKey = getMonthKey()) => {
+        const { envelopeBudgets } = get();
+        const budgets = envelopeBudgets[monthKey] || {};
+        return Object.keys(budgets).length > 0;
+      },
+
+      // Get previous month with envelopes (for copying)
+      getPreviousMonthWithEnvelopes: () => {
+        const { envelopeBudgets } = get();
+        const months = Object.keys(envelopeBudgets).sort().reverse();
+        return months[0] || null;
+      },
+
+      // ============================================================
+      // SINKING FUNDS METHODS
+      // ============================================================
+
+      addSinkingFund: (fund) => {
+        const newFund = {
+          id: `fund-${Date.now()}`,
+          name: fund.name,
+          targetAmount: fund.targetAmount,
+          currentAmount: fund.currentAmount || 0,
+          targetDate: fund.targetDate || null,
+          monthlyContribution: fund.monthlyContribution || 0,
+          icon: fund.icon || '💰',
+          color: fund.color || 'from-amber-500 to-yellow-500',
+          createdAt: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          sinkingFunds: [...state.sinkingFunds, newFund],
+        }));
+
+        return newFund.id;
+      },
+
+      updateSinkingFund: (id, updates) => {
+        set((state) => ({
+          sinkingFunds: state.sinkingFunds.map((f) =>
+            f.id === id ? { ...f, ...updates } : f
+          ),
+        }));
+      },
+
+      deleteSinkingFund: (id) => {
+        set((state) => ({
+          sinkingFunds: state.sinkingFunds.filter((f) => f.id !== id),
+        }));
+      },
+
+      contributeSinkingFund: (id, amount) => {
+        set((state) => ({
+          sinkingFunds: state.sinkingFunds.map((f) =>
+            f.id === id ? { ...f, currentAmount: f.currentAmount + amount } : f
+          ),
+        }));
+      },
+
+      withdrawSinkingFund: (id, amount) => {
+        set((state) => ({
+          sinkingFunds: state.sinkingFunds.map((f) =>
+            f.id === id ? { ...f, currentAmount: Math.max(0, f.currentAmount - amount) } : f
+          ),
+        }));
+      },
+
       getTopMerchants: (limit = 5) => {
         const filtered = get().getFilteredTransactions();
         const merchantTotals = {};
@@ -443,6 +867,19 @@ export const useFinancialStore = create(
     }),
     {
       name: 'financial-storage',
+      partialize: (state) => ({
+        transactions: state.transactions,
+        budgets: state.budgets,
+        savingsGoals: state.savingsGoals,
+        accounts: state.accounts,
+        envelopeBudgets: state.envelopeBudgets,
+        monthlyIncomeTarget: state.monthlyIncomeTarget,
+        envelopeSettings: state.envelopeSettings,
+        sinkingFunds: state.sinkingFunds,
+      }),
     }
   )
 );
+
+// Export helper
+export { getMonthKey };

@@ -1,14 +1,20 @@
 /**
  * Pets Section - Mythological Companion Collection
  * Displays active pets, collection progress, and pet codex
+ *
+ * Supports gamification modes:
+ * - Cosmic: Full pixel art pets with mythological names
+ * - Professional: "Focus Boosters" with icons and percentages
+ * - Minimal: Hidden (bonuses still apply silently)
  */
 
 import React, { useState } from 'react';
 import { usePetStore, PET_DATABASE, TIER_INFO } from '../../stores/petStore';
-import { Lock, Star, Sparkles, Crown, BookOpen, X } from 'lucide-react';
+import { Lock, Star, Sparkles, Crown, BookOpen, X, Zap, TrendingUp } from 'lucide-react';
 import Card from '../ui/Card';
+import { useGamificationModeStore } from '../../stores/gamificationModeStore';
 
-const PetsSection = () => {
+const PetsSection = ({ forceShow = false }) => {
   const {
     ownedPets,
     activePets,
@@ -19,6 +25,12 @@ const PetsSection = () => {
     isPetUnlocked,
     isPetActive,
   } = usePetStore();
+
+  // Get gamification mode settings
+  const { mode, getTerm, isVisible, getPetName } = useGamificationModeStore();
+  // If forceShow is true (e.g., on dedicated Pets page), always show full UI
+  const showPets = forceShow || isVisible('showPets');
+  const showPetSprites = forceShow || isVisible('showPetSprites');
 
   const [showCodex, setShowCodex] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
@@ -31,30 +43,71 @@ const PetsSection = () => {
   const activeSlots = Array.from({ length: maxSlots }, (_, i) => activePets[i] || null);
   const lockedSlots = Array.from({ length: 6 - maxSlots }, () => 'locked');
 
+  // Get mode-appropriate terminology
+  const companionsLabel = getTerm('activeCompanions');
+  const codexLabel = getTerm('petCodex');
+
+  // Don't render in minimal mode (bonuses still apply via store)
+  if (!showPets) {
+    // Show a minimal summary of active bonuses instead
+    if (Object.keys(activeBonuses).length > 0) {
+      return (
+        <Card padding="sm">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-green-400" />
+            <span className="text-sm font-semibold" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
+              Active Bonuses
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(activeBonuses).map(([type, amount]) => (
+              <div
+                key={type}
+                className="px-3 py-1 rounded-full text-xs font-medium"
+                style={{
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  color: '#4ade80',
+                }}
+              >
+                +{amount}% {type.charAt(0).toUpperCase() + type.slice(1)}
+              </div>
+            ))}
+          </div>
+        </Card>
+      );
+    }
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       {/* Active Companions Header */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
-            <Sparkles className="w-5 h-5 text-purple-400" />
-            Active Companions
+            {mode === 'cosmic' ? (
+              <Sparkles className="w-5 h-5 text-purple-400" />
+            ) : (
+              <Zap className="w-5 h-5 text-blue-400" />
+            )}
+            {companionsLabel}
           </h3>
           <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
-            {activePets.length}/{maxSlots} slots • {stats.owned}/{stats.total} collected ({stats.percentage}%)
+            {activePets.length}/{maxSlots} {mode === 'cosmic' ? 'slots' : 'active'} • {stats.owned}/{stats.total} {mode === 'cosmic' ? 'collected' : 'unlocked'} ({stats.percentage}%)
           </p>
         </div>
         <button
           onClick={() => setShowCodex(true)}
           className="px-4 py-2 rounded-lg flex items-center gap-2"
           style={{
-            background: 'rgba(139, 92, 246, 0.1)',
-            border: '1px solid rgba(139, 92, 246, 0.3)',
-            color: '#a78bfa',
+            background: mode === 'cosmic' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+            border: mode === 'cosmic' ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(59, 130, 246, 0.3)',
+            color: mode === 'cosmic' ? '#a78bfa' : '#60a5fa',
           }}
         >
           <BookOpen className="w-4 h-4" />
-          Pet Codex
+          {codexLabel}
         </button>
       </div>
 
@@ -67,6 +120,7 @@ const PetsSection = () => {
             slotNumber={index + 1}
             onSelect={setSelectedPet}
             onOpenCodex={() => setShowCodex(true)}
+            forceShowSprites={forceShow}
           />
         ))}
         {lockedSlots.map((_, index) => (
@@ -107,6 +161,7 @@ const PetsSection = () => {
           onClose={() => setShowCodex(false)}
           filterTier={filterTier}
           setFilterTier={setFilterTier}
+          forceShowSprites={forceShow}
           selectedPet={selectedPet}
           setSelectedPet={setSelectedPet}
         />
@@ -121,8 +176,10 @@ const PetsSection = () => {
 };
 
 // Pet Slot Component
-function PetSlot({ petId, slotNumber, onSelect, onOpenCodex }) {
+function PetSlot({ petId, slotNumber, onSelect, onOpenCodex, forceShowSprites = false }) {
   const { equipPet, isPetActive } = usePetStore();
+  const { mode, isVisible, getPetName, getTerm } = useGamificationModeStore();
+  const showSprites = forceShowSprites || isVisible('showPetSprites');
 
   if (!petId) {
     return (
@@ -137,7 +194,7 @@ function PetSlot({ petId, slotNumber, onSelect, onOpenCodex }) {
         <div className="text-center">
           <div className="text-2xl mb-1">+</div>
           <div className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.38)' }}>
-            Empty
+            {mode === 'cosmic' ? 'Empty' : 'Add'}
           </div>
         </div>
       </div>
@@ -148,7 +205,56 @@ function PetSlot({ petId, slotNumber, onSelect, onOpenCodex }) {
   if (!pet) return null;
 
   const tierColor = TIER_INFO[pet.tier].color;
+  const displayName = getPetName(petId);
+  const unequipLabel = getTerm('unequip');
 
+  // Professional mode: show as icon-based booster card
+  if (!showSprites) {
+    return (
+      <div
+        className="aspect-square rounded-lg overflow-hidden cursor-pointer group relative flex flex-col items-center justify-center p-2"
+        style={{
+          background: 'rgba(39, 39, 42, 0.6)',
+          border: `2px solid ${tierColor}40`,
+        }}
+        onClick={() => onSelect(pet)}
+      >
+        {/* Icon instead of sprite */}
+        <Zap className="w-8 h-8 mb-1" style={{ color: tierColor }} />
+
+        {/* Bonus text */}
+        <div className="text-xs font-medium text-center" style={{ color: tierColor }}>
+          {pet.bonusDescription.replace('+', '').replace(' XP', '')}
+        </div>
+
+        {/* Slot number */}
+        <div
+          className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-xs font-bold"
+          style={{
+            background: 'rgba(59, 130, 246, 0.2)',
+            color: '#60a5fa',
+          }}
+        >
+          {slotNumber}
+        </div>
+
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              equipPet(petId);
+            }}
+            className="px-3 py-1 rounded bg-red-500 text-white text-xs font-medium"
+          >
+            {unequipLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Cosmic mode: full pixel art display
   return (
     <div
       className="aspect-square rounded-lg overflow-hidden cursor-pointer group relative"
@@ -185,7 +291,7 @@ function PetSlot({ petId, slotNumber, onSelect, onOpenCodex }) {
           }}
           className="px-3 py-1 rounded bg-red-500 text-white text-xs font-medium"
         >
-          Unequip
+          {unequipLabel}
         </button>
       </div>
     </div>
@@ -211,7 +317,7 @@ function LockedSlot({ slotNumber }) {
 }
 
 // Pet Codex Modal
-function PetCodexModal({ onClose, filterTier, setFilterTier, selectedPet, setSelectedPet }) {
+function PetCodexModal({ onClose, filterTier, setFilterTier, selectedPet, setSelectedPet, forceShowSprites = false }) {
   const { isPetUnlocked, equipPet, isPetActive } = usePetStore();
 
   // Get all pets grouped by tier
@@ -291,6 +397,7 @@ function PetCodexModal({ onClose, filterTier, setFilterTier, selectedPet, setSel
                 active={isPetActive(pet.id)}
                 onClick={() => setSelectedPet(pet)}
                 onEquip={equipPet}
+                forceShowSprites={forceShowSprites}
               />
             ))}
           </div>
@@ -325,8 +432,24 @@ function FilterButton({ active, onClick, label, color }) {
 }
 
 // Pet Card in Codex
-function PetCard({ pet, unlocked, active, onClick, onEquip }) {
+function PetCard({ pet, unlocked, active, onClick, onEquip, forceShowSprites = false }) {
   const tierColor = TIER_INFO[pet.tier].color;
+  const { mode, isVisible, getPetName, getTerm } = useGamificationModeStore();
+  const showSprites = forceShowSprites || isVisible('showPetSprites');
+
+  const displayName = getPetName(pet.id);
+  const equipLabel = getTerm('equip');
+
+  // Professional tier labels
+  const professionalTierNames = {
+    common: 'Basic',
+    uncommon: 'Standard',
+    rare: 'Advanced',
+    epic: 'Premium',
+    mythic: 'Elite',
+  };
+
+  const tierLabel = mode === 'cosmic' ? TIER_INFO[pet.tier].name : professionalTierNames[pet.tier];
 
   return (
     <div
@@ -338,14 +461,24 @@ function PetCard({ pet, unlocked, active, onClick, onEquip }) {
       }}
       onClick={onClick}
     >
-      {/* Pet Image */}
+      {/* Pet Image/Icon */}
       <div className="aspect-square p-4 relative">
         {unlocked ? (
-          <img
-            src={pet.sprite}
-            alt={pet.name}
-            className="w-full h-full object-contain pixelated"
-          />
+          showSprites ? (
+            <img
+              src={pet.sprite}
+              alt={pet.name}
+              className="w-full h-full object-contain pixelated"
+            />
+          ) : (
+            /* Professional mode: show icon */
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <Zap className="w-12 h-12 mb-2" style={{ color: tierColor }} />
+              <div className="text-sm font-bold" style={{ color: tierColor }}>
+                {pet.bonusDescription.split(' ')[0]}
+              </div>
+            </div>
+          )
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Lock className="w-12 h-12" style={{ color: 'rgba(255, 255, 255, 0.2)' }} />
@@ -354,7 +487,13 @@ function PetCard({ pet, unlocked, active, onClick, onEquip }) {
 
         {active && (
           <div className="absolute top-2 right-2">
-            <Crown className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+            {mode === 'cosmic' ? (
+              <Crown className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+            ) : (
+              <div className="px-2 py-0.5 bg-green-500/20 border border-green-500/30 rounded text-xs text-green-400 font-medium">
+                Active
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -362,10 +501,10 @@ function PetCard({ pet, unlocked, active, onClick, onEquip }) {
       {/* Pet Info */}
       <div className="p-3 border-t" style={{ borderColor: `${tierColor}40` }}>
         <div className="text-sm font-semibold mb-1" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
-          {unlocked ? pet.name : '???'}
+          {unlocked ? displayName : '???'}
         </div>
         <div className="text-xs mb-2" style={{ color: 'rgba(255, 255, 255, 0.38)' }}>
-          {pet.culture} • {TIER_INFO[pet.tier].name}
+          {mode === 'cosmic' && `${pet.culture} • `}{tierLabel}
         </div>
         {unlocked && (
           <div className="text-xs font-medium" style={{ color: tierColor }}>
@@ -388,7 +527,7 @@ function PetCard({ pet, unlocked, active, onClick, onEquip }) {
               color: '#fff',
             }}
           >
-            Equip
+            {equipLabel}
           </button>
         </div>
       )}

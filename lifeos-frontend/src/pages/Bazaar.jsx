@@ -187,39 +187,25 @@ export default function Bazaar() {
   const filteredRewards = getFilteredRewards();
 
   return (
-    <div className="min-h-screen bg-[#0c0a10] pb-20">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
-        <div className="px-6 py-4">
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <ShoppingBag className="w-6 h-6 text-yellow-400" />
-            Reward Bazaar
-          </h1>
-          <p className="text-sm text-white/60 mt-1">
-            Spend your hard-earned credits on rewards
-          </p>
-        </div>
-
-        {/* Credit Balance */}
-        <div className="px-6 pb-4">
-          <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-white/60">Available Credits</div>
-                <div className="text-3xl font-bold text-white flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-yellow-400" />
-                  {userCredits.toLocaleString()}
-                </div>
-              </div>
-              <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm transition-colors">
-                Earn More →
-              </button>
+    <div className="space-y-4">
+      {/* Credit Balance */}
+      <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm text-white/60">Available Credits</div>
+            <div className="text-3xl font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-yellow-400" />
+              {userCredits.toLocaleString()}
             </div>
           </div>
+          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm transition-colors">
+            Earn More →
+          </button>
         </div>
+      </div>
 
-        {/* Search & Filters */}
-        <div className="px-6 pb-3 space-y-3">
+      {/* Search & Filters */}
+      <div className="space-y-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
@@ -282,8 +268,8 @@ export default function Bazaar() {
           )}
         </div>
 
-        {/* Category Pills */}
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
+      {/* Category Pills */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-2 px-2">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isActive = selectedCategory === cat.id;
@@ -307,12 +293,10 @@ export default function Bazaar() {
               </button>
             );
           })}
-        </div>
       </div>
 
       {/* Rewards Grid */}
-      <div className="p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRewards.map((reward) => {
             const affordability = getAffordabilityState(reward.cost);
             const AffordIcon = affordability.icon;
@@ -379,16 +363,15 @@ export default function Bazaar() {
               </motion.div>
             );
           })}
-        </div>
-
-        {filteredRewards.length === 0 && (
-          <div className="text-center py-20">
-            <ShoppingBag className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-            <p className="text-white/50">No rewards found</p>
-            <p className="text-sm text-white/40 mt-2">Try adjusting your filters</p>
-          </div>
-        )}
       </div>
+
+      {filteredRewards.length === 0 && (
+        <div className="text-center py-20">
+          <ShoppingBag className="w-16 h-16 text-gray-700 mx-auto mb-4" />
+          <p className="text-white/50">No rewards found</p>
+          <p className="text-sm text-white/40 mt-2">Try adjusting your filters</p>
+        </div>
+      )}
 
       {/* Purchase Modal */}
       <AnimatePresence>

@@ -11,78 +11,71 @@ import {
   ChevronRight,
   Pill,
   BarChart3,
+  Trash2,
 } from 'lucide-react';
 import NutritionCharts from './charts/NutritionCharts';
-import NutritionLogger from './NutritionLogger';
+import SmartMealLogger from './SmartMealLogger';
+import MicronutrientBreakdown from './MicronutrientBreakdown';
+import { useHealthStore } from '../../stores/healthStore';
 import './NutritionTab.css';
 
 export default function NutritionTab() {
   const [showSupplements, setShowSupplements] = useState(false);
-  const [loggedFoods, setLoggedFoods] = useState([]);
+  const [showMicronutrients, setShowMicronutrients] = useState(false);
 
-  // Calculate today's stats from logged foods
-  const todayStats = loggedFoods.reduce(
-    (acc, food) => ({
-      calories: {
-        current: acc.calories.current + food.calories,
-        goal: 2000
-      },
-      protein: {
-        current: acc.protein.current + food.protein,
-        goal: 150
-      },
-      carbs: {
-        current: acc.carbs.current + food.carbs,
-        goal: 250
-      },
-      fat: {
-        current: acc.fat.current + food.fat,
-        goal: 67
-      },
-    }),
-    {
-      calories: { current: 0, goal: 2000 },
-      protein: { current: 0, goal: 150 },
-      carbs: { current: 0, goal: 250 },
-      fat: { current: 0, goal: 67 },
-    }
-  );
+  // Use health store for meals
+  const {
+    meals,
+    dailyGoals,
+    selectedDate,
+    addMeal,
+    deleteMeal,
+    getMealsForDate,
+    getDailyTotals,
+  } = useHealthStore();
 
-  const handleAddFood = (food) => {
-    setLoggedFoods([...loggedFoods, food]);
+  // Get meals and totals for selected date
+  const todayMeals = getMealsForDate(selectedDate);
+  const dailyTotals = getDailyTotals(selectedDate);
+
+  // Calculate today's stats
+  const todayStats = {
+    calories: { current: dailyTotals.calories, goal: dailyGoals.calories },
+    protein: { current: dailyTotals.protein, goal: dailyGoals.protein },
+    carbs: { current: dailyTotals.carbs, goal: dailyGoals.carbs },
+    fat: { current: dailyTotals.fat, goal: dailyGoals.fat },
   };
 
-  // Convert logged foods to meal format
-  const recentMeals = loggedFoods.map((food, index) => {
-    const date = new Date(food.timestamp);
-    const hour = date.getHours();
-    let type = 'Snack';
-    let icon = '🍽️';
+  const handleMealLogged = (mealData) => {
+    addMeal(mealData);
+  };
 
-    // Determine meal type based on time
-    if (hour >= 6 && hour < 11) {
-      type = 'Breakfast';
-      icon = '🌅';
-    } else if (hour >= 11 && hour < 16) {
-      type = 'Lunch';
-      icon = '🥗';
-    } else if (hour >= 16 && hour < 22) {
-      type = 'Dinner';
-      icon = '🌙';
-    } else {
-      icon = '☕';
-    }
+  const handleDeleteMeal = (mealId) => {
+    deleteMeal(mealId);
+  };
+
+  // Meal type icons
+  const mealTypeIcons = {
+    breakfast: '🌅',
+    lunch: '☀️',
+    dinner: '🌙',
+    snack: '🍎',
+  };
+
+  // Convert meals to display format
+  const recentMeals = todayMeals.map((meal) => {
+    const date = new Date(meal.timestamp);
 
     return {
-      id: food.id,
-      type,
+      id: meal.id,
+      type: meal.mealType ? meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1) : 'Meal',
       time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      description: food.brand ? `${food.name} (${food.brand})` : food.name,
-      calories: Math.round(food.calories),
-      protein: Math.round(food.protein * 10) / 10,
-      carbs: Math.round(food.carbs * 10) / 10,
-      fat: Math.round(food.fat * 10) / 10,
-      icon,
+      description: meal.description || (meal.items ? meal.items.map(i => i.name).join(', ') : 'Logged meal'),
+      calories: Math.round(meal.totalCalories || 0),
+      protein: Math.round((meal.totalProtein || 0) * 10) / 10,
+      carbs: Math.round((meal.totalCarbs || 0) * 10) / 10,
+      fat: Math.round((meal.totalFat || 0) * 10) / 10,
+      icon: mealTypeIcons[meal.mealType] || '🍽️',
     };
   });
 
@@ -91,8 +84,8 @@ export default function NutritionTab() {
 
   return (
     <div className="nutrition-tab">
-      {/* FatSecret Food Logger */}
-      <NutritionLogger onAddFood={handleAddFood} />
+      {/* Smart Meal Logger with AI parsing */}
+      <SmartMealLogger onMealLogged={handleMealLogged} />
 
       {/* Today's Summary */}
       <div className="todays-summary-section">
@@ -190,7 +183,10 @@ export default function NutritionTab() {
           </div>
         </div>
 
-        <button className="view-micronutrients-btn">
+        <button
+          className="view-micronutrients-btn"
+          onClick={() => setShowMicronutrients(true)}
+        >
           View Micronutrients
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -307,13 +303,27 @@ export default function NutritionTab() {
                     <span className="macro-label">F:</span>
                     <span className="macro-value">{meal.fat}g</span>
                   </div>
-                  <button className="meal-edit-btn">Edit</button>
+                  <button
+                    className="meal-delete-btn"
+                    onClick={() => handleDeleteMeal(meal.id)}
+                    title="Delete meal"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Micronutrient Breakdown Modal */}
+      {showMicronutrients && (
+        <MicronutrientBreakdown
+          totals={dailyTotals}
+          onClose={() => setShowMicronutrients(false)}
+        />
+      )}
     </div>
   );
 }

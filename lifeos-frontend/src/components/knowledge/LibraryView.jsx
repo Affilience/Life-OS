@@ -1,13 +1,45 @@
-import React, { useState } from 'react';
+/**
+ * Library View - Clean, Minimal Book Tracking Interface
+ * Inspired by modern book tracking apps and Notion templates
+ */
+
+import React, { useState, useMemo } from 'react';
 import {
   Star, Check, Clock, Book, Headphones, Video, GraduationCap,
-  Search, Grid3x3, Grid2x2, LayoutGrid, TrendingUp, BookOpen,
-  Play, Pause, Plus
+  Search, Grid3x3, List, TrendingUp, BookOpen, Plus, Filter,
+  ChevronRight, BarChart3, Target, Calendar
 } from 'lucide-react';
 import './LibraryView.css';
 
-// Mock data for consumed items - Enhanced with cover images
-const consumedItems = [
+// Mock data - Currently Reading (featured)
+const currentlyReading = [
+  {
+    id: 11,
+    type: 'book',
+    title: 'The Almanack of Naval Ravikant',
+    author: 'Eric Jorgenson',
+    genre: 'Philosophy',
+    coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1598011736i/54898389.jpg',
+    progress: 65,
+    currentPage: 156,
+    totalPages: 240,
+    status: 'reading',
+    dateStarted: '2025-10-22',
+  },
+  {
+    id: 12,
+    type: 'course',
+    title: 'System Design Interview',
+    author: 'Alex Xu',
+    genre: 'Technology',
+    progress: 40,
+    status: 'reading',
+    dateStarted: '2025-10-20',
+  },
+];
+
+// Mock data - Completed
+const completedItems = [
   {
     id: 1,
     type: 'book',
@@ -16,125 +48,82 @@ const consumedItems = [
     genre: 'Self-Improvement',
     rating: 5,
     dateCompleted: '2025-10-15',
-    notes: 'Excellent framework for building lasting habits through small, consistent changes.',
     coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1655988385i/40121378.jpg',
-    progress: 100,
     status: 'completed'
   },
   {
     id: 2,
-    type: 'course',
-    title: 'Advanced React Patterns',
-    author: 'Kent C. Dodds',
-    genre: 'Technology',
-    rating: 5,
-    dateCompleted: '2025-09-20',
-    notes: 'Deep dive into advanced React patterns like render props, compound components.',
-    coverUrl: 'https://kentcdodds.com/images/courses/advanced-react-patterns.png',
-    progress: 100,
-    status: 'completed'
-  },
-  {
-    id: 3,
-    type: 'podcast',
-    title: 'The Tim Ferriss Show #542',
-    author: 'Tim Ferriss',
-    genre: 'Business',
-    rating: 4,
-    dateCompleted: '2025-10-10',
-    notes: 'Great insights on productivity and life optimization.',
-    progress: 100,
-    status: 'completed'
-  },
-  {
-    id: 4,
-    type: 'video',
-    title: 'The Future of Web Development',
-    author: 'Fireship',
-    genre: 'Technology',
-    rating: 4,
-    dateCompleted: '2025-09-28',
-    notes: 'Quick overview of emerging web technologies.',
-    progress: 100,
-    status: 'completed'
-  },
-  {
-    id: 5,
     type: 'book',
     title: 'Zero to One',
     author: 'Peter Thiel',
     genre: 'Business',
     rating: 5,
     dateCompleted: '2025-08-10',
-    notes: 'Revolutionary thinking about building startups and creating value.',
     coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1414347376i/18050143.jpg',
-    progress: 100,
+    status: 'completed'
+  },
+  {
+    id: 3,
+    type: 'course',
+    title: 'Advanced React Patterns',
+    author: 'Kent C. Dodds',
+    genre: 'Technology',
+    rating: 5,
+    dateCompleted: '2025-09-20',
+    status: 'completed'
+  },
+  {
+    id: 4,
+    type: 'podcast',
+    title: 'The Tim Ferriss Show #542',
+    author: 'Tim Ferriss',
+    genre: 'Business',
+    rating: 4,
+    dateCompleted: '2025-10-10',
+    status: 'completed'
+  },
+  {
+    id: 5,
+    type: 'video',
+    title: 'The Future of Web Development',
+    author: 'Fireship',
+    genre: 'Technology',
+    rating: 4,
+    dateCompleted: '2025-09-28',
     status: 'completed'
   },
 ];
 
-// Mock data for currently reading
-const currentlyReading = [
-  {
-    id: 11,
-    type: 'book',
-    title: 'The Almanack of Naval Ravikant',
-    author: 'Eric Jorgenson',
-    genre: 'Philosophy',
-    rating: null,
-    dateStarted: '2025-10-22',
-    coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1598011736i/54898389.jpg',
-    progress: 65,
-    status: 'reading',
-    priority: 'high'
-  },
-  {
-    id: 12,
-    type: 'course',
-    title: 'System Design Interview',
-    author: 'Alex Xu',
-    genre: 'Technology',
-    rating: null,
-    dateStarted: '2025-10-20',
-    progress: 40,
-    status: 'reading',
-    priority: 'high'
-  },
-];
-
-// Mock data for wishlist items
-const wishlistItems = [
+// Mock data - Want to Read
+const wantToRead = [
   {
     id: 6,
     type: 'book',
     title: 'The Sovereign Individual',
     author: 'James Dale Davidson',
     genre: 'Philosophy',
-    priority: 'high',
-    addedDate: '2025-10-20',
     coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1388177630i/82256.jpg',
-    status: 'wishlist'
+    status: 'wishlist',
+    addedDate: '2025-10-20',
   },
   {
     id: 7,
-    type: 'course',
-    title: 'PostgreSQL Deep Dive',
-    author: 'Hussein Nasser',
-    genre: 'Technology',
-    priority: 'high',
-    addedDate: '2025-10-18',
-    status: 'wishlist'
-  },
-  {
-    id: 8,
     type: 'book',
     title: 'Meditations',
     author: 'Marcus Aurelius',
     genre: 'Philosophy',
-    priority: 'medium',
-    addedDate: '2025-10-15',
     coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1421618636i/30659.jpg',
-    status: 'wishlist'
+    status: 'wishlist',
+    addedDate: '2025-10-15',
+  },
+  {
+    id: 8,
+    type: 'course',
+    title: 'PostgreSQL Deep Dive',
+    author: 'Hussein Nasser',
+    genre: 'Technology',
+    status: 'wishlist',
+    addedDate: '2025-10-18',
   },
   {
     id: 9,
@@ -142,407 +131,359 @@ const wishlistItems = [
     title: 'How to Learn Anything Fast',
     author: 'Ali Abdaal',
     genre: 'Learning',
-    priority: 'medium',
+    status: 'wishlist',
     addedDate: '2025-10-12',
-    status: 'wishlist'
-  },
-  {
-    id: 10,
-    type: 'podcast',
-    title: 'Lex Fridman Podcast',
-    author: 'Lex Fridman',
-    genre: 'Science',
-    priority: 'low',
-    addedDate: '2025-10-05',
-    status: 'wishlist'
   },
 ];
 
-// Type Icon Component
-function TypeIcon({ type, size = 16 }) {
-  const icons = {
-    book: Book,
-    podcast: Headphones,
-    video: Video,
-    course: GraduationCap
-  };
-  const Icon = icons[type] || Book;
-  return <Icon size={size} />;
-}
+// Type icons mapping
+const TYPE_ICONS = {
+  book: Book,
+  podcast: Headphones,
+  video: Video,
+  course: GraduationCap
+};
 
-// Generate placeholder cover based on type
-function generatePlaceholderCover(type, title) {
-  const colors = {
-    book: 'from-purple-500 to-pink-500',
-    course: 'from-blue-500 to-cyan-500',
-    podcast: 'from-orange-500 to-red-500',
-    video: 'from-green-500 to-emerald-500'
-  };
+const TYPE_COLORS = {
+  book: { bg: 'rgba(139, 92, 246, 0.15)', text: '#a78bfa', border: 'rgba(139, 92, 246, 0.3)' },
+  course: { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa', border: 'rgba(59, 130, 246, 0.3)' },
+  podcast: { bg: 'rgba(249, 115, 22, 0.15)', text: '#fb923c', border: 'rgba(249, 115, 22, 0.3)' },
+  video: { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80', border: 'rgba(34, 197, 94, 0.3)' },
+};
 
+// Stats Card Component
+function StatsCard({ icon: Icon, label, value, color }) {
   return (
-    <div className={`placeholder-cover bg-gradient-to-br ${colors[type] || 'from-gray-500 to-gray-700'}`}>
-      <TypeIcon type={type} size={48} />
+    <div className="library-stat-card">
+      <div className="stat-icon-wrapper" style={{ background: color }}>
+        <Icon size={18} />
+      </div>
+      <div className="stat-info">
+        <span className="stat-value">{value}</span>
+        <span className="stat-label">{label}</span>
+      </div>
     </div>
   );
 }
 
-// Enhanced Library Card Component
-function LibraryCard({ item, density = 'normal' }) {
+// Currently Reading Hero Card
+function CurrentlyReadingCard({ item }) {
   const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const Icon = TYPE_ICONS[item.type] || Book;
+  const colors = TYPE_COLORS[item.type] || TYPE_COLORS.book;
 
   return (
-    <div className={`library-card ${density} group`}>
-      {/* Cover Image Container */}
-      <div className="card-cover-container">
+    <div className="currently-reading-card">
+      <div className="cr-cover">
         {item.coverUrl && !imageError ? (
-          <>
-            {!imageLoaded && generatePlaceholderCover(item.type, item.title)}
-            <img
-              src={item.coverUrl}
-              alt={item.title}
-              loading="lazy"
-              className={`cover-image ${imageLoaded ? 'loaded' : 'loading'}`}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
-            />
-          </>
+          <img
+            src={item.coverUrl}
+            alt={item.title}
+            onError={() => setImageError(true)}
+          />
         ) : (
-          generatePlaceholderCover(item.type, item.title)
-        )}
-
-        {/* Status Overlays */}
-        <div className="card-overlays">
-          {/* Top badges */}
-          <div className="top-badges">
-            {item.status === 'completed' && (
-              <span className="status-badge completed">
-                <Check size={12} />
-                Read
-              </span>
-            )}
-            {item.status === 'reading' && (
-              <span className="status-badge reading">
-                <BookOpen size={12} />
-                Reading
-              </span>
-            )}
-            {item.priority === 'high' && (
-              <span className="priority-badge high">★</span>
-            )}
+          <div className="cr-cover-placeholder" style={{ background: colors.bg }}>
+            <Icon size={32} style={{ color: colors.text }} />
           </div>
+        )}
+        <div className="cr-progress-ring">
+          <svg viewBox="0 0 36 36">
+            <path
+              className="ring-bg"
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+            <path
+              className="ring-fill"
+              strokeDasharray={`${item.progress}, 100`}
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+          </svg>
+          <span className="ring-text">{item.progress}%</span>
+        </div>
+      </div>
+      <div className="cr-info">
+        <div className="cr-type-badge" style={{ background: colors.bg, color: colors.text, borderColor: colors.border }}>
+          <Icon size={12} />
+          <span>{item.type}</span>
+        </div>
+        <h3 className="cr-title">{item.title}</h3>
+        <p className="cr-author">{item.author}</p>
+        {item.currentPage && (
+          <p className="cr-pages">Page {item.currentPage} of {item.totalPages}</p>
+        )}
+        <button className="cr-continue-btn">
+          <BookOpen size={16} />
+          Continue Reading
+        </button>
+      </div>
+    </div>
+  );
+}
 
-          {/* Progress bar for in-progress items */}
-          {item.progress && item.progress < 100 && (
-            <div className="progress-overlay">
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${item.progress}%` }}
-                />
-              </div>
-              <span className="progress-text">{item.progress}%</span>
+// Library Item Card (for grid/list views)
+function LibraryCard({ item, viewMode }) {
+  const [imageError, setImageError] = useState(false);
+  const Icon = TYPE_ICONS[item.type] || Book;
+  const colors = TYPE_COLORS[item.type] || TYPE_COLORS.book;
+
+  if (viewMode === 'list') {
+    return (
+      <div className="library-list-item">
+        <div className="list-item-cover">
+          {item.coverUrl && !imageError ? (
+            <img src={item.coverUrl} alt={item.title} onError={() => setImageError(true)} />
+          ) : (
+            <div className="cover-placeholder" style={{ background: colors.bg }}>
+              <Icon size={20} style={{ color: colors.text }} />
             </div>
           )}
-
-          {/* Rating stars */}
+        </div>
+        <div className="list-item-info">
+          <h4 className="list-item-title">{item.title}</h4>
+          <p className="list-item-author">{item.author}</p>
+          <div className="list-item-meta">
+            <span className="type-tag" style={{ background: colors.bg, color: colors.text }}>
+              <Icon size={12} />
+              {item.type}
+            </span>
+            <span className="genre-tag">{item.genre}</span>
+          </div>
+        </div>
+        <div className="list-item-actions">
           {item.rating && (
-            <div className="rating-overlay">
+            <div className="rating-display">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  size={10}
+                  size={14}
                   fill={i < item.rating ? '#fbbf24' : 'none'}
-                  stroke={i < item.rating ? '#fbbf24' : 'rgba(255, 255, 255, 0.3)'}
-                  strokeWidth={2}
+                  stroke={i < item.rating ? '#fbbf24' : 'rgba(255,255,255,0.2)'}
                 />
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Card Metadata - Only show in normal/spacious */}
-      {density !== 'compact' && (
-        <div className="card-metadata">
-          <h3 className="card-title">{item.title}</h3>
-          <p className="card-author">{item.author || item.source}</p>
-          <div className="card-info">
-            <div className="type-badge">
-              <TypeIcon type={item.type} size={12} />
-              <span>{item.type}</span>
-            </div>
-            {item.genre && <span className="genre-text">• {item.genre}</span>}
-          </div>
-
-          {/* Notes preview - Only in spacious */}
-          {density === 'spacious' && item.notes && (
-            <p className="card-notes">{item.notes}</p>
+          {item.status === 'completed' && (
+            <span className="status-badge completed">
+              <Check size={12} /> Completed
+            </span>
           )}
         </div>
-      )}
-    </div>
-  );
-}
-
-// Reading Statistics Dashboard
-function ReadingStats({ items, currentItems }) {
-  const totalCompleted = items.filter(i => i.status === 'completed').length;
-  const totalReading = currentItems.length;
-  const avgRating = items.filter(i => i.rating).reduce((acc, i) => acc + i.rating, 0) / items.filter(i => i.rating).length || 0;
-
-  const typeBreakdown = items.reduce((acc, item) => {
-    acc[item.type] = (acc[item.type] || 0) + 1;
-    return acc;
-  }, {});
-
-  return (
-    <div className="reading-stats">
-      <div className="stat-card">
-        <div className="stat-icon completed">
-          <Check size={20} />
-        </div>
-        <div className="stat-content">
-          <div className="stat-value">{totalCompleted}</div>
-          <div className="stat-label">Completed</div>
-        </div>
-      </div>
-
-      <div className="stat-card">
-        <div className="stat-icon reading">
-          <BookOpen size={20} />
-        </div>
-        <div className="stat-content">
-          <div className="stat-value">{totalReading}</div>
-          <div className="stat-label">Reading</div>
-        </div>
-      </div>
-
-      <div className="stat-card">
-        <div className="stat-icon rating">
-          <Star size={20} />
-        </div>
-        <div className="stat-content">
-          <div className="stat-value">{avgRating.toFixed(1)}</div>
-          <div className="stat-label">Avg Rating</div>
-        </div>
-      </div>
-
-      <div className="stat-card types">
-        <div className="stat-icon types">
-          <TrendingUp size={20} />
-        </div>
-        <div className="stat-content">
-          <div className="type-breakdown">
-            {Object.entries(typeBreakdown).map(([type, count]) => (
-              <div key={type} className="type-stat">
-                <TypeIcon type={type} size={14} />
-                <span>{count}</span>
-              </div>
-            ))}
-          </div>
-          <div className="stat-label">By Type</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Library Shelf Component (horizontal scrolling section)
-function LibraryShelf({ title, items, density, emptyMessage }) {
-  if (!items || items.length === 0) {
-    return (
-      <div className="library-shelf empty">
-        <h3 className="shelf-title">{title}</h3>
-        <p className="empty-message">{emptyMessage || 'No items yet'}</p>
       </div>
     );
   }
 
+  // Grid view (default)
   return (
-    <div className="library-shelf">
-      <div className="shelf-header">
-        <h3 className="shelf-title">{title}</h3>
-        <span className="shelf-count">{items.length} items</span>
+    <div className="library-grid-card">
+      <div className="grid-card-cover">
+        {item.coverUrl && !imageError ? (
+          <img src={item.coverUrl} alt={item.title} onError={() => setImageError(true)} />
+        ) : (
+          <div className="cover-placeholder" style={{ background: colors.bg }}>
+            <Icon size={28} style={{ color: colors.text }} />
+          </div>
+        )}
+        {item.rating && (
+          <div className="card-rating">
+            <Star size={12} fill="#fbbf24" stroke="#fbbf24" />
+            <span>{item.rating}</span>
+          </div>
+        )}
+        {item.progress !== undefined && item.progress < 100 && (
+          <div className="card-progress-bar">
+            <div className="progress-fill" style={{ width: `${item.progress}%` }} />
+          </div>
+        )}
       </div>
-      <div className={`shelf-items density-${density}`}>
-        {items.map(item => (
-          <LibraryCard key={item.id} item={item} density={density} />
-        ))}
+      <div className="grid-card-info">
+        <h4 className="card-title">{item.title}</h4>
+        <p className="card-author">{item.author}</p>
+        <div className="card-type" style={{ background: colors.bg, color: colors.text }}>
+          <Icon size={12} />
+          <span>{item.type}</span>
+        </div>
       </div>
     </div>
   );
 }
 
-// Main LibraryView Component
-const LibraryView = () => {
-  const [viewMode, setViewMode] = useState('shelves'); // 'shelves' or 'grid'
-  const [gridDensity, setGridDensity] = useState('normal'); // 'compact', 'normal', 'spacious'
+// Main Library View
+export default function LibraryView() {
+  const [activeTab, setActiveTab] = useState('all');
+  const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
 
-  const allItems = [...consumedItems, ...currentlyReading, ...wishlistItems];
+  // Combine all items
+  const allItems = useMemo(() => [
+    ...currentlyReading,
+    ...completedItems,
+    ...wantToRead
+  ], []);
 
-  const filteredItems = allItems.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.author?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = filterType === 'all' || item.type === filterType;
-    return matchesSearch && matchesType;
-  });
+  // Filter items based on tab, search, and type filter
+  const filteredItems = useMemo(() => {
+    let items = allItems;
 
-  // Smart collections
-  const collections = {
-    currentlyReading: filteredItems.filter(i => i.status === 'reading'),
-    recentlyCompleted: filteredItems
-      .filter(i => i.status === 'completed')
-      .sort((a, b) => new Date(b.dateCompleted) - new Date(a.dateCompleted))
-      .slice(0, 10),
-    highPriority: filteredItems.filter(i => i.priority === 'high'),
-    wishlist: filteredItems.filter(i => i.status === 'wishlist'),
-  };
+    // Filter by tab
+    if (activeTab === 'reading') {
+      items = currentlyReading;
+    } else if (activeTab === 'completed') {
+      items = completedItems;
+    } else if (activeTab === 'wishlist') {
+      items = wantToRead;
+    }
 
-  // Group by type
-  const byType = {
-    books: filteredItems.filter(i => i.type === 'book'),
-    courses: filteredItems.filter(i => i.type === 'course'),
-    podcasts: filteredItems.filter(i => i.type === 'podcast'),
-    videos: filteredItems.filter(i => i.type === 'video'),
-  };
+    // Filter by type
+    if (filterType !== 'all') {
+      items = items.filter(item => item.type === filterType);
+    }
+
+    // Filter by search
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      items = items.filter(item =>
+        item.title.toLowerCase().includes(query) ||
+        item.author?.toLowerCase().includes(query) ||
+        item.genre?.toLowerCase().includes(query)
+      );
+    }
+
+    return items;
+  }, [allItems, activeTab, filterType, searchQuery]);
+
+  // Calculate stats
+  const stats = useMemo(() => ({
+    totalBooks: allItems.filter(i => i.type === 'book').length,
+    completed: completedItems.length,
+    reading: currentlyReading.length,
+    avgRating: completedItems.filter(i => i.rating).reduce((acc, i) => acc + i.rating, 0) /
+               completedItems.filter(i => i.rating).length || 0,
+  }), [allItems]);
+
+  const tabs = [
+    { id: 'all', label: 'All', count: allItems.length },
+    { id: 'reading', label: 'Reading', count: currentlyReading.length },
+    { id: 'completed', label: 'Completed', count: completedItems.length },
+    { id: 'wishlist', label: 'Want to Read', count: wantToRead.length },
+  ];
 
   return (
-    <div className="library-view-enhanced">
-      {/* Reading Statistics Dashboard */}
-      <ReadingStats items={consumedItems} currentItems={currentlyReading} />
+    <div className="library-view">
+      {/* Stats Overview */}
+      <div className="library-stats-row">
+        <StatsCard icon={Book} label="Total Books" value={stats.totalBooks} color="linear-gradient(135deg, #8b5cf6, #7c3aed)" />
+        <StatsCard icon={BookOpen} label="Currently Reading" value={stats.reading} color="linear-gradient(135deg, #3b82f6, #2563eb)" />
+        <StatsCard icon={Check} label="Completed" value={stats.completed} color="linear-gradient(135deg, #10b981, #059669)" />
+        <StatsCard icon={Star} label="Avg Rating" value={stats.avgRating.toFixed(1)} color="linear-gradient(135deg, #f59e0b, #d97706)" />
+      </div>
 
-      {/* Controls */}
-      <div className="library-controls-enhanced">
-        {/* Search */}
-        <div className="search-wrapper">
-          <Search size={18} />
-          <input
-            type="text"
-            placeholder="Search your library..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input-enhanced"
-          />
+      {/* Currently Reading Section */}
+      {currentlyReading.length > 0 && (
+        <section className="currently-reading-section">
+          <div className="section-header">
+            <h2>
+              <BookOpen size={20} />
+              Currently Reading
+            </h2>
+            <span className="item-count">{currentlyReading.length} items</span>
+          </div>
+          <div className="currently-reading-grid">
+            {currentlyReading.map(item => (
+              <CurrentlyReadingCard key={item.id} item={item} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Main Library Section */}
+      <section className="library-main-section">
+        {/* Tab Navigation */}
+        <div className="library-tabs">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+              <span className="tab-count">{tab.count}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Filter and Density Controls */}
-        <div className="control-group">
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="filter-select-enhanced"
-          >
-            <option value="all">All Types</option>
-            <option value="book">Books</option>
-            <option value="course">Courses</option>
-            <option value="podcast">Podcasts</option>
-            <option value="video">Videos</option>
-          </select>
+        {/* Controls Bar */}
+        <div className="library-controls">
+          <div className="search-box">
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder="Search books, authors, genres..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-          {/* Grid Density Switcher */}
-          <div className="density-controls">
-            <button
-              className={`density-btn ${gridDensity === 'compact' ? 'active' : ''}`}
-              onClick={() => setGridDensity('compact')}
-              title="Compact view"
+          <div className="controls-right">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="type-filter"
             >
-              <Grid3x3 size={18} />
-            </button>
-            <button
-              className={`density-btn ${gridDensity === 'normal' ? 'active' : ''}`}
-              onClick={() => setGridDensity('normal')}
-              title="Normal view"
-            >
-              <Grid2x2 size={18} />
-            </button>
-            <button
-              className={`density-btn ${gridDensity === 'spacious' ? 'active' : ''}`}
-              onClick={() => setGridDensity('spacious')}
-              title="Spacious view"
-            >
-              <LayoutGrid size={18} />
-            </button>
+              <option value="all">All Types</option>
+              <option value="book">Books</option>
+              <option value="course">Courses</option>
+              <option value="podcast">Podcasts</option>
+              <option value="video">Videos</option>
+            </select>
+
+            <div className="view-toggle">
+              <button
+                className={viewMode === 'grid' ? 'active' : ''}
+                onClick={() => setViewMode('grid')}
+                title="Grid view"
+              >
+                <Grid3x3 size={18} />
+              </button>
+              <button
+                className={viewMode === 'list' ? 'active' : ''}
+                onClick={() => setViewMode('list')}
+                title="List view"
+              >
+                <List size={18} />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Library Content */}
-      <div className="library-content-enhanced">
-        {/* Currently Reading Section - Always visible */}
-        {collections.currentlyReading.length > 0 && (
-          <LibraryShelf
-            title="Currently Reading"
-            items={collections.currentlyReading}
-            density={gridDensity}
-          />
-        )}
+        {/* Library Content */}
+        <div className={`library-content ${viewMode}`}>
+          {filteredItems.length === 0 ? (
+            <div className="empty-state">
+              <Book size={48} />
+              <h3>No items found</h3>
+              <p>Try adjusting your search or filters</p>
+            </div>
+          ) : viewMode === 'grid' ? (
+            <div className="library-grid">
+              {filteredItems.map(item => (
+                <LibraryCard key={item.id} item={item} viewMode={viewMode} />
+              ))}
+            </div>
+          ) : (
+            <div className="library-list">
+              {filteredItems.map(item => (
+                <LibraryCard key={item.id} item={item} viewMode={viewMode} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
-        {/* High Priority Section */}
-        {collections.highPriority.length > 0 && (
-          <LibraryShelf
-            title="High Priority"
-            items={collections.highPriority}
-            density={gridDensity}
-          />
-        )}
-
-        {/* Recently Completed */}
-        {collections.recentlyCompleted.length > 0 && (
-          <LibraryShelf
-            title="Recently Completed"
-            items={collections.recentlyCompleted}
-            density={gridDensity}
-          />
-        )}
-
-        {/* Wishlist */}
-        {collections.wishlist.length > 0 && (
-          <LibraryShelf
-            title="Want to Read"
-            items={collections.wishlist}
-            density={gridDensity}
-            emptyMessage="Add items to your wishlist to see them here"
-          />
-        )}
-
-        {/* By Type Sections */}
-        {byType.books.length > 0 && (
-          <LibraryShelf
-            title="Books"
-            items={byType.books}
-            density={gridDensity}
-          />
-        )}
-
-        {byType.courses.length > 0 && (
-          <LibraryShelf
-            title="Courses"
-            items={byType.courses}
-            density={gridDensity}
-          />
-        )}
-
-        {byType.podcasts.length > 0 && (
-          <LibraryShelf
-            title="Podcasts"
-            items={byType.podcasts}
-            density={gridDensity}
-          />
-        )}
-
-        {byType.videos.length > 0 && (
-          <LibraryShelf
-            title="Videos"
-            items={byType.videos}
-            density={gridDensity}
-          />
-        )}
-      </div>
+      {/* Add Book FAB */}
+      <button className="add-book-fab">
+        <Plus size={24} />
+      </button>
     </div>
   );
-};
-
-export default LibraryView;
+}

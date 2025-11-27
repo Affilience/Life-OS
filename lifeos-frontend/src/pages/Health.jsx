@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Dumbbell, BarChart3, Apple, Moon, Heart } from 'lucide-react';
+import { Dumbbell, BarChart3, Apple, Moon, Activity } from 'lucide-react';
 import HealthDashboard from '../components/health/HealthDashboard';
 import WorkoutsTab from '../components/health/WorkoutsTab';
 import NutritionTab from '../components/health/NutritionTab';
 import SleepTabSimple from '../components/health/SleepTabSimple';
-import RecoveryTabSimple from '../components/health/RecoveryTabSimple';
+import CardioTab from '../components/health/CardioTab';
 
 export default function Health() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -14,13 +14,13 @@ export default function Health() {
     { id: 'workouts', name: 'Workouts', icon: Dumbbell },
     { id: 'nutrition', name: 'Nutrition', icon: Apple },
     { id: 'sleep', name: 'Sleep', icon: Moon },
-    { id: 'recovery', name: 'Recovery', icon: Heart },
+    { id: 'cardio', name: 'Cardio', icon: Activity },
   ];
 
   return (
     <div className="health-page min-h-screen bg-[#0c0a10]">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-10 bg-[#12101a]/95 backdrop-blur-sm border-b border-slate-800">
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -48,7 +48,7 @@ export default function Health() {
         {activeTab === 'workouts' && <WorkoutsTab />}
         {activeTab === 'nutrition' && <NutritionTab />}
         {activeTab === 'sleep' && <SleepTabSimple />}
-        {activeTab === 'recovery' && <RecoveryTabSimple />}
+        {activeTab === 'cardio' && <CardioTab />}
       </div>
 
       <style>{`

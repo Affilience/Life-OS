@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Clock, BarChart3, CheckSquare, FolderKanban, DollarSign } from 'lucide-react';
+import { Clock, BarChart3, CheckSquare, FolderKanban, DollarSign, Calendar } from 'lucide-react';
 import ProductivityDashboard from '../components/productivity/ProductivityDashboard';
 import WorkSessionsTab from '../components/productivity/WorkSessionsTab';
 import TasksTab from '../components/productivity/TasksTab';
 import ProjectsTab from '../components/productivity/ProjectsTab';
 import IncomeTab from '../components/productivity/IncomeTab';
+import PlanTomorrowTab from '../components/productivity/PlanTomorrowTab';
 
 export default function Productivity() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const tabs = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
+    { id: 'daily', name: 'Daily Plan', icon: Calendar },
     { id: 'sessions', name: 'Work Sessions', icon: Clock },
     { id: 'tasks', name: 'Tasks', icon: CheckSquare },
     { id: 'projects', name: 'Projects', icon: FolderKanban },
@@ -20,7 +22,7 @@ export default function Productivity() {
   return (
     <div className="productivity-page min-h-screen bg-[#0c0a10]">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-10 bg-[#12101a]/95 backdrop-blur-sm border-b border-slate-800">
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -45,6 +47,7 @@ export default function Productivity() {
       {/* Active Tab Content */}
       <div className="tab-content">
         {activeTab === 'dashboard' && <ProductivityDashboard />}
+        {activeTab === 'daily' && <PlanTomorrowTab />}
         {activeTab === 'sessions' && <WorkSessionsTab />}
         {activeTab === 'tasks' && <TasksTab />}
         {activeTab === 'projects' && <ProjectsTab />}

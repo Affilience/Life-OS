@@ -10,17 +10,17 @@
   justify-content: center;
   z-index: 9999;
   pointer-events: none;
-  animation: prOverlayFade 3s ease-out forwards;
+  animation: prOverlayFade 4s ease-out forwards;
 }
 
 @keyframes prOverlayFade {
   0% {
     opacity: 0;
   }
-  10% {
+  8% {
     opacity: 1;
   }
-  90% {
+  88% {
     opacity: 1;
   }
   100% {
@@ -37,7 +37,7 @@
   box-shadow: 0 24px 72px rgba(245, 158, 11, 0.6),
               0 0 120px rgba(139, 92, 246, 0.4);
   text-align: center;
-  animation: prCardPop 3s ease-out forwards;
+  animation: prCardPop 4s ease-out forwards;
   overflow: hidden;
 }
 
@@ -45,13 +45,13 @@
   0% {
     transform: scale(0.3) rotate(-12deg);
   }
-  10% {
+  8% {
     transform: scale(1.15) rotate(3deg);
   }
-  15% {
+  12% {
     transform: scale(1) rotate(0deg);
   }
-  90% {
+  88% {
     transform: scale(1) rotate(0deg);
   }
   100% {
@@ -244,6 +244,24 @@
   background: #f59e0b;
 }
 
+.pr-confetti:nth-child(10) {
+  left: 15%;
+  animation: confettiFall 2.4s ease-out 0.35s;
+  background: #ec4899;
+}
+
+.pr-confetti:nth-child(11) {
+  left: 45%;
+  animation: confettiFall 1.6s ease-out 0.4s;
+  background: #14b8a6;
+}
+
+.pr-confetti:nth-child(12) {
+  left: 75%;
+  animation: confettiFall 2s ease-out 0.45s;
+  background: #f97316;
+}
+
 @keyframes confettiFall {
   0% {
     top: -10%;
@@ -265,6 +283,66 @@
   --x-drift: -50px;
 }
 
+/* Improvement indicator */
+.pr-improvement {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6ee7b7;
+  animation: prDetailsFadeIn 0.4s ease-out 0.8s both;
+  z-index: 1;
+}
+
+.pr-improvement svg {
+  color: #10b981;
+}
+
+/* Stats row */
+.pr-stats-row {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  animation: prDetailsFadeIn 0.4s ease-out 0.85s both;
+  z-index: 1;
+}
+
+.pr-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pr-stat svg {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pr-stat-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pr-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+}
+
 /* Subtitle */
 .pr-subtitle {
   position: relative;
@@ -273,7 +351,7 @@
   color: rgba(255, 255, 255, 0.85);
   margin: 1rem 0 0 0;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  animation: prDetailsFadeIn 0.4s ease-out 0.9s both;
+  animation: prDetailsFadeIn 0.4s ease-out 0.95s both;
   z-index: 1;
 }
 

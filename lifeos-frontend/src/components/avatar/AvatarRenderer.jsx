@@ -9,8 +9,18 @@ import {
   getRarityEffects,
 } from '../../utils/equipmentRenderer';
 import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
+import { useGamificationModeStore } from '../../stores/gamificationModeStore';
+import { User } from 'lucide-react';
 import './AvatarRenderer.css';
 
+/**
+ * AvatarRenderer - Renders the character avatar with equipment
+ *
+ * Supports gamification modes:
+ * - Cosmic: Full pixel art avatar with effects
+ * - Professional: Simplified avatar or initials-based
+ * - Minimal: Hidden (shows placeholder)
+ */
 export default function AvatarRenderer({
   size = 128,
   animate = true,
@@ -19,6 +29,12 @@ export default function AvatarRenderer({
 }) {
   const canvasRef = useRef(null);
   const [currentFrame, setCurrentFrame] = useState(0);
+
+  // Get gamification mode settings
+  const { mode, isVisible, getTerm } = useGamificationModeStore();
+  const showAvatar = isVisible('showAvatar');
+  const showAvatarEffects = isVisible('showAvatarEffects');
+  const showParticleEffects = isVisible('showParticleEffects');
 
   const {
     level,
@@ -34,6 +50,30 @@ export default function AvatarRenderer({
   const tierData = getCurrentTierData();
   const equippedItems = getEquippedItems();
   const visualEquipment = getVisualEquipment();
+
+  // If avatar is hidden in current mode, show a minimal placeholder
+  if (!showAvatar) {
+    return (
+      <div className={`avatar-renderer ${className}`}>
+        <div
+          className="flex items-center justify-center rounded-xl"
+          style={{
+            width: `${size}px`,
+            height: `${size}px`,
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '2px solid rgba(59, 130, 246, 0.3)',
+          }}
+        >
+          <div className="text-center">
+            <User className="w-12 h-12 mx-auto mb-2 text-blue-400" />
+            <div className="text-lg font-bold text-blue-400">
+              {getTerm('level')} {level}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Animation loop - just use breathing effect, not walking frames
   useEffect(() => {
@@ -127,8 +167,8 @@ export default function AvatarRenderer({
       equipSprite.src = item.sprite?.path || '/assets/equipment/placeholder.png';
 
       equipSprite.onload = () => {
-        // Render aura first (if legendary)
-        if (effects.hasAura) {
+        // Render aura first (if legendary and effects enabled)
+        if (effects.hasAura && showAvatarEffects) {
           renderEquipmentAura(
             ctx,
             x + renderSize / 2,
@@ -139,19 +179,20 @@ export default function AvatarRenderer({
           );
         }
 
-        // Render equipment layer
+        // Render equipment layer (disable glow in non-cosmic modes)
+        const renderEffects = showAvatarEffects ? effects : { ...effects, hasGlow: false };
         renderEquipmentLayer(
           ctx,
           equipSprite,
           x,
           y,
           renderSize,
-          effects,
+          renderEffects,
           dyeColor
         );
 
-        // Render particles (if epic/legendary)
-        if (effects.hasParticles) {
+        // Render particles (if epic/legendary and effects enabled)
+        if (effects.hasParticles && showParticleEffects) {
           renderEquipmentParticles(
             ctx,
             x + renderSize / 2,

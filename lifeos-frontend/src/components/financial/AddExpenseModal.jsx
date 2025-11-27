@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
-import { X, DollarSign, Calendar, Tag, FileText, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, DollarSign, Calendar, Tag, FileText, AlertCircle, Wallet, TrendingDown, CheckCircle2 } from 'lucide-react';
 import Button from '../shared/Button';
+import { useFinancialStore, ENVELOPE_CATEGORIES, getMonthKey } from '../../stores/financialStore';
 import './AddExpenseModal.css';
 
 const AddExpenseModal = ({ onClose }) => {
+  const { addTransaction, getEnvelopeStatus } = useFinancialStore();
+  const envelopes = getEnvelopeStatus(getMonthKey());
+
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
-    category: 'Food',
+    category: 'food',
     amount: '',
-    type: 'Essential',
     notes: ''
   });
 
@@ -20,6 +23,18 @@ const AddExpenseModal = ({ onClose }) => {
     }));
   };
 
+  // Get envelope status for selected category
+  const selectedEnvelope = useMemo(() => {
+    return envelopes[formData.category] || null;
+  }, [envelopes, formData.category]);
+
+  // Calculate remaining after this expense
+  const remainingAfterExpense = useMemo(() => {
+    if (!selectedEnvelope) return null;
+    const amount = parseFloat(formData.amount) || 0;
+    return selectedEnvelope.remaining - amount;
+  }, [selectedEnvelope, formData.amount]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -28,35 +43,28 @@ const AddExpenseModal = ({ onClose }) => {
       return;
     }
 
-    const expenseData = {
-      ...formData,
+    // Add transaction to store
+    addTransaction({
+      date: new Date(formData.date).toISOString(),
+      description: formData.description,
       amount: parseFloat(formData.amount),
-      timestamp: new Date().toISOString()
-    };
+      category: formData.category,
+      type: 'expense',
+      notes: formData.notes,
+      merchant: formData.description,
+    });
 
-    console.log('Expense logged:', expenseData);
-    alert('Expense entry added successfully!');
     onClose();
   };
 
-  const categories = [
-    'Food',
-    'Health',
-    'Learning',
-    'Transport',
-    'Discretionary',
-    'Bills & Utilities',
-    'Business',
-    'Other'
-  ];
+  // Categories from ENVELOPE_CATEGORIES
+  const categories = Object.values(ENVELOPE_CATEGORIES).map(cat => ({
+    id: cat.id,
+    name: cat.name,
+    icon: cat.icon,
+  }));
 
-  const types = [
-    'Essential',
-    'Investment',
-    'Discretionary'
-  ];
-
-  const suggestedAmounts = [10, 20, 50, 100];
+  const suggestedAmounts = [5, 10, 20, 50, 100];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -115,9 +123,40 @@ const AddExpenseModal = ({ onClose }) => {
                 required
               >
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
                 ))}
               </select>
+
+              {/* Envelope Status */}
+              {selectedEnvelope && selectedEnvelope.allocated > 0 && (
+                <div className={`envelope-status ${selectedEnvelope.status}`}>
+                  <div className="envelope-header">
+                    <Wallet size={14} />
+                    <span>Envelope: £{selectedEnvelope.remaining.toFixed(0)} remaining</span>
+                  </div>
+                  <div className="envelope-bar">
+                    <div
+                      className="envelope-fill"
+                      style={{ width: `${Math.min(selectedEnvelope.percentUsed, 100)}%` }}
+                    />
+                  </div>
+                  {formData.amount && remainingAfterExpense !== null && (
+                    <div className={`envelope-after ${remainingAfterExpense < 0 ? 'over' : ''}`}>
+                      {remainingAfterExpense >= 0 ? (
+                        <>
+                          <CheckCircle2 size={12} />
+                          <span>£{remainingAfterExpense.toFixed(0)} left after</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle size={12} />
+                          <span>£{Math.abs(remainingAfterExpense).toFixed(0)} over budget</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Amount */}
@@ -147,39 +186,6 @@ const AddExpenseModal = ({ onClose }) => {
                     £{amount}
                   </button>
                 ))}
-              </div>
-            </div>
-
-            {/* Type */}
-            <div className="form-group">
-              <label className="form-label">
-                <AlertCircle size={16} />
-                Expense Type *
-              </label>
-              <div className="type-options">
-                {types.map(type => (
-                  <label key={type} className="type-radio">
-                    <input
-                      type="radio"
-                      name="type"
-                      value={type}
-                      checked={formData.type === type}
-                      onChange={(e) => handleInputChange('type', e.target.value)}
-                    />
-                    <span className="type-label">{type}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="type-description">
-                {formData.type === 'Essential' && (
-                  <p>Necessary expenses like food, transport, and bills</p>
-                )}
-                {formData.type === 'Investment' && (
-                  <p>Spending that generates future value (learning, equipment)</p>
-                )}
-                {formData.type === 'Discretionary' && (
-                  <p>Optional spending for enjoyment or convenience</p>
-                )}
               </div>
             </div>
 

@@ -5,6 +5,7 @@ import ExerciseSelector from './ExerciseSelector';
 import SetLogger from './SetLogger';
 import RestTimer from './RestTimer';
 import PRBadge from './PRBadge';
+import WorkoutSummary from './WorkoutSummary';
 import {
   X,
   Check,
@@ -24,10 +25,12 @@ export default function ActiveWorkout() {
     currentExerciseIndex,
     setCurrentExerciseIndex,
     addExerciseToWorkout,
+    addSetToExercise,
     logSet,
     finishWorkout,
     cancelWorkout,
     updateWorkoutNotes,
+    personalRecords,
   } = useWorkoutStore();
 
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -35,6 +38,8 @@ export default function ActiveWorkout() {
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [showPRCelebration, setShowPRCelebration] = useState(false);
   const [prDetails, setPRDetails] = useState(null);
+  const [showWorkoutSummary, setShowWorkoutSummary] = useState(false);
+  const [completedWorkout, setCompletedWorkout] = useState(null);
 
   // Update elapsed time
   useEffect(() => {
@@ -45,7 +50,18 @@ export default function ActiveWorkout() {
     return () => clearInterval(interval);
   }, [workoutStartTime]);
 
-  if (!activeWorkout) return null;
+  // Show workout summary even after workout is finished
+  if (!activeWorkout && !showWorkoutSummary) return null;
+
+  // If showing summary, render only the summary modal
+  if (!activeWorkout && showWorkoutSummary && completedWorkout) {
+    return (
+      <WorkoutSummary
+        workout={completedWorkout}
+        onClose={handleCloseSummary}
+      />
+    );
+  }
 
   const currentExercise = activeWorkout.exercises[currentExerciseIndex];
   const exerciseData = currentExercise ? EXERCISE_DATABASE[currentExercise.exerciseId] : null;
@@ -56,22 +72,42 @@ export default function ActiveWorkout() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleSetComplete = (setIndex, weight, reps, isPR) => {
-    logSet(currentExerciseIndex, setIndex, weight, reps);
+  const handleSetComplete = (setIndex, weight, reps, isPR, setType = 'normal') => {
+    // Get previous PR before logging (for comparison in celebration)
+    const exerciseId = currentExercise?.exerciseId;
+    const previousPR = exerciseId ? personalRecords[exerciseId] : null;
+
+    logSet(currentExerciseIndex, setIndex, weight, reps, setType);
 
     if (isPR) {
-      setPRDetails({ exercise: exerciseData.name, weight, reps });
+      setPRDetails({
+        exercise: exerciseData.name,
+        weight,
+        reps,
+        previousPR,
+        xpEarned: 25, // PR bonus XP
+      });
       setShowPRCelebration(true);
-      setTimeout(() => setShowPRCelebration(false), 3000);
+      setTimeout(() => setShowPRCelebration(false), 4000); // Show longer for enhanced modal
     }
 
-    // Auto-start rest timer
-    setShowRestTimer(true);
+    // Auto-start rest timer (skip for warm-up sets)
+    if (setType !== 'warmup') {
+      setShowRestTimer(true);
+    }
   };
 
   const handleFinish = () => {
     const result = finishWorkout();
-    // Could show completion modal here with stats
+    if (result) {
+      setCompletedWorkout(result);
+      setShowWorkoutSummary(true);
+    }
+  };
+
+  const handleCloseSummary = () => {
+    setShowWorkoutSummary(false);
+    setCompletedWorkout(null);
   };
 
   const handleNextExercise = () => {
@@ -226,6 +262,7 @@ export default function ActiveWorkout() {
                 exerciseData={exerciseData}
                 exerciseIndex={currentExerciseIndex}
                 onSetComplete={handleSetComplete}
+                onAddSet={() => addSetToExercise(currentExerciseIndex)}
               />
             </div>
           </div>
@@ -285,6 +322,15 @@ export default function ActiveWorkout() {
           exercise={prDetails.exercise}
           weight={prDetails.weight}
           reps={prDetails.reps}
+          previousPR={prDetails.previousPR}
+          xpEarned={prDetails.xpEarned}
+        />
+      )}
+
+      {showWorkoutSummary && completedWorkout && (
+        <WorkoutSummary
+          workout={completedWorkout}
+          onClose={handleCloseSummary}
         />
       )}
     </div>

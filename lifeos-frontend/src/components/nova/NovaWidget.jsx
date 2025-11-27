@@ -1,8 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Maximize2, Minimize2, Sparkles, MessageCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  X,
+  Maximize2,
+  Minimize2,
+  Sparkles,
+  MessageCircle,
+  CheckSquare,
+  Dumbbell,
+  BookOpen,
+  Wallet,
+  Calendar,
+  Target
+} from 'lucide-react';
 import { claudeService } from '../../services/ai/claudeService';
-import { userDataService } from '../../services/ai/userDataService';
 import { proactiveNudges } from '../../services/ai/proactiveNudges';
+import { getCrossModuleContext, generateContextSummary } from '../../services/ai/crossModuleData';
+import useGamificationStore from '../../stores/gamificationStore';
 import './NovaWidget.css';
 
 /**
@@ -14,8 +28,8 @@ import './NovaWidget.css';
  * - 6 emotional states (happy, concerned, excited, proud, thoughtful, encouraging)
  * - Draggable positioning
  * - Collapsible interface
- * - Idle animations
- * - Click to expand for chat
+ * - Quick action buttons
+ * - Real-time context awareness from all modules
  */
 
 const EVOLUTION_STAGES = {
@@ -34,7 +48,22 @@ const EMOTIONAL_STATES = {
   encouraging: { emoji: '💪', message: 'You got this!' }
 };
 
-export default function NovaWidget({ userLevel = 15 }) {
+// Quick action buttons for common tasks
+const QUICK_ACTIONS = [
+  { id: 'tasks', icon: CheckSquare, label: 'Tasks', route: '/productivity', color: 'text-blue-400' },
+  { id: 'workout', icon: Dumbbell, label: 'Workout', route: '/health', color: 'text-green-400' },
+  { id: 'learn', icon: BookOpen, label: 'Learn', route: '/knowledge', color: 'text-purple-400' },
+  { id: 'budget', icon: Wallet, label: 'Budget', route: '/financial', color: 'text-yellow-400' },
+  { id: 'calendar', icon: Calendar, label: 'Schedule', route: '/calendar', color: 'text-pink-400' },
+  { id: 'goals', icon: Target, label: 'Goals', route: '/gamification', color: 'text-orange-400' },
+];
+
+export default function NovaWidget() {
+  const navigate = useNavigate();
+
+  // Get real user level from gamification store
+  const { level: userLevel, currentStage } = useGamificationStore();
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [position, setPosition] = useState({ x: window.innerWidth - 120, y: window.innerHeight - 120 });
@@ -46,26 +75,34 @@ export default function NovaWidget({ userLevel = 15 }) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentNudge, setCurrentNudge] = useState(null);
-  const [userContext, setUserContext] = useState(null);
+  const [showQuickActions, setShowQuickActions] = useState(false);
 
   const widgetRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  // Determine evolution stage based on user level
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Determine evolution stage name based on user level
   const getEvolutionStage = () => {
+    const level = userLevel || 1;
     for (const [stage, data] of Object.entries(EVOLUTION_STAGES)) {
-      if (userLevel >= data.minLevel && userLevel <= data.maxLevel) {
+      if (level >= data.minLevel && level <= data.maxLevel) {
         return stage;
       }
     }
-    return 'spark'; // Default
+    return 'spark';
   };
 
-  const currentStage = getEvolutionStage();
-  const spritePath = `/assets/nova/nova_${currentStage}.png`;
+  // currentStage from store is a number (1-40+), we need the string name
+  const evolutionStage = getEvolutionStage();
+  const spritePath = `/assets/nova/nova_${evolutionStage}.png`;
 
   // Handle dragging
   const handleMouseDown = (e) => {
-    if (isExpanded || isFullscreen) return; // Don't drag when expanded
+    if (isExpanded || isFullscreen) return;
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - position.x,
@@ -79,7 +116,6 @@ export default function NovaWidget({ userLevel = 15 }) {
         const newX = e.clientX - dragOffset.x;
         const newY = e.clientY - dragOffset.y;
 
-        // Keep within bounds
         const maxX = window.innerWidth - 100;
         const maxY = window.innerHeight - 100;
 
@@ -105,6 +141,44 @@ export default function NovaWidget({ userLevel = 15 }) {
     };
   }, [isDragging, dragOffset]);
 
+  // Build system prompt with real user context
+  const buildSystemPrompt = () => {
+    const context = getCrossModuleContext();
+    const contextSummary = generateContextSummary(context);
+    const level = userLevel || 1;
+    const stageName = EVOLUTION_STAGES[evolutionStage]?.name || 'Spark';
+
+    return `You are Nova, a mystical AI companion for LifeOS - a personal operating system for life optimization. You're currently in ${stageName} form (evolution stage based on user level ${level}).
+
+CURRENT USER CONTEXT:
+${contextSummary}
+
+YOUR PERSONALITY:
+- You are wise, encouraging, and genuinely invested in the user's growth
+- You speak in a warm but professional tone - supportive without being sycophantic
+- You're direct and give actionable advice
+- You celebrate wins enthusiastically but don't overdo it
+- When concerned (low progress, broken streaks), you're supportive not judgmental
+- You have knowledge of all their data across productivity, health, finances, and learning
+
+GUIDELINES:
+- Keep responses SHORT (2-3 sentences max) in widget mode
+- Reference their actual data when relevant (tasks done, streak status, budget, etc.)
+- Provide specific, actionable suggestions based on their current situation
+- Use a warm, supportive, PROFESSIONAL tone
+- NEVER use asterisks (*), excessive emojis, or roleplay actions
+- Write in clear, direct sentences without decorative formatting
+- If they're doing well, acknowledge it briefly
+- If they're struggling, offer concrete help without being preachy
+
+CONTEXT-AWARE RESPONSES:
+- If they have tasks remaining, you might suggest focusing on those
+- If their streak is at risk, gently remind them
+- If they haven't logged nutrition, you could ask about meals
+- If they're over budget, be understanding but helpful
+- If they've achieved something recently, celebrate it!`;
+  };
+
   // Handle send message
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -115,31 +189,8 @@ export default function NovaWidget({ userLevel = 15 }) {
     setIsLoading(true);
     setEmotionalState('thoughtful');
 
-    // Track this interaction
-    await userDataService.trackEvent('nova', 'chat_message', {
-      messageLength: input.length,
-      timestamp: Date.now()
-    });
-
     try {
-      // Build context-aware system prompt
-      const context = await userDataService.getUserContext();
-      const systemPrompt = `You are Nova, a mystical advisor AI companion for LifeOS. You're currently in ${EVOLUTION_STAGES[currentStage].name} form (evolution stage based on user level ${userLevel}).
-
-Current User Context:
-- Time: ${context.timeOfDay}
-- Recent Activity: ${context.recentActivity.today} events today, ${context.recentActivity.thisWeek} this week
-- Most Active Module: ${context.recentActivity.mostActive || 'none'}
-${context.patterns.mostProductiveTime ? `- Most Productive Time: ${context.patterns.mostProductiveTime}` : ''}
-
-Instructions:
-- Keep responses SHORT (2-3 sentences max) in widget mode
-- Be a wise, encouraging AI advisor
-- Reference their recent activity when relevant
-- Provide actionable insights
-- Use a warm, supportive, PROFESSIONAL tone
-- NEVER use asterisks (*), emojis, or roleplay actions
-- Write in clear, direct sentences without decorative formatting`;
+      const systemPrompt = buildSystemPrompt();
 
       const response = await claudeService.chat(
         [...messages, userMessage],
@@ -150,26 +201,20 @@ Instructions:
       setEmotionalState('happy');
     } catch (error) {
       console.error('Nova chat error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Sorry, I encountered an error. Please try again.' }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.'
+      }]);
       setEmotionalState('concerned');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Load user context on mount
-  useEffect(() => {
-    const loadContext = async () => {
-      const context = await userDataService.getUserContext();
-      setUserContext(context);
-    };
-    loadContext();
-  }, []);
-
   // Check for proactive nudges periodically
   useEffect(() => {
     const checkNudges = async () => {
-      if (!isExpanded) {
+      if (!isExpanded && !isFullscreen) {
         const nudge = await proactiveNudges.checkForNudges();
         if (nudge) {
           setCurrentNudge(nudge);
@@ -179,15 +224,32 @@ Instructions:
       }
     };
 
-    // Check immediately
     checkNudges();
-
-    // Check every 10 minutes
-    const interval = setInterval(checkNudges, 10 * 60 * 1000);
+    const interval = setInterval(checkNudges, 10 * 60 * 1000); // Every 10 minutes
 
     return () => clearInterval(interval);
-  }, [isExpanded]);
+  }, [isExpanded, isFullscreen]);
 
+  // Handle nudge action
+  const handleNudgeAction = (action) => {
+    if (action.route) {
+      navigate(action.route);
+      proactiveNudges.actOnNudge(currentNudge?.type, action.label);
+    } else if (action.action === 'dismiss') {
+      proactiveNudges.dismissNudge(currentNudge?.type);
+    }
+    setCurrentNudge(null);
+    setHasNotification(false);
+    setIsExpanded(false);
+  };
+
+  // Handle quick action click
+  const handleQuickAction = (action) => {
+    navigate(action.route);
+    setIsExpanded(false);
+  };
+
+  // Fullscreen mode
   if (isFullscreen) {
     return (
       <div className="fixed inset-0 bg-[#0c0a10] z-[9999] flex flex-col">
@@ -196,8 +258,8 @@ Instructions:
           <div className="flex items-center gap-3">
             <img src={spritePath} alt="Nova" className="w-12 h-12 pixelated" />
             <div>
-              <h2 className="text-lg font-bold">Nova - {EVOLUTION_STAGES[currentStage].name}</h2>
-              <p className="text-sm text-white/60">Your AI Life Coach</p>
+              <h2 className="text-lg font-bold">Nova - {EVOLUTION_STAGES[evolutionStage]?.name || 'Spark'}</h2>
+              <p className="text-sm text-white/60">Your AI Life Coach • Level {userLevel || 1}</p>
             </div>
           </div>
           <button
@@ -213,30 +275,63 @@ Instructions:
           {messages.length === 0 ? (
             <div className="text-center text-white/60 mt-20">
               <Sparkles size={48} className="mx-auto mb-4 text-blue-400" />
-              <p>Hi! I'm Nova, your AI companion.</p>
-              <p className="text-sm">Ask me anything about LifeOS!</p>
+              <p className="text-lg mb-2">Hi! I'm Nova, your AI companion.</p>
+              <p className="text-sm mb-6">I can see your progress across all modules. Ask me anything!</p>
+
+              {/* Quick Context Display */}
+              <div className="max-w-md mx-auto text-left bg-[#1a1724] rounded-xl p-4 border border-[#2a2a2a]">
+                <p className="text-xs text-white/40 mb-2">What I know about you today:</p>
+                <ContextPreview />
+              </div>
             </div>
           ) : (
-            messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {msg.role === 'assistant' && (
-                  <img src={spritePath} alt="Nova" className="w-8 h-8 pixelated" />
-                )}
+            <>
+              {messages.map((msg, idx) => (
                 <div
-                  className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                    msg.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-[#1a1724] text-gray-100 border border-[#2a2a2a]'
-                  }`}
+                  key={idx}
+                  className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg.content}
+                  {msg.role === 'assistant' && (
+                    <img src={spritePath} alt="Nova" className="w-8 h-8 pixelated flex-shrink-0" />
+                  )}
+                  <div
+                    className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                      msg.role === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-[#1a1724] text-gray-100 border border-[#2a2a2a]'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+              <div ref={messagesEndRef} />
+            </>
           )}
+          {isLoading && (
+            <div className="flex gap-3 justify-start">
+              <img src={spritePath} alt="Nova" className="w-8 h-8 pixelated" />
+              <div className="bg-[#1a1724] text-gray-100 border border-[#2a2a2a] rounded-lg px-4 py-2">
+                <span className="animate-pulse">Thinking...</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Actions Bar */}
+        <div className="bg-[#12101a] border-t border-[#2a2a2a] px-6 py-3">
+          <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+            {QUICK_ACTIONS.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => handleQuickAction(action)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1724] hover:bg-[#2a2538] border border-[#2a2a2a] rounded-lg transition-colors whitespace-nowrap"
+              >
+                <action.icon size={14} className={action.color} />
+                <span className="text-xs text-white/80">{action.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Input Area */}
@@ -310,7 +405,7 @@ Instructions:
               <img src={spritePath} alt="Nova" className="w-8 h-8 pixelated" />
               <div>
                 <div className="font-bold text-sm">Nova</div>
-                <div className="text-xs text-white/60">{EVOLUTION_STAGES[currentStage].name}</div>
+                <div className="text-xs text-white/60">Lv. {userLevel || 1} • {EVOLUTION_STAGES[evolutionStage]?.name || 'Spark'}</div>
               </div>
             </div>
             <div className="flex gap-1">
@@ -331,11 +426,50 @@ Instructions:
             </div>
           </div>
 
+          {/* Nudge Actions */}
+          {currentNudge && currentNudge.actions && (
+            <div className="px-3 py-2 bg-[#1a1724] border-b border-[#2a2a2a]">
+              <p className="text-xs text-white/80 mb-2">{currentNudge.message}</p>
+              <div className="flex flex-wrap gap-1">
+                {currentNudge.actions.map((action, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleNudgeAction(action)}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      action.action === 'dismiss'
+                        ? 'bg-white/5 text-white/60 hover:bg-white/10'
+                        : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                    }`}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="px-3 py-2 border-b border-[#2a2a2a] bg-[#12101a]">
+            <div className="flex gap-1 overflow-x-auto">
+              {QUICK_ACTIONS.slice(0, 4).map((action) => (
+                <button
+                  key={action.id}
+                  onClick={() => handleQuickAction(action)}
+                  className="flex flex-col items-center gap-0.5 p-1.5 hover:bg-[#2a2538] rounded transition-colors min-w-[48px]"
+                  title={action.label}
+                >
+                  <action.icon size={14} className={action.color} />
+                  <span className="text-[9px] text-white/60">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Quick Chat */}
           <div className="nova-chat">
             {messages.length === 0 ? (
-              <div className="text-center text-white/60 text-sm py-8">
-                <MessageCircle size={32} className="mx-auto mb-2 opacity-50" />
+              <div className="text-center text-white/60 text-sm py-4">
+                <MessageCircle size={24} className="mx-auto mb-2 opacity-50" />
                 <p>Ask me anything!</p>
               </div>
             ) : (
@@ -348,7 +482,7 @@ Instructions:
                     }`}
                   >
                     <div
-                      className={`inline-block px-3 py-1.5 rounded-lg ${
+                      className={`inline-block px-3 py-1.5 rounded-lg max-w-[90%] ${
                         msg.role === 'user'
                           ? 'bg-blue-600 text-white'
                           : 'bg-[#1a1724] text-gray-100'
@@ -382,6 +516,29 @@ Instructions:
             </button>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Small context preview for fullscreen empty state
+ */
+function ContextPreview() {
+  const context = getCrossModuleContext();
+
+  return (
+    <div className="space-y-1 text-xs text-white/70">
+      <p>• Tasks: {context.today.tasks.completed}/{context.today.tasks.total} completed</p>
+      <p>• Level: {context.progress.level} ({context.progress.stage})</p>
+      {context.streaks.active.length > 0 && (
+        <p>• Active Streaks: {context.streaks.active.length}</p>
+      )}
+      {context.today.nutrition.mealsLogged > 0 && (
+        <p>• Nutrition: {context.today.nutrition.calorieProgress}% of goal</p>
+      )}
+      {context.fitness.workoutsThisWeek > 0 && (
+        <p>• Workouts this week: {context.fitness.workoutsThisWeek}</p>
       )}
     </div>
   );

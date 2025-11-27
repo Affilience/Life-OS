@@ -21,6 +21,7 @@
 
 /* Timer Card */
 .rest-timer-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -31,6 +32,7 @@
   border-radius: 1.25rem;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6),
               0 0 32px rgba(139, 92, 246, 0.2);
+  transition: border-color 300ms ease, box-shadow 300ms ease;
 }
 
 /* Circular Progress */
@@ -154,6 +156,166 @@
   transform: translateY(0);
 }
 
+/* Low time warning state */
+.rest-timer-card.low-time {
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6),
+              0 0 32px rgba(239, 68, 68, 0.3);
+  animation: lowTimePulse 1s ease-in-out infinite;
+}
+
+@keyframes lowTimePulse {
+  0%, 100% {
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6),
+                0 0 32px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6),
+                0 0 48px rgba(239, 68, 68, 0.5);
+  }
+}
+
+.timer-time-display.warning {
+  color: #f87171;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+  animation: warningPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes warningPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.timer-progress-fill.pulse {
+  animation: progressPulse 1s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Sound Toggle Button */
+.timer-sound-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(39, 39, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.timer-sound-btn:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+}
+
+.timer-sound-btn.enabled {
+  color: #a78bfa;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Preset Selector Popup */
+.timer-presets-popup {
+  position: absolute;
+  bottom: calc(100% + 0.75rem);
+  left: 0;
+  background: rgba(10, 10, 10, 0.98);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  animation: presetPopIn 200ms ease-out;
+}
+
+@keyframes presetPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.presets-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+.preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.625rem 0.5rem;
+  background: rgba(39, 39, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 150ms ease;
+  min-width: 56px;
+}
+
+.preset-btn:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.preset-btn.active {
+  background: rgba(139, 92, 246, 0.25);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.preset-time {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.preset-desc {
+  font-size: 0.625rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.preset-btn.active .preset-time {
+  color: #a78bfa;
+}
+
+/* Timer progress clickable */
+.timer-progress-container {
+  cursor: pointer;
+}
+
+.timer-progress-container:hover .timer-progress-bg {
+  stroke: rgba(139, 92, 246, 0.25);
+}
+
 /* Add/Subtract Time Buttons */
 .timer-adjust-controls {
   display: flex;
@@ -181,6 +343,11 @@
   background: rgba(139, 92, 246, 0.15);
   border-color: rgba(139, 92, 246, 0.3);
   color: #a78bfa;
+}
+
+.timer-adjust-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* Responsive Design */

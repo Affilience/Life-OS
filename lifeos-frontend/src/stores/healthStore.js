@@ -74,19 +74,53 @@ export const useHealthStore = create(
         );
       },
 
-      // Calculate daily totals
+      // Calculate daily totals (includes all micronutrients)
       getDailyTotals: (date) => {
         const meals = get().getMealsForDate(date);
 
-        return meals.reduce(
-          (totals, meal) => ({
-            calories: totals.calories + meal.totalCalories,
-            protein: totals.protein + meal.totalProtein,
-            carbs: totals.carbs + meal.totalCarbs,
-            fat: totals.fat + meal.totalFat,
-          }),
-          { calories: 0, protein: 0, carbs: 0, fat: 0 }
-        );
+        const initialTotals = {
+          // Macros
+          calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0,
+          // Fat breakdown
+          saturatedFat: 0, transFat: 0, cholesterol: 0,
+          // Minerals
+          sodium: 0, potassium: 0, calcium: 0, iron: 0, magnesium: 0, phosphorus: 0, zinc: 0,
+          // Vitamins
+          vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0, vitaminK: 0,
+          vitaminB6: 0, vitaminB12: 0, folate: 0,
+        };
+
+        return meals.reduce((totals, meal) => {
+          // Sum macros (always present)
+          totals.calories += meal.totalCalories || 0;
+          totals.protein += meal.totalProtein || 0;
+          totals.carbs += meal.totalCarbs || 0;
+          totals.fat += meal.totalFat || 0;
+          totals.fiber += meal.totalFiber || 0;
+          totals.sugar += meal.totalSugar || 0;
+
+          // Sum micronutrients if available
+          totals.saturatedFat += meal.totalSaturatedFat || 0;
+          totals.transFat += meal.totalTransFat || 0;
+          totals.cholesterol += meal.totalCholesterol || 0;
+          totals.sodium += meal.totalSodium || 0;
+          totals.potassium += meal.totalPotassium || 0;
+          totals.calcium += meal.totalCalcium || 0;
+          totals.iron += meal.totalIron || 0;
+          totals.magnesium += meal.totalMagnesium || 0;
+          totals.phosphorus += meal.totalPhosphorus || 0;
+          totals.zinc += meal.totalZinc || 0;
+          totals.vitaminA += meal.totalVitaminA || 0;
+          totals.vitaminC += meal.totalVitaminC || 0;
+          totals.vitaminD += meal.totalVitaminD || 0;
+          totals.vitaminE += meal.totalVitaminE || 0;
+          totals.vitaminK += meal.totalVitaminK || 0;
+          totals.vitaminB6 += meal.totalVitaminB6 || 0;
+          totals.vitaminB12 += meal.totalVitaminB12 || 0;
+          totals.folate += meal.totalFolate || 0;
+
+          return totals;
+        }, initialTotals);
       },
 
       // UI actions

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Swords,
@@ -10,14 +10,21 @@ import {
   Star,
   ChevronLeft,
   Lock,
-  Check
+  Check,
+  TrendingUp
 } from 'lucide-react';
 import { PERK_TREES } from '../data/perkTrees';
+import { useGamificationModeStore } from '../stores/gamificationModeStore';
 
 /**
  * Skyrim-Inspired Skill Tree System
  * 6 Primary Stats: Body, Mind, Spirit, Wealth, Social, Craft
  * Each stat has a constellation with perks
+ *
+ * Supports gamification modes:
+ * - Cosmic: Full constellation view with effects
+ * - Professional: "Growth Map" with simplified layout
+ * - Minimal: Simple list view of skills
  */
 
 // Stat definitions with Skyrim-style theming
@@ -25,7 +32,9 @@ const STATS = [
   {
     id: 'body',
     name: 'BODY',
+    professionalName: 'PHYSICAL',
     subtitle: 'The Warrior',
+    professionalSubtitle: 'Health & Fitness',
     icon: Swords,
     color: '#d97757',
     nebula: 'warrior',
@@ -35,7 +44,9 @@ const STATS = [
   {
     id: 'mind',
     name: 'MIND',
+    professionalName: 'LEARNING',
     subtitle: 'The Mage',
+    professionalSubtitle: 'Knowledge & Focus',
     icon: Brain,
     color: '#7b68d9',
     nebula: 'mage',
@@ -45,7 +56,9 @@ const STATS = [
   {
     id: 'spirit',
     name: 'SPIRIT',
+    professionalName: 'WELLBEING',
     subtitle: 'The Mystic',
+    professionalSubtitle: 'Mental Health',
     icon: Heart,
     color: '#57d9d4',
     nebula: 'mystic',
@@ -55,7 +68,9 @@ const STATS = [
   {
     id: 'wealth',
     name: 'WEALTH',
+    professionalName: 'FINANCE',
     subtitle: 'The Merchant',
+    professionalSubtitle: 'Financial Growth',
     icon: Coins,
     color: '#d9c157',
     nebula: 'merchant',
@@ -65,7 +80,9 @@ const STATS = [
   {
     id: 'social',
     name: 'SOCIAL',
+    professionalName: 'NETWORK',
     subtitle: 'The Diplomat',
+    professionalSubtitle: 'Relationships',
     icon: Users,
     color: '#57d98a',
     nebula: 'diplomat',
@@ -75,7 +92,9 @@ const STATS = [
   {
     id: 'craft',
     name: 'CRAFT',
+    professionalName: 'SKILLS',
     subtitle: 'The Artisan',
+    professionalSubtitle: 'Professional Skills',
     icon: Wrench,
     color: '#b8b8c8',
     nebula: 'artisan',
@@ -98,162 +117,263 @@ const mockCharacterData = {
 export default function SkillTreeNew() {
   const [selectedStat, setSelectedStat] = useState(null);
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const mousePosRef = useRef({ x: 0.5, y: 0.5 });
 
-  // Draw enhanced space background
+  // Get gamification mode settings
+  const { mode, getTerm, isVisible } = useGamificationModeStore();
+  const showSkillTree = isVisible('showSkillTree');
+  const showConstellationEffects = isVisible('showConstellationEffects');
+
+  // Track mouse position for parallax effects (using ref to avoid re-renders)
+  const handleMouseMove = useCallback((e) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    mousePosRef.current = {
+      x: (e.clientX - rect.left) / rect.width,
+      y: (e.clientY - rect.top) / rect.height
+    };
+  }, []);
+
+  // Get mode-appropriate labels
+  const skillTreeLabel = getTerm('skillTree');
+  const perkLabel = getTerm('perk');
+  const levelLabel = getTerm('level');
+
+  // Draw enhanced space background with animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    let animationId;
+    let stars = [];
+    let twinkleStars = [];
 
-    canvas.width = width;
-    canvas.height = height;
+    const initCanvas = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
 
-    // Deep space gradient background
-    const bgGradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height));
-    bgGradient.addColorStop(0, '#0a0a12');
-    bgGradient.addColorStop(0.5, '#05050a');
-    bgGradient.addColorStop(1, '#000000');
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, width, height);
-
-    // Enhanced nebula rendering with smoother blending
-    const drawNebula = (x, y, radius, color, opacity) => {
-      // Main nebula core
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, `rgba(${color}, ${opacity * 0.25})`);
-      gradient.addColorStop(0.2, `rgba(${color}, ${opacity * 0.18})`);
-      gradient.addColorStop(0.5, `rgba(${color}, ${opacity * 0.08})`);
-      gradient.addColorStop(0.8, `rgba(${color}, ${opacity * 0.02})`);
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-
-      // Nebula wisps
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.5;
-        const dist = radius * (0.4 + Math.random() * 0.3);
-        const dx = Math.cos(angle) * dist;
-        const dy = Math.sin(angle) * dist;
-        const wispRadius = radius * (0.3 + Math.random() * 0.2);
-
-        const wispGradient = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, wispRadius);
-        wispGradient.addColorStop(0, `rgba(${color}, ${opacity * 0.15})`);
-        wispGradient.addColorStop(0.5, `rgba(${color}, ${opacity * 0.06})`);
-        wispGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = wispGradient;
-        ctx.fillRect(x + dx - wispRadius, y + dy - wispRadius, wispRadius * 2, wispRadius * 2);
-      }
-    };
-
-    // Position nebulas more strategically
-    drawNebula(width * 0.2, height * 0.7, 450, '217, 119, 87', 1.0); // Warrior (warm orange)
-    drawNebula(width * 0.5, height * 0.3, 500, '123, 104, 217', 1.0); // Mage (deep purple)
-    drawNebula(width * 0.8, height * 0.6, 420, '87, 217, 212', 1.0); // Mystic (cyan)
-    drawNebula(width * 0.35, height * 0.85, 380, '217, 193, 87', 1.0); // Merchant (gold)
-    drawNebula(width * 0.1, height * 0.35, 360, '87, 217, 138', 1.0); // Diplomat (green)
-    drawNebula(width * 0.85, height * 0.2, 400, '184, 184, 200', 1.0); // Artisan (silver)
-
-    // Distant galaxies/nebulas for depth
-    for (let i = 0; i < 5; i++) {
-      const x = Math.random() * width;
-      const y = Math.random() * height;
-      const size = 80 + Math.random() * 120;
-      const hue = Math.random() * 360;
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
-      gradient.addColorStop(0, `hsla(${hue}, 60%, 50%, 0.03)`);
-      gradient.addColorStop(0.5, `hsla(${hue}, 60%, 50%, 0.01)`);
-      gradient.addColorStop(1, 'transparent');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(x - size, y - size, size * 2, size * 2);
-    }
-
-    // Enhanced star field with depth layers
-    const drawStarLayer = (count, sizeRange, brightnessRange, layer) => {
-      for (let i = 0; i < count; i++) {
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        const size = sizeRange[0] + Math.random() * (sizeRange[1] - sizeRange[0]);
-        const brightness = brightnessRange[0] + Math.random() * (brightnessRange[1] - brightnessRange[0]);
-
-        // Star color temperature
+      // Initialize static star field
+      stars = [];
+      for (let i = 0; i < 1000; i++) {
         const temp = Math.random();
         let r, g, b;
         if (temp < 0.1) {
-          // Blue giants
-          r = 180 + Math.random() * 50;
-          g = 200 + Math.random() * 40;
-          b = 255;
+          r = 180 + Math.random() * 50; g = 200 + Math.random() * 40; b = 255;
         } else if (temp < 0.7) {
-          // Yellow-white (sun-like)
-          r = 255;
-          g = 245 + Math.random() * 10;
-          b = 220 + Math.random() * 30;
+          r = 255; g = 245 + Math.random() * 10; b = 220 + Math.random() * 30;
         } else {
-          // Pure white
           r = g = b = 240 + Math.random() * 15;
         }
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          size: 0.3 + Math.random() * 2,
+          brightness: 0.2 + Math.random() * 0.8,
+          r, g, b,
+          layer: Math.random() // 0 = far, 1 = near (for parallax)
+        });
+      }
 
-        // Subtle glow
-        if (size > 0.8) {
-          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${brightness * 0.2})`;
+      // Initialize twinkling stars (brighter ones that animate)
+      twinkleStars = stars.filter(s => s.size > 1.2).map(s => ({
+        ...s,
+        twinkleSpeed: 0.5 + Math.random() * 2,
+        twinklePhase: Math.random() * Math.PI * 2
+      }));
+    };
+
+    const drawFrame = (time) => {
+      const width = canvas.width;
+      const height = canvas.height;
+      const mousePos = mousePosRef.current;
+
+      // Deep space gradient background
+      const bgGradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height));
+      bgGradient.addColorStop(0, '#0a0a14');
+      bgGradient.addColorStop(0.4, '#050508');
+      bgGradient.addColorStop(1, '#000002');
+      ctx.fillStyle = bgGradient;
+      ctx.fillRect(0, 0, width, height);
+
+      // Enhanced nebula rendering with Skyrim-style depth
+      const drawNebula = (baseX, baseY, radius, color, opacity, parallaxFactor = 0) => {
+        // Apply parallax offset based on mouse position
+        const offsetX = (mousePos.x - 0.5) * parallaxFactor * 100;
+        const offsetY = (mousePos.y - 0.5) * parallaxFactor * 60;
+        const x = baseX + offsetX;
+        const y = baseY + offsetY;
+
+        // Main nebula core with multiple layers for depth
+        for (let layer = 0; layer < 3; layer++) {
+          const layerRadius = radius * (1 - layer * 0.2);
+          const layerOpacity = opacity * (1 - layer * 0.25);
+
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, layerRadius);
+          gradient.addColorStop(0, `rgba(${color}, ${layerOpacity * 0.3})`);
+          gradient.addColorStop(0.15, `rgba(${color}, ${layerOpacity * 0.2})`);
+          gradient.addColorStop(0.4, `rgba(${color}, ${layerOpacity * 0.1})`);
+          gradient.addColorStop(0.7, `rgba(${color}, ${layerOpacity * 0.03})`);
+          gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(x - layerRadius, y - layerRadius, layerRadius * 2, layerRadius * 2);
+        }
+
+        // Nebula wisps - flowing tendrils
+        for (let i = 0; i < 12; i++) {
+          const baseAngle = (i / 12) * Math.PI * 2;
+          const waveOffset = Math.sin(time * 0.0003 + i) * 0.2;
+          const angle = baseAngle + waveOffset;
+          const dist = radius * (0.3 + Math.random() * 0.4);
+          const dx = Math.cos(angle) * dist;
+          const dy = Math.sin(angle) * dist;
+          const wispRadius = radius * (0.15 + Math.random() * 0.15);
+
+          const wispGradient = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, wispRadius);
+          wispGradient.addColorStop(0, `rgba(${color}, ${opacity * 0.12})`);
+          wispGradient.addColorStop(0.5, `rgba(${color}, ${opacity * 0.05})`);
+          wispGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = wispGradient;
+          ctx.fillRect(x + dx - wispRadius, y + dy - wispRadius, wispRadius * 2, wispRadius * 2);
+        }
+      };
+
+      // Parallax nebula layers - deep background (moves least)
+      drawNebula(width * 0.15, height * 0.2, 600, '40, 30, 60', 0.6, 0.1);
+      drawNebula(width * 0.85, height * 0.75, 550, '30, 40, 50', 0.5, 0.1);
+
+      // Mid-ground nebulae - stat colors (moves medium)
+      drawNebula(width * 0.2, height * 0.7, 450, '217, 119, 87', 0.9, 0.3); // Body (warm orange)
+      drawNebula(width * 0.5, height * 0.3, 500, '123, 104, 217', 0.9, 0.3); // Mind (deep purple)
+      drawNebula(width * 0.8, height * 0.6, 420, '87, 217, 212', 0.9, 0.3); // Spirit (cyan)
+      drawNebula(width * 0.35, height * 0.85, 380, '217, 193, 87', 0.9, 0.3); // Wealth (gold)
+      drawNebula(width * 0.1, height * 0.35, 360, '87, 217, 138', 0.9, 0.3); // Social (green)
+      drawNebula(width * 0.85, height * 0.2, 400, '184, 184, 200', 0.9, 0.3); // Craft (silver)
+
+      // Draw star field with parallax
+      stars.forEach(star => {
+        const parallaxFactor = star.layer * 0.15;
+        const px = star.x + (mousePos.x - 0.5) * parallaxFactor * 50;
+        const py = star.y + (mousePos.y - 0.5) * parallaxFactor * 30;
+
+        // Subtle glow for larger stars
+        if (star.size > 0.8) {
+          ctx.fillStyle = `rgba(${star.r}, ${star.g}, ${star.b}, ${star.brightness * 0.15})`;
           ctx.beginPath();
-          ctx.arc(x, y, size * 2.5, 0, Math.PI * 2);
+          ctx.arc(px, py, star.size * 2.5, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Star core
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${brightness})`;
+        ctx.fillStyle = `rgba(${star.r}, ${star.g}, ${star.b}, ${star.brightness})`;
         ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.arc(px, py, star.size, 0, Math.PI * 2);
         ctx.fill();
-      }
+      });
+
+      // Animated twinkling for bright stars
+      twinkleStars.forEach(star => {
+        const twinkle = 0.5 + 0.5 * Math.sin(time * 0.002 * star.twinkleSpeed + star.twinklePhase);
+        const parallaxFactor = star.layer * 0.15;
+        const px = star.x + (mousePos.x - 0.5) * parallaxFactor * 50;
+        const py = star.y + (mousePos.y - 0.5) * parallaxFactor * 30;
+
+        // Glowing halo for twinkling effect
+        ctx.fillStyle = `rgba(255, 255, 255, ${twinkle * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(px, py, star.size * 3 * twinkle, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cross-ray effect for brightest stars
+        if (star.size > 1.8 && twinkle > 0.7) {
+          ctx.strokeStyle = `rgba(255, 255, 255, ${twinkle * 0.4})`;
+          ctx.lineWidth = 0.5;
+          const rayLength = star.size * 4 * twinkle;
+          ctx.beginPath();
+          ctx.moveTo(px - rayLength, py);
+          ctx.lineTo(px + rayLength, py);
+          ctx.moveTo(px, py - rayLength);
+          ctx.lineTo(px, py + rayLength);
+          ctx.stroke();
+        }
+      });
+
+      animationId = requestAnimationFrame(drawFrame);
     };
 
-    // Multi-layer stars for depth
-    drawStarLayer(800, [0.3, 0.6], [0.2, 0.4], 'far'); // Distant stars
-    drawStarLayer(300, [0.6, 1.2], [0.4, 0.7], 'mid'); // Mid-distance
-    drawStarLayer(80, [1.2, 2.5], [0.7, 1.0], 'near'); // Bright foreground stars
-
-    // Subtle shooting stars
-    for (let i = 0; i < 2; i++) {
-      const x = Math.random() * width;
-      const y = Math.random() * height * 0.5;
-      const length = 60 + Math.random() * 80;
-      const angle = Math.random() * Math.PI * 0.5 + Math.PI * 0.25;
-
-      const gradient = ctx.createLinearGradient(x, y, x + Math.cos(angle) * length, y + Math.sin(angle) * length);
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-      gradient.addColorStop(0.1, 'rgba(255, 255, 255, 0.4)');
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-      ctx.strokeStyle = gradient;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
-      ctx.stroke();
-    }
+    initCanvas();
+    animationId = requestAnimationFrame(drawFrame);
 
     const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      initCanvas();
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
+    };
+  }, []); // Empty deps - animation runs continuously, reads mousePosRef each frame
+
+  // Simple list view for minimal mode
+  if (!showSkillTree || mode === 'minimal') {
+    return (
+      <div className="text-white space-y-4">
+        <div className="space-y-4">
+          {STATS.map(stat => {
+            const data = mockCharacterData[stat.id];
+            const Icon = stat.icon;
+            return (
+              <div
+                key={stat.id}
+                className="bg-[#1a1724] border border-white/10 rounded-xl p-4"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Icon className="w-5 h-5" style={{ color: stat.color }} />
+                  <span className="font-semibold">{stat.professionalName || stat.name}</span>
+                  <span className="text-white/60 text-sm">Level {data.level}</span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${(data.xp / data.xpToNext) * 100}%`,
+                      backgroundColor: stat.color,
+                    }}
+                  />
+                </div>
+                <div className="text-xs text-white/50 mt-1">
+                  {data.perksUnlocked} skills unlocked
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative min-h-screen bg-black text-white overflow-hidden">
-      {/* Space Background Canvas */}
-      <canvas
-        ref={canvasRef}
-        className="fixed inset-0 -z-10"
-        style={{ imageRendering: 'crisp-edges' }}
-      />
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      className="relative min-h-[600px] bg-black text-white overflow-hidden rounded-xl"
+    >
+      {/* Space Background Canvas - only in cosmic mode with effects */}
+      {showConstellationEffects && (
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 -z-10"
+          style={{ imageRendering: 'crisp-edges' }}
+        />
+      )}
+
+      {/* Simple gradient background for non-cosmic modes */}
+      {!showConstellationEffects && (
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0c0a10] via-[#1a1428] to-[#0c0a10]" />
+      )}
 
       {/* Main Content */}
       <AnimatePresence mode="wait">
@@ -263,6 +383,10 @@ export default function SkillTreeNew() {
             stats={STATS}
             characterData={mockCharacterData}
             onSelectStat={setSelectedStat}
+            mode={mode}
+            showEffects={showConstellationEffects}
+            levelLabel={levelLabel}
+            skillTreeLabel={skillTreeLabel}
           />
         ) : (
           <SkillTreeView
@@ -270,6 +394,10 @@ export default function SkillTreeNew() {
             stat={STATS.find(s => s.id === selectedStat)}
             characterData={mockCharacterData}
             onBack={() => setSelectedStat(null)}
+            mode={mode}
+            showEffects={showConstellationEffects}
+            perkLabel={perkLabel}
+            levelLabel={levelLabel}
           />
         )}
       </AnimatePresence>
@@ -278,7 +406,12 @@ export default function SkillTreeNew() {
 }
 
 // Constellation Overview - Main selection screen
-function ConstellationOverview({ stats, characterData, onSelectStat }) {
+function ConstellationOverview({ stats, characterData, onSelectStat, mode = 'cosmic', showEffects = true, levelLabel = 'Level', skillTreeLabel = 'Constellation Skills' }) {
+  const isCosmic = mode === 'cosmic';
+
+  // Professional mode title
+  const title = isCosmic ? 'CONSTELLATION SKILLS' : 'GROWTH MAP';
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -298,23 +431,27 @@ function ConstellationOverview({ stats, characterData, onSelectStat }) {
             <h1
               className="text-4xl md:text-5xl font-bold tracking-wider relative z-10"
               style={{
-                background: 'linear-gradient(180deg, #ffffff 0%, #d4d4d8 100%)',
+                background: isCosmic
+                  ? 'linear-gradient(180deg, #ffffff 0%, #d4d4d8 100%)'
+                  : 'linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                textShadow: '0 0 30px rgba(255,255,255,0.3)',
+                textShadow: showEffects ? '0 0 30px rgba(255,255,255,0.3)' : 'none',
                 fontFamily: 'system-ui, -apple-system, sans-serif',
                 fontWeight: 700
               }}
             >
-              CONSTELLATION SKILLS
+              {title}
             </h1>
-            {/* Subtle glow underneath */}
-            <div
-              className="absolute inset-0 blur-2xl opacity-40"
-              style={{
-                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, transparent 70%)'
-              }}
-            />
+            {/* Subtle glow underneath - only in cosmic mode */}
+            {showEffects && (
+              <div
+                className="absolute inset-0 blur-2xl opacity-40"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, transparent 70%)'
+                }}
+              />
+            )}
           </div>
         </motion.div>
         <motion.div
@@ -324,7 +461,7 @@ function ConstellationOverview({ stats, characterData, onSelectStat }) {
           className="flex items-center justify-center gap-3"
         >
           <div className="h-px w-12 bg-gradient-to-r from-transparent to-gray-600" />
-          <span className="text-lg text-white/60 font-medium">Level {characterData.level}</span>
+          <span className="text-lg text-white/60 font-medium">{levelLabel} {characterData.level}</span>
           <div className="h-px w-12 bg-gradient-to-l from-transparent to-gray-600" />
         </motion.div>
       </div>
@@ -338,6 +475,9 @@ function ConstellationOverview({ stats, characterData, onSelectStat }) {
             data={characterData[stat.id]}
             index={index}
             onClick={() => onSelectStat(stat.id)}
+            mode={mode}
+            showEffects={showEffects}
+            levelLabel={levelLabel}
           />
         ))}
       </div>
@@ -356,9 +496,15 @@ function ConstellationOverview({ stats, characterData, onSelectStat }) {
 }
 
 // Individual constellation card
-function ConstellationCard({ stat, data, index, onClick }) {
+function ConstellationCard({ stat, data, index, onClick, mode = 'cosmic', showEffects = true, levelLabel = 'Level' }) {
   const Icon = stat.icon;
   const progress = (data.xp / data.xpToNext) * 100;
+  const isCosmic = mode === 'cosmic';
+
+  // Use mode-appropriate names
+  const displayName = isCosmic ? stat.name : (stat.professionalName || stat.name);
+  const displaySubtitle = isCosmic ? stat.subtitle : (stat.professionalSubtitle || stat.subtitle);
+  const perksLabel = isCosmic ? 'perks' : 'skills';
 
   return (
     <motion.button
@@ -370,13 +516,15 @@ function ConstellationCard({ stat, data, index, onClick }) {
       onClick={onClick}
       className="relative group"
     >
-      {/* Glow effect behind card */}
-      <div
-        className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-60 transition-all duration-700 blur-2xl"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, ${stat.color}50 0%, transparent 70%)`,
-        }}
-      />
+      {/* Glow effect behind card - only in cosmic mode with effects */}
+      {showEffects && (
+        <div
+          className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-60 transition-all duration-700 blur-2xl"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${stat.color}50 0%, transparent 70%)`,
+          }}
+        />
+      )}
 
       {/* Card background with refined glassmorphism */}
       <div
@@ -387,21 +535,25 @@ function ConstellationCard({ stat, data, index, onClick }) {
           boxShadow: `0 4px 20px ${stat.color}15, inset 0 1px 0 ${stat.color}20`
         }}
       >
-        {/* Subtle top highlight */}
-        <div
-          className="absolute top-0 left-0 right-0 h-px opacity-50"
-          style={{
-            background: `linear-gradient(90deg, transparent 0%, ${stat.color}60 50%, transparent 100%)`
-          }}
-        />
+        {/* Subtle top highlight - only with effects */}
+        {showEffects && (
+          <div
+            className="absolute top-0 left-0 right-0 h-px opacity-50"
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, ${stat.color}60 50%, transparent 100%)`
+            }}
+          />
+        )}
 
-        {/* Hover glow overlay */}
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-          style={{
-            background: `radial-gradient(circle at 50% 0%, ${stat.color}15 0%, transparent 60%)`
-          }}
-        />
+        {/* Hover glow overlay - only with effects */}
+        {showEffects && (
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style={{
+              background: `radial-gradient(circle at 50% 0%, ${stat.color}15 0%, transparent 60%)`
+            }}
+          />
+        )}
 
         {/* Content */}
         <div className="relative z-10">
@@ -410,21 +562,25 @@ function ConstellationCard({ stat, data, index, onClick }) {
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-110 relative"
               style={{
-                background: `radial-gradient(circle, ${stat.color}25 0%, ${stat.color}08 60%, transparent 100%)`,
+                background: showEffects
+                  ? `radial-gradient(circle, ${stat.color}25 0%, ${stat.color}08 60%, transparent 100%)`
+                  : `${stat.color}15`,
               }}
             >
-              {/* Icon glow ring */}
-              <div
-                className="absolute inset-0 rounded-full opacity-50 group-hover:opacity-80 transition-opacity duration-500"
-                style={{
-                  boxShadow: `0 0 20px ${stat.color}40, inset 0 0 15px ${stat.color}15`
-                }}
-              />
+              {/* Icon glow ring - only with effects */}
+              {showEffects && (
+                <div
+                  className="absolute inset-0 rounded-full opacity-50 group-hover:opacity-80 transition-opacity duration-500"
+                  style={{
+                    boxShadow: `0 0 20px ${stat.color}40, inset 0 0 15px ${stat.color}15`
+                  }}
+                />
+              )}
               <Icon
-                className="w-8 h-8 relative z-10 transition-all duration-500 group-hover:scale-110 group-hover:rotate-12"
+                className={`w-8 h-8 relative z-10 transition-all duration-500 ${showEffects ? 'group-hover:scale-110 group-hover:rotate-12' : ''}`}
                 style={{
                   color: stat.color,
-                  filter: `drop-shadow(0 2px 8px ${stat.color}80)`
+                  filter: showEffects ? `drop-shadow(0 2px 8px ${stat.color}80)` : 'none'
                 }}
               />
             </div>
@@ -435,20 +591,20 @@ function ConstellationCard({ stat, data, index, onClick }) {
             className="text-xl font-bold mb-0.5 tracking-wide transition-all duration-300"
             style={{
               color: stat.color,
-              textShadow: `0 0 15px ${stat.color}70, 0 2px 8px ${stat.color}40`,
+              textShadow: showEffects ? `0 0 15px ${stat.color}70, 0 2px 8px ${stat.color}40` : 'none',
               fontFamily: 'system-ui, -apple-system, sans-serif',
               fontWeight: 600
             }}
           >
-            {stat.name}
+            {displayName}
           </h2>
-          <p className="text-xs text-white/60 mb-4 font-medium">{stat.subtitle}</p>
+          <p className="text-xs text-white/60 mb-4 font-medium">{displaySubtitle}</p>
 
           {/* Level and Progress */}
           <div className="space-y-2.5">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-300 font-medium">Lv. {data.level}</span>
-              <span className="text-white/50 text-xs">{data.perksUnlocked} perks</span>
+              <span className="text-gray-300 font-medium">{isCosmic ? 'Lv.' : levelLabel} {data.level}</span>
+              <span className="text-white/50 text-xs">{data.perksUnlocked} {perksLabel}</span>
             </div>
 
             {/* XP Bar with refined styling */}
@@ -462,13 +618,15 @@ function ConstellationCard({ stat, data, index, onClick }) {
                   background: `linear-gradient(90deg, ${stat.color}80 0%, ${stat.color} 100%)`,
                 }}
               >
-                {/* Glow on progress bar */}
-                <div
-                  className="absolute inset-0 opacity-60"
-                  style={{
-                    boxShadow: `0 0 8px ${stat.color}90`
-                  }}
-                />
+                {/* Glow on progress bar - only with effects */}
+                {showEffects && (
+                  <div
+                    className="absolute inset-0 opacity-60"
+                    style={{
+                      boxShadow: `0 0 8px ${stat.color}90`
+                    }}
+                  />
+                )}
               </motion.div>
             </div>
 
@@ -479,10 +637,12 @@ function ConstellationCard({ stat, data, index, onClick }) {
         </div>
       </div>
 
-      {/* Constellation pattern background - subtle enhancement */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.07] group-hover:opacity-20 transition-all duration-700 rounded-xl overflow-hidden">
-        <ConstellationMiniature color={stat.color} />
-      </div>
+      {/* Constellation pattern background - only in cosmic mode */}
+      {isCosmic && (
+        <div className="absolute inset-0 pointer-events-none opacity-[0.07] group-hover:opacity-20 transition-all duration-700 rounded-xl overflow-hidden">
+          <ConstellationMiniature color={stat.color} />
+        </div>
+      )}
     </motion.button>
   );
 }
@@ -531,9 +691,16 @@ function ConstellationMiniature({ color }) {
 }
 
 // Detailed skill tree view (perk constellation)
-function SkillTreeView({ stat, characterData, onBack }) {
+function SkillTreeView({ stat, characterData, onBack, mode = 'cosmic', showEffects = true, perkLabel = 'Perk', levelLabel = 'Level' }) {
   const Icon = stat.icon;
   const data = characterData[stat.id];
+  const isCosmic = mode === 'cosmic';
+
+  // Mode-appropriate labels
+  const displayName = isCosmic ? stat.name : (stat.professionalName || stat.name);
+  const displaySubtitle = isCosmic ? stat.subtitle : (stat.professionalSubtitle || stat.subtitle);
+  const pointsLabel = isCosmic ? 'PERK POINTS' : 'SKILL POINTS';
+  const xpLabel = isCosmic ? 'XP' : 'Progress';
 
   // State for unlocked perks and perk points
   const [unlockedPerks, setUnlockedPerks] = useState(data.unlockedPerks || []);
@@ -605,8 +772,10 @@ function SkillTreeView({ stat, characterData, onBack }) {
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
-                  background: `radial-gradient(circle, ${stat.color}30 0%, ${stat.color}10 100%)`,
-                  boxShadow: `0 0 20px ${stat.color}40`
+                  background: showEffects
+                    ? `radial-gradient(circle, ${stat.color}30 0%, ${stat.color}10 100%)`
+                    : `${stat.color}20`,
+                  boxShadow: showEffects ? `0 0 20px ${stat.color}40` : 'none'
                 }}
               >
                 <Icon className="w-6 h-6" style={{ color: stat.color }} />
@@ -616,13 +785,13 @@ function SkillTreeView({ stat, characterData, onBack }) {
                   className="text-2xl font-bold tracking-wider"
                   style={{
                     color: stat.color,
-                    textShadow: `0 0 10px ${stat.color}80`,
-                    fontFamily: 'serif'
+                    textShadow: showEffects ? `0 0 10px ${stat.color}80` : 'none',
+                    fontFamily: isCosmic ? 'serif' : 'system-ui, -apple-system, sans-serif'
                   }}
                 >
-                  {stat.name}
+                  {displayName}
                 </h2>
-                <p className="text-sm text-white/50">{stat.subtitle}</p>
+                <p className="text-sm text-white/50">{displaySubtitle}</p>
               </div>
             </div>
 
@@ -630,29 +799,29 @@ function SkillTreeView({ stat, characterData, onBack }) {
               <div className="text-3xl font-bold" style={{ color: stat.color }}>
                 {data.level}
               </div>
-              <div className="text-xs text-white/50">LEVEL</div>
+              <div className="text-xs text-white/50">{levelLabel.toUpperCase()}</div>
             </div>
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Perk Points */}
+            {/* Perk/Skill Points */}
             <div className="text-center">
               <div
                 className="text-3xl font-bold"
                 style={{
                   color: stat.color,
-                  textShadow: `0 0 10px ${stat.color}80`
+                  textShadow: showEffects ? `0 0 10px ${stat.color}80` : 'none'
                 }}
               >
                 {perkPoints}
               </div>
-              <div className="text-xs text-white/50 tracking-wide">PERK POINTS</div>
+              <div className="text-xs text-white/50 tracking-wide">{pointsLabel}</div>
             </div>
 
             {/* XP Progress */}
             <div className="w-48">
               <div className="text-xs text-white/60 mb-1">
-                {data.xp.toLocaleString()} / {data.xpToNext.toLocaleString()} XP
+                {data.xp.toLocaleString()} / {data.xpToNext.toLocaleString()} {xpLabel}
               </div>
               <div className="h-2 bg-[#1a1724] rounded-full overflow-hidden">
                 <div
@@ -660,7 +829,7 @@ function SkillTreeView({ stat, characterData, onBack }) {
                   style={{
                     width: `${(data.xp / data.xpToNext) * 100}%`,
                     background: `linear-gradient(90deg, ${stat.color}60 0%, ${stat.color} 100%)`,
-                    boxShadow: `0 0 10px ${stat.color}60`
+                    boxShadow: showEffects ? `0 0 10px ${stat.color}60` : 'none'
                   }}
                 />
               </div>
@@ -674,10 +843,14 @@ function SkillTreeView({ stat, characterData, onBack }) {
         <PerkConstellation
           perkTree={perkTree}
           color={stat.color}
-          statName={stat.name}
+          statName={displayName}
           onPerkClick={handlePerkUnlock}
           characterLevel={data.level}
           unlockedPerks={unlockedPerks}
+          mode={mode}
+          showEffects={showEffects}
+          perkLabel={perkLabel}
+          levelLabel={levelLabel}
         />
       </div>
     </motion.div>
@@ -685,9 +858,10 @@ function SkillTreeView({ stat, characterData, onBack }) {
 }
 
 // Perk constellation visualization
-function PerkConstellation({ perkTree, color, onPerkClick, characterLevel, unlockedPerks }) {
+function PerkConstellation({ perkTree, color, onPerkClick, characterLevel, unlockedPerks, mode = 'cosmic', showEffects = true, perkLabel = 'Perk', levelLabel = 'Level' }) {
   const [hoveredPerk, setHoveredPerk] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const isCosmic = mode === 'cosmic';
 
   // Convert color to RGB
   const hexToRgb = (hex) => {
@@ -714,65 +888,170 @@ function PerkConstellation({ perkTree, color, onPerkClick, characterLevel, unloc
     setHoveredPerk(null);
   };
 
+  // Calculate line length for animated dash effect
+  const getLineLength = (x1, y1, x2, y2) => {
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+  };
+
   return (
     <div className="absolute inset-0 flex items-center justify-center">
-      {/* Refined nebula background - cleaner and more subtle */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Main central glow */}
-        <div
-          className="absolute inset-0 opacity-80"
-          style={{
-            background: `radial-gradient(ellipse 900px 700px at 50% 50%, rgba(${rgbString}, 0.12) 0%, rgba(${rgbString}, 0.05) 40%, transparent 70%)`
-          }}
-        />
+      {/* Refined nebula background - only in cosmic mode with effects */}
+      {showEffects && (
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Main central glow - Skyrim-style pulsating */}
+          <motion.div
+            animate={{
+              opacity: [0.6, 0.8, 0.6],
+              scale: [1, 1.02, 1],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse 900px 700px at 50% 50%, rgba(${rgbString}, 0.15) 0%, rgba(${rgbString}, 0.06) 40%, transparent 70%)`
+            }}
+          />
 
-        {/* Soft ambient light layers */}
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{
-            background: `radial-gradient(ellipse 600px 400px at 40% 40%, rgba(${rgbString}, 0.08) 0%, transparent 55%)`
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{
-            background: `radial-gradient(ellipse 600px 400px at 60% 60%, rgba(${rgbString}, 0.08) 0%, transparent 55%)`
-          }}
-        />
-      </div>
+          {/* Soft ambient light layers */}
+          <motion.div
+            animate={{ opacity: [0.4, 0.6, 0.4] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse 600px 400px at 40% 40%, rgba(${rgbString}, 0.1) 0%, transparent 55%)`
+            }}
+          />
+          <motion.div
+            animate={{ opacity: [0.4, 0.6, 0.4] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse 600px 400px at 60% 60%, rgba(${rgbString}, 0.1) 0%, transparent 55%)`
+            }}
+          />
+
+          {/* Additional wispy nebula effect */}
+          <motion.div
+            animate={{ opacity: [0.3, 0.5, 0.3], x: [-10, 10, -10] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse 500px 300px at 50% 30%, rgba(${rgbString}, 0.08) 0%, transparent 60%)`
+            }}
+          />
+        </div>
+      )}
 
       {/* SVG Constellation */}
       <svg className="w-full h-full" viewBox="0 0 800 600">
-        {/* Connection lines with refined styling */}
+        {/* Define gradients and filters for enhanced effects */}
+        <defs>
+          {/* Glow filter for unlocked nodes */}
+          <filter id={`glow-${color.replace('#', '')}`} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+
+          {/* Animated gradient for flowing energy lines */}
+          <linearGradient id={`flow-gradient-${color.replace('#', '')}`} gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor={color} stopOpacity="0.2">
+              <animate attributeName="offset" values="-1;0" dur="2s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="50%" stopColor={color} stopOpacity="0.8">
+              <animate attributeName="offset" values="-0.5;0.5" dur="2s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%" stopColor={color} stopOpacity="0.2">
+              <animate attributeName="offset" values="0;1" dur="2s" repeatCount="indefinite" />
+            </stop>
+          </linearGradient>
+        </defs>
+
+        {/* Connection lines with enhanced styling */}
         {perkTree.connections.map((conn, i) => {
           const unlocked = conn.unlocked;
+          const fromPerk = perkTree.perks[conn.from];
+          const toPerk = perkTree.perks[conn.to];
+          const lineLength = getLineLength(fromPerk.x, fromPerk.y, toPerk.x, toPerk.y);
+
           return (
             <g key={`line-${i}`}>
-              {/* Outer glow for unlocked connections */}
-              {unlocked && (
+              {/* Multiple glow layers for unlocked connections - Skyrim style */}
+              {unlocked && showEffects && (
+                <>
+                  {/* Outer diffuse glow */}
+                  <line
+                    x1={fromPerk.x}
+                    y1={fromPerk.y}
+                    x2={toPerk.x}
+                    y2={toPerk.y}
+                    stroke={color}
+                    strokeWidth="8"
+                    opacity="0.08"
+                    strokeLinecap="round"
+                  />
+                  {/* Middle glow */}
+                  <line
+                    x1={fromPerk.x}
+                    y1={fromPerk.y}
+                    x2={toPerk.x}
+                    y2={toPerk.y}
+                    stroke={color}
+                    strokeWidth="5"
+                    opacity="0.15"
+                    strokeLinecap="round"
+                  />
+                  {/* Inner bright core */}
+                  <line
+                    x1={fromPerk.x}
+                    y1={fromPerk.y}
+                    x2={toPerk.x}
+                    y2={toPerk.y}
+                    stroke={color}
+                    strokeWidth="2.5"
+                    opacity="0.6"
+                    strokeLinecap="round"
+                  />
+                  {/* Animated energy flow pulse */}
+                  <line
+                    x1={fromPerk.x}
+                    y1={fromPerk.y}
+                    x2={toPerk.x}
+                    y2={toPerk.y}
+                    stroke="#ffffff"
+                    strokeWidth="1"
+                    opacity="0.4"
+                    strokeLinecap="round"
+                    strokeDasharray={`${lineLength * 0.1}, ${lineLength * 0.9}`}
+                  >
+                    <animate
+                      attributeName="stroke-dashoffset"
+                      values={`0;${-lineLength}`}
+                      dur="3s"
+                      repeatCount="indefinite"
+                    />
+                  </line>
+                </>
+              )}
+              {/* Locked line - dotted style */}
+              {!unlocked && (
                 <line
-                  x1={perkTree.perks[conn.from].x}
-                  y1={perkTree.perks[conn.from].y}
-                  x2={perkTree.perks[conn.to].x}
-                  y2={perkTree.perks[conn.to].y}
-                  stroke={color}
-                  strokeWidth="4"
-                  opacity="0.15"
+                  x1={fromPerk.x}
+                  y1={fromPerk.y}
+                  x2={toPerk.x}
+                  y2={toPerk.y}
+                  stroke="#444"
+                  strokeWidth="1"
+                  opacity="0.3"
+                  strokeDasharray="4,6"
                   strokeLinecap="round"
                 />
               )}
-              {/* Main line */}
-              <line
-                x1={perkTree.perks[conn.from].x}
-                y1={perkTree.perks[conn.from].y}
-                x2={perkTree.perks[conn.to].x}
-                y2={perkTree.perks[conn.to].y}
-                stroke={unlocked ? color : '#333'}
-                strokeWidth={unlocked ? "2" : "1"}
-                opacity={unlocked ? "0.7" : "0.25"}
-                strokeDasharray={unlocked ? "0" : "4,4"}
-                strokeLinecap="round"
-              />
             </g>
           );
         })}
@@ -795,6 +1074,7 @@ function PerkConstellation({ perkTree, color, onPerkClick, characterLevel, unloc
               isAvailable={isAvailable}
               onHover={handlePerkHover}
               onLeave={handlePerkLeave}
+              showEffects={showEffects}
             />
           );
         })}
@@ -811,23 +1091,23 @@ function PerkConstellation({ perkTree, color, onPerkClick, characterLevel, unloc
           }}
         >
           <div
-            className="rounded-lg p-4 shadow-2xl border-4"
+            className={`rounded-lg p-4 shadow-2xl ${showEffects ? 'border-4' : 'border-2'}`}
             style={{
               backgroundColor: '#000000',
               borderColor: color,
               minWidth: '300px',
               maxWidth: '350px',
-              boxShadow: `0 0 30px ${color}, 0 10px 40px rgba(0,0,0,0.8)`
+              boxShadow: showEffects ? `0 0 30px ${color}, 0 10px 40px rgba(0,0,0,0.8)` : '0 10px 40px rgba(0,0,0,0.8)'
             }}
           >
-            {/* Perk Name */}
+            {/* Perk/Skill Name */}
             <div
               className="text-xl font-bold mb-2"
               style={{
                 color: color,
-                fontFamily: 'serif',
-                textShadow: `0 0 20px ${color}, 0 0 40px ${color}80`,
-                filter: 'brightness(1.2)'
+                fontFamily: isCosmic ? 'serif' : 'system-ui, -apple-system, sans-serif',
+                textShadow: showEffects ? `0 0 20px ${color}, 0 0 40px ${color}80` : 'none',
+                filter: showEffects ? 'brightness(1.2)' : 'none'
               }}
             >
               {hoveredPerk.name}
@@ -863,41 +1143,39 @@ function PerkConstellation({ perkTree, color, onPerkClick, characterLevel, unloc
                 ? '✓ Unlocked'
                 : unlockedPerks.includes(hoveredPerk.id)
                 ? '▶ Click to Unlock'
-                : `🔒 Level ${hoveredPerk.requiredLevel} Required`}
+                : `🔒 ${levelLabel} ${hoveredPerk.requiredLevel} Required`}
             </div>
           </div>
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center text-white/50 text-sm tracking-widest">
-        HOVER OVER STARS TO VIEW PERK DETAILS
-      </div>
     </div>
   );
 }
 
-// Individual perk node
-function PerkNode({ perk, color, onClick, isAvailable, onHover, onLeave }) {
+// Individual perk node with Skyrim-style effects
+function PerkNode({ perk, color, onClick, isAvailable, onHover, onLeave, showEffects = true }) {
   const [isHovered, setIsHovered] = useState(false);
 
   // Determine size and glow based on tier and type
   const isKeystone = perk.type === 'keystone';
-  const baseSize = isKeystone ? 12 : perk.tier === 'master' ? 10 : perk.tier === 'expert' ? 8 : 7;
-  const glowSize = isKeystone ? 35 : perk.tier === 'master' ? 25 : 20;
-  const pulseSize = isHovered ? baseSize * 1.3 : baseSize;
+  const isMaster = perk.tier === 'master';
+  const isExpert = perk.tier === 'expert';
+  const baseSize = isKeystone ? 14 : isMaster ? 11 : isExpert ? 9 : 7;
+  const glowSize = isKeystone ? 45 : isMaster ? 35 : isExpert ? 28 : 22;
+  const pulseSize = isHovered ? baseSize * 1.4 : baseSize;
 
   // Determine visual state
   const getNodeColor = () => {
-    if (perk.unlocked) return color; // Unlocked: stat color
-    if (isAvailable) return color; // Available: stat color but dimmer
-    return '#4a4a4a'; // Locked: gray
+    if (perk.unlocked) return color;
+    if (isAvailable) return color;
+    return '#4a4a4a';
   };
 
   const getNodeOpacity = () => {
     if (perk.unlocked) return 1;
-    if (isAvailable) return 0.7;
-    return 0.3;
+    if (isAvailable) return 0.75;
+    return 0.35;
   };
 
   const getCursorStyle = () => {
@@ -916,10 +1194,11 @@ function PerkNode({ perk, color, onClick, isAvailable, onHover, onLeave }) {
     onLeave();
   };
 
+  // Generate unique animation delays based on perk position
+  const animDelay = ((perk.x + perk.y) % 1000) / 500;
+
   return (
-    <g
-      style={{ cursor: getCursorStyle() }}
-    >
+    <g style={{ cursor: getCursorStyle() }}>
       {/* Large invisible hit area for reliable hover detection */}
       <circle
         cx={perk.x}
@@ -928,93 +1207,95 @@ function PerkNode({ perk, color, onClick, isAvailable, onHover, onLeave }) {
         fill="transparent"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={() => {
-          if (isAvailable) onClick();
-        }}
+        onClick={() => { if (isAvailable) onClick(); }}
         style={{ cursor: getCursorStyle(), pointerEvents: 'all' }}
       />
 
-      {/* Refined outer glow */}
-      {perk.unlocked && (
-        <circle
-          cx={perk.x}
-          cy={perk.y}
-          r={glowSize}
-          fill={getNodeColor()}
-          opacity={isKeystone ? 0.18 : 0.12}
-          className="transition-all duration-300"
-          style={{ pointerEvents: 'none' }}
-        />
+      {/* UNLOCKED: Multi-layer Skyrim-style glow effects */}
+      {perk.unlocked && showEffects && (
+        <>
+          {/* Outermost diffuse glow - pulsing */}
+          <circle cx={perk.x} cy={perk.y} r={glowSize * 1.2} fill={color} style={{ pointerEvents: 'none' }}>
+            <animate attributeName="opacity" values="0.06;0.12;0.06" dur="3s" repeatCount="indefinite" begin={`${animDelay}s`} />
+            <animate attributeName="r" values={`${glowSize * 1.1};${glowSize * 1.3};${glowSize * 1.1}`} dur="3s" repeatCount="indefinite" begin={`${animDelay}s`} />
+          </circle>
+          {/* Middle glow layer */}
+          <circle cx={perk.x} cy={perk.y} r={glowSize * 0.8} fill={color} style={{ pointerEvents: 'none' }}>
+            <animate attributeName="opacity" values={`${isKeystone ? 0.15 : 0.1};${isKeystone ? 0.25 : 0.18};${isKeystone ? 0.15 : 0.1}`} dur="2.5s" repeatCount="indefinite" begin={`${animDelay + 0.2}s`} />
+          </circle>
+          {/* Inner bright glow */}
+          <circle cx={perk.x} cy={perk.y} r={glowSize * 0.5} fill={color} opacity={isKeystone ? 0.3 : 0.22} style={{ pointerEvents: 'none' }} />
+          {/* Core bright center */}
+          <circle cx={perk.x} cy={perk.y} r={glowSize * 0.25} fill="#ffffff" opacity="0.15" style={{ pointerEvents: 'none' }} />
+        </>
       )}
 
-      {/* Middle glow layer */}
-      {perk.unlocked && (
-        <circle
-          cx={perk.x}
-          cy={perk.y}
-          r={glowSize * 0.6}
-          fill={getNodeColor()}
-          opacity={isKeystone ? 0.25 : 0.18}
-          className="transition-all duration-300"
-          style={{ pointerEvents: 'none' }}
-        />
+      {/* AVAILABLE: Beckoning pulse effect */}
+      {isAvailable && showEffects && (
+        <>
+          {/* Outer beckoning ring */}
+          <circle cx={perk.x} cy={perk.y} r={glowSize} fill="transparent" stroke={color} strokeWidth="1" style={{ pointerEvents: 'none' }}>
+            <animate attributeName="opacity" values="0;0.4;0" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="r" values={`${glowSize * 0.6};${glowSize * 1.2};${glowSize * 0.6}`} dur="2s" repeatCount="indefinite" />
+          </circle>
+          {/* Inner soft glow */}
+          <circle cx={perk.x} cy={perk.y} r={glowSize * 0.6} fill={color} style={{ pointerEvents: 'none' }}>
+            <animate attributeName="opacity" values="0.05;0.12;0.05" dur="2s" repeatCount="indefinite" />
+          </circle>
+        </>
       )}
 
-      {/* Available perk pulse effect */}
-      {isAvailable && (
-        <circle
-          cx={perk.x}
-          cy={perk.y}
-          r={glowSize * 1.1}
-          fill={color}
-          opacity={isHovered ? 0.15 : 0.08}
-          className="transition-all duration-300"
-          style={{ pointerEvents: 'none' }}
-        />
+      {/* Hover enhancement */}
+      {isHovered && showEffects && (
+        <circle cx={perk.x} cy={perk.y} r={glowSize * 1.5} fill={color} opacity="0.1" style={{ pointerEvents: 'none' }} />
       )}
 
-      {/* Main star - different shapes for different types */}
+      {/* Main star node - different shapes for different types */}
       {isKeystone ? (
-        // Keystone: Diamond shape
+        // Keystone: Diamond/Crystal shape
         <polygon
-          points={`${perk.x},${perk.y - pulseSize} ${perk.x + pulseSize},${perk.y} ${perk.x},${perk.y + pulseSize} ${perk.x - pulseSize},${perk.y}`}
+          points={`${perk.x},${perk.y - pulseSize * 1.2} ${perk.x + pulseSize},${perk.y} ${perk.x},${perk.y + pulseSize * 1.2} ${perk.x - pulseSize},${perk.y}`}
           fill={getNodeColor()}
-          stroke={perk.unlocked ? '#ffffff' : isAvailable ? color : '#666'}
-          strokeWidth={perk.unlocked ? 2.5 : isAvailable ? 2 : 1.5}
+          stroke={perk.unlocked ? '#ffffff' : isAvailable ? color : '#555'}
+          strokeWidth={perk.unlocked ? 3 : isAvailable ? 2 : 1.5}
           opacity={getNodeOpacity()}
-          className="transition-all duration-300"
+          className="transition-all duration-200"
           style={{
-            filter: perk.unlocked ? `drop-shadow(0 0 12px ${color}) drop-shadow(0 0 20px ${color}80)` : isAvailable ? `drop-shadow(0 0 8px ${color}60)` : 'none',
+            filter: showEffects
+              ? (perk.unlocked ? `drop-shadow(0 0 15px ${color}) drop-shadow(0 0 30px ${color}80)` : isAvailable ? `drop-shadow(0 0 10px ${color}60)` : 'none')
+              : 'none',
             pointerEvents: 'none'
           }}
         />
       ) : (
-        // Regular perks: Circle
+        // Regular perks: Circle with better glow
         <circle
           cx={perk.x}
           cy={perk.y}
           r={pulseSize}
           fill={getNodeColor()}
-          stroke={perk.unlocked ? '#ffffff' : isAvailable ? color : '#666'}
-          strokeWidth={perk.unlocked ? 2 : isAvailable ? 1.5 : 1}
+          stroke={perk.unlocked ? '#ffffff' : isAvailable ? color : '#555'}
+          strokeWidth={perk.unlocked ? 2.5 : isAvailable ? 2 : 1}
           opacity={getNodeOpacity()}
-          className="transition-all duration-300"
+          className="transition-all duration-200"
           style={{
-            filter: perk.unlocked ? `drop-shadow(0 0 8px ${color})` : isAvailable ? `drop-shadow(0 0 6px ${color}60)` : 'none',
+            filter: showEffects
+              ? (perk.unlocked ? `drop-shadow(0 0 10px ${color}) drop-shadow(0 0 20px ${color}60)` : isAvailable ? `drop-shadow(0 0 8px ${color}50)` : 'none')
+              : 'none',
             pointerEvents: 'none'
           }}
         />
       )}
 
-      {/* Inner detail - star for master, dot for others */}
+      {/* Inner detail - enhanced star for master/keystone, bright dot for others */}
       {perk.unlocked && (
         <>
-          {perk.tier === 'master' || isKeystone ? (
-            // 4-pointed star for master/keystone
+          {isMaster || isKeystone ? (
+            // 4-pointed star for master/keystone - more dramatic
             <polygon
-              points={`${perk.x},${perk.y - 4} ${perk.x + 1.5},${perk.y - 1.5} ${perk.x + 4},${perk.y} ${perk.x + 1.5},${perk.y + 1.5} ${perk.x},${perk.y + 4} ${perk.x - 1.5},${perk.y + 1.5} ${perk.x - 4},${perk.y} ${perk.x - 1.5},${perk.y - 1.5}`}
+              points={`${perk.x},${perk.y - 5} ${perk.x + 2},${perk.y - 2} ${perk.x + 5},${perk.y} ${perk.x + 2},${perk.y + 2} ${perk.x},${perk.y + 5} ${perk.x - 2},${perk.y + 2} ${perk.x - 5},${perk.y} ${perk.x - 2},${perk.y - 2}`}
               fill="#ffffff"
-              opacity="0.9"
+              opacity="0.95"
               style={{ pointerEvents: 'none' }}
             />
           ) : (

@@ -44,7 +44,7 @@ const TopBar = ({ onMenuClick }) => {
   return (
     <header className="
       fixed top-0 left-0 md:left-[280px] right-0 h-16
-      cosmic-panel backdrop-blur-lg border-b border-border-subtle
+      bg-bg-surface/95 backdrop-blur-lg border-b border-border-subtle
       flex items-center justify-between px-4 md:px-6
       z-30
     ">

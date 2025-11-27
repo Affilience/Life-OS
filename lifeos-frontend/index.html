@@ -4,26 +4,40 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Xcalibur - Your Personal Operating System for Life Optimization" />
-    <meta name="author" content="Xcalibur" />
+    <meta name="description" content="LifeOS - Your Personal Operating System for Life Optimization" />
+    <meta name="author" content="LifeOS" />
+    <meta name="theme-color" content="#0c0a10" />
 
     <!-- Resource hints for faster loading -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Using font-display: swap for better perceived performance -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-    <!-- Preload critical resources -->
-    <link rel="modulepreload" href="/src/main.jsx" />
-    <link rel="modulepreload" href="/src/App.jsx" />
+    <!-- Inline critical CSS for faster first paint -->
+    <style>
+      /* Critical CSS - immediate render */
+      *{box-sizing:border-box;margin:0;padding:0}
+      html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+      body{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0c0a10;color:#fff;min-height:100vh}
+      #root{min-height:100vh}
+      /* Loading screen placeholder */
+      .loading-placeholder{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0c0a10}
+      .loading-spinner{width:40px;height:40px;border:3px solid rgba(139,92,246,0.3);border-top-color:#8b5cf6;border-radius:50%;animation:spin 1s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
 
-    <title>Xcalibur - Personal Operating System</title>
+    <title>LifeOS - Personal Operating System</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Placeholder shown while JS loads -->
+      <div class="loading-placeholder">
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

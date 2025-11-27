@@ -1,0 +1,55 @@
+{
+  "generated": "2025-11-25T12:08:30.856Z",
+  "theme": "Cosmic Violet - 8 Core Modules",
+  "totalIcons": 8,
+  "icons": [
+    {
+      "key": "productivity",
+      "name": "Productivity & Business",
+      "filename": "module_productivity.png",
+      "path": "/assets/icons/modules/module_productivity.png"
+    },
+    {
+      "key": "health",
+      "name": "Health & Fitness",
+      "filename": "module_health.png",
+      "path": "/assets/icons/modules/module_health.png"
+    },
+    {
+      "key": "knowledge",
+      "name": "Knowledge Management",
+      "filename": "module_knowledge.png",
+      "path": "/assets/icons/modules/module_knowledge.png"
+    },
+    {
+      "key": "journal",
+      "name": "Journal & Diary",
+      "filename": "module_journal.png",
+      "path": "/assets/icons/modules/module_journal.png"
+    },
+    {
+      "key": "calendar",
+      "name": "Calendar & Time",
+      "filename": "module_calendar.png",
+      "path": "/assets/icons/modules/module_calendar.png"
+    },
+    {
+      "key": "skills",
+      "name": "Skills Learning",
+      "filename": "module_skills.png",
+      "path": "/assets/icons/modules/module_skills.png"
+    },
+    {
+      "key": "financial",
+      "name": "Financial Tracking",
+      "filename": "module_financial.png",
+      "path": "/assets/icons/modules/module_financial.png"
+    },
+    {
+      "key": "purpose",
+      "name": "Purpose & Values",
+      "filename": "module_purpose.png",
+      "path": "/assets/icons/modules/module_purpose.png"
+    }
+  ]
+}

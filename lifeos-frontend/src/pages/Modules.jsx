@@ -1,15 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Activity,
-  Dumbbell,
-  Book,
-  Calendar,
-  TrendingUp,
-  Zap,
-  DollarSign,
-  Compass
-} from 'lucide-react';
+import { Compass } from 'lucide-react';
+
+// Pixel art module icons
+const MODULE_ICONS = {
+  productivity: '/assets/icons/modules/module_productivity.png',
+  health: '/assets/icons/modules/module_health.png',
+  knowledge: '/assets/icons/modules/module_knowledge.png',
+  journal: '/assets/icons/modules/module_journal.png',
+  calendar: '/assets/icons/modules/module_calendar.png',
+  skills: '/assets/icons/modules/module_skills.png',
+  financial: '/assets/icons/modules/module_financial.png',
+  purpose: '/assets/icons/modules/module_purpose.png',
+};
 
 // Module colors harmonized with Cosmic Violet theme
 const CORE_MODULES = [
@@ -17,8 +20,9 @@ const CORE_MODULES = [
     id: 'productivity',
     name: 'Productivity & Business',
     description: 'Deep work tracking, projects, tasks, income',
-    icon: Zap,
+    iconKey: 'productivity',
     color: 'from-indigo-500 to-violet-500',  // Indigo - Focus
+    glowColor: 'rgba(99, 102, 241, 0.6)',
     route: '/productivity',
     stats: { tasks: 12, projects: 3, hours: 28 }
   },
@@ -26,8 +30,9 @@ const CORE_MODULES = [
     id: 'health',
     name: 'Health & Fitness',
     description: 'Workouts, nutrition, sleep, recovery',
-    icon: Dumbbell,
+    iconKey: 'health',
     color: 'from-emerald-500 to-teal-500',   // Emerald - Vitality
+    glowColor: 'rgba(16, 185, 129, 0.6)',
     route: '/health',
     stats: { workouts: 14, streak: 7, calories: 2200 }
   },
@@ -35,8 +40,9 @@ const CORE_MODULES = [
     id: 'knowledge',
     name: 'Knowledge Management',
     description: 'Books, podcasts, notes, ideas, implementation',
-    icon: Book,
+    iconKey: 'knowledge',
     color: 'from-violet-500 to-purple-500',  // Violet - Wisdom (Primary)
+    glowColor: 'rgba(139, 92, 246, 0.6)',
     route: '/knowledge',
     stats: { books: 3, notes: 45, hours: 12 }
   },
@@ -44,8 +50,9 @@ const CORE_MODULES = [
     id: 'journal',
     name: 'Journal & Diary',
     description: 'Free-form entries, mood tracking, reflection',
-    icon: Activity,
+    iconKey: 'journal',
     color: 'from-slate-400 to-slate-500',    // Slate - Reflection
+    glowColor: 'rgba(148, 163, 184, 0.6)',
     route: '/journal',
     stats: { entries: 87, streak: 12, moods: 'Positive' }
   },
@@ -53,8 +60,9 @@ const CORE_MODULES = [
     id: 'calendar',
     name: 'Calendar & Time',
     description: 'Time blocking, planned vs actual, energy mapping',
-    icon: Calendar,
+    iconKey: 'calendar',
     color: 'from-rose-500 to-pink-500',      // Rose - Time/Urgency
+    glowColor: 'rgba(244, 63, 94, 0.6)',
     route: '/calendar',
     stats: { events: 23, blocked: '32h', efficiency: '87%' }
   },
@@ -62,8 +70,9 @@ const CORE_MODULES = [
     id: 'skills',
     name: 'Skills Learning',
     description: 'Skill cards, practice logs, progression, real-world usage',
-    icon: TrendingUp,
+    iconKey: 'skills',
     color: 'from-cyan-500 to-sky-500',       // Cyan - Development
+    glowColor: 'rgba(6, 182, 212, 0.6)',
     route: '/skills',
     stats: { active: 5, mastered: 2, hours: 156 }
   },
@@ -71,8 +80,9 @@ const CORE_MODULES = [
     id: 'financial',
     name: 'Financial Tracking',
     description: 'Income, expenses, net worth, goals, business finances',
-    icon: DollarSign,
+    iconKey: 'financial',
     color: 'from-amber-500 to-yellow-500',   // Amber - Prosperity
+    glowColor: 'rgba(245, 158, 11, 0.6)',
     route: '/financial',
     stats: { income: '$4.2k', saved: '$1.8k', net: '+$2.4k' }
   },
@@ -80,8 +90,9 @@ const CORE_MODULES = [
     id: 'purpose',
     name: 'Purpose & Values',
     description: 'Life vision, core values, long-term goals',
-    icon: Compass,
+    iconKey: 'purpose',
     color: 'from-fuchsia-500 to-violet-500', // Fuchsia - Vision
+    glowColor: 'rgba(217, 70, 239, 0.6)',
     route: '/purpose',
     stats: { goals: 8, values: 5, reviews: 12 }
   },
@@ -93,7 +104,7 @@ export default function Modules() {
   return (
     <div className="min-h-screen bg-[#0c0a10] pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5 px-6 py-4">
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-white/5 px-6 py-4">
         <h1 className="text-2xl font-bold text-white">Modules</h1>
         <p className="text-sm text-white/60 mt-1">
           8 core systems for optimizing life
@@ -103,7 +114,6 @@ export default function Modules() {
       {/* Modules Grid - 2 columns on mobile, 4 on desktop */}
       <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
         {CORE_MODULES.map((module) => {
-          const Icon = module.icon;
           const statEntries = Object.entries(module.stats);
           const primaryStat = statEntries[0];
 
@@ -116,13 +126,25 @@ export default function Modules() {
               {/* Gradient overlay on hover */}
               <div className={`absolute inset-0 bg-gradient-to-br ${module.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
 
-              {/* Icon */}
+              {/* Pixel Art Icon */}
               <div className={`
-                relative z-10 w-12 h-12 rounded-xl bg-gradient-to-br ${module.color}
+                relative z-10 w-14 h-14 rounded-xl bg-gradient-to-br ${module.color}
                 flex items-center justify-center mb-3
-                group-hover:scale-110 group-hover:shadow-lg transition-all duration-300
-              `}>
-                <Icon className="w-6 h-6 text-white" />
+                group-hover:scale-110 transition-all duration-300
+              `}
+              style={{
+                boxShadow: `0 0 0 rgba(0,0,0,0)`,
+              }}
+              >
+                <img
+                  src={MODULE_ICONS[module.iconKey]}
+                  alt={module.name}
+                  className="w-10 h-10 transition-all duration-300"
+                  style={{
+                    imageRendering: 'pixelated',
+                    filter: `drop-shadow(0 0 8px ${module.glowColor})`,
+                  }}
+                />
               </div>
 
               {/* Title */}

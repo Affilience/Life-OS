@@ -19,6 +19,7 @@ import EquipmentShowcase from '../components/avatar/EquipmentShowcase';
 import SkillTreeNew from './SkillTreeNew';
 import Bazaar from './Bazaar';
 import PetsSection from '../components/character/PetsSection';
+import { usePetStore, PET_DATABASE } from '../stores/petStore';
 
 const TABS = [
   { id: 'avatar', label: 'Avatar', icon: User, color: 'from-purple-500 to-pink-500' },
@@ -42,10 +43,13 @@ export default function Character() {
     moduleMultipliers,
   } = useStats();
 
+  // Get active/equipped pets
+  const { activePets } = usePetStore();
+
   return (
     <div className="min-h-screen bg-[#0c0a10] pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
+      <div className="sticky top-0 z-30 bg-[#0c0a10] border-b border-white/5">
         {/* Title */}
         <div className="px-6 py-4">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -93,16 +97,58 @@ export default function Character() {
             <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-8">
               {/* Avatar Section */}
               <div className="flex flex-col items-center mb-8">
-                {/* Hero Avatar Sprite */}
-                <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-2xl p-8 mb-6 relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl blur-xl" />
-                  <img
-                    src="/assets/avatar/evolution/hero_v3_stage_10_swordsman.png"
-                    alt="Swordsman"
-                    className="w-40 h-40 pixelated relative z-10"
-                    style={{ imageRendering: 'pixelated' }}
-                  />
+                {/* Hero Avatar with Pets - No Box */}
+                <div className="relative mb-6 flex items-end justify-center gap-4">
+                  {/* Left Pet (if any) */}
+                  {activePets[0] && PET_DATABASE[activePets[0]] && (
+                    <img
+                      src={PET_DATABASE[activePets[0]].sprite}
+                      alt={PET_DATABASE[activePets[0]].name}
+                      className="w-20 h-20 pixelated self-end mb-2"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                  )}
+
+                  {/* Main Avatar - Larger, No Box */}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl scale-150" />
+                    <img
+                      src="/assets/avatar/evolution/hero_v3_stage_10_swordsman.png"
+                      alt="Swordsman"
+                      className="w-56 h-56 pixelated relative z-10"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                  </div>
+
+                  {/* Right Pet (if any) */}
+                  {activePets[1] && PET_DATABASE[activePets[1]] && (
+                    <img
+                      src={PET_DATABASE[activePets[1]].sprite}
+                      alt={PET_DATABASE[activePets[1]].name}
+                      className="w-20 h-20 pixelated self-end mb-2"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                  )}
                 </div>
+
+                {/* Additional Pets Row (3rd onwards) */}
+                {activePets.length > 2 && (
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    {activePets.slice(2).map((petId) => {
+                      const pet = PET_DATABASE[petId];
+                      if (!pet) return null;
+                      return (
+                        <img
+                          key={petId}
+                          src={pet.sprite}
+                          alt={pet.name}
+                          className="w-14 h-14 pixelated"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Character Info */}
                 <div className="text-center mb-6">
@@ -235,7 +281,7 @@ export default function Character() {
 
         {activeTab === 'pets' && (
           <div className="p-6">
-            <PetsSection />
+            <PetsSection forceShow={true} />
           </div>
         )}
 

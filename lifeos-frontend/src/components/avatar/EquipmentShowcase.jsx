@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useStats } from '../../hooks/useStats';
 import { supabase } from '../../lib/supabase';
+import { usePetStore, PET_DATABASE } from '../../stores/petStore';
 import {
   Shield,
   Sword,
@@ -116,6 +117,9 @@ export default function EquipmentShowcase() {
   // Use unified stats system
   const { stats, statBreakdown, totalPower, synergies } = useStats();
 
+  // Get active/equipped pets
+  const { activePets } = usePetStore();
+
   const [devEquipment, setDevEquipment] = useState([]);
   const [devEquippedItems, setDevEquippedItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -208,22 +212,7 @@ export default function EquipmentShowcase() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c0a10] pb-20">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
-        <div className="px-6 py-4">
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Sword className="w-6 h-6 text-orange-400" />
-            Equipment Arsenal
-          </h1>
-          <p className="text-sm text-white/60 mt-1">
-            Equip legendary gear to enhance your abilities
-          </p>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="p-6 space-y-6">
+    <div className="space-y-6">
         {/* Paper Doll Equipment Display */}
         <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 relative overflow-hidden">
           {/* Background Glow Effect */}
@@ -265,15 +254,59 @@ export default function EquipmentShowcase() {
               />
             </div>
 
-            {/* Center: Character Avatar */}
-            <div className="w-64 h-64 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/30 flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 blur-xl" />
-              <img
-                src="/assets/avatar/evolution/hero_v3_stage_10_swordsman.png"
-                alt="Character"
-                className="w-48 h-48 pixelated relative z-10"
-                style={{ imageRendering: 'pixelated' }}
-              />
+            {/* Center: Character Avatar with Pets - No Box */}
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative flex items-end justify-center gap-2">
+                {/* Left Pet (if any) */}
+                {activePets[0] && PET_DATABASE[activePets[0]] && (
+                  <img
+                    src={PET_DATABASE[activePets[0]].sprite}
+                    alt={PET_DATABASE[activePets[0]].name}
+                    className="w-16 h-16 pixelated self-end mb-2"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                )}
+
+                {/* Main Avatar - No Box */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl scale-150" />
+                  <img
+                    src="/assets/avatar/evolution/hero_v3_stage_10_swordsman.png"
+                    alt="Character"
+                    className="w-48 h-48 pixelated relative z-10"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                </div>
+
+                {/* Right Pet (if any) */}
+                {activePets[1] && PET_DATABASE[activePets[1]] && (
+                  <img
+                    src={PET_DATABASE[activePets[1]].sprite}
+                    alt={PET_DATABASE[activePets[1]].name}
+                    className="w-16 h-16 pixelated self-end mb-2"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                )}
+              </div>
+
+              {/* Additional Pets Row (3rd onwards) */}
+              {activePets.length > 2 && (
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  {activePets.slice(2).map((petId) => {
+                    const pet = PET_DATABASE[petId];
+                    if (!pet) return null;
+                    return (
+                      <img
+                        key={petId}
+                        src={pet.sprite}
+                        alt={pet.name}
+                        className="w-12 h-12 pixelated"
+                        style={{ imageRendering: 'pixelated' }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Right Column - Equipment Slots */}
@@ -324,7 +357,6 @@ export default function EquipmentShowcase() {
 
         {/* Stats Display */}
         <StatsDisplay stats={stats} />
-      </div>
 
       {/* Inventory Modal */}
       {showInventory && selectedSlot && (

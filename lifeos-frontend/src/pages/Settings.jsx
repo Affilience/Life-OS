@@ -17,10 +17,30 @@ import {
   Smartphone,
   Cloud,
   Key,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Sparkles,
+  Briefcase,
+  BarChart2,
+  Gamepad2,
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-react';
+import {
+  useGamificationModeStore,
+  GAMIFICATION_MODES,
+  VISIBILITY,
+} from '../stores/gamificationModeStore';
 
 const SETTINGS_SECTIONS = [
+  {
+    id: 'gamification',
+    title: 'Gamification Mode',
+    icon: Gamepad2,
+    color: 'from-violet-500 to-purple-500',
+    isCustom: true, // Special handling for this section
+    items: [] // Rendered custom
+  },
   {
     id: 'account',
     title: 'Account & Profile',
@@ -150,6 +170,220 @@ const DANGER_ZONE = [
   },
 ];
 
+// Mode icons mapping
+const MODE_ICONS = {
+  cosmic: Sparkles,
+  professional: Briefcase,
+  minimal: BarChart2,
+};
+
+// Visibility setting labels
+const VISIBILITY_LABELS = {
+  showAvatar: { label: 'Avatar Display', description: 'Show character avatar' },
+  showAvatarEffects: { label: 'Avatar Effects', description: 'Particle effects and animations' },
+  showPets: { label: 'Companions/Boosters', description: 'Show pet companions' },
+  showPetSprites: { label: 'Pet Sprites', description: 'Show pixel art pet images' },
+  showEquipment: { label: 'Equipment/Boosters', description: 'Show equipment system' },
+  showEquipmentEffects: { label: 'Equipment Effects', description: 'Glow and rarity effects' },
+  showSkillTree: { label: 'Skill Tree', description: 'Show skill constellation' },
+  showConstellationEffects: { label: 'Constellation Effects', description: 'Visual effects on skill tree' },
+  showXPBar: { label: 'Progress Bar', description: 'Show XP/progress bar' },
+  showLevel: { label: 'Level Display', description: 'Show current level' },
+  showStreaks: { label: 'Streak Tracking', description: 'Show streak counters' },
+  showStreakFlame: { label: 'Streak Flame', description: 'Animated flame icon for streaks' },
+  showAchievementPopups: { label: 'Achievement Popups', description: 'Toast notifications for achievements' },
+  showLevelUpAnimation: { label: 'Level Up Animation', description: 'Celebration when leveling up' },
+  showParticleEffects: { label: 'Particle Effects', description: 'Floating particles and effects' },
+  showRarityGlow: { label: 'Rarity Glow', description: 'Color glow based on item rarity' },
+};
+
+// Gamification Mode Selector Component
+function GamificationModeSelector() {
+  const {
+    mode,
+    setMode,
+    getVisibilitySettings,
+    toggleVisibility,
+    resetVisibility,
+  } = useGamificationModeStore();
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const visibilitySettings = getVisibilitySettings();
+
+  return (
+    <div className="space-y-6">
+      {/* Mode Selection Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {Object.entries(GAMIFICATION_MODES).map(([modeId, modeData]) => {
+          const Icon = MODE_ICONS[modeId];
+          const isActive = mode === modeId;
+
+          return (
+            <button
+              key={modeId}
+              onClick={() => setMode(modeId)}
+              className={`
+                relative p-5 rounded-xl text-left transition-all
+                ${isActive
+                  ? 'bg-gradient-to-br from-purple-500/20 to-violet-500/20 border-purple-500/50'
+                  : 'bg-[#1a1724]/50 border-white/10 hover:border-white/20'
+                }
+                border-2
+              `}
+            >
+              {/* Selected Indicator */}
+              {isActive && (
+                <div className="absolute top-3 right-3">
+                  <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                    <Check className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              )}
+
+              {/* Icon */}
+              <div
+                className={`
+                  w-12 h-12 rounded-xl flex items-center justify-center mb-4
+                  ${isActive
+                    ? 'bg-purple-500'
+                    : 'bg-white/5'
+                  }
+                `}
+              >
+                <Icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-white/60'}`} />
+              </div>
+
+              {/* Content */}
+              <h3 className={`text-lg font-bold mb-1 ${isActive ? 'text-white' : 'text-white/80'}`}>
+                {modeData.name}
+              </h3>
+              <p className="text-sm text-white/60 leading-relaxed">
+                {modeData.description}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mode Preview */}
+      <div className="bg-[#1a1724] border border-white/10 rounded-xl p-5">
+        <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+          <Eye className="w-4 h-4 text-purple-400" />
+          Mode Preview
+        </h4>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {mode === 'cosmic' && (
+            <>
+              <PreviewItem label="Level 42" subLabel="Blade Master" />
+              <PreviewItem label="1,250 XP" subLabel="Cosmic Credits" />
+              <PreviewItem label="Phoenix" subLabel="Active Companion" />
+              <PreviewItem label="Epic Helmet" subLabel="Neural Interface" />
+            </>
+          )}
+          {mode === 'professional' && (
+            <>
+              <PreviewItem label="Milestone 42" subLabel="Specialist" />
+              <PreviewItem label="1,250 Points" subLabel="Progress Points" />
+              <PreviewItem label="+10% All" subLabel="Universal Boost" />
+              <PreviewItem label="Premium" subLabel="Cognitive Enhancer" />
+            </>
+          )}
+          {mode === 'minimal' && (
+            <>
+              <PreviewItem label="Level 42" subLabel="Stage 21" />
+              <PreviewItem label="1,250 pts" subLabel="Points" />
+              <PreviewItem label="+10% All" subLabel="Active Bonus" />
+              <PreviewItem label="Focus +4" subLabel="Active" />
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Advanced Settings Toggle */}
+      <button
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        className="flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300 transition-colors"
+      >
+        <ChevronRight className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-90' : ''}`} />
+        Advanced Visibility Settings
+      </button>
+
+      {/* Advanced Visibility Settings */}
+      {showAdvanced && (
+        <div className="bg-[#1a1724] border border-white/10 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+            <div>
+              <h4 className="text-white font-semibold">Visibility Overrides</h4>
+              <p className="text-xs text-white/50 mt-1">
+                Customize which elements are visible regardless of mode
+              </p>
+            </div>
+            <button
+              onClick={resetVisibility}
+              className="text-xs px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white/60 hover:bg-white/10 transition-colors"
+            >
+              Reset to Defaults
+            </button>
+          </div>
+
+          <div className="divide-y divide-white/5">
+            {Object.entries(VISIBILITY_LABELS).map(([key, { label, description }]) => {
+              const isEnabled = visibilitySettings[key];
+              const defaultValue = VISIBILITY[mode][key];
+              const isOverridden = isEnabled !== defaultValue;
+
+              return (
+                <div
+                  key={key}
+                  className="px-5 py-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-medium">{label}</span>
+                      {isOverridden && (
+                        <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded">
+                          Modified
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-white/60 mt-0.5">{description}</div>
+                  </div>
+
+                  <button
+                    onClick={() => toggleVisibility(key)}
+                    className={`
+                      relative w-12 h-6 rounded-full transition-colors
+                      ${isEnabled ? 'bg-purple-500' : 'bg-gray-600'}
+                    `}
+                  >
+                    <div
+                      className={`
+                        absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform
+                        ${isEnabled ? 'translate-x-6' : 'translate-x-0.5'}
+                      `}
+                    />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Preview Item Component
+function PreviewItem({ label, subLabel }) {
+  return (
+    <div className="bg-white/5 rounded-lg p-3">
+      <div className="text-white font-semibold text-sm">{label}</div>
+      <div className="text-white/50 text-xs">{subLabel}</div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const [expandedSection, setExpandedSection] = useState(null);
 
@@ -233,40 +467,48 @@ export default function Settings() {
               {/* Section Items */}
               {isExpanded && (
                 <div className="border-t border-white/10">
-                  {section.items.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className={`px-5 py-4 hover:bg-white/5 transition-colors ${
-                        index < section.items.length - 1 ? 'border-b border-white/5' : ''
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="text-white font-medium">{item.label}</div>
-                          <div className="text-sm text-white/60 mt-0.5">{item.description}</div>
-                        </div>
-
-                        {item.toggle ? (
-                          <button
-                            onClick={() => handleToggle(item.id, item.value)}
-                            className={`
-                              relative w-12 h-6 rounded-full transition-colors
-                              ${item.value ? 'bg-purple-500' : 'bg-gray-600'}
-                            `}
-                          >
-                            <div
-                              className={`
-                                absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform
-                                ${item.value ? 'translate-x-6' : 'translate-x-0.5'}
-                              `}
-                            />
-                          </button>
-                        ) : (
-                          <ChevronRight className="w-5 h-5 text-white/50" />
-                        )}
-                      </div>
+                  {/* Custom Gamification Section */}
+                  {section.isCustom && section.id === 'gamification' ? (
+                    <div className="p-5">
+                      <GamificationModeSelector />
                     </div>
-                  ))}
+                  ) : (
+                    /* Standard Items */
+                    section.items.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className={`px-5 py-4 hover:bg-white/5 transition-colors ${
+                          index < section.items.length - 1 ? 'border-b border-white/5' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="text-white font-medium">{item.label}</div>
+                            <div className="text-sm text-white/60 mt-0.5">{item.description}</div>
+                          </div>
+
+                          {item.toggle ? (
+                            <button
+                              onClick={() => handleToggle(item.id, item.value)}
+                              className={`
+                                relative w-12 h-6 rounded-full transition-colors
+                                ${item.value ? 'bg-purple-500' : 'bg-gray-600'}
+                              `}
+                            >
+                              <div
+                                className={`
+                                  absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform
+                                  ${item.value ? 'translate-x-6' : 'translate-x-0.5'}
+                                `}
+                              />
+                            </button>
+                          ) : (
+                            <ChevronRight className="w-5 h-5 text-white/50" />
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>

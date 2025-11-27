@@ -8,79 +8,120 @@ export default defineConfig({
     // Optimize chunk splitting
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core vendor chunks
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'lucide': ['lucide-react'],
+        manualChunks(id) {
+          // Core React vendor chunk - loaded on every page
+          if (id.includes('node_modules/react') ||
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/react-router')) {
+            return 'react-vendor';
+          }
 
-          // Heavy library chunks (lazy loaded)
-          'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
-          'd3-vendor': ['d3'],
-          'markdown-vendor': ['react-markdown', 'remark-gfm'],
-          'recharts-vendor': ['recharts'],
+          // Lucide icons - used everywhere
+          if (id.includes('node_modules/lucide-react')) {
+            return 'lucide';
+          }
 
-          // Module chunks - split by route
-          'health': [
-            './src/pages/HealthNew.jsx',
-            './src/components/health/WorkoutsTab.jsx',
-            './src/components/health/NutritionTab.jsx',
-            './src/components/health/SleepTab.jsx',
-            './src/components/health/RecoveryTab.jsx'
-          ],
-          'knowledge': [
-            './src/pages/KnowledgeNew.jsx',
-            './src/components/knowledge/LearningLogTab.jsx',
-            './src/components/knowledge/IdeasTab.jsx',
-            './src/components/knowledge/NotesTab.jsx'
-          ],
-          'journal': [
-            './src/pages/JournalNew.jsx',
-            './src/components/journal/JournalEditor.jsx',
-            './src/components/journal/EntryHistory.jsx'
-          ],
-          'calendar': [
-            './src/pages/CalendarNew.jsx',
-            './src/components/calendar/WeekView.jsx',
-            './src/components/calendar/DayView.jsx',
-            './src/components/calendar/MonthView.jsx'
-          ],
-          'skills': [
-            './src/pages/Skills.jsx',
-            './src/components/skills/SkillCard.jsx'
-          ],
-          'financial': [
-            './src/pages/Financial.jsx',
-            './src/components/financial/FinancialDashboard.jsx',
-            './src/components/financial/OverviewTab.jsx',
-            './src/components/financial/IncomeTab.jsx',
-            './src/components/financial/ExpensesTab.jsx'
-          ]
+          // Three.js and 3D - only used in demos, lazy loaded
+          if (id.includes('node_modules/three') ||
+              id.includes('node_modules/@react-three') ||
+              id.includes('node_modules/@react-spring/three')) {
+            return 'three-vendor';
+          }
+
+          // D3 - charts and visualizations
+          if (id.includes('node_modules/d3')) {
+            return 'd3-vendor';
+          }
+
+          // Recharts - dashboard charts
+          if (id.includes('node_modules/recharts')) {
+            return 'recharts-vendor';
+          }
+
+          // Markdown - knowledge base
+          if (id.includes('node_modules/react-markdown') ||
+              id.includes('node_modules/remark')) {
+            return 'markdown-vendor';
+          }
+
+          // Framer Motion - animations
+          if (id.includes('node_modules/framer-motion')) {
+            return 'motion-vendor';
+          }
+
+          // Date utilities
+          if (id.includes('node_modules/date-fns')) {
+            return 'date-vendor';
+          }
+
+          // Zustand - state management (small, keep in main)
+          // Query client
+          if (id.includes('node_modules/@tanstack')) {
+            return 'query-vendor';
+          }
+
+          // Particles - effects
+          if (id.includes('node_modules/@tsparticles') ||
+              id.includes('node_modules/tsparticles')) {
+            return 'particles-vendor';
+          }
+
+          // Supabase client
+          if (id.includes('node_modules/@supabase')) {
+            return 'supabase-vendor';
+          }
+
+          // AI SDKs
+          if (id.includes('node_modules/@anthropic-ai') ||
+              id.includes('node_modules/openai')) {
+            return 'ai-vendor';
+          }
+
+          // Lottie animations
+          if (id.includes('node_modules/lottie')) {
+            return 'lottie-vendor';
+          }
+
+          // Grid layout
+          if (id.includes('node_modules/react-grid-layout') ||
+              id.includes('node_modules/react-resizable') ||
+              id.includes('node_modules/react-draggable')) {
+            return 'grid-vendor';
+          }
         }
       }
     },
     // Increase chunk size warning limit for large vendor chunks
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
     // Enable minification
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug']
       }
     },
     // Target modern browsers for smaller bundles
-    target: 'es2020'
+    target: 'es2020',
+    // Enable source maps for debugging (can disable in prod)
+    sourcemap: false
   },
-  // Optimize dependencies - only include commonly used ones
-  // Heavy deps (three, d3, react-markdown) are lazy loaded via code splitting
+  // Optimize dependencies
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
       'react-router-dom',
       'lucide-react',
-      'react-reconciler/constants'
+      'zustand',
+      'date-fns'
     ],
-    exclude: ['d3', 'react-markdown', 'remark-gfm']
+    // Exclude heavy deps that are lazy loaded
+    exclude: ['three', '@react-three/fiber', '@react-three/drei', 'd3']
+  },
+  // Enable CSS code splitting
+  css: {
+    devSourcemap: true
   }
 })

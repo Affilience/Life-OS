@@ -161,26 +161,12 @@ const Skills = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 md:pb-8">
+    <div className="space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-slate-900/50 to-transparent border-b border-slate-800/50 mb-6">
+      <div className="relative overflow-hidden bg-gradient-to-b from-slate-900/50 to-transparent border border-slate-800/50 rounded-xl">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
 
-        <div className="relative px-4 py-8 text-center">
-          <div className="inline-block mb-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-full">
-              <Target className="w-4 h-4 text-purple-400" />
-              <span className="text-sm font-medium text-purple-300">Skill Mastery</span>
-            </div>
-          </div>
-
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-3">
-            My Skills
-          </h1>
-
-          <p className="text-sm text-slate-400 max-w-lg mx-auto mb-6">
-            Track individual competencies, log practice sessions, and watch your skills grow over time.
-          </p>
+        <div className="relative px-4 py-6 text-center">
 
           {/* Quick Stats */}
           <div className="flex justify-center gap-6 text-center">

@@ -18,7 +18,7 @@ export default function Knowledge() {
   return (
     <div className="knowledge-page min-h-screen bg-[#0c0a10]">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-10 bg-[#12101a]/95 backdrop-blur-sm border-b border-slate-800">
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;

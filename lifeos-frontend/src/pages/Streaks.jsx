@@ -3,7 +3,7 @@ import { MomentumChainsBoard } from '../features/streaks/components/MomentumChai
 
 const Streaks = () => {
   return (
-    <div className="min-h-screen p-8">
+    <div className="space-y-4">
       <MomentumChainsBoard />
     </div>
   );

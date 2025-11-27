@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { getRarityColor } from '../../stores/gamificationStore';
+import { useGamificationModeStore } from '../../stores/gamificationModeStore';
 import {
   ShieldCheckIcon,
   BoltIcon,
@@ -12,19 +13,44 @@ import {
 /**
  * Equipment Card - Display for equipment items
  *
- * Shows item stats, rarity, and equip status
+ * Supports gamification modes:
+ * - Cosmic: Full RPG-style display with rarities and effects
+ * - Professional: Clean "Booster" display with percentages
+ * - Minimal: Hidden (bonuses still apply)
  */
 export default function EquipmentCard({ equipment, isEquipped = false, onEquip, onUnequip }) {
   const item = equipment.equipment_items || equipment;
 
+  // Get gamification mode settings
+  const { mode, getTerm, isVisible, getEquipmentName, getRarityName } = useGamificationModeStore();
+  const showEquipment = isVisible('showEquipment');
+  const showEffects = isVisible('showEquipmentEffects');
+  const showRarityGlow = isVisible('showRarityGlow');
+
   const rarityColor = getRarityColor(item.rarity);
 
+  // Get mode-appropriate display values
+  const displayName = mode === 'cosmic' ? item.name : getEquipmentName(item.id) || item.name;
+  const rarityLabel = getRarityName(item.rarity);
+  const equipLabel = getTerm('equip');
+  const unequipLabel = getTerm('unequip');
+  const statsLabel = getTerm('stats');
+
+  // Get mode-appropriate stat labels
+  const statLabels = {
+    defense: getTerm('defense'),
+    strength: getTerm('strength'),
+    vitality: getTerm('vitality'),
+    intelligence: getTerm('intelligence'),
+    wisdom: getTerm('wisdom'),
+  };
+
   const stats = [
-    { icon: ShieldCheckIcon, label: 'Defense', value: item.defense, color: 'text-blue-400' },
-    { icon: BoltIcon, label: 'Strength', value: item.strength, color: 'text-red-400' },
-    { icon: HeartIcon, label: 'Vitality', value: item.vitality, color: 'text-green-400' },
-    { icon: AcademicCapIcon, label: 'Intelligence', value: item.intelligence, color: 'text-purple-400' },
-    { icon: SparklesIcon, label: 'Wisdom', value: item.wisdom, color: 'text-amber-400' },
+    { icon: ShieldCheckIcon, label: statLabels.defense, value: item.defense, color: 'text-blue-400' },
+    { icon: BoltIcon, label: statLabels.strength, value: item.strength, color: 'text-red-400' },
+    { icon: HeartIcon, label: statLabels.vitality, value: item.vitality, color: 'text-green-400' },
+    { icon: AcademicCapIcon, label: statLabels.intelligence, value: item.intelligence, color: 'text-purple-400' },
+    { icon: SparklesIcon, label: statLabels.wisdom, value: item.wisdom, color: 'text-amber-400' },
   ].filter(stat => stat.value > 0);
 
   const slotIcons = {
@@ -37,18 +63,36 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
     amulet: '📿',
   };
 
+  // Professional mode: simpler slot labels
+  const professionalSlotLabels = {
+    helmet: 'Focus',
+    chest: 'Core',
+    weapon: 'Tool',
+    shield: 'Guard',
+    cape: 'Boost',
+    ring: 'Trait',
+    amulet: 'Trait',
+  };
+
+  const slotLabel = mode === 'cosmic' ? item.slot : professionalSlotLabels[item.slot] || item.slot;
+
+  // Use mode-appropriate border color
+  const borderColor = showRarityGlow ? rarityColor : 'rgba(255, 255, 255, 0.2)';
+
   return (
     <motion.div
       whileHover={{ scale: 1.03, y: -4 }}
       className="bg-[#1a1724]/50 backdrop-blur-sm rounded-xl border-2 p-4 relative overflow-hidden cursor-pointer"
-      style={{ borderColor: rarityColor }}
+      style={{ borderColor }}
       onClick={isEquipped ? onUnequip : onEquip}
     >
-      {/* Background glow */}
-      <div
-        className="absolute inset-0 opacity-5 blur-2xl"
-        style={{ backgroundColor: rarityColor }}
-      />
+      {/* Background glow - only in cosmic mode with effects enabled */}
+      {showEffects && (
+        <div
+          className="absolute inset-0 opacity-5 blur-2xl"
+          style={{ backgroundColor: rarityColor }}
+        />
+      )}
 
       {/* Equipped badge */}
       {isEquipped && (
@@ -78,30 +122,30 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
           <div className="flex items-center justify-between mb-1">
             <h3
               className="font-bold text-lg leading-tight"
-              style={{ color: rarityColor }}
+              style={{ color: showRarityGlow ? rarityColor : 'rgba(255, 255, 255, 0.87)' }}
             >
-              {item.name}
+              {displayName}
             </h3>
             <span className="text-xs text-white/60 uppercase">
-              {item.slot}
+              {slotLabel}
             </span>
           </div>
 
-          {/* Rarity */}
+          {/* Rarity/Tier */}
           <div className="flex items-center gap-2">
             <span
               className="px-2 py-0.5 rounded text-xs font-semibold uppercase"
               style={{
-                backgroundColor: `${rarityColor}20`,
-                color: rarityColor,
-                border: `1px solid ${rarityColor}40`,
+                backgroundColor: showRarityGlow ? `${rarityColor}20` : 'rgba(59, 130, 246, 0.2)',
+                color: showRarityGlow ? rarityColor : '#60a5fa',
+                border: showRarityGlow ? `1px solid ${rarityColor}40` : '1px solid rgba(59, 130, 246, 0.3)',
               }}
             >
-              {item.rarity}
+              {rarityLabel}
             </span>
             {item.required_level > 1 && (
               <span className="text-xs text-white/60">
-                Req. Level {item.required_level}
+                Req. {getTerm('level')} {item.required_level}
               </span>
             )}
           </div>
@@ -178,7 +222,7 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
             }
           }}
         >
-          {isEquipped ? 'Unequip' : 'Equip'}
+          {isEquipped ? unequipLabel : equipLabel}
         </button>
       </div>
     </motion.div>
@@ -187,14 +231,30 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
 
 /**
  * Equipment Grid - Display multiple equipment items
+ *
+ * Supports gamification modes - returns null in minimal mode
  */
 export function EquipmentGrid({ equipment = [], equippedIds = [], onEquip, onUnequip, columns = 3 }) {
+  const { mode, getTerm, isVisible } = useGamificationModeStore();
+  const showEquipment = isVisible('showEquipment');
+
+  // In minimal mode, don't show equipment grid (bonuses still apply)
+  if (!showEquipment) {
+    return null;
+  }
+
+  const equipmentLabel = getTerm('equipment');
+
   if (!equipment || equipment.length === 0) {
     return (
       <div className="text-center py-12 text-white/60">
-        <div className="text-6xl mb-3">📦</div>
-        <p className="text-lg">No equipment yet</p>
-        <p className="text-sm mt-1">Unlock equipment by leveling up and completing achievements!</p>
+        <div className="text-6xl mb-3">{mode === 'cosmic' ? '📦' : '📊'}</div>
+        <p className="text-lg">No {equipmentLabel.toLowerCase()} yet</p>
+        <p className="text-sm mt-1">
+          {mode === 'cosmic'
+            ? 'Unlock equipment by leveling up and completing achievements!'
+            : 'Unlock boosters by reaching milestones and completing goals!'}
+        </p>
       </div>
     );
   }

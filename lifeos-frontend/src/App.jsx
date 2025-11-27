@@ -1,11 +1,14 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+// DevTools only in development - lazy load to reduce bundle
+const ReactQueryDevtools = import.meta.env.DEV
+  ? React.lazy(() => import('@tanstack/react-query-devtools').then(mod => ({ default: mod.ReactQueryDevtools })))
+  : () => null;
 // DEVELOPMENT: Auth disabled
 // import { useAuth } from './hooks/useAuth';
 import MainLayout from './components/layout/MainLayout';
-import LoadingSpinner from './components/shared/LoadingSpinner';
+import LoadingScreen from './components/shared/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Create React Query client
@@ -109,7 +112,7 @@ function App() {
   // Show intro on first visit (wrapped in Suspense for lazy loading)
   if (showIntro && !hasSeenIntro) {
     return (
-      <Suspense fallback={<LoadingSpinner />}>
+      <Suspense fallback={<LoadingScreen message="Preparing your journey" />}>
         <IntroScreen onComplete={handleIntroComplete} />
       </Suspense>
     );
@@ -118,7 +121,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense fallback={<LoadingScreen />}>
           <Routes>
             {/* DEVELOPMENT: Auth route disabled */}
             {/* <Route path="/auth" element={<Auth />} /> */}
@@ -178,8 +181,12 @@ function App() {
           </Routes>
         </Suspense>
       </Router>
-      {/* React Query DevTools - only shows in development */}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* React Query DevTools - only in development */}
+      {import.meta.env.DEV && (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </Suspense>
+      )}
     </QueryClientProvider>
   );
 }
