@@ -54,7 +54,7 @@ export default function MediaDetailView({ mediaId }) {
           <div className="text-white/50 mb-4">Media not found</div>
           <button
             onClick={() => setActiveView('media')}
-            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 text-white rounded-lg transition-all duration-150"
           >
             Back to Media Library
           </button>
@@ -243,7 +243,7 @@ export default function MediaDetailView({ mediaId }) {
                 {media.url && (
                   <button
                     onClick={handleOpenLink}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-purple-500 hover:bg-purple-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 text-white font-medium rounded-lg transition-all duration-150"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path

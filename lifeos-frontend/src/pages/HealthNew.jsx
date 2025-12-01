@@ -12,6 +12,7 @@ import Card from '../components/ui/Card';
 import Stat from '../components/ui/Stat';
 import Badge from '../components/ui/Badge';
 import XPBar from '../components/app/XPBar';
+import PageHeader from '../components/shared/PageHeader';
 import WorkoutsTab from '../components/health/WorkoutsTab';
 import NutritionTab from '../components/health/NutritionTab';
 import SleepTabSimple from '../components/health/SleepTabSimple';
@@ -43,15 +44,14 @@ const HealthNew = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Simplified Header - removed icon box, removed XP bar, removed stat grid */}
-      <div>
-        <h1 className="text-2xl font-bold text-text-high mb-1">
-          Gravity
-        </h1>
-        <p className="text-sm text-text-dim">
-          {stats.workoutsThisWeek} workouts this week · {stats.avgSleep}h avg sleep · {stats.recovery}% recovery
-        </p>
-      </div>
+      <PageHeader
+        title="Gravity"
+        subtitle="Track workouts, nutrition, sleep, and recovery"
+        stats={`${stats.workoutsThisWeek} workouts this week · ${stats.avgSleep}h avg sleep · ${stats.recovery}% recovery`}
+        icon={Activity}
+        module="health"
+        variant="icon"
+      />
 
       {/* Tab Navigation */}
       <Card padding="none">

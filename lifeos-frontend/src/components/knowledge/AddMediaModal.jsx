@@ -471,7 +471,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
             </button>
             <button
               onClick={handleSubmit}
-              className="px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors"
+              className="px-6 py-2 bg-purple-500 hover:bg-purple-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 text-white font-medium rounded-lg transition-all duration-150"
             >
               Add Media
             </button>

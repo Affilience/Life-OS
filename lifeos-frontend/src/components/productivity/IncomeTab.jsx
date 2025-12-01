@@ -13,6 +13,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import useProductivityStore from '../../stores/productivityStore';
+import { EmptyState } from '../ui';
 import './IncomeTab.css';
 
 export default function IncomeTab() {
@@ -256,11 +257,15 @@ export default function IncomeTab() {
 
         {/* Transactions List */}
         {filteredTransactions.length === 0 ? (
-          <div className="empty-state">
-            <DollarSign className="w-12 h-12 opacity-20" />
-            <p>No income transactions yet</p>
-            <p className="empty-hint">Add your first transaction to start tracking earnings!</p>
-          </div>
+          <EmptyState
+            type="financial"
+            title="No income transactions yet"
+            description="Track your earnings and watch your income grow over time. Add your first transaction to get started!"
+            actionLabel="Add Transaction"
+            onAction={() => setShowAddModal(true)}
+            variant="emerald"
+            size="md"
+          />
         ) : (
           <div className="transactions-list">
             {filteredTransactions.map((transaction) => {

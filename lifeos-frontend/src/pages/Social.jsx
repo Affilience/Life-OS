@@ -170,7 +170,7 @@ export default function Social() {
       <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
         <div className="px-6 py-4">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-400" />
+            <Users className="w-6 h-6 text-purple-400" />
             Social
           </h1>
           <p className="text-sm text-white/60 mt-1">
@@ -190,10 +190,10 @@ export default function Social() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
-                  whitespace-nowrap transition-all duration-200
+                  whitespace-nowrap transition-all duration-150
                   ${isActive
-                    ? 'bg-blue-500 text-white shadow-lg'
-                    : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10'
+                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+                    : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10 hover:border-purple-500/30'
                   }
                 `}
               >
@@ -210,7 +210,7 @@ export default function Social() {
         {activeTab === 'feed' && (
           <div className="space-y-6">
             {/* Your Daily Summary */}
-            <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-2xl p-6">
+            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <Star className="w-5 h-5 text-yellow-400" />
                 Your Today
@@ -238,14 +238,14 @@ export default function Social() {
             {/* Activity Feed */}
             <div>
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-blue-400" />
+                <TrendingUp className="w-5 h-5 text-purple-400" />
                 Recent Activity
               </h3>
               <div className="space-y-3">
                 {activityFeed.map((activity) => (
-                  <div key={activity.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
+                  <div key={activity.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-purple-500/30 transition-all duration-150">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-xl flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center text-xl flex-shrink-0">
                         {activity.avatar}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -275,16 +275,16 @@ export default function Social() {
           <div className="space-y-6">
             {/* Filter Options */}
             <div className="flex gap-3 overflow-x-auto pb-2">
-              <button className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium whitespace-nowrap">
+              <button className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium whitespace-nowrap shadow-lg shadow-purple-500/20">
                 Global
               </button>
-              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
+              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-purple-500/30 transition-all duration-150">
                 Friends
               </button>
-              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
+              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-purple-500/30 transition-all duration-150">
                 Guild
               </button>
-              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-blue-500/30">
+              <button className="px-4 py-2 bg-[#1a1724] text-white/60 border border-white/10 rounded-lg text-sm font-medium whitespace-nowrap hover:text-white hover:border-purple-500/30 transition-all duration-150">
                 This Week
               </button>
             </div>
@@ -295,10 +295,10 @@ export default function Social() {
                 <div
                   key={user.rank}
                   className={`
-                    flex items-center gap-4 p-4 rounded-xl transition-all
+                    flex items-center gap-4 p-4 rounded-xl transition-all duration-150
                     ${user.isYou
-                      ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500/50'
-                      : 'bg-[#1a1724] border border-white/10 hover:border-blue-500/30'
+                      ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50'
+                      : 'bg-[#1a1724] border border-white/10 hover:border-purple-500/30'
                     }
                   `}
                 >
@@ -316,7 +316,7 @@ export default function Social() {
                   </div>
 
                   {/* Avatar */}
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-2xl flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center text-2xl flex-shrink-0">
                     {user.avatar}
                   </div>
 
@@ -324,7 +324,7 @@ export default function Social() {
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-white flex items-center gap-2">
                       {user.name}
-                      {user.isYou && <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded">You</span>}
+                      {user.isYou && <span className="text-xs bg-purple-500 text-white px-2 py-0.5 rounded">You</span>}
                     </div>
                     <div className="text-sm text-white/60">Level {user.level}</div>
                   </div>
@@ -381,11 +381,11 @@ export default function Social() {
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <button className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+                    <button className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 hover:shadow-[0_8px_32px_rgba(16,185,129,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150 flex items-center justify-center gap-2">
                       <MessageCircle className="w-4 h-4" />
                       Guild Chat
                     </button>
-                    <button className="px-4 py-2 bg-white/5 text-white rounded-lg font-medium hover:bg-white/10 transition-colors">
+                    <button className="px-4 py-2 bg-white/5 text-white rounded-lg font-medium hover:bg-white/10 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
                       View Members
                     </button>
                   </div>
@@ -397,19 +397,19 @@ export default function Social() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-blue-400" />
+                  <Globe className="w-5 h-5 text-purple-400" />
                   Browse Guilds
                 </h3>
-                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
+                <button className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
                   Create Guild
                 </button>
               </div>
 
               <div className="space-y-3">
                 {guilds.filter(g => !g.isMember).map((guild) => (
-                  <div key={guild.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
+                  <div key={guild.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-purple-500/30 transition-all duration-150">
                     <div className="flex items-start gap-4">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-2xl flex-shrink-0">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center text-2xl flex-shrink-0">
                         {guild.icon}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -429,7 +429,7 @@ export default function Social() {
                             <span className="text-gray-300">{guild.totalXP.toLocaleString()}</span>
                           </div>
                         </div>
-                        <button className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
+                        <button className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
                           Join Guild
                         </button>
                       </div>
@@ -448,14 +448,14 @@ export default function Social() {
             {pendingRequests.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <UserPlus className="w-5 h-5 text-blue-400" />
+                  <UserPlus className="w-5 h-5 text-purple-400" />
                   Pending Requests ({pendingRequests.length})
                 </h3>
                 <div className="space-y-3">
                   {pendingRequests.map((request) => (
                     <div key={request.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-2xl flex-shrink-0">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center text-2xl flex-shrink-0">
                           {request.avatar}
                         </div>
                         <div className="flex-1">
@@ -463,10 +463,10 @@ export default function Social() {
                           <div className="text-sm text-white/60">Level {request.level} • {request.mutualFriends} mutual friends</div>
                         </div>
                         <div className="flex gap-2">
-                          <button className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                          <button className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 hover:shadow-[0_8px_24px_rgba(16,185,129,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
                             <Check className="w-4 h-4" />
                           </button>
-                          <button className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
+                          <button className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
@@ -483,7 +483,7 @@ export default function Social() {
               <input
                 type="text"
                 placeholder="Search for friends..."
-                className="w-full pl-10 pr-4 py-3 bg-[#1a1724] border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-blue-500/50 focus:outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-[#1a1724] border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-purple-500/50 focus:outline-none transition-colors duration-150"
               />
             </div>
 
@@ -495,10 +495,10 @@ export default function Social() {
               </h3>
               <div className="space-y-3">
                 {friends.map((friend) => (
-                  <div key={friend.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
+                  <div key={friend.id} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-purple-500/30 transition-all duration-150">
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-2xl flex-shrink-0">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center text-2xl flex-shrink-0">
                           {friend.avatar}
                         </div>
                         {friend.online && (
@@ -519,7 +519,7 @@ export default function Social() {
                           <span className="text-white font-medium">{friend.streak}</span>
                         </div>
                       </div>
-                      <button className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
+                      <button className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
                         View Profile
                       </button>
                     </div>
@@ -548,8 +548,8 @@ export default function Social() {
                           <h4 className="text-lg font-semibold text-white">{challenge.title}</h4>
                           <span className={`text-xs px-2 py-0.5 rounded ${
                             challenge.type === 'guild'
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-blue-500/20 text-blue-400'
+                              ? 'bg-emerald-500/20 text-emerald-400'
+                              : 'bg-purple-500/20 text-purple-400'
                           }`}>
                             {challenge.type === 'guild' ? 'Guild' : 'Individual'}
                           </span>

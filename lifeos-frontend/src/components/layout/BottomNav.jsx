@@ -37,18 +37,18 @@ export default function BottomNav() {
             <button
               key={tab.path}
               onClick={() => navigate(tab.path)}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-all ${
-                active ? 'text-purple-400' : 'text-white/50'
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-150 group ${
+                active ? 'text-purple-400' : 'text-white/50 hover:text-white/70'
               }`}
             >
               <div className="relative">
                 <img
                   src={NAV_ICONS[tab.iconKey]}
                   alt={tab.label}
-                  className={`w-7 h-7 transition-all ${
+                  className={`w-7 h-7 transition-all duration-150 ${
                     active
                       ? 'scale-110 drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]'
-                      : 'opacity-60'
+                      : 'opacity-60 group-hover:opacity-80 group-hover:scale-105 group-active:scale-95'
                   }`}
                   style={{ imageRendering: 'pixelated' }}
                 />
@@ -56,7 +56,7 @@ export default function BottomNav() {
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
                 )}
               </div>
-              <span className={`text-xs mt-1 font-medium ${active ? 'font-semibold text-purple-300' : ''}`}>
+              <span className={`text-xs mt-1 font-medium transition-colors duration-150 ${active ? 'font-semibold text-purple-300' : 'group-hover:text-white/70'}`}>
                 {tab.label}
               </span>
             </button>

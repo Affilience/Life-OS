@@ -18,6 +18,7 @@ import {
   Filter,
 } from 'lucide-react';
 import useProductivityStore from '../../stores/productivityStore';
+import { EmptyState } from '../ui';
 import './ProjectsTab.css';
 
 export default function ProjectsTab() {
@@ -220,11 +221,17 @@ export default function ProjectsTab() {
 
       {/* Projects Display */}
       {filteredProjects.length === 0 ? (
-        <div className="empty-state">
-          <Folder className="w-12 h-12 opacity-20" />
-          <p>No projects found</p>
-          <p className="empty-hint">Create your first project to get started!</p>
-        </div>
+        <EmptyState
+          type="projects"
+          title="No projects found"
+          description={filterStatus !== 'all'
+            ? "Try adjusting your filters to see more projects"
+            : "Create your first project to organize tasks and track progress"}
+          actionLabel="Create Project"
+          onAction={() => setShowAddModal(true)}
+          variant="violet"
+          size="md"
+        />
       ) : (
         <div className={`projects-${viewMode}`}>
           {filteredProjects.map((project) => {

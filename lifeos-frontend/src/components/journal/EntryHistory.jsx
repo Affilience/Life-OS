@@ -4,6 +4,7 @@ import Card from '../shared/Card';
 import Button from '../shared/Button';
 import StatCard from '../shared/StatCard';
 import MoodSelector from './MoodSelector';
+import { EmptyState } from '../ui';
 import './EntryHistory.css';
 
 const EntryHistory = () => {
@@ -235,19 +236,16 @@ const EntryHistory = () => {
 
         {/* Entries List */}
         {filteredEntries.length === 0 ? (
-          <div className="empty-history">
-            <BookOpen size={48} className="empty-icon" />
-            <h3>No entries found</h3>
-            <p>
-              {searchTerm || filterMood !== 'all' || selectedTag !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Start writing your first journal entry'
-              }
-            </p>
-            <Button variant="primary">
-              Write First Entry
-            </Button>
-          </div>
+          <EmptyState
+            type="journal"
+            title="No entries found"
+            description={searchTerm || filterMood !== 'all' || selectedTag !== 'all'
+              ? "Try adjusting your search or filters to find more entries"
+              : "Start writing your first journal entry to capture your thoughts and reflections"}
+            actionLabel="Write First Entry"
+            variant="rose"
+            size="md"
+          />
         ) : (
           <div className="entries-list">
             {filteredEntries.map(entry => (

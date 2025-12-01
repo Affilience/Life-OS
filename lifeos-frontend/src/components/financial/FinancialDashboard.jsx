@@ -9,6 +9,7 @@ import {
   PiggyBank,
 } from 'lucide-react';
 import Card from '../ui/Card';
+import PageHeader from '../shared/PageHeader';
 import OverviewTab from './OverviewTab';
 import IncomeTab from './IncomeTab';
 import ExpensesTab from './ExpensesTab';
@@ -53,22 +54,13 @@ const FinancialDashboard = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-success/10 border border-success/20 flex items-center justify-center">
-            <DollarSign size={24} className="text-success" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-text-high tracking-tighter">
-              Nebula
-            </h1>
-            <p className="text-text-med mt-1">
-              Track income, expenses, net worth, and financial goals
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Nebula"
+        subtitle="Track income, expenses, net worth, and financial goals"
+        icon={DollarSign}
+        module="financial"
+        variant="icon"
+      />
 
       {/* View Navigation */}
       <Card padding="none">

@@ -17,6 +17,7 @@ import NutritionCharts from './charts/NutritionCharts';
 import SmartMealLogger from './SmartMealLogger';
 import MicronutrientBreakdown from './MicronutrientBreakdown';
 import { useHealthStore } from '../../stores/healthStore';
+import { EmptyState } from '../ui';
 import './NutritionTab.css';
 
 export default function NutritionTab() {
@@ -267,11 +268,13 @@ export default function NutritionTab() {
         <h3 className="section-title">Your Meals Today</h3>
 
         {recentMeals.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🍽️</div>
-            <p className="empty-text">No meals logged yet today</p>
-            <p className="empty-hint">Type what you ate above to get started</p>
-          </div>
+          <EmptyState
+            type="meals"
+            title="No meals logged yet today"
+            description="Track your nutrition by logging what you eat. Use the smart meal logger above to get started!"
+            variant="emerald"
+            size="sm"
+          />
         ) : (
           <div className="meals-list">
             {recentMeals.map((meal) => (

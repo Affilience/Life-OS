@@ -62,7 +62,7 @@ export default function ProjectsView() {
       </div>
 
       {/* Stellar Pipeline - 3 Column Kanban */}
-      <div className="flex-1 grid grid-cols-3 gap-6 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6 overflow-auto lg:overflow-hidden">
         {/* Nebula Column - Ideas/Planning */}
         <PipelineColumn
           title="Nebula"

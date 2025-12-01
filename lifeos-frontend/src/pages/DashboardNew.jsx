@@ -125,9 +125,9 @@ export default function DashboardNew() {
                     }
                   }}
                   disabled={!canUndo()}
-                  className={`p-2 rounded-lg transition-all ${
+                  className={`p-2 rounded-lg transition-all duration-150 ${
                     canUndo()
-                      ? 'text-white/60 hover:bg-white/10 hover:text-white'
+                      ? 'text-white/60 hover:bg-white/10 hover:text-white hover:-translate-y-0.5 active:translate-y-0'
                       : 'text-white/20 cursor-not-allowed'
                   }`}
                   title="Undo (Ctrl+Z)"
@@ -142,9 +142,9 @@ export default function DashboardNew() {
                     }
                   }}
                   disabled={!canRedo()}
-                  className={`p-2 rounded-lg transition-all ${
+                  className={`p-2 rounded-lg transition-all duration-150 ${
                     canRedo()
-                      ? 'text-white/60 hover:bg-white/10 hover:text-white'
+                      ? 'text-white/60 hover:bg-white/10 hover:text-white hover:-translate-y-0.5 active:translate-y-0'
                       : 'text-white/20 cursor-not-allowed'
                   }`}
                   title="Redo (Ctrl+Shift+Z)"
@@ -158,10 +158,10 @@ export default function DashboardNew() {
             {/* Edit Mode Toggle */}
             <button
               onClick={toggleEditMode}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                 isEditMode
-                  ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
-                  : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                  ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20 hover:bg-purple-600 hover:-translate-y-0.5 active:translate-y-0'
+                  : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white hover:-translate-y-0.5 active:translate-y-0'
               }`}
             >
               {isEditMode ? (
@@ -180,10 +180,10 @@ export default function DashboardNew() {
             {/* Settings Button */}
             <button
               onClick={openSettings}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/10 rounded-lg transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 text-white/60 hover:text-white"
               title="Customize Dashboard"
             >
-              <Settings className="w-4 h-4 text-white/60 hover:text-white" />
+              <Settings className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -271,7 +271,7 @@ export default function DashboardNew() {
             </p>
             <button
               onClick={() => setIsAddWidgetOpen(true)}
-              className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-xl transition-all shadow-lg shadow-purple-500/20"
+              className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-xl transition-all duration-150 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-0.5 active:translate-y-0"
             >
               Add Widgets
             </button>
@@ -281,7 +281,7 @@ export default function DashboardNew() {
         {/* Add Widget Button (floating) */}
         <button
           onClick={() => setIsAddWidgetOpen(true)}
-          className="fixed bottom-24 right-6 p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all z-20"
+          className="fixed bottom-24 right-6 p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-110 hover:-translate-y-1 active:scale-100 active:translate-y-0 transition-all duration-150 z-20"
           title="Add Widget"
         >
           <Plus className="w-6 h-6" />

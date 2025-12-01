@@ -11,6 +11,7 @@ import { useJournalStore } from '../features/journal/journal.store';
 import { MonthHexGrid } from '../features/journal/MonthHexGrid';
 import { EntryFullView } from '../features/journal/EntryFullView';
 import { calculateStreaks, getAllTags } from '../features/journal/journal.utils';
+import PageHeader from '../components/shared/PageHeader';
 
 export default function JournalNew() {
   const navigate = useNavigate();
@@ -87,19 +88,14 @@ export default function JournalNew() {
 
   return (
     <div className="min-h-screen bg-[#0c0a10] text-white p-6 md:p-8 animate-fade-in">
-      {/* Simplified Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-1">
-              Starlog
-            </h1>
-            <p className="text-sm text-white/50">
-              {entryCount} entries · {weeklyEntries} this week
-              {streakInfo.current > 0 && ` · ${streakInfo.current} day streak 🔥`}
-            </p>
-          </div>
-
+      <PageHeader
+        title="Starlog"
+        subtitle="Personal journal and daily reflections"
+        stats={`${entryCount} entries · ${weeklyEntries} this week${streakInfo.current > 0 ? ` · ${streakInfo.current} day streak 🔥` : ''}`}
+        icon={BookOpen}
+        module="journal"
+        variant="icon"
+        actions={
           <button
             onClick={handleJumpToToday}
             className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-lg transition-colors text-sm"
@@ -107,8 +103,8 @@ export default function JournalNew() {
             <Calendar size={16} />
             <span>Today</span>
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Search & Filter Bar */}
       <div className="mb-6 space-y-4">

@@ -66,7 +66,13 @@ export default function NovaWidget() {
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [position, setPosition] = useState({ x: window.innerWidth - 120, y: window.innerHeight - 120 });
+  // Initial position: account for bottom nav on mobile (64px + padding)
+  const isMobile = window.innerWidth <= 768;
+  const bottomOffset = isMobile ? 100 : 20; // Higher on mobile to avoid bottom nav
+  const [position, setPosition] = useState({
+    x: window.innerWidth - 100,
+    y: window.innerHeight - bottomOffset - 80
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [emotionalState, setEmotionalState] = useState('happy');
@@ -117,7 +123,9 @@ export default function NovaWidget() {
         const newY = e.clientY - dragOffset.y;
 
         const maxX = window.innerWidth - 100;
-        const maxY = window.innerHeight - 100;
+        // Keep above bottom nav on mobile (64px nav + 16px padding + widget height)
+        const bottomNavHeight = window.innerWidth <= 768 ? 80 : 0;
+        const maxY = window.innerHeight - 100 - bottomNavHeight;
 
         setPosition({
           x: Math.max(0, Math.min(newX, maxX)),

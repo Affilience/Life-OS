@@ -113,7 +113,7 @@ export default function KnowledgeDashboard() {
         </div>
 
         {/* Knowledge Stats Grid */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="bg-[#1a1724] border border-blue-500/20 rounded-xl p-4 text-center">
             <BookOpen className="w-6 h-6 text-blue-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">47</p>
@@ -189,7 +189,7 @@ export default function KnowledgeDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <div className="bg-[#0c0a10]/50 rounded-lg p-3">
               <p className="text-sm text-white/60">Applied This Month</p>
               <p className="text-xl font-bold text-white">8</p>
@@ -211,7 +211,7 @@ export default function KnowledgeDashboard() {
             <span className="text-sm text-purple-400">+12 this week</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { topic: 'Productivity', connections: 24, color: 'yellow' },
               { topic: 'Learning', connections: 18, color: 'blue' },
@@ -258,11 +258,11 @@ export default function KnowledgeDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-4 rounded-xl font-semibold hover:opacity-90 transition-opacity">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
             Capture Note
           </button>
-          <button className="bg-[#1a1724] border border-blue-500/30 text-white p-4 rounded-xl font-semibold hover:bg-blue-500/10 transition-colors">
+          <button className="bg-[#1a1724] border border-purple-500/30 text-white p-4 rounded-xl font-semibold hover:bg-purple-500/10 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
             Browse Library
           </button>
         </div>

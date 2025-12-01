@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, Clock, Zap, Calendar, Tag, TrendingUp } from 'lucide-react';
 import useProductivityStore from '../../stores/productivityStore';
+import { EmptyState } from '../ui';
 import './WorkSessionsTab.css';
 
 const sessionTypes = [
@@ -289,11 +290,19 @@ export default function WorkSessionsTab() {
         <h3 className="section-title">Recent Sessions</h3>
 
         {sessions.length === 0 ? (
-          <div className="empty-state">
-            <Clock className="w-12 h-12 opacity-20" />
-            <p>No work sessions yet</p>
-            <p className="empty-hint">Start your first session to track your work!</p>
-          </div>
+          <EmptyState
+            type="calendar"
+            title="No work sessions yet"
+            description="Track your deep work sessions, build focus streaks, and understand your productivity patterns."
+            actionLabel="Start Your First Session"
+            onAction={() => {
+              if (selectedProject && selectedType) {
+                startSession(selectedProject, selectedType);
+              }
+            }}
+            variant="violet"
+            size="md"
+          />
         ) : (
           <div className="sessions-list">
             {sessions.slice(0, 10).map((session) => {

@@ -112,7 +112,7 @@ const PetsSection = ({ forceShow = false }) => {
       </div>
 
       {/* Active Pet Slots */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {activeSlots.map((petId, index) => (
           <PetSlot
             key={`active-${index}`}

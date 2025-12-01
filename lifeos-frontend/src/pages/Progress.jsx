@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Target, Trophy, TrendingUp } from 'lucide-react';
+import PageHeader from '../components/shared/PageHeader';
 import Skills from './Skills';
 import SkillTreeNew from './SkillTreeNew';
 import Streaks from './Streaks';
@@ -50,11 +51,13 @@ export default function Progress() {
         {activeTab === 'avatar' && (
           <div className="avatar-tab space-y-6">
             <div className="text-center">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-                {evolutionStage.name}
-              </h2>
-              <p className="text-slate-400 mb-1">{evolutionStage.category}</p>
-              <p className="text-sm text-slate-500">{evolutionStage.description}</p>
+              <PageHeader
+                title={evolutionStage.name}
+                subtitle={evolutionStage.description}
+                module="progress"
+                variant="gradient"
+                className="text-center justify-center"
+              />
             </div>
 
             {/* Avatar Display */}
@@ -90,7 +93,7 @@ export default function Progress() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Object.entries(stats).map(([stat, value]) => (
                 <div key={stat} className="bg-[#1a1724]/50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-purple-400">{value}</div>
@@ -100,7 +103,7 @@ export default function Progress() {
             </div>
 
             {/* Quick Links */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <a
                 href="/evolution"
                 className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-4 text-center hover:border-purple-500/50 transition-all"

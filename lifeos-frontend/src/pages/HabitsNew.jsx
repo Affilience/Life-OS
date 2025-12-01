@@ -21,8 +21,10 @@ import {
   Heart,
   Brain,
   CheckCircle2,
-  Circle
+  Circle,
+  RotateCcw
 } from 'lucide-react';
+import PageHeader from '../components/shared/PageHeader';
 
 /**
  * Orbit - Cosmic Habit Tracker
@@ -186,39 +188,35 @@ export default function HabitsNew() {
 
   return (
     <div className="min-h-screen bg-[#12101a] text-white p-6 md:p-8">
-      {/* Simplified Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-1">
-              Orbit
-            </h1>
-            <p className="text-sm text-white/50">
-              {stats.completedToday}/{stats.totalHabits} completed · {Math.round(stats.completionRate)}% · {stats.longestActiveStreak} day best streak
-            </p>
-          </div>
-
-          {/* Consolidated View Toggle - Smaller */}
-          <div className="flex gap-1 bg-[#12101a]/50 p-1 rounded-lg border border-white/10">
-            {['today', 'week', 'month'].map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`px-3 py-1.5 rounded text-sm transition-all capitalize ${
-                  viewMode === mode
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'text-white/50 hover:text-gray-300'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-        </div>
+        <PageHeader
+          title="Orbit"
+          subtitle="Build momentum with daily habits and cosmic streaks"
+          stats={`${stats.completedToday}/${stats.totalHabits} completed · ${Math.round(stats.completionRate)}% · ${stats.longestActiveStreak} day best streak`}
+          icon={RotateCcw}
+          module="habits"
+          variant="icon"
+          actions={
+            <div className="flex gap-1 bg-[#12101a]/50 p-1 rounded-lg border border-white/10">
+              {['today', 'week', 'month'].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-3 py-1.5 rounded text-sm transition-all capitalize ${
+                    viewMode === mode
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'text-white/50 hover:text-gray-300'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+          }
+        />
       </motion.div>
 
       {/* Main Content */}
@@ -314,10 +312,10 @@ function HabitCard({ habit, onToggle, index }) {
       className="group"
     >
       <div
-        className={`relative bg-[#12101a]/50 backdrop-blur-sm border rounded-xl p-5 transition-all ${
+        className={`relative bg-[#12101a]/50 backdrop-blur-sm border rounded-xl p-5 transition-all duration-150 ${
           habit.completedToday
-            ? 'border-emerald-500/50 bg-emerald-500/5'
-            : 'border-white/10 hover:border-emerald-500/30'
+            ? 'border-emerald-500/50 bg-emerald-500/5 shadow-[0_8px_24px_rgba(16,185,129,0.15)]'
+            : 'border-white/10 hover:border-emerald-500/30 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(16,185,129,0.1)]'
         }`}
       >
         {/* Cosmic Glow Effect */}
@@ -495,7 +493,7 @@ function MonthView({ habits }) {
             </div>
 
             {/* Heat Map Grid */}
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {monthData.map((intensity, i) => (
                 <div
                   key={i}
@@ -524,7 +522,7 @@ function StatsView({ habits }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="grid grid-cols-2 gap-6"
+      className="grid grid-cols-1 md:grid-cols-2 gap-6"
     >
       {/* Achievements */}
       <div className="bg-[#12101a]/30 border border-white/10 rounded-xl p-6">
@@ -651,7 +649,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#1a1724] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl"
+          className="bg-[#1a1724] border border-white/10 rounded-2xl p-4 sm:p-6 md:p-8 max-w-md w-full shadow-2xl"
         >
           <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
             Add New Habit
@@ -678,7 +676,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
               <label className="block text-sm font-medium text-white/60 mb-2">
                 Icon
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                 {availableIcons.map(({ key, name, Icon }) => (
                   <button
                     key={key}
@@ -740,7 +738,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
               <label className="block text-sm font-medium text-white/60 mb-2">
                 Frequency
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {['daily', 'weekly', 'monthly'].map((freq) => (
                   <button
                     key={freq}
@@ -763,7 +761,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }) {
               <label className="block text-sm font-medium text-white/60 mb-2">
                 Difficulty
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {['easy', 'medium', 'hard'].map((diff) => (
                   <button
                     key={diff}

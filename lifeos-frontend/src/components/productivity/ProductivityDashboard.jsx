@@ -94,7 +94,7 @@ export default function ProductivityDashboard() {
 
       <div className="p-4 space-y-6">
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
             title="Deep Work Today"
             value="5.2h"
@@ -215,7 +215,7 @@ export default function ProductivityDashboard() {
         </div>
 
         {/* Context Switches & Distractions */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="bg-[#1a1724] border border-yellow-500/20 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="w-5 h-5 text-yellow-400" />
@@ -265,7 +265,7 @@ export default function ProductivityDashboard() {
         </div>
 
         {/* Quick Actions - Enhanced with Functionality */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {!isDeepWorkActive ? (
             <button
               onClick={handleStartDeepWork}

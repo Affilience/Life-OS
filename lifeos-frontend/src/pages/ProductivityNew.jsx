@@ -4,6 +4,7 @@ import Card from '../components/ui/Card';
 import Stat from '../components/ui/Stat';
 import Badge from '../components/ui/Badge';
 import XPBar from '../components/app/XPBar';
+import PageHeader from '../components/shared/PageHeader';
 import WorkSessionsTab from '../components/productivity/WorkSessionsTab';
 import ProjectsTab from '../components/productivity/ProjectsTab';
 import TasksTab from '../components/productivity/TasksTab';
@@ -36,17 +37,14 @@ const ProductivityNew = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Simplified Header - removed icon box, kept essential info */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-high mb-1">
-            Supernova
-          </h1>
-          <p className="text-sm text-text-dim">
-            {stats.todayFocus}h today · {stats.activeTasks} active tasks
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Supernova"
+        subtitle="Track work sessions, projects, tasks, and income"
+        stats={`${stats.todayFocus}h today · ${stats.activeTasks} active tasks`}
+        icon={Briefcase}
+        module="productivity"
+        variant="icon"
+      />
 
       {/* Tab Navigation */}
       <Card padding="none">

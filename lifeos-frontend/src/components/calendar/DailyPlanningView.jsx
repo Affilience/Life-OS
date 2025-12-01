@@ -18,6 +18,7 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
+import { EmptyStateInline } from '../ui';
 
 export default function DailyPlanningView() {
   const { getTodaysBlocks, getPlannedTimeForDate, workHoursEnd, workHoursStart } =
@@ -79,13 +80,16 @@ export default function DailyPlanningView() {
       </div>
 
       {yesterdaysBlocks.length === 0 ? (
-        <div className="text-center py-12 text-white/50">
-          <p>No data from yesterday</p>
-        </div>
+        <EmptyStateInline
+          icon={Moon}
+          message="No data from yesterday"
+          hint="Start planning today to build your history"
+          variant="violet"
+        />
       ) : (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <div className="bg-[#12101a]/60 border border-white/10 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-green-400">
                 {completedYesterday}
@@ -151,10 +155,15 @@ export default function DailyPlanningView() {
 
       {unscheduledTasks.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-white/60 mb-4">No unscheduled tasks found</p>
+          <EmptyStateInline
+            icon={CheckCircle2}
+            message="No unscheduled tasks found"
+            hint="All caught up! Continue to plan your time blocks"
+            variant="emerald"
+          />
           <button
             onClick={() => setPlanningStep('plan')}
-            className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all"
+            className="mt-4 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all"
           >
             Continue to Planning
           </button>
@@ -244,10 +253,12 @@ export default function DailyPlanningView() {
           Scheduled blocks ({todaysBlocks.length}):
         </h3>
         {todaysBlocks.length === 0 ? (
-          <div className="text-center py-8 text-white/50">
-            <p>No blocks scheduled yet</p>
-            <p className="text-sm mt-2">Click "Add Time Block" to get started</p>
-          </div>
+          <EmptyStateInline
+            icon={Clock}
+            message="No blocks scheduled yet"
+            hint="Click 'Add Time Block' to start planning your day"
+            variant="cyan"
+          />
         ) : (
           <div className="space-y-2">
             {todaysBlocks
@@ -302,7 +313,7 @@ export default function DailyPlanningView() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
         <div className="bg-[#12101a]/60 border border-white/10 rounded-lg p-4">
           <div className="text-2xl font-bold text-purple-400">{todaysBlocks.length}</div>
           <div className="text-sm text-white/50 mt-1">Time Blocks</div>

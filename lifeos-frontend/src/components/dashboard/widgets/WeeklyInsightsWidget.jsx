@@ -48,7 +48,7 @@ export default function WeeklyInsightsWidget() {
         <Sparkles className="w-4 h-4" />
         Weekly Insights
       </h3>
-      <div className="flex-1 grid grid-cols-2 gap-2 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-hidden">
         {insights.map((insight) => {
           const Icon = insight.icon;
           return (

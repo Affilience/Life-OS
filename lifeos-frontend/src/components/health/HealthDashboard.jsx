@@ -118,7 +118,7 @@ export default function HealthDashboard() {
           </div>
 
           {/* Activity Rings */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <CircularProgress
               value={2850}
               max={3000}
@@ -146,7 +146,7 @@ export default function HealthDashboard() {
         </div>
 
         {/* Body Vitals Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="bg-[#1a1724] border border-red-500/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Heart className="w-5 h-5 text-red-400" />
@@ -304,7 +304,7 @@ export default function HealthDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 rounded-xl font-semibold hover:opacity-90 transition-opacity">
             Log Workout
           </button>

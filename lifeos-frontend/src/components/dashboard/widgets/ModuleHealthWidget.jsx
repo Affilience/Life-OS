@@ -33,7 +33,7 @@ export default function ModuleHealthWidget() {
         <Zap className="w-4 h-4" />
         Module Health
       </h3>
-      <div className="flex-1 grid grid-cols-2 gap-2 overflow-y-auto">
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto">
         {allModules.map((module) => {
           const Icon = module.icon;
           return (

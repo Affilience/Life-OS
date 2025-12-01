@@ -314,7 +314,7 @@ const Skills = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
                       <Flame className="w-3.5 h-3.5" />

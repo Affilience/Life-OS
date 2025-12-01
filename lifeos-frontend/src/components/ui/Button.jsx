@@ -53,25 +53,59 @@ const Button = ({
   `;
 
   const variants = {
+    // Primary: Main call-to-action (purple)
     primary: `
       bg-purple-500 text-white
-      hover:bg-purple-600 hover:shadow-[0_0_40px_rgba(138,92,255,0.25)] hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-[0_4px_16px_rgba(0,0,0,0.3)]
+      hover:bg-purple-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px]
+      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
     `,
+    // Gradient: Premium primary action with gradient
+    gradient: `
+      bg-gradient-to-r from-purple-500 to-pink-500 text-white
+      hover:from-purple-600 hover:to-pink-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.4)] hover:-translate-y-[1px]
+      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+    `,
+    // Secondary: Alternative action with dark background
     secondary: `
       bg-[#12101a] text-white border border-white/10
-      hover:bg-[#1a1724] hover:border-white/15 hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)]
-      active:translate-y-[1px]
+      hover:bg-[#1a1724] hover:border-purple-500/20 hover:-translate-y-[1px] hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]
+      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
     `,
+    // Outline: Purple outline style for secondary emphasis
+    outline: `
+      bg-purple-500/10 text-purple-400 border border-purple-500/30
+      hover:bg-purple-500/20 hover:border-purple-500/50 hover:-translate-y-[1px] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)]
+      active:translate-y-[1px] active:bg-purple-500/25
+    `,
+    // Ghost: Minimal tertiary action
     ghost: `
-      bg-transparent text-white/60
-      hover:bg-[#1a1724]/50 hover:text-zinc-200
-      active:bg-[#1a1724]
+      bg-transparent text-white/60 border border-transparent
+      hover:bg-[#1a1724]/80 hover:text-white hover:border-white/10 hover:-translate-y-[1px]
+      active:bg-[#1a1724] active:translate-y-[1px]
     `,
+    // Danger: Destructive actions (red)
     danger: `
       bg-red-500 text-white
-      hover:bg-red-600 hover:shadow-[0_0_40px_rgba(239,68,68,0.25)] hover:-translate-y-[1px]
-      active:translate-y-[1px]
+      hover:bg-red-600 hover:shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:-translate-y-[1px]
+      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+    `,
+    // Danger Outline: Less prominent destructive action
+    'danger-outline': `
+      bg-red-500/10 text-red-400 border border-red-500/30
+      hover:bg-red-500/20 hover:border-red-500/50 hover:-translate-y-[1px]
+      active:translate-y-[1px] active:bg-red-500/25
+    `,
+    // Success: Positive/confirmation actions (emerald)
+    success: `
+      bg-emerald-500 text-white
+      hover:bg-emerald-600 hover:shadow-[0_8px_32px_rgba(16,185,129,0.3)] hover:-translate-y-[1px]
+      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+    `,
+    // Success Outline: Less prominent success action
+    'success-outline': `
+      bg-emerald-500/10 text-emerald-400 border border-emerald-500/30
+      hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:-translate-y-[1px]
+      active:translate-y-[1px] active:bg-emerald-500/25
     `,
   };
 

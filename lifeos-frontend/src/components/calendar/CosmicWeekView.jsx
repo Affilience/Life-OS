@@ -169,7 +169,7 @@ export default function CosmicWeekView() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
             <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
               <Sun className="w-3 h-3" />

@@ -6,6 +6,7 @@ import {
   Target
 } from 'lucide-react';
 import Card from '../components/ui/Card';
+import PageHeader from '../components/shared/PageHeader';
 import WeekView from '../components/calendar/WeekView';
 import CosmicWeekView from '../components/calendar/CosmicWeekView';
 import CosmicDayView from '../components/calendar/CosmicDayView';
@@ -59,22 +60,14 @@ const CalendarNew = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-error/10 border border-error/20 flex items-center justify-center">
-            <CalendarIcon size={24} className="text-error" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-text-high tracking-tighter">
-              Astral Map
-            </h1>
-            <p className="text-text-med mt-1">
-              Plan your time, track actual usage, and optimize your schedule
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Astral Map"
+        subtitle="Plan your time, track actual usage, and optimize your schedule"
+        stats={`${stats.eventsToday} events today · ${stats.completionRate}% completion rate`}
+        icon={CalendarIcon}
+        module="calendar"
+        variant="icon"
+      />
 
       {/* View Navigation */}
       <Card padding="none">

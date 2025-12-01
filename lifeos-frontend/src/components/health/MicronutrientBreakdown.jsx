@@ -172,7 +172,7 @@ export default function MicronutrientBreakdown({ totals, onClose }) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Quick Summary */}
-          <div className="grid grid-cols-4 gap-2 p-3 bg-black/20 rounded-xl">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-black/20 rounded-xl">
             <div className="text-center">
               <div className="text-lg font-bold text-fg-primary">{totals.calories || 0}</div>
               <div className="text-xs text-fg-tertiary">Calories</div>

@@ -152,7 +152,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
           </div>
 
           {/* Date and Time */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
@@ -206,7 +206,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
             <label className="block text-sm font-medium text-zinc-300 mb-2">
               Life Module
             </label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {modules.map((module) => (
                 <button
                   key={module.id}
@@ -235,7 +235,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
             <label className="block text-sm font-medium text-zinc-300 mb-2">
               Block Type
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {blockTypes.map((type) => (
                 <button
                   key={type.id}
@@ -255,13 +255,13 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
           </div>
 
           {/* Priority and Energy */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2 flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 Priority
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                 {['critical', 'high', 'medium', 'low'].map((priority) => (
                   <button
                     key={priority}

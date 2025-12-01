@@ -195,7 +195,7 @@ export default function BossBattles() {
         <div className="p-6">
           {/* Battle Progress (for active battles) */}
           {!isTemplate && !boss.defeated && !boss.playerDefeated && (
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
               <div className="text-center p-3 bg-white/5 rounded-lg">
                 <div className="text-2xl font-bold text-cyan-400">{boss.tasksCompleted}</div>
                 <p className="text-xs text-white/60">Tasks Done</p>

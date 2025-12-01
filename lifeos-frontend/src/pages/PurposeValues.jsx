@@ -152,7 +152,7 @@ function OverviewView() {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card padding="md" hover>
           <Stat
             label="Core Values"
@@ -1028,7 +1028,7 @@ function AddDecisionModal({ onClose }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(255, 255, 255, 0.70)' }}>
                 Category

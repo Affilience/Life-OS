@@ -107,10 +107,11 @@
 
 .nova-expanded {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 88px; /* Above bottom nav (64px) + some spacing */
+  right: 16px;
   width: 320px;
   height: 480px;
+  max-height: calc(100vh - 120px);
   background: #111111;
   border: 1px solid #2a2a2a;
   border-radius: 16px;
@@ -120,6 +121,15 @@
   overflow: hidden;
   animation: nova-expand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9999;
+}
+
+/* Desktop: above floating add button if present */
+@media (min-width: 769px) {
+  .nova-expanded {
+    bottom: 20px;
+    right: 20px;
+    max-height: calc(100vh - 60px);
+  }
 }
 
 .nova-header {
@@ -221,15 +231,22 @@
    ======================================== */
 
 @media (max-width: 768px) {
+  /* On mobile, minimized widget should stay above bottom nav */
+  .nova-widget.minimized {
+    /* Position will be managed by JS, but ensure it doesn't overlap bottom nav */
+  }
+
   .nova-expanded {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(100vw - 32px);
-    max-width: 400px;
-    height: 70vh;
-    max-height: 600px;
+    bottom: 88px; /* Above bottom nav */
+    left: 16px;
+    right: 16px;
+    top: auto;
+    transform: none;
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: calc(100vh - 120px);
   }
 }
 

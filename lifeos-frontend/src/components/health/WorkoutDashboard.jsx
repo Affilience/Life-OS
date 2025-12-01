@@ -15,6 +15,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import WorkoutCharts from './charts/WorkoutCharts';
+import { EmptyState } from '../ui';
 import './WorkoutDashboard.css';
 
 export default function WorkoutDashboard() {
@@ -184,15 +185,15 @@ export default function WorkoutDashboard() {
         </div>
 
         {recentWorkouts.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🏋️</div>
-            <h3 className="empty-title">No workouts logged yet</h3>
-            <p className="empty-text">Click "Start Workout" to begin your fitness journey</p>
-            <button onClick={() => startWorkout()} className="empty-cta-btn">
-              <Play className="w-4 h-4" fill="currentColor" />
-              Start Your First Workout
-            </button>
-          </div>
+          <EmptyState
+            type="workouts"
+            title="No workouts logged yet"
+            description="Start your fitness journey! Track workouts, build streaks, and watch your strength grow over time."
+            actionLabel="Start Your First Workout"
+            onAction={() => startWorkout()}
+            variant="emerald"
+            size="md"
+          />
         ) : (
           <div className="workouts-list">
             {recentWorkouts.map((workout) => {

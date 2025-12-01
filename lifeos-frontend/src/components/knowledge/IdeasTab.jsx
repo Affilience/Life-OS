@@ -4,6 +4,7 @@ import Card from '../shared/Card';
 import Button from '../shared/Button';
 import StatCard from '../shared/StatCard';
 import AddIdeaModal from './AddIdeaModal';
+import { EmptyState } from '../ui';
 import './IdeasTab.css';
 
 const IdeasTab = () => {
@@ -259,14 +260,17 @@ const IdeasTab = () => {
 
         {/* Ideas List */}
         {filteredIdeas.length === 0 ? (
-          <div className="empty-garden">
-            <Lightbulb size={48} className="empty-icon" />
-            <h3>No ideas in this stage</h3>
-            <p>Plant a new seed or check other growth stages</p>
-            <Button variant="primary" onClick={() => setShowAddModal(true)}>
-              Plant First Idea
-            </Button>
-          </div>
+          <EmptyState
+            type="ideas"
+            title="No ideas in this stage"
+            description={stageFilter !== 'all'
+              ? "Try checking other growth stages to see your ideas"
+              : "Plant your first idea seed and watch it grow into something amazing!"}
+            actionLabel="Plant First Idea"
+            onAction={() => setShowAddModal(true)}
+            variant="amber"
+            size="md"
+          />
         ) : (
           <div className="ideas-list">
             {filteredIdeas.map(idea => (

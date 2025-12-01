@@ -331,7 +331,7 @@ export default function SmartMealLogger({ onMealLogged }) {
             </div>
 
             {/* Macro Grid */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div className="text-center p-3 bg-black/20 rounded-lg">
                 <div className="text-xl font-bold text-blue-400">{result.totals.protein}g</div>
                 <div className="text-xs text-fg-tertiary">Protein</div>

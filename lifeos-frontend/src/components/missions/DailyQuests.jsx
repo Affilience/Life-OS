@@ -14,10 +14,10 @@ import {
   Clock,
   Sparkles,
   Flame,
-  Plus,
-  Moon
+  Plus
 } from 'lucide-react';
 import useDailyTasksStore, { TASK_CATEGORIES, PRIORITY_LEVELS } from '../../stores/dailyTasksStore';
+import { EmptyState } from '../ui';
 
 // Map category to icon
 const CATEGORY_ICONS = {
@@ -266,21 +266,16 @@ export default function DailyQuests() {
           </div>
         ) : (
           /* Empty State */
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-8 text-center">
-            <Moon className="w-12 h-12 text-white/20 mx-auto mb-4" />
-            <h4 className="text-lg font-semibold text-white mb-2">
-              No quests planned for today
-            </h4>
-            <p className="text-white/50 text-sm mb-6">
-              Plan your daily tasks in the Productivity module to see them here as quests.
-            </p>
-            <button
-              onClick={() => navigate('/productivity')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-500 hover:bg-violet-600 text-white font-medium rounded-xl transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Plan Today's Quests
-            </button>
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl">
+            <EmptyState
+              type="quests"
+              title="No quests planned for today"
+              description="Plan your daily tasks in the Productivity module to transform them into epic quests with XP rewards."
+              actionLabel="Plan Today's Quests"
+              onAction={() => navigate('/productivity')}
+              variant="violet"
+              size="md"
+            />
           </div>
         )}
       </div>

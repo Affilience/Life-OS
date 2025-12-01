@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import useProductivityStore from '../../stores/productivityStore';
+import { EmptyState } from '../ui';
 import './TasksTab.css';
 
 export default function TasksTab() {
@@ -308,11 +309,17 @@ export default function TasksTab() {
 
       {/* Tasks List */}
       {filteredTasks.length === 0 ? (
-        <div className="empty-state">
-          <CheckCircle2 className="w-12 h-12 opacity-20" />
-          <p>No tasks found</p>
-          <p className="empty-hint">Create your first task to get started!</p>
-        </div>
+        <EmptyState
+          type="tasks"
+          title="No tasks found"
+          description={filterStatus !== 'all' || filterProject !== 'all' || filterPriority !== 'all'
+            ? "Try adjusting your filters to see more tasks"
+            : "Create your first task to start tracking your work and earning XP"}
+          actionLabel="Create Task"
+          onAction={() => setShowQuickAdd(true)}
+          variant="violet"
+          size="md"
+        />
       ) : (
         <div className="tasks-list">
           {filteredTasks.map((task) => {

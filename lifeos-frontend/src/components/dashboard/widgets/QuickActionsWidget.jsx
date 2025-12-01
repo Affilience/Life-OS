@@ -33,7 +33,7 @@ export default function QuickActionsWidget() {
       </div>
 
       {/* Actions Grid */}
-      <div className="flex-1 grid grid-cols-2 gap-2 content-start overflow-y-auto">
+      <div className="flex-1 grid grid-cols-2 sm:grid-cols-2 gap-2 content-start overflow-y-auto">
         {QUICK_ACTIONS.map((action) => {
           const Icon = action.icon;
           return (

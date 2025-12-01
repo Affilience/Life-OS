@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { supabase } from '../../lib/supabase';
+import { EmptyState } from '../ui';
 import './EquipmentInventory.css';
 
 // Rarity definitions
@@ -347,16 +348,23 @@ export default function EquipmentInventory() {
                   );
                 })
               ) : (
-                <div className="no-items">
-                  <p>No items available for this slot</p>
-                  <p className="hint">Complete challenges to unlock equipment!</p>
-                </div>
+                <EmptyState
+                  type="equipment"
+                  title="No items available for this slot"
+                  description="Complete quests, reach milestones, and unlock achievements to earn new equipment!"
+                  variant="pink"
+                  size="sm"
+                />
               )}
             </div>
           ) : (
-            <div className="no-slot-selected">
-              <p>👈 Select an equipment slot to view available items</p>
-            </div>
+            <EmptyState
+              type="equipment"
+              title="Select an equipment slot"
+              description="Choose a slot from your character to view and equip available items"
+              variant="violet"
+              size="sm"
+            />
           )}
         </div>
       </div>

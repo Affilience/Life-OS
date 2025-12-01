@@ -4,7 +4,9 @@
  */
 
 import React from 'react';
+import { BookOpen } from 'lucide-react';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
+import PageHeader from '../shared/PageHeader';
 import Sidebar from './Sidebar';
 import SearchBar from './SearchBar';
 import QuickCapture from './QuickCapture';
@@ -42,14 +44,21 @@ function MainCanvas() {
     <div className="flex-1 flex flex-col bg-[#0c0a10] overflow-hidden">
       {/* Header */}
       <div className="border-b border-white/5 bg-[#0c0a10] overflow-visible relative z-20">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">
-            {getViewTitle()}
-          </h1>
-          <div className="flex items-center gap-3">
-            <SearchBar />
-            <QuickCapture />
-          </div>
+        <div className="px-6 py-4">
+          <PageHeader
+            title={getViewTitle()}
+            subtitle="Notes, books, and knowledge library"
+            icon={BookOpen}
+            module="knowledge"
+            variant="default"
+            className="mb-0"
+            actions={
+              <div className="flex items-center gap-3">
+                <SearchBar />
+                <QuickCapture />
+              </div>
+            }
+          />
         </div>
       </div>
 

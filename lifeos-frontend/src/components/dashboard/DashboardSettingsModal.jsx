@@ -45,7 +45,7 @@ export default function DashboardSettingsModal() {
           {/* Preset Layouts */}
           <div className="p-4 border-b border-white/10">
             <h3 className="text-sm font-semibold text-white/60 mb-3">Quick Presets</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {Object.values(DASHBOARD_PRESETS).map((preset) => (
                 <button
                   key={preset.id}

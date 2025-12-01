@@ -200,7 +200,7 @@ export default function ProjectDetailView({ projectId, onBack }) {
       </div>
 
       {/* Main Content - 2 Column Layout */}
-      <div className="flex-1 grid grid-cols-2 gap-6 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 gap-6 overflow-auto lg:overflow-hidden">
         {/* Left Column - Tasks */}
         <div className="flex flex-col overflow-hidden">
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">

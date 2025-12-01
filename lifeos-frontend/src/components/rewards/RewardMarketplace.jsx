@@ -4,6 +4,7 @@ import { Plus, Gift, TrendingUp, Filter, Coins } from 'lucide-react';
 import { RewardCard } from '../../features/rewards/components/RewardCard';
 import { useRewards, useCreateReward, useRedeemReward } from '../../api/rewards';
 import { useCosmicCurrency } from '../../api/currency';
+import { EmptyState } from '../ui';
 
 export default function RewardMarketplace() {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -120,22 +121,16 @@ export default function RewardMarketplace() {
 
       {/* Rewards Grid */}
       {!filteredRewards || filteredRewards.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-6xl mb-4">🎁</div>
-          <h3 className="text-xl font-bold text-gray-300 mb-2">
-            No rewards in this category yet
-          </h3>
-          <p className="text-white/50 mb-4">
-            Create your first reward to get started!
-          </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold"
-          >
-            Add Your First Reward
-          </motion.button>
+        <div className="bg-[#1a1724] border border-white/10 rounded-xl">
+          <EmptyState
+            type="rewards"
+            title="No rewards in this category yet"
+            description="Create custom rewards for yourself - treats, activities, or anything that motivates you. Earn them with Cosmic Credits!"
+            actionLabel="Add Your First Reward"
+            onAction={() => setShowAddModal(true)}
+            variant="pink"
+            size="lg"
+          />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -4,15 +4,24 @@
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
 .skill-card:hover {
   border-color: var(--color-skills-300);
-  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.1);
+  box-shadow: var(--shadow-hover-skills);
   transform: translateY(-2px);
+}
+
+.skill-card:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.skill-card:active {
+  transform: translateY(0);
 }
 
 .skill-card-header {
