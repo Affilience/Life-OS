@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Crown, Zap } from 'lucide-react';
+import { ArrowLeft, Crown, Zap, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAvatarStore } from '../../stores/avatarStore';
 import './EvolutionShowcase.css';
 
 // V3 Evolution stages data
@@ -52,9 +53,11 @@ export default function EvolutionShowcase() {
   const [selectedStage, setSelectedStage] = useState(null);
   const currentLevel = 12; // Mock current level
 
+  // Get gender and sprite path function from store
+  const { characterGender, getHeroSpritePath, setCharacterGender } = useAvatarStore();
+
   const getSpritePath = (stage) => {
-    const stageName = stage.name.toLowerCase().replace(/ /g, '_');
-    return `/assets/avatar/evolution/hero_v3_stage_${stage.stage}_${stageName}.png`;
+    return getHeroSpritePath(stage.stage, stage.name);
   };
 
   const isUnlocked = (requiredLevel) => currentLevel >= requiredLevel;
@@ -72,12 +75,38 @@ export default function EvolutionShowcase() {
             <span className="text-sm">Back to Character</span>
           </button>
 
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Crown className="w-6 h-6 text-purple-400" />
-            Evolution Gallery
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Crown className="w-6 h-6 text-purple-400" />
+              Evolution Gallery
+            </h1>
+
+            {/* Gender Toggle */}
+            <div className="flex items-center gap-1 bg-[#1a1724] border border-white/10 rounded-lg p-1">
+              <button
+                onClick={() => setCharacterGender('male')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  characterGender === 'male'
+                    ? 'bg-purple-500 text-white'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                Hero
+              </button>
+              <button
+                onClick={() => setCharacterGender('female')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  characterGender === 'female'
+                    ? 'bg-pink-500 text-white'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                Heroine
+              </button>
+            </div>
+          </div>
           <p className="text-sm text-white/60 mt-1">
-            All 40 evolution stages • Current: Stage 10 (Swordsman)
+            All 40 evolution stages • Current: Stage 10 ({characterGender === 'female' ? 'Swordswoman' : 'Swordsman'})
           </p>
         </div>
 

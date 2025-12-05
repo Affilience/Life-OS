@@ -12,7 +12,6 @@ import SearchBar from './SearchBar';
 import QuickCapture from './QuickCapture';
 import NoteEditor from './NoteEditor';
 import MediaDetailView from './MediaDetailView';
-import ProjectsView from './ProjectsView';
 import LibraryView from './LibraryView';
 import BooksView from './BooksView';
 import PodcastsView from './PodcastsView';
@@ -27,7 +26,6 @@ function MainCanvas() {
   const getViewTitle = () => {
     switch (activeView) {
       case 'all-notes': return 'All Notes';
-      case 'projects': return 'Projects';
       case 'library': return 'Library';
       case 'books': return 'Books';
       case 'podcasts': return 'Podcasts';
@@ -47,7 +45,6 @@ function MainCanvas() {
         <div className="px-6 py-4">
           <PageHeader
             title={getViewTitle()}
-            subtitle="Notes, books, and knowledge library"
             icon={BookOpen}
             module="knowledge"
             variant="default"
@@ -64,9 +61,6 @@ function MainCanvas() {
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
-        {/* Projects View */}
-        {activeView === 'projects' && <ProjectsView />}
-
         {/* Library View - Overview of all content */}
         {activeView === 'library' && <LibraryView />}
 

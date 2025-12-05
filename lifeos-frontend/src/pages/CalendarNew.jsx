@@ -2,18 +2,12 @@ import React, { useState } from 'react';
 import {
   Calendar as CalendarIcon,
   List,
-  Grid,
-  Target
+  Grid
 } from 'lucide-react';
-import Card from '../components/ui/Card';
-import PageHeader from '../components/shared/PageHeader';
-import WeekView from '../components/calendar/WeekView';
 import CosmicWeekView from '../components/calendar/CosmicWeekView';
 import CosmicDayView from '../components/calendar/CosmicDayView';
-import DayView from '../components/calendar/DayView';
 import MonthView from '../components/calendar/MonthView';
 import AnalyticsView from '../components/calendar/AnalyticsView';
-import DailyPlanningView from '../components/calendar/DailyPlanningView';
 
 /**
  * Astral Map - Calendar & Time
@@ -25,20 +19,11 @@ const CalendarNew = () => {
   const [activeView, setActiveView] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const stats = {
-    hoursThisWeek: 42,
-    completionRate: 78,
-    eventsToday: 12,
-    timeTracked: 85
-  };
-
-  const views = [
-    { id: 'week', label: 'Week', icon: Grid },
-    { id: 'day', label: 'Day', icon: List },
-    { id: 'planning', label: 'Daily Planning', icon: Target },
+  const tabs = [
+    { id: 'week', name: 'Week', icon: Grid },
+    { id: 'day', name: 'Day', icon: List },
     // TODO: Implement Month and Analytics views
-    // { id: 'month', label: 'Month', icon: CalendarIcon },
-    // { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+    // { id: 'month', name: 'Month', icon: CalendarIcon },
   ];
 
   const renderView = () => {
@@ -47,8 +32,6 @@ const CalendarNew = () => {
         return <CosmicWeekView />;
       case 'day':
         return <CosmicDayView />;
-      case 'planning':
-        return <DailyPlanningView />;
       case 'month':
         return <MonthView selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
       case 'analytics':
@@ -59,47 +42,57 @@ const CalendarNew = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title="Astral Map"
-        subtitle="Plan your time, track actual usage, and optimize your schedule"
-        stats={`${stats.eventsToday} events today · ${stats.completionRate}% completion rate`}
-        icon={CalendarIcon}
-        module="calendar"
-        variant="icon"
-      />
-
-      {/* View Navigation */}
-      <Card padding="none">
-        <div className="flex border-b border-border">
-          {views.map((view) => {
-            const Icon = view.icon;
-            const isActive = activeView === view.id;
+    <div className="calendar-page min-h-screen bg-[#0c0a10]">
+      {/* Tab Navigation */}
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+        <div className="flex overflow-x-auto hide-scrollbar">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
             return (
               <button
-                key={view.id}
-                onClick={() => setActiveView(view.id)}
-                className={`
-                  flex items-center gap-2 px-6 py-4 text-sm font-medium
-                  border-b-2 -mb-px transition-all duration-fast
-                  ${isActive
-                    ? 'border-error text-text-high bg-muted'
-                    : 'border-transparent text-text-med hover:text-text-high hover:bg-muted/50'
-                  }
-                `}
+                key={tab.id}
+                onClick={() => setActiveView(tab.id)}
+                className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
+                  activeView === tab.id
+                    ? 'bg-rose-500/20 text-rose-400 border-b-2 border-rose-500'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
+                }`}
               >
-                <Icon size={18} />
-                <span>{view.label}</span>
+                <Icon className="w-5 h-5" />
+                <span className="text-sm font-semibold">{tab.name}</span>
               </button>
             );
           })}
         </div>
+      </div>
 
-        {/* View Content */}
-        <div className="p-6">
-          {renderView()}
-        </div>
-      </Card>
+      {/* Active Tab Content */}
+      <div className="tab-content">
+        {renderView()}
+      </div>
+
+      <style>{`
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .tab-content {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };

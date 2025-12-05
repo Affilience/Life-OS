@@ -15,8 +15,8 @@ import {
   Edit2,
 } from 'lucide-react';
 
-export default function CosmicTimeBlock({ block, heightMultiplier = 1 }) {
-  const { updateTimeBlock, deleteTimeBlock, startTimeBlock, completeTimeBlock } =
+export default function CosmicTimeBlock({ block, heightMultiplier = 1, onEdit }) {
+  const { deleteTimeBlock, startTimeBlock, completeTimeBlock } =
     useCalendarStore();
   const [showActions, setShowActions] = useState(false);
 
@@ -187,7 +187,7 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1 }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                // TODO: Open edit modal
+                onEdit?.(block);
               }}
               className="p-1 hover:bg-[#1a1724] rounded transition-all"
             >

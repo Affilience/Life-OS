@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-import { Settings, Move, Check, Undo2, Redo2, Plus } from 'lucide-react';
+import { Settings, Move, Check, Undo2, Redo2, Plus, LayoutGrid } from 'lucide-react';
 import useDashboardStore, { DASHBOARD_WIDGETS } from '../stores/dashboardStore';
 import DashboardSettingsModal from '../components/dashboard/DashboardSettingsModal';
 import AddWidgetModal from '../components/dashboard/AddWidgetModal';
@@ -25,6 +25,7 @@ export default function DashboardNew() {
     redoLayout,
     canUndo,
     canRedo,
+    compactAllLayouts,
   } = useDashboardStore();
 
   // Toast notification state
@@ -91,6 +92,11 @@ export default function DashboardNew() {
       .map(([id]) => id);
   }, [widgetVisibility]);
 
+  // Generate a key for the grid layout based on visible widgets to force re-render
+  const gridKey = useMemo(() => {
+    return visibleWidgets.sort().join(',');
+  }, [visibleWidgets]);
+
   return (
     <div className={`min-h-screen bg-[#0c0a10] pb-20 ${isEditMode ? 'dashboard-edit-mode' : ''}`}>
       {/* Dashboard Settings Modal */}
@@ -151,6 +157,16 @@ export default function DashboardNew() {
                 >
                   <Redo2 className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={() => {
+                    compactAllLayouts();
+                    showToast('Layout compacted');
+                  }}
+                  className="p-2 rounded-lg transition-all duration-150 text-white/60 hover:bg-white/10 hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+                  title="Compact Layout (remove gaps)"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
                 <div className="w-px h-6 bg-white/10 mx-1" />
               </>
             )}
@@ -208,8 +224,9 @@ export default function DashboardNew() {
       )}
 
       {/* Grid Layout */}
-      <div className="p-4">
+      <div className="px-4 pt-6 pb-4">
         <ResponsiveGridLayout
+          key={gridKey}
           className="layout"
           layouts={filteredLayouts}
           breakpoints={{ lg: 1200, md: 768, sm: 480 }}

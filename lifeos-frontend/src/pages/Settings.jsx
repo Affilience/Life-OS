@@ -409,7 +409,7 @@ export default function Settings() {
         </p>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="px-4 pt-6 pb-4 space-y-4">
         {/* Quick Access Card */}
         <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-5">
           <div className="flex items-start gap-4">
@@ -422,10 +422,16 @@ export default function Settings() {
                 All data is encrypted and stored locally. You own everything.
               </p>
               <div className="flex gap-2">
-                <button className="text-xs px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-500/30 transition-colors">
+                <button
+                  onClick={() => alert('Privacy Policy\n\nAll data is stored locally and encrypted. You own 100% of your data.\n\nDetailed privacy policy coming soon.')}
+                  className="text-xs px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-500/30 transition-colors"
+                >
                   View Privacy Policy
                 </button>
-                <button className="text-xs px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-500/30 transition-colors">
+                <button
+                  onClick={() => alert('Export Data\n\nData export feature coming soon. You will be able to download all your data in JSON/CSV format.')}
+                  className="text-xs px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-500/30 transition-colors"
+                >
                   Export My Data
                 </button>
               </div>
@@ -531,9 +537,21 @@ export default function Settings() {
             {DANGER_ZONE.map((item) => {
               const Icon = item.icon;
 
+              const handleDangerAction = () => {
+                if (item.action === 'export') {
+                  alert('Export All Data\n\nData export feature coming soon. You will be able to download all your data in JSON/CSV format.');
+                } else if (item.action === 'delete') {
+                  const confirmed = window.confirm('Are you sure you want to delete your account?\n\nThis action is irreversible and will permanently delete all your data.');
+                  if (confirmed) {
+                    alert('Account deletion is not yet implemented.\n\nThis feature will be available in a future update.');
+                  }
+                }
+              };
+
               return (
                 <button
                   key={item.id}
+                  onClick={handleDangerAction}
                   className="w-full px-5 py-4 hover:bg-white/5 transition-colors text-left"
                 >
                   <div className="flex items-center justify-between">

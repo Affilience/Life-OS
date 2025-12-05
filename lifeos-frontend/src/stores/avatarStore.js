@@ -13,6 +13,9 @@ export const useAvatarStore = create(
       totalLevelsEarned: 0,
       totalXPEarned: 0,
 
+      // Character appearance
+      characterGender: 'male', // 'male' or 'female'
+
       // Equipped items (itemId for each slot) - provides stats
       equipped: {
         helmet: 'helmet_basic',
@@ -355,6 +358,23 @@ export const useAvatarStore = create(
         });
 
         return visual;
+      },
+
+      // Character Gender/Appearance
+      setCharacterGender: (gender) => {
+        if (gender === 'male' || gender === 'female') {
+          set({ characterGender: gender });
+        }
+      },
+
+      // Get hero sprite path based on gender and stage
+      getHeroSpritePath: (stageNumber, stageName) => {
+        const gender = get().characterGender;
+        const nameSlug = stageName.toLowerCase().replace(/ /g, '_');
+        if (gender === 'female') {
+          return `/assets/avatar/evolution/heroine_v3_stage_${stageNumber}_${nameSlug}.png`;
+        }
+        return `/assets/avatar/evolution/hero_v3_stage_${stageNumber}_${nameSlug}.png`;
       },
 
       // Prestige/Rebirth system

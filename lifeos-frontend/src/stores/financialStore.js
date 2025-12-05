@@ -217,6 +217,44 @@ const getMonthKey = (date = new Date()) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
+// Helper to get week key (for weekly contribution streaks)
+const getWeekKey = (date = new Date()) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay()); // Start of week (Sunday)
+  return d.toISOString().split('T')[0];
+};
+
+// Calculate contribution streak (consecutive weeks with at least one contribution)
+const calculateContributionStreak = (contributions, newContribution) => {
+  if (!contributions || contributions.length === 0) return 1;
+
+  const allContributions = [...contributions, newContribution].filter(c => c.amount > 0);
+  if (allContributions.length === 0) return 0;
+
+  // Get unique weeks with contributions
+  const weeksWithContributions = new Set(
+    allContributions.map(c => getWeekKey(new Date(c.date)))
+  );
+
+  // Count consecutive weeks from current week backwards
+  let streak = 0;
+  const today = new Date();
+  let checkDate = new Date(today);
+
+  while (true) {
+    const weekKey = getWeekKey(checkDate);
+    if (weeksWithContributions.has(weekKey)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 7);
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+};
+
 export const useFinancialStore = create(
   persist(
     (set, get) => ({
@@ -314,11 +352,97 @@ export const useFinancialStore = create(
         }));
       },
 
-      contributeSavingsGoal: (id, amount) => {
+      contributeSavingsGoal: (id, amount, note = '') => {
+        const contribution = {
+          id: `contrib-${Date.now()}`,
+          amount,
+          date: new Date().toISOString(),
+          note,
+        };
+
+        set((state) => {
+          const goal = state.savingsGoals.find(g => g.id === id);
+          if (!goal) return state;
+
+          const newCurrent = goal.current + amount;
+          const oldPercent = (goal.current / goal.target) * 100;
+          const newPercent = (newCurrent / goal.target) * 100;
+
+          // Check for milestone crossings (25%, 50%, 75%, 100%)
+          const milestones = [25, 50, 75, 100];
+          const crossedMilestones = milestones.filter(m => oldPercent < m && newPercent >= m);
+
+          // Update milestones reached
+          const existingMilestones = goal.milestonesReached || [];
+          const newMilestonesReached = [
+            ...existingMilestones,
+            ...crossedMilestones.map(m => ({
+              percent: m,
+              reachedAt: new Date().toISOString(),
+              celebrated: false,
+            }))
+          ];
+
+          return {
+            savingsGoals: state.savingsGoals.map((g) =>
+              g.id === id
+                ? {
+                    ...g,
+                    current: newCurrent,
+                    contributions: [...(g.contributions || []), contribution],
+                    milestonesReached: newMilestonesReached,
+                    lastContributionDate: new Date().toISOString(),
+                    contributionStreak: calculateContributionStreak(g.contributions || [], contribution),
+                  }
+                : g
+            ),
+          };
+        });
+
+        // Return milestone info for celebration
+        const goal = get().savingsGoals.find(g => g.id === id);
+        const oldPercent = ((goal?.current || 0) - amount) / (goal?.target || 1) * 100;
+        const newPercent = (goal?.current || 0) / (goal?.target || 1) * 100;
+        const milestones = [25, 50, 75, 100];
+        const crossedMilestones = milestones.filter(m => oldPercent < m && newPercent >= m);
+
+        return { crossedMilestones, newPercent, goal };
+      },
+
+      // Mark milestone as celebrated (so we don't show it again)
+      celebrateMilestone: (goalId, milestonePercent) => {
+        set((state) => ({
+          savingsGoals: state.savingsGoals.map((goal) =>
+            goal.id === goalId
+              ? {
+                  ...goal,
+                  milestonesReached: (goal.milestonesReached || []).map(m =>
+                    m.percent === milestonePercent ? { ...m, celebrated: true } : m
+                  )
+                }
+              : goal
+          ),
+        }));
+      },
+
+      // Withdraw from goal (e.g., if user needs money back)
+      withdrawFromGoal: (id, amount, reason = '') => {
+        const withdrawal = {
+          id: `withdraw-${Date.now()}`,
+          amount: -amount,
+          date: new Date().toISOString(),
+          note: reason,
+          isWithdrawal: true,
+        };
+
         set((state) => ({
           savingsGoals: state.savingsGoals.map((goal) =>
             goal.id === id
-              ? { ...goal, current: goal.current + amount }
+              ? {
+                  ...goal,
+                  current: Math.max(0, goal.current - amount),
+                  contributions: [...(goal.contributions || []), withdrawal],
+                }
               : goal
           ),
         }));

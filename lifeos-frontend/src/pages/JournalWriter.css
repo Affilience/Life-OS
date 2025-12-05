@@ -141,7 +141,6 @@
   flex: 1;
   width: 100%;
   border: none;
-  background: transparent;
   font-family: 'Caveat', cursive;
   font-size: 24px;
   line-height: 36px;
@@ -150,6 +149,17 @@
   outline: none;
   margin-bottom: 24px;
   font-weight: 500;
+  /* Lines that scroll with text - text sits ON the lines */
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 35px,
+    rgba(168, 213, 226, 0.3) 35px,
+    rgba(168, 213, 226, 0.3) 36px
+  );
+  background-attachment: local;
+  /* Position text baseline on the lines (36px line-height, text descends ~8px below baseline) */
+  padding-top: 28px;
+  background-position-y: 0;
 }
 
 .content-textarea::placeholder {
@@ -312,6 +322,14 @@
   .content-textarea {
     font-size: 16px;
     line-height: 30px;
+    /* Adjust lines for mobile */
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 29px,
+      rgba(168, 213, 226, 0.3) 29px,
+      rgba(168, 213, 226, 0.3) 30px
+    );
+    padding-top: 22px;
   }
 
   .writer-footer {

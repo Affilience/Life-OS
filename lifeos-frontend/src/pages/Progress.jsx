@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { User, Target, Trophy, TrendingUp } from 'lucide-react';
+import { User, Target, Trophy, TrendingUp, Sparkles } from 'lucide-react';
 import PageHeader from '../components/shared/PageHeader';
+import Card from '../components/ui/Card';
 import Skills from './Skills';
 import SkillTreeNew from './SkillTreeNew';
 import Streaks from './Streaks';
@@ -15,49 +16,56 @@ export default function Progress() {
   const evolutionStage = getStageByLevel(level, prestige || 0);
 
   const tabs = [
-    { id: 'avatar', name: 'Avatar', icon: User },
-    { id: 'skills', name: 'Skills', icon: Target },
-    { id: 'tree', name: 'Skill Tree', icon: Trophy },
-    { id: 'stats', name: 'Stats', icon: TrendingUp },
+    { id: 'avatar', label: 'Avatar', icon: User },
+    { id: 'skills', label: 'Skills', icon: Target },
+    { id: 'tree', label: 'Skill Tree', icon: Trophy },
+    { id: 'stats', label: 'Stats', icon: TrendingUp },
   ];
 
   return (
-    <div className="progress-page min-h-screen">
+    <div className="space-y-8 animate-fade-in">
+      <PageHeader
+        title="Progress"
+        stats={`Level ${level} · ${xp} XP`}
+        icon={Sparkles}
+        module="progress"
+        variant="icon"
+      />
+
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
-        <div className="flex overflow-x-auto hide-scrollbar">
-          {tabs.map(tab => {
+      <Card padding="none">
+        <div className="flex border-b border-border overflow-x-auto scrollbar-hide">
+          {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-purple-500/20 text-purple-400 border-b-2 border-purple-500'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
-                }`}
+                className={`
+                  flex items-center gap-2 px-6 py-4 text-sm font-medium
+                  border-b-2 -mb-px transition-all duration-fast whitespace-nowrap
+                  ${isActive
+                    ? 'border-purple-500 text-text-high bg-muted'
+                    : 'border-transparent text-text-med hover:text-text-high hover:bg-muted/50'
+                  }
+                `}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-sm font-semibold">{tab.name}</span>
+                <Icon size={18} />
+                <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Active Tab Content */}
-      <div className="tab-content p-4">
+        {/* Tab Content */}
+        <div className="p-6">
         {activeTab === 'avatar' && (
           <div className="avatar-tab space-y-6">
+            {/* Evolution Stage Title */}
             <div className="text-center">
-              <PageHeader
-                title={evolutionStage.name}
-                subtitle={evolutionStage.description}
-                module="progress"
-                variant="gradient"
-                className="text-center justify-center"
-              />
+              <h2 className="text-xl font-bold text-purple-400">{evolutionStage.name}</h2>
             </div>
 
             {/* Avatar Display */}
@@ -125,30 +133,8 @@ export default function Progress() {
         {activeTab === 'skills' && <Skills />}
         {activeTab === 'tree' && <SkillTreeNew />}
         {activeTab === 'stats' && <Streaks />}
-      </div>
-
-      <style>{`
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .tab-content {
-          animation: fadeIn 0.3s ease-in-out;
-        }
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+        </div>
+      </Card>
     </div>
   );
 }

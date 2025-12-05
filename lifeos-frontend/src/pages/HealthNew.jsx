@@ -46,8 +46,7 @@ const HealthNew = () => {
     <div className="space-y-8 animate-fade-in">
       <PageHeader
         title="Gravity"
-        subtitle="Track workouts, nutrition, sleep, and recovery"
-        stats={`${stats.workoutsThisWeek} workouts this week · ${stats.avgSleep}h avg sleep · ${stats.recovery}% recovery`}
+        stats={`${stats.workoutsThisWeek} workouts · ${stats.avgSleep}h sleep · ${stats.recovery}% recovery`}
         icon={Activity}
         module="health"
         variant="icon"

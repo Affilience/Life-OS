@@ -33,12 +33,13 @@
 .modal-content {
   display: inline-block;
   width: 100%;
-  max-width: 32rem;
+  max-width: min(32rem, calc(100vw - 2rem));
+  max-height: calc(100vh - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px) - 2rem);
+  overflow-y: auto;
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-default);
   border-radius: var(--border-radius-lg);
   text-align: left;
-  overflow: hidden;
   box-shadow: var(--shadow-xl);
   transform: scale(1);
   transition: all var(--duration-normal) var(--easing-ease);
@@ -50,6 +51,8 @@
   .modal-content {
     margin: var(--space-8) auto;
     vertical-align: middle;
+    max-width: 32rem;
+    max-height: calc(100vh - 4rem);
   }
 }
 

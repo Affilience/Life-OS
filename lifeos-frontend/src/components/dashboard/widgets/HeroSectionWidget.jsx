@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGamificationStore } from '../../../stores/gamificationStore';
 import { useAvatarStore } from '../../../stores/avatarStore';
 import { usePetStore, PET_DATABASE } from '../../../stores/petStore';
 import { getStageByLevel } from '../../../data/avatarEvolution';
 
-export default function HeroSectionWidget() {
+const HeroSectionWidget = memo(function HeroSectionWidget() {
   const navigate = useNavigate();
   const { level, currentXP, xpToNextLevel } = useGamificationStore();
   const { prestige = 0 } = useAvatarStore();
@@ -81,4 +81,6 @@ export default function HeroSectionWidget() {
       </div>
     </div>
   );
-}
+});
+
+export default HeroSectionWidget;

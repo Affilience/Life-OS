@@ -194,8 +194,7 @@ export default function HabitsNew() {
       >
         <PageHeader
           title="Orbit"
-          subtitle="Build momentum with daily habits and cosmic streaks"
-          stats={`${stats.completedToday}/${stats.totalHabits} completed · ${Math.round(stats.completionRate)}% · ${stats.longestActiveStreak} day best streak`}
+          stats={`${stats.completedToday}/${stats.totalHabits} completed · ${Math.round(stats.completionRate)}%`}
           icon={RotateCcw}
           module="habits"
           variant="icon"

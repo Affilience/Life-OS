@@ -25,6 +25,7 @@ export default function CosmicWeekView() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [editingBlock, setEditingBlock] = useState(null);
 
   // Get start of week (Monday)
   const getWeekStart = (date) => {
@@ -274,7 +275,14 @@ export default function CosmicWeekView() {
 
                   {/* Render Time Blocks */}
                   {dayBlocks.map((block) => (
-                    <CosmicTimeBlock key={block.id} block={block} />
+                    <CosmicTimeBlock
+                      key={block.id}
+                      block={block}
+                      onEdit={(block) => {
+                        setEditingBlock(block);
+                        setShowCreateModal(true);
+                      }}
+                    />
                   ))}
                 </div>
               </div>
@@ -283,13 +291,15 @@ export default function CosmicWeekView() {
         </div>
       </div>
 
-      {/* Create Time Block Modal */}
+      {/* Create/Edit Time Block Modal */}
       {showCreateModal && (
         <CreateTimeBlockModal
           initialData={selectedSlot}
+          editBlock={editingBlock}
           onClose={() => {
             setShowCreateModal(false);
             setSelectedSlot(null);
+            setEditingBlock(null);
           }}
         />
       )}

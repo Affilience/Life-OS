@@ -182,6 +182,14 @@
   cursor: grabbing;
 }
 
+/* Ensure buttons inside drag handle are clickable */
+.drag-handle button {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 100;
+}
+
 /* ===== Widget Card Base Styles ===== */
 .react-grid-item > div {
   height: 100%;

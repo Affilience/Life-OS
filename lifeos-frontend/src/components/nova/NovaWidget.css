@@ -4,6 +4,8 @@
   position: fixed;
   z-index: 9998;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  contain: layout style;
+  will-change: transform;
 }
 
 .nova-widget.dragging {
@@ -23,8 +25,8 @@
    ======================================== */
 
 .nova-minimized {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   cursor: grab;
   position: relative;
   user-select: none;
@@ -35,22 +37,29 @@
 }
 
 .nova-avatar-container {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(145deg, rgba(15, 12, 25, 0.95) 0%, rgba(25, 20, 40, 0.9) 100%);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 32px rgba(102, 126, 234, 0.4);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
-  animation: nova-float 3s ease-in-out infinite, nova-glow 2s ease-in-out infinite alternate;
+  animation: nova-float 4s ease-in-out infinite;
+  will-change: transform, box-shadow;
+  contain: layout paint;
+  border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
 .nova-avatar {
   width: 64px;
   height: 64px;
   animation: nova-breathe 2s ease-in-out infinite;
+  will-change: transform;
 }
 
 .nova-notification-badge {
@@ -107,11 +116,9 @@
 
 .nova-expanded {
   position: fixed;
-  bottom: 88px; /* Above bottom nav (64px) + some spacing */
-  right: 16px;
   width: 320px;
-  height: 480px;
-  max-height: calc(100vh - 120px);
+  height: auto;
+  min-height: 300px;
   background: #111111;
   border: 1px solid #2a2a2a;
   border-radius: 16px;
@@ -121,15 +128,7 @@
   overflow: hidden;
   animation: nova-expand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9999;
-}
-
-/* Desktop: above floating add button if present */
-@media (min-width: 769px) {
-  .nova-expanded {
-    bottom: 20px;
-    right: 20px;
-    max-height: calc(100vh - 60px);
-  }
+  /* Position is set via inline styles in JS */
 }
 
 .nova-header {
@@ -188,10 +187,17 @@
 
 @keyframes nova-glow {
   0% {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 32px rgba(102, 126, 234, 0.4);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(139, 92, 246, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
   100% {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 48px rgba(102, 126, 234, 0.6);
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(139, 92, 246, 0.5),
+      0 0 20px rgba(139, 92, 246, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 }
 
@@ -237,16 +243,10 @@
   }
 
   .nova-expanded {
-    position: fixed;
-    bottom: 88px; /* Above bottom nav */
-    left: 16px;
-    right: 16px;
-    top: auto;
-    transform: none;
-    width: auto;
-    max-width: none;
-    height: auto;
-    max-height: calc(100vh - 120px);
+    /* On mobile, use full width but keep JS-controlled vertical positioning */
+    width: calc(100% - 32px) !important;
+    left: 16px !important;
+    right: 16px !important;
   }
 }
 
@@ -263,4 +263,11 @@
   .nova-widget {
     transition: none;
   }
+}
+
+/* Pause animations when expanded to save GPU */
+.nova-widget.expanded .nova-avatar-container,
+.nova-widget.expanded .nova-avatar,
+.nova-widget.expanded .nova-notification-badge {
+  animation-play-state: paused;
 }

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Book,
   BookOpen,
@@ -10,6 +11,25 @@ import {
   Sparkles
 } from 'lucide-react';
 import MiniBarChart from '../shared/charts/MiniBarChart';
+import { useContentStore } from '../../stores/contentStore';
+import { useKnowledgeStore } from '../../stores/knowledgeStore';
+
+// Helper to get relative time string
+const getRelativeTime = (dateString) => {
+  if (!dateString) return 'Recently';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString();
+};
 
 /**
  * Knowledge Management Module Dashboard
@@ -27,23 +47,209 @@ import MiniBarChart from '../shared/charts/MiniBarChart';
  * - Learning streaks
  */
 export default function KnowledgeDashboard() {
-  // Mock data
-  const weeklyReadingHours = [
-    { label: 'Mon', value: 2.5 },
-    { label: 'Tue', value: 1.8 },
-    { label: 'Wed', value: 3.2 },
-    { label: 'Thu', value: 2.1 },
-    { label: 'Fri', value: 2.8 },
-    { label: 'Sat', value: 4.5 },
-    { label: 'Sun', value: 3.8 }
-  ];
+  const navigate = useNavigate();
 
-  const monthlyNotes = [
-    { label: 'W1', value: 12 },
-    { label: 'W2', value: 18 },
-    { label: 'W3', value: 15 },
-    { label: 'W4', value: 22 }
-  ];
+  // Connect to real stores
+  const { contentItems, stats, getInProgress, getCompleted, getImplementationRate } = useContentStore();
+  const knowledgeState = useKnowledgeStore();
+  // Provide safe defaults for potentially undefined properties
+  const notes = knowledgeState?.notes || [];
+  const ideas = knowledgeState?.ideas || [];
+  const highlights = knowledgeState?.highlights || [];
+
+  const handleCaptureNote = () => {
+    // Navigate to the Knowledge module where QuickCapture is available
+    navigate('/knowledge');
+  };
+
+  const handleBrowseLibrary = () => {
+    // Navigate to the Knowledge module library view
+    navigate('/knowledge');
+  };
+
+  // Get books in progress
+  const booksInProgress = useMemo(() => {
+    return contentItems
+      .filter(item => item.type === 'book' && item.status === 'in_progress')
+      .slice(0, 3);
+  }, [contentItems]);
+
+  // Calculate completed books this month
+  const booksCompletedThisMonth = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return contentItems.filter(
+      item => item.type === 'book' &&
+      item.status === 'completed' &&
+      new Date(item.dateCompleted) >= startOfMonth
+    ).length;
+  }, [contentItems]);
+
+  // Calculate total books completed
+  const totalBooksRead = useMemo(() => {
+    return contentItems.filter(item => item.type === 'book' && item.status === 'completed').length;
+  }, [contentItems]);
+
+  // Calculate implementation rate
+  const implementationRate = useMemo(() => {
+    const completed = contentItems.filter(item => item.status === 'completed');
+    const implemented = completed.filter(item => item.implementationStatus === 'implemented');
+    return completed.length > 0 ? Math.round((implemented.length / completed.length) * 100) : 0;
+  }, [contentItems]);
+
+  // Calculate weekly reading hours from content items with timeSpent
+  const weeklyReadingHours = useMemo(() => {
+    const now = new Date();
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const result = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dayStart = new Date(date.setHours(0, 0, 0, 0));
+      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+
+      // Sum timeSpent for content items updated on this day
+      const dayMinutes = contentItems.reduce((sum, item) => {
+        const itemDate = new Date(item.updatedAt || item.dateStarted || item.dateCompleted);
+        if (itemDate >= dayStart && itemDate <= dayEnd) {
+          return sum + (item.timeSpent || 0);
+        }
+        return sum;
+      }, 0);
+
+      result.push({
+        label: days[new Date(date).getDay()],
+        value: Math.round((dayMinutes / 60) * 10) / 10 // Convert to hours
+      });
+    }
+    return result;
+  }, [contentItems]);
+
+  // Calculate total weekly hours
+  const totalWeeklyHours = useMemo(() => {
+    return weeklyReadingHours.reduce((sum, day) => sum + day.value, 0).toFixed(1);
+  }, [weeklyReadingHours]);
+
+  // Get recent notes count per week this month
+  const monthlyNotes = useMemo(() => {
+    const now = new Date();
+    const weeks = [];
+    for (let i = 0; i < 4; i++) {
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - (7 * (3 - i)));
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 7);
+
+      const count = notes.filter(note => {
+        const noteDate = new Date(note.createdAt);
+        return noteDate >= weekStart && noteDate < weekEnd;
+      }).length;
+
+      weeks.push({ label: `W${i + 1}`, value: count || 0 });
+    }
+    return weeks;
+  }, [notes]);
+
+  // Get recent activity
+  const recentActivity = useMemo(() => {
+    const activities = [];
+
+    // Add recent notes
+    notes.slice(0, 2).forEach(note => {
+      activities.push({
+        type: 'Note',
+        title: note.title,
+        time: getRelativeTime(note.createdAt),
+        icon: '📝',
+        color: 'cyan'
+      });
+    });
+
+    // Add recent ideas
+    ideas.slice(0, 1).forEach(idea => {
+      activities.push({
+        type: 'Idea',
+        title: idea.title,
+        time: getRelativeTime(idea.createdAt),
+        icon: '💡',
+        color: 'purple'
+      });
+    });
+
+    return activities.slice(0, 3);
+  }, [notes, ideas]);
+
+  // Calculate knowledge connections by topic/tag
+  const knowledgeConnections = useMemo(() => {
+    const tagCounts = {};
+    const colors = ['yellow', 'blue', 'green', 'purple', 'cyan', 'pink'];
+
+    // Count tags from notes
+    notes.forEach(note => {
+      (note.tags || []).forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+
+    // Count tags from ideas
+    ideas.forEach(idea => {
+      (idea.tags || []).forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+
+    // Convert to sorted array and take top 4
+    return Object.entries(tagCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([topic, connections], index) => ({
+        topic,
+        connections,
+        color: colors[index % colors.length]
+      }));
+  }, [notes, ideas]);
+
+  // Calculate notes created this week
+  const notesThisWeek = useMemo(() => {
+    const now = new Date();
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return notes.filter(note => new Date(note.createdAt) >= weekAgo).length;
+  }, [notes]);
+
+  // Calculate learning streak (consecutive days with content activity)
+  const learningStreak = useMemo(() => {
+    const activityDates = new Set();
+
+    // Add dates from notes
+    notes.forEach(note => {
+      const date = new Date(note.createdAt).toDateString();
+      activityDates.add(date);
+    });
+
+    // Add dates from content consumption
+    contentItems.forEach(item => {
+      if (item.dateStarted) activityDates.add(new Date(item.dateStarted).toDateString());
+      if (item.dateCompleted) activityDates.add(new Date(item.dateCompleted).toDateString());
+    });
+
+    // Count consecutive days back from today
+    let streak = 0;
+    const today = new Date();
+
+    for (let i = 0; i < 365; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() - i);
+      if (activityDates.has(checkDate.toDateString())) {
+        streak++;
+      } else if (i > 0) {
+        break; // Only break if we've started counting
+      }
+    }
+
+    return streak;
+  }, [notes, contentItems]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0614] via-[#0a0a0a] to-[#0a0a0a] pb-20">
@@ -58,7 +264,7 @@ export default function KnowledgeDashboard() {
         </p>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="px-4 pt-6 pb-4 space-y-6">
         {/* Reading Progress Banner */}
         <div className="relative bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-blue-500/10 border border-blue-500/30 rounded-2xl p-6 overflow-hidden">
           {/* Decorative book spine pattern */}
@@ -75,39 +281,55 @@ export default function KnowledgeDashboard() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-bold text-white">Current Reading</h2>
-                <p className="text-sm text-blue-300">3 books in progress</p>
+                <p className="text-sm text-blue-300">{booksInProgress.length} book{booksInProgress.length !== 1 ? 's' : ''} in progress</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-white/60">This month</p>
-                <p className="text-2xl font-bold text-cyan-400">📚 2 completed</p>
+                <p className="text-2xl font-bold text-cyan-400">📚 {booksCompletedThisMonth} completed</p>
               </div>
             </div>
 
             {/* Mini book progress */}
             <div className="space-y-3">
-              {[
-                { title: 'Atomic Habits', author: 'James Clear', progress: 68, pages: '320 pages', color: 'cyan' },
-                { title: 'Deep Work', author: 'Cal Newport', progress: 45, pages: '296 pages', color: 'blue' },
-                { title: 'The Art of Learning', author: 'Josh Waitzkin', progress: 22, pages: '265 pages', color: 'indigo' }
-              ].map((book, index) => (
-                <div key={index} className="bg-[#0c0a10]/50 rounded-lg p-3 border border-white/5">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-white">{book.title}</p>
-                      <p className="text-xs text-white/50">{book.author} · {book.pages}</p>
+              {booksInProgress.length > 0 ? booksInProgress.map((book, index) => {
+                const colors = ['cyan', 'blue', 'indigo'];
+                const color = colors[index % colors.length];
+                // Calculate progress (default to 0 if no duration tracking)
+                const progress = book.duration > 0 ? Math.round((book.timeSpent / book.duration) * 100) : 0;
+                return (
+                  <div
+                    key={book.id}
+                    onClick={() => navigate('/knowledge')}
+                    className="bg-[#0c0a10]/50 rounded-lg p-3 border border-white/5 cursor-pointer hover:border-blue-500/30 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-white">{book.title}</p>
+                        <p className="text-xs text-white/50">{book.author || 'Unknown'} · {book.duration || '?'} pages</p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded bg-${color}-500/20 text-${color}-300`}>
+                        {progress}%
+                      </span>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded bg-${book.color}-500/20 text-${book.color}-300`}>
-                      {book.progress}%
-                    </span>
+                    <div className="h-1.5 bg-[#1a1724] rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r from-${color}-500 to-${color}-400 transition-all duration-500`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 bg-[#1a1724] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full bg-gradient-to-r from-${book.color}-500 to-${book.color}-400 transition-all duration-500`}
-                      style={{ width: `${book.progress}%` }}
-                    />
-                  </div>
+                );
+              }) : (
+                <div className="text-center py-4 text-white/50">
+                  <p>No books in progress</p>
+                  <button
+                    onClick={() => navigate('/knowledge')}
+                    className="text-blue-400 hover:text-blue-300 text-sm mt-2"
+                  >
+                    Add a book to read
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -116,19 +338,19 @@ export default function KnowledgeDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="bg-[#1a1724] border border-blue-500/20 rounded-xl p-4 text-center">
             <BookOpen className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">47</p>
+            <p className="text-2xl font-bold text-white">{totalBooksRead}</p>
             <p className="text-xs text-white/60 mt-1">Books Read</p>
           </div>
 
           <div className="bg-[#1a1724] border border-cyan-500/20 rounded-xl p-4 text-center">
             <FileText className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">284</p>
+            <p className="text-2xl font-bold text-white">{notes.length}</p>
             <p className="text-xs text-white/60 mt-1">Notes</p>
           </div>
 
           <div className="bg-[#1a1724] border border-indigo-500/20 rounded-xl p-4 text-center">
             <Lightbulb className="w-6 h-6 text-indigo-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">52</p>
+            <p className="text-2xl font-bold text-white">{ideas.length}</p>
             <p className="text-xs text-white/60 mt-1">Ideas</p>
           </div>
         </div>
@@ -144,8 +366,8 @@ export default function KnowledgeDashboard() {
               <p className="text-sm text-white/60 mt-1">Hours invested this week</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-white">20.7h</p>
-              <p className="text-sm text-blue-400">+3.2h from last week</p>
+              <p className="text-2xl font-bold text-white">{totalWeeklyHours}h</p>
+              <p className="text-sm text-blue-400">this week</p>
             </div>
           </div>
           <div className="h-32">
@@ -164,8 +386,8 @@ export default function KnowledgeDashboard() {
               <p className="text-sm text-white/60 mt-1">Notes created this month</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-white">67</p>
-              <p className="text-sm text-cyan-400">notes captured</p>
+              <p className="text-2xl font-bold text-white">{monthlyNotes.reduce((sum, w) => sum + w.value, 0)}</p>
+              <p className="text-sm text-cyan-400">notes this month</p>
             </div>
           </div>
           <div className="h-32">
@@ -184,19 +406,26 @@ export default function KnowledgeDashboard() {
               <p className="text-sm text-white/60 mt-1">Ideas put into action</p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-green-400">73%</p>
-              <p className="text-sm text-white/60">38/52 ideas implemented</p>
+              <p className="text-3xl font-bold text-green-400">{implementationRate}%</p>
+              <p className="text-sm text-white/60">
+                {contentItems.filter(i => i.implementationStatus === 'implemented').length}/
+                {contentItems.filter(i => i.status === 'completed').length} implemented
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <div className="bg-[#0c0a10]/50 rounded-lg p-3">
-              <p className="text-sm text-white/60">Applied This Month</p>
-              <p className="text-xl font-bold text-white">8</p>
+              <p className="text-sm text-white/60">Implementing</p>
+              <p className="text-xl font-bold text-white">
+                {contentItems.filter(i => i.implementationStatus === 'implementing').length}
+              </p>
             </div>
             <div className="bg-[#0c0a10]/50 rounded-lg p-3">
               <p className="text-sm text-white/60">Pending Review</p>
-              <p className="text-xl font-bold text-white">14</p>
+              <p className="text-xl font-bold text-white">
+                {contentItems.filter(i => i.status === 'completed' && i.implementationStatus === 'not_started').length}
+              </p>
             </div>
           </div>
         </div>
@@ -208,16 +437,11 @@ export default function KnowledgeDashboard() {
               <Sparkles className="w-5 h-5 text-purple-400" />
               Knowledge Connections
             </h3>
-            <span className="text-sm text-purple-400">+12 this week</span>
+            <span className="text-sm text-purple-400">+{notesThisWeek} this week</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              { topic: 'Productivity', connections: 24, color: 'yellow' },
-              { topic: 'Learning', connections: 18, color: 'blue' },
-              { topic: 'Business', connections: 15, color: 'green' },
-              { topic: 'Philosophy', connections: 12, color: 'purple' }
-            ].map((item, index) => (
+            {knowledgeConnections.length > 0 ? knowledgeConnections.map((item, index) => (
               <div key={index} className="bg-[#0c0a10] border border-white/5 rounded-lg p-3">
                 <p className="text-sm text-white/60">{item.topic}</p>
                 <div className="flex items-baseline gap-2 mt-1">
@@ -225,7 +449,12 @@ export default function KnowledgeDashboard() {
                   <span className={`text-xs text-${item.color}-400`}>links</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-2 text-center py-4 text-white/50">
+                <p>No tagged content yet</p>
+                <p className="text-sm mt-1">Add tags to notes and ideas to see connections</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -233,12 +462,12 @@ export default function KnowledgeDashboard() {
         <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
           <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
           <div className="space-y-3">
-            {[
-              { type: 'Note', title: 'Habit Formation Principles', time: '2h ago', icon: '📝', color: 'cyan' },
-              { type: 'Highlight', title: 'Deep Work Chapter 3', time: '5h ago', icon: '✨', color: 'yellow' },
-              { type: 'Idea', title: 'Morning Routine Optimization', time: 'Yesterday', icon: '💡', color: 'purple' }
-            ].map((activity, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 bg-[#0c0a10] rounded-lg border border-white/5 hover:border-blue-500/30 transition-colors">
+            {recentActivity.length > 0 ? recentActivity.map((activity, index) => (
+              <div
+                key={index}
+                onClick={() => navigate('/knowledge')}
+                className="flex items-center gap-3 p-3 bg-[#0c0a10] rounded-lg border border-white/5 hover:border-blue-500/30 transition-colors cursor-pointer"
+              >
                 <span className="text-2xl">{activity.icon}</span>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-white">{activity.title}</p>
@@ -246,23 +475,41 @@ export default function KnowledgeDashboard() {
                 </div>
                 <Bookmark className={`w-4 h-4 text-${activity.color}-400`} />
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-4 text-white/50">
+                <p>No recent activity</p>
+                <button
+                  onClick={() => navigate('/knowledge')}
+                  className="text-blue-400 hover:text-blue-300 text-sm mt-2"
+                >
+                  Start capturing knowledge
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Learning Streak */}
         <div className="bg-gradient-to-r from-orange-500/20 via-yellow-500/20 to-orange-500/20 border border-orange-500/30 rounded-2xl p-5 text-center">
           <p className="text-sm text-white/60 mb-2">Learning Streak</p>
-          <p className="text-5xl font-bold text-white mb-2">28 🔥</p>
-          <p className="text-sm text-orange-300">days of continuous learning!</p>
+          <p className="text-5xl font-bold text-white mb-2">{learningStreak} {learningStreak > 0 ? '🔥' : '📚'}</p>
+          <p className="text-sm text-orange-300">
+            {learningStreak > 0 ? 'days of continuous learning!' : 'Start learning today!'}
+          </p>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
+          <button
+            onClick={handleCaptureNote}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150"
+          >
             Capture Note
           </button>
-          <button className="bg-[#1a1724] border border-purple-500/30 text-white p-4 rounded-xl font-semibold hover:bg-purple-500/10 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150">
+          <button
+            onClick={handleBrowseLibrary}
+            className="bg-[#1a1724] border border-purple-500/30 text-white p-4 rounded-xl font-semibold hover:bg-purple-500/10 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150"
+          >
             Browse Library
           </button>
         </div>

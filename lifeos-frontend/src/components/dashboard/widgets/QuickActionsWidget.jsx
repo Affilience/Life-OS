@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Zap,
@@ -21,7 +21,7 @@ const QUICK_ACTIONS = [
   { id: 'expense', label: 'Expense', icon: Wallet, color: 'from-emerald-500 to-emerald-600', path: '/financial' },
 ];
 
-export default function QuickActionsWidget() {
+const QuickActionsWidget = memo(function QuickActionsWidget() {
   const navigate = useNavigate();
 
   return (
@@ -57,4 +57,6 @@ export default function QuickActionsWidget() {
       </div>
     </div>
   );
-}
+});
+
+export default QuickActionsWidget;

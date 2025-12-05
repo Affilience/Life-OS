@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
-import { Briefcase, Clock, FolderKanban, CheckSquare, DollarSign, TrendingUp } from 'lucide-react';
+import { Briefcase, Clock, FolderKanban } from 'lucide-react';
 import Card from '../components/ui/Card';
-import Stat from '../components/ui/Stat';
-import Badge from '../components/ui/Badge';
-import XPBar from '../components/app/XPBar';
 import PageHeader from '../components/shared/PageHeader';
 import WorkSessionsTab from '../components/productivity/WorkSessionsTab';
 import ProjectsTab from '../components/productivity/ProjectsTab';
-import TasksTab from '../components/productivity/TasksTab';
-import IncomeTab from '../components/productivity/IncomeTab';
 
 /**
  * Supernova - Productivity & Business
@@ -23,24 +18,19 @@ const ProductivityNew = () => {
   const stats = {
     todayFocus: 2.5,
     weeklyFocus: 18.5,
-    weeklyIncome: 1200,
-    activeTasks: 12,
     projectsActive: 3
   };
 
   const tabs = [
     { id: 'sessions', label: 'Work Sessions', icon: Clock },
-    { id: 'projects', label: 'Projects', icon: FolderKanban },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare },
-    { id: 'income', label: 'Income', icon: DollarSign }
+    { id: 'projects', label: 'Projects', icon: FolderKanban }
   ];
 
   return (
     <div className="space-y-8 animate-fade-in">
       <PageHeader
         title="Supernova"
-        subtitle="Track work sessions, projects, tasks, and income"
-        stats={`${stats.todayFocus}h today · ${stats.activeTasks} active tasks`}
+        stats={`${stats.todayFocus}h today · ${stats.projectsActive} projects`}
         icon={Briefcase}
         module="productivity"
         variant="icon"
@@ -76,8 +66,6 @@ const ProductivityNew = () => {
         <div className="p-6">
           {activeTab === 'sessions' && <WorkSessionsTab />}
           {activeTab === 'projects' && <ProjectsTab />}
-          {activeTab === 'tasks' && <TasksTab />}
-          {activeTab === 'income' && <IncomeTab />}
         </div>
       </Card>
     </div>

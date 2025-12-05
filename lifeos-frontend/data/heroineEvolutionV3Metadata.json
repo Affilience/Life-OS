@@ -1,0 +1,209 @@
+{
+  "version": "V3-Heroine-Regen",
+  "generated": "2025-12-02T17:42:09.538Z",
+  "totalStages": 40,
+  "successful": 37,
+  "failed": 3,
+  "stages": [
+    {
+      "level": 1,
+      "name": "Dreamer",
+      "filename": "heroine_v3_stage_1_dreamer.png"
+    },
+    {
+      "level": 2,
+      "name": "Seeker",
+      "filename": "heroine_v3_stage_2_seeker.png"
+    },
+    {
+      "level": 3,
+      "name": "Recruit",
+      "filename": "heroine_v3_stage_3_recruit.png"
+    },
+    {
+      "level": 4,
+      "name": "Trainee",
+      "filename": "heroine_v3_stage_4_trainee.png"
+    },
+    {
+      "level": 5,
+      "name": "Squire",
+      "filename": "heroine_v3_stage_5_squire.png"
+    },
+    {
+      "level": 6,
+      "name": "Initiate",
+      "filename": "heroine_v3_stage_6_initiate.png"
+    },
+    {
+      "level": 7,
+      "name": "Footman",
+      "filename": "heroine_v3_stage_7_footman.png"
+    },
+    {
+      "level": 8,
+      "name": "Scout",
+      "filename": "heroine_v3_stage_8_scout.png"
+    },
+    {
+      "level": 9,
+      "name": "Warrior",
+      "filename": "heroine_v3_stage_9_warrior.png"
+    },
+    {
+      "level": 10,
+      "name": "Swordsman",
+      "filename": "heroine_v3_stage_10_swordsman.png"
+    },
+    {
+      "level": 11,
+      "name": "Duelist",
+      "filename": "heroine_v3_stage_11_duelist.png"
+    },
+    {
+      "level": 12,
+      "name": "Berserker",
+      "filename": "heroine_v3_stage_12_berserker.png"
+    },
+    {
+      "level": 13,
+      "name": "Knight",
+      "filename": "heroine_v3_stage_13_knight.png"
+    },
+    {
+      "level": 14,
+      "name": "Ranger",
+      "filename": "heroine_v3_stage_14_ranger.png"
+    },
+    {
+      "level": 15,
+      "name": "Paladin",
+      "filename": "heroine_v3_stage_15_paladin.png"
+    },
+    {
+      "level": 16,
+      "name": "Monk",
+      "filename": "heroine_v3_stage_16_monk.png"
+    },
+    {
+      "level": 17,
+      "name": "Assassin",
+      "filename": "heroine_v3_stage_17_assassin.png"
+    },
+    {
+      "level": 18,
+      "name": "Battlemage",
+      "filename": "heroine_v3_stage_18_battlemage.png"
+    },
+    {
+      "level": 19,
+      "name": "Champion",
+      "filename": "heroine_v3_stage_19_champion.png"
+    },
+    {
+      "level": 20,
+      "name": "Veteran",
+      "filename": "heroine_v3_stage_20_veteran.png"
+    },
+    {
+      "level": 21,
+      "name": "Blade Master",
+      "filename": "heroine_v3_stage_21_blade_master.png"
+    },
+    {
+      "level": 22,
+      "name": "War Chief",
+      "filename": "heroine_v3_stage_22_war_chief.png"
+    },
+    {
+      "level": 23,
+      "name": "Dragon Knight",
+      "filename": "heroine_v3_stage_23_dragon_knight.png"
+    },
+    {
+      "level": 24,
+      "name": "Shadow Master",
+      "filename": "heroine_v3_stage_24_shadow_master.png"
+    },
+    {
+      "level": 25,
+      "name": "Holy Crusader",
+      "filename": "heroine_v3_stage_25_holy_crusader.png"
+    },
+    {
+      "level": 26,
+      "name": "Arcane Warrior",
+      "filename": "heroine_v3_stage_26_arcane_warrior.png"
+    },
+    {
+      "level": 27,
+      "name": "Beast Master",
+      "filename": "heroine_v3_stage_27_beast_master.png"
+    },
+    {
+      "level": 28,
+      "name": "Demon Hunter",
+      "filename": "heroine_v3_stage_28_demon_hunter.png"
+    },
+    {
+      "level": 29,
+      "name": "Storm Lord",
+      "filename": "heroine_v3_stage_29_storm_lord.png"
+    },
+    {
+      "level": 30,
+      "name": "Warlord",
+      "filename": "heroine_v3_stage_30_warlord.png"
+    },
+    {
+      "level": 31,
+      "name": "Sword Saint",
+      "filename": "heroine_v3_stage_31_sword_saint.png"
+    },
+    {
+      "level": 32,
+      "name": "Phoenix Knight",
+      "filename": "heroine_v3_stage_32_phoenix_knight.png"
+    },
+    {
+      "level": 33,
+      "name": "Void Stalker",
+      "filename": "heroine_v3_stage_33_void_stalker.png"
+    },
+    {
+      "level": 34,
+      "name": "Celestial Guardian",
+      "filename": "heroine_v3_stage_34_celestial_guardian.png"
+    },
+    {
+      "level": 35,
+      "name": "Titan Slayer",
+      "filename": "heroine_v3_stage_35_titan_slayer.png"
+    },
+    {
+      "level": 36,
+      "name": "Elemental Lord",
+      "filename": "heroine_v3_stage_36_elemental_lord.png"
+    },
+    {
+      "level": 37,
+      "name": "Immortal Champion",
+      "filename": "heroine_v3_stage_37_immortal_champion.png"
+    },
+    {
+      "level": 38,
+      "name": "Godslayer",
+      "filename": "heroine_v3_stage_38_godslayer.png"
+    },
+    {
+      "level": 39,
+      "name": "Ascendant",
+      "filename": "heroine_v3_stage_39_ascendant.png"
+    },
+    {
+      "level": 40,
+      "name": "Avatar of Mastery",
+      "filename": "heroine_v3_stage_40_avatar_of_mastery.png"
+    }
+  ]
+}

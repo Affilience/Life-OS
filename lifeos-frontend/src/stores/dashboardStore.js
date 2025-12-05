@@ -1,6 +1,96 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// Helper function to compact layouts (remove gaps)
+function compactLayout(layout, cols) {
+  // Sort items by y then x
+  const sorted = [...layout].sort((a, b) => a.y - b.y || a.x - b.x);
+  const compacted = [];
+  const occupied = new Map(); // Map of "x,y" -> true for occupied cells
+
+  // Helper to check if a position is valid
+  const canPlace = (item, x, y) => {
+    if (x + item.w > cols) return false;
+    for (let dx = 0; dx < item.w; dx++) {
+      for (let dy = 0; dy < item.h; dy++) {
+        if (occupied.has(`${x + dx},${y + dy}`)) return false;
+      }
+    }
+    return true;
+  };
+
+  // Helper to mark cells as occupied
+  const markOccupied = (item, x, y) => {
+    for (let dx = 0; dx < item.w; dx++) {
+      for (let dy = 0; dy < item.h; dy++) {
+        occupied.set(`${x + dx},${y + dy}`, true);
+      }
+    }
+  };
+
+  // Find the first valid position for each item
+  const findPosition = (item) => {
+    for (let y = 0; y < 100; y++) {
+      for (let x = 0; x <= cols - item.w; x++) {
+        if (canPlace(item, x, y)) {
+          return { x, y };
+        }
+      }
+    }
+    return { x: 0, y: 0 }; // Fallback
+  };
+
+  // Place each item at the first available position
+  for (const item of sorted) {
+    const pos = findPosition(item);
+    const compactedItem = { ...item, x: pos.x, y: pos.y };
+    markOccupied(item, pos.x, pos.y);
+    compacted.push(compactedItem);
+  }
+
+  return compacted;
+}
+
+// Helper to find optimal position for a new widget
+function findOptimalPosition(layout, widget, cols) {
+  const w = Math.min(widget.minW || 2, cols);
+  const h = widget.minH || 2;
+  const occupied = new Map();
+
+  // Mark all occupied cells
+  for (const item of layout) {
+    for (let dx = 0; dx < item.w; dx++) {
+      for (let dy = 0; dy < item.h; dy++) {
+        occupied.set(`${item.x + dx},${item.y + dy}`, true);
+      }
+    }
+  }
+
+  // Find the first position that fits
+  const canPlace = (x, y) => {
+    if (x + w > cols) return false;
+    for (let dx = 0; dx < w; dx++) {
+      for (let dy = 0; dy < h; dy++) {
+        if (occupied.has(`${x + dx},${y + dy}`)) return false;
+      }
+    }
+    return true;
+  };
+
+  // Search for first available position (row by row)
+  for (let y = 0; y < 100; y++) {
+    for (let x = 0; x <= cols - w; x++) {
+      if (canPlace(x, y)) {
+        return { x, y, w, h };
+      }
+    }
+  }
+
+  // Fallback: place at bottom
+  const maxY = layout.reduce((max, item) => Math.max(max, item.y + item.h), 0);
+  return { x: 0, y: maxY, w, h };
+}
+
 // Define all available dashboard widgets with grid layout properties
 export const DASHBOARD_WIDGETS = {
   heroSection: {
@@ -297,6 +387,22 @@ const useDashboardStore = create(
         });
       },
 
+      // Force compact all layouts (remove gaps)
+      compactAllLayouts: () => {
+        const state = get();
+        const newLayouts = { ...state.layouts };
+
+        Object.keys(newLayouts).forEach((breakpoint) => {
+          const cols = breakpoint === 'lg' ? 4 : breakpoint === 'md' ? 2 : 1;
+          newLayouts[breakpoint] = compactLayout(newLayouts[breakpoint] || [], cols);
+        });
+
+        set({
+          layouts: newLayouts,
+          currentPreset: null,
+        });
+      },
+
       // Undo last layout change
       undoLayout: () => {
         const state = get();
@@ -339,22 +445,27 @@ const useDashboardStore = create(
           const widget = DASHBOARD_WIDGETS[widgetId];
           const newLayouts = { ...state.layouts };
 
-          // Add to each breakpoint at the bottom
+          // Add to each breakpoint at the optimal position
           Object.keys(newLayouts).forEach((breakpoint) => {
             const existingItems = newLayouts[breakpoint] || [];
-            const maxY = existingItems.reduce((max, item) => Math.max(max, item.y + item.h), 0);
             const cols = breakpoint === 'lg' ? 4 : breakpoint === 'md' ? 2 : 1;
+
+            // Find optimal position to fill gaps
+            const pos = findOptimalPosition(existingItems, widget, cols);
 
             newLayouts[breakpoint] = [
               ...existingItems,
               {
                 i: widgetId,
-                x: 0,
-                y: maxY,
-                w: Math.min(widget.minW || 2, cols),
-                h: widget.minH || 2,
+                x: pos.x,
+                y: pos.y,
+                w: pos.w,
+                h: pos.h,
               },
             ];
+
+            // Re-compact the layout to eliminate gaps
+            newLayouts[breakpoint] = compactLayout(newLayouts[breakpoint], cols);
           });
 
           set({
@@ -363,12 +474,18 @@ const useDashboardStore = create(
             currentPreset: null,
           });
         } else {
-          // Remove from layouts
+          // Remove from layouts and re-compact
           const newLayouts = { ...state.layouts };
           Object.keys(newLayouts).forEach((breakpoint) => {
+            const cols = breakpoint === 'lg' ? 4 : breakpoint === 'md' ? 2 : 1;
+
+            // Filter out the removed widget
             newLayouts[breakpoint] = (newLayouts[breakpoint] || []).filter(
               (item) => item.i !== widgetId
             );
+
+            // Re-compact to fill the gap
+            newLayouts[breakpoint] = compactLayout(newLayouts[breakpoint], cols);
           });
 
           set({

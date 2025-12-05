@@ -12,6 +12,7 @@ const EntryHistory = () => {
   const [filterMood, setFilterMood] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
   const [selectedTag, setSelectedTag] = useState('all');
+  const [expandedEntryId, setExpandedEntryId] = useState(null);
 
   // Mock journal entries data
   const [entries] = useState([
@@ -272,8 +273,9 @@ const EntryHistory = () => {
 
                 <div className="entry-content">
                   <p className="entry-preview">
-                    {entry.content.substring(0, 200)}
-                    {entry.content.length > 200 && '...'}
+                    {expandedEntryId === entry.id
+                      ? entry.content
+                      : entry.content.substring(0, 200) + (entry.content.length > 200 ? '...' : '')}
                   </p>
                 </div>
 
@@ -287,11 +289,19 @@ const EntryHistory = () => {
                     ))}
                   </div>
                   <div className="entry-actions">
-                    <Button variant="ghost" size="small">
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => alert(`Edit entry: "${entry.title}"\n\nEntry editing will be available in a future update.`)}
+                    >
                       Edit
                     </Button>
-                    <Button variant="ghost" size="small">
-                      View
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => setExpandedEntryId(expandedEntryId === entry.id ? null : entry.id)}
+                    >
+                      {expandedEntryId === entry.id ? 'Collapse' : 'View'}
                     </Button>
                   </div>
                 </div>

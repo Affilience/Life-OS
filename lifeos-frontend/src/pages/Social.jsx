@@ -20,8 +20,11 @@ import {
   Clock,
   Zap,
   Star,
-  Send
+  Send,
+  Heart
 } from 'lucide-react';
+import PageHeader from '../components/shared/PageHeader';
+import Card from '../components/ui/Card';
 
 export default function Social() {
   const [activeTab, setActiveTab] = useState('feed');
@@ -165,21 +168,18 @@ export default function Social() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c0a10] pb-20">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
-        <div className="px-6 py-4">
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-purple-400" />
-            Social
-          </h1>
-          <p className="text-sm text-white/60 mt-1">
-            Connect, compete, and conquer together
-          </p>
-        </div>
+    <div className="space-y-8 animate-fade-in">
+      <PageHeader
+        title="Social"
+        stats={`${friends.length} friends · Rank #${userStats.rank}`}
+        icon={Heart}
+        module="social"
+        variant="icon"
+      />
 
-        {/* Tab Navigation */}
-        <div className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-hide">
+      {/* Tab Navigation */}
+      <Card padding="none">
+        <div className="flex border-b border-border overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -189,23 +189,23 @@ export default function Social() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
-                  whitespace-nowrap transition-all duration-150
+                  flex items-center gap-2 px-6 py-4 text-sm font-medium
+                  border-b-2 -mb-px transition-all duration-fast whitespace-nowrap
                   ${isActive
-                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
-                    : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10 hover:border-purple-500/30'
+                    ? 'border-pink-500 text-text-high bg-muted'
+                    : 'border-transparent text-text-med hover:text-text-high hover:bg-muted/50'
                   }
                 `}
               >
-                <Icon className="w-4 h-4" />
+                <Icon size={18} />
                 <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
-      </div>
 
-      <div className="p-6">
+        {/* Tab Content */}
+        <div className="p-6">
         {/* FEED TAB */}
         {activeTab === 'feed' && (
           <div className="space-y-6">
@@ -606,7 +606,8 @@ export default function Social() {
             </button>
           </div>
         )}
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }

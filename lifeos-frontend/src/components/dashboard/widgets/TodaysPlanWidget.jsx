@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ChevronRight, Circle, Clock, Moon, Plus } from 'lucide-react';
 import useDailyTasksStore, { TASK_CATEGORIES, PRIORITY_LEVELS } from '../../../stores/dailyTasksStore';
 
-export default function TodaysPlanWidget() {
+function TodaysPlanWidget() {
   const navigate = useNavigate();
   const { getTodayTasks, getTodayStats, toggleTask } = useDailyTasksStore();
 
@@ -22,7 +22,7 @@ export default function TodaysPlanWidget() {
           Today's Plan
         </h3>
         <button
-          onClick={() => navigate('/productivity')}
+          onClick={() => navigate('/quests')}
           className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
         >
           {totalTasks > 0 ? `${completedTasks}/${totalTasks}` : 'Plan Day'}
@@ -118,7 +118,7 @@ export default function TodaysPlanWidget() {
               })}
               {todaysTasks.length > 5 && (
                 <button
-                  onClick={() => navigate('/productivity')}
+                  onClick={() => navigate('/quests')}
                   className="w-full text-center text-xs text-purple-400 hover:text-purple-300 py-1"
                 >
                   +{todaysTasks.length - 5} more
@@ -133,7 +133,7 @@ export default function TodaysPlanWidget() {
           <p className="text-white/60 text-sm mb-1">No tasks planned</p>
           <p className="text-white/40 text-xs mb-3">Plan your day for better productivity</p>
           <button
-            onClick={() => navigate('/productivity')}
+            onClick={() => navigate('/quests')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-500 hover:bg-violet-600 text-white text-xs rounded-lg transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -144,3 +144,5 @@ export default function TodaysPlanWidget() {
     </div>
   );
 }
+
+export default memo(TodaysPlanWidget);

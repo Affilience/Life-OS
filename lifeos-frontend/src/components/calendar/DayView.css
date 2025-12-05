@@ -141,6 +141,40 @@
   }
 }
 
+@media (max-width: 480px) {
+  .day-view {
+    gap: var(--space-4);
+  }
+
+  .day-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .day-timeline {
+    grid-template-columns: 40px 1fr;
+    gap: var(--space-2);
+  }
+
+  .time-label {
+    font-size: 9px;
+    height: 50px;
+  }
+
+  .hour-slot {
+    height: 50px;
+  }
+
+  .schedule-column {
+    min-height: 500px;
+  }
+
+  .summary-stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+}
+
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .hour-divider {

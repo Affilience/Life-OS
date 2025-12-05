@@ -1,13 +1,11 @@
 import React from 'react';
 import {
   Dumbbell,
-  Heart,
-  Moon,
   Flame,
   TrendingUp,
   Droplet,
   Apple,
-  Activity
+  Scale
 } from 'lucide-react';
 import MiniLineChart from '../shared/charts/MiniLineChart';
 
@@ -18,13 +16,11 @@ import MiniLineChart from '../shared/charts/MiniLineChart';
  * health metrics in a grid, and body vitals monitoring
  *
  * Key KPIs:
- * - Workouts completed
+ * - Workouts completed (weekly)
  * - Active calories burned
- * - Sleep quality
- * - Heart rate zones
  * - Nutrition macros
  * - Hydration
- * - Recovery score
+ * - Weight tracking
  * - Weekly activity
  */
 export default function HealthDashboard() {
@@ -37,16 +33,6 @@ export default function HealthDashboard() {
     { label: 'Fri', value: 2900 },
     { label: 'Sat', value: 2200 },
     { label: 'Sun', value: 1800 }
-  ];
-
-  const sleepData = [
-    { label: 'Mon', value: 7.2 },
-    { label: 'Tue', value: 8.1 },
-    { label: 'Wed', value: 6.8 },
-    { label: 'Thu', value: 7.5 },
-    { label: 'Fri', value: 7.8 },
-    { label: 'Sat', value: 8.5 },
-    { label: 'Sun', value: 8.2 }
   ];
 
   // Circular progress component
@@ -103,7 +89,7 @@ export default function HealthDashboard() {
         </p>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="px-4 pt-6 pb-4 space-y-6">
         {/* Today's Summary Banner */}
         <div className="bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-green-500/20 border border-green-500/30 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
@@ -118,7 +104,7 @@ export default function HealthDashboard() {
           </div>
 
           {/* Activity Rings */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
             <CircularProgress
               value={2850}
               max={3000}
@@ -127,43 +113,18 @@ export default function HealthDashboard() {
               color="orange"
             />
             <CircularProgress
-              value={14}
-              max={16}
-              label="Workouts"
+              value={4}
+              max={5}
+              label="Weekly Workouts"
               icon={Dumbbell}
               color="green"
-              unit="/16"
-            />
-            <CircularProgress
-              value={8.2}
-              max={8}
-              label="Sleep"
-              icon={Moon}
-              color="indigo"
-              unit="h"
+              unit="/5"
             />
           </div>
         </div>
 
         {/* Body Vitals Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-[#1a1724] border border-red-500/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Heart className="w-5 h-5 text-red-400" />
-              <h4 className="text-sm font-semibold text-white">Heart Rate</h4>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-white">72</p>
-                <p className="text-sm text-white/60">bpm</p>
-              </div>
-              <div className="flex gap-2 text-xs">
-                <span className="bg-red-500/20 text-red-300 px-2 py-1 rounded">Resting</span>
-                <span className="text-white/50">↓ 3 from avg</span>
-              </div>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="bg-[#1a1724] border border-blue-500/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Droplet className="w-5 h-5 text-blue-400" />
@@ -194,17 +155,17 @@ export default function HealthDashboard() {
             </div>
           </div>
 
-          <div className="bg-[#1a1724] border border-purple-500/30 rounded-xl p-4">
+          <div className="bg-[#1a1724] border border-emerald-500/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Activity className="w-5 h-5 text-purple-400" />
-              <h4 className="text-sm font-semibold text-white">Recovery</h4>
+              <Scale className="w-5 h-5 text-emerald-400" />
+              <h4 className="text-sm font-semibold text-white">Weight</h4>
             </div>
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-white">87</p>
-                <p className="text-sm text-white/60">/ 100</p>
+                <p className="text-3xl font-bold text-white">165</p>
+                <p className="text-sm text-white/60">lbs</p>
               </div>
-              <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Ready</span>
+              <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">↓ 2 this week</span>
             </div>
           </div>
         </div>
@@ -225,24 +186,6 @@ export default function HealthDashboard() {
             </div>
           </div>
           <MiniLineChart data={weeklyCalories} color="orange" filled showDots height={80} />
-        </div>
-
-        {/* Sleep Quality */}
-        <div className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Moon className="w-5 h-5 text-indigo-400" />
-                Sleep Quality
-              </h3>
-              <p className="text-sm text-white/60 mt-1">Hours per night</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-white">7.7h</p>
-              <p className="text-sm text-indigo-400">avg this week</p>
-            </div>
-          </div>
-          <MiniLineChart data={sleepData} color="indigo" filled showDots height={80} />
         </div>
 
         {/* Macros Breakdown */}

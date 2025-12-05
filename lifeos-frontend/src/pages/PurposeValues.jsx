@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePurposeStore } from '../stores/purposeStore';
 import {
   Compass,
@@ -19,33 +20,30 @@ import {
   Star,
   AlertCircle,
   Lightbulb,
-  Activity,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Stat from '../components/ui/Stat';
 import Badge from '../components/ui/Badge';
-import CosmicBackground from '../components/ui/CosmicBackground';
-import IkigaiDiagram from '../components/purpose/IkigaiDiagram';
 import ValuesAssessment from '../components/purpose/ValuesAssessment';
 
 const PurposeValues = () => {
-  const [activeView, setActiveView] = useState('overview'); // overview, mission, values, vision, decisions
+  const [activeTab, setActiveTab] = useState('overview');
+  const { coreValues, decisions } = usePurposeStore();
+  const navigate = useNavigate();
 
-  const views = [
-    { id: 'overview', label: 'Overview', icon: Compass },
-    { id: 'ikigai', label: 'Ikigai', icon: Activity },
-    { id: 'mission', label: 'Mission', icon: Target },
-    { id: 'values', label: 'Values', icon: Heart },
-    { id: 'vision', label: 'Vision', icon: TrendingUp },
-    { id: 'decisions', label: 'Decisions', icon: Brain },
+  const tabs = [
+    { id: 'overview', name: 'Overview', icon: Compass },
+    { id: 'resolutions', name: 'Resolutions', icon: Target, isLink: true, href: '/resolutions' },
+    { id: 'mission', name: 'Mission', icon: Target },
+    { id: 'values', name: 'Values', icon: Heart },
+    { id: 'vision', name: 'Vision', icon: TrendingUp },
+    { id: 'decisions', name: 'Decisions', icon: Brain },
   ];
 
   const renderView = () => {
-    switch (activeView) {
+    switch (activeTab) {
       case 'overview':
         return <OverviewView />;
-      case 'ikigai':
-        return <IkigaiView />;
       case 'mission':
         return <MissionView />;
       case 'values':
@@ -60,85 +58,66 @@ const PurposeValues = () => {
   };
 
   return (
-    <div className="relative space-y-6 animate-fade-in">
-      <CosmicBackground variant="purple" />
-
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-            <Compass size={24} className="text-purple-400" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tighter" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
-              North Star
-            </h1>
-            <p className="mt-1" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
-              Define who you are, what you stand for, and where you're going
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* View Navigation */}
-      <Card padding="none">
-        <div className="flex" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-          {views.map((view) => {
-            const Icon = view.icon;
-            const isActive = activeView === view.id;
+    <div className="purpose-page min-h-screen bg-[#0c0a10]">
+      {/* Tab Navigation */}
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+        <div className="flex overflow-x-auto hide-scrollbar">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
             return (
               <button
-                key={view.id}
-                onClick={() => setActiveView(view.id)}
-                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 -mb-px`}
-                style={{
-                  borderColor: isActive ? '#8b5cf6' : 'transparent',
-                  color: isActive ? 'rgba(255, 255, 255, 0.87)' : 'rgba(255, 255, 255, 0.60)',
-                  background: isActive ? 'rgba(39, 39, 42, 0.4)' : 'transparent',
-                  transition: 'all 150ms',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.87)';
-                    e.currentTarget.style.background = 'rgba(39, 39, 42, 0.2)';
+                key={tab.id}
+                onClick={() => {
+                  if (tab.isLink && tab.href) {
+                    navigate(tab.href);
+                  } else {
+                    setActiveTab(tab.id);
                   }
                 }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.60)';
-                    e.currentTarget.style.background = 'transparent';
-                  }
-                }}
+                className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-indigo-500/20 text-indigo-400 border-b-2 border-indigo-500'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
+                }`}
               >
-                <Icon size={18} />
-                <span>{view.label}</span>
+                <Icon className="w-5 h-5" />
+                <span className="text-sm font-semibold">{tab.name}</span>
               </button>
             );
           })}
         </div>
+      </div>
 
-        <div className="p-6">{renderView()}</div>
-      </Card>
+      {/* Active Tab Content */}
+      <div className="tab-content">
+        {renderView()}
+      </div>
+
+      <style>{`
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .tab-content {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };
-
-// Ikigai View
-function IkigaiView() {
-  return (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
-          Find Your Ikigai
-        </h2>
-        <p style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
-          Discover your life's purpose at the intersection of passion, mission, vocation, and profession
-        </p>
-      </div>
-      <IkigaiDiagram />
-    </div>
-  );
-}
 
 // Overview View
 function OverviewView() {

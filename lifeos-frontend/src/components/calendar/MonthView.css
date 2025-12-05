@@ -180,6 +180,35 @@
   }
 }
 
+@media (max-width: 480px) {
+  .month-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .calendar-day {
+    min-height: 60px;
+    padding: 2px;
+  }
+
+  .day-number {
+    font-size: 10px;
+  }
+
+  .calendar-header-cell {
+    padding: var(--space-1);
+    font-size: 9px;
+  }
+
+  .event-dots {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .event-more {
+    font-size: 8px;
+  }
+}
+
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .calendar-day.empty {

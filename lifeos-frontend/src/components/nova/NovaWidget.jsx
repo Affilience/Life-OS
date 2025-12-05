@@ -74,6 +74,7 @@ export default function NovaWidget() {
     y: window.innerHeight - bottomOffset - 80
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [wasDragged, setWasDragged] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [emotionalState, setEmotionalState] = useState('happy');
   const [hasNotification, setHasNotification] = useState(false);
@@ -106,10 +107,57 @@ export default function NovaWidget() {
   const evolutionStage = getEvolutionStage();
   const spritePath = `/assets/nova/nova_${evolutionStage}.png`;
 
-  // Handle dragging
+  // Calculate expanded view position based on avatar position
+  const getExpandedPosition = () => {
+    const chatHeight = 480; // Approximate height of expanded chat
+    const chatWidth = 320;
+    const avatarSize = 72;
+    const padding = 16;
+    const bottomNavHeight = window.innerWidth <= 768 ? 80 : 0;
+
+    // Check if there's enough space below the avatar
+    const spaceBelow = window.innerHeight - position.y - avatarSize - bottomNavHeight;
+    const spaceAbove = position.y;
+
+    // Determine if we should show above or below
+    const openAbove = spaceBelow < chatHeight && spaceAbove > spaceBelow;
+
+    // Calculate horizontal position (try to align with avatar, but stay on screen)
+    let left = position.x + avatarSize - chatWidth; // Align right edge with avatar
+    if (left < padding) left = padding;
+    if (left + chatWidth > window.innerWidth - padding) {
+      left = window.innerWidth - chatWidth - padding;
+    }
+
+    if (openAbove) {
+      // Open above the avatar
+      const maxHeight = Math.min(chatHeight, spaceAbove - padding);
+      return {
+        left: `${left}px`,
+        bottom: `${window.innerHeight - position.y + padding}px`,
+        top: 'auto',
+        right: 'auto',
+        maxHeight: `${maxHeight}px`,
+      };
+    } else {
+      // Open below the avatar (default behavior)
+      const maxHeight = Math.min(chatHeight, spaceBelow - padding);
+      return {
+        left: `${left}px`,
+        top: `${position.y + avatarSize + padding}px`,
+        bottom: 'auto',
+        right: 'auto',
+        maxHeight: `${maxHeight}px`,
+      };
+    }
+  };
+
+  // Handle dragging - use standard mousedown/mousemove/mouseup pattern
   const handleMouseDown = (e) => {
     if (isExpanded || isFullscreen) return;
+    e.preventDefault(); // Prevent text selection during drag
     setIsDragging(true);
+    setWasDragged(false);
     setDragOffset({
       x: e.clientX - position.x,
       y: e.clientY - position.y
@@ -118,36 +166,46 @@ export default function NovaWidget() {
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (isDragging) {
-        const newX = e.clientX - dragOffset.x;
-        const newY = e.clientY - dragOffset.y;
+      if (!isDragging) return;
 
-        const maxX = window.innerWidth - 100;
-        // Keep above bottom nav on mobile (64px nav + 16px padding + widget height)
-        const bottomNavHeight = window.innerWidth <= 768 ? 80 : 0;
-        const maxY = window.innerHeight - 100 - bottomNavHeight;
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
 
-        setPosition({
-          x: Math.max(0, Math.min(newX, maxX)),
-          y: Math.max(0, Math.min(newY, maxY))
-        });
+      const maxX = window.innerWidth - 100;
+      // Keep above bottom nav on mobile (64px nav + 16px padding + widget height)
+      const bottomNavHeight = window.innerWidth <= 768 ? 80 : 0;
+      const maxY = window.innerHeight - 100 - bottomNavHeight;
+
+      // Check if we've moved enough to consider it a drag (5px threshold)
+      const deltaX = Math.abs(newX - position.x);
+      const deltaY = Math.abs(newY - position.y);
+      if (deltaX > 5 || deltaY > 5) {
+        setWasDragged(true);
       }
+
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
+      if (isDragging) {
+        setIsDragging(false);
+        // Reset wasDragged after a short delay to allow click event to check it
+        setTimeout(() => setWasDragged(false), 100);
+      }
     };
 
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
+    // Always add listeners when component mounts, check isDragging inside handlers
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, position]);
 
   // Build system prompt with real user context
   const buildSystemPrompt = () => {
@@ -368,45 +426,52 @@ CONTEXT-AWARE RESPONSES:
   }
 
   return (
-    <div
-      ref={widgetRef}
-      className={`nova-widget ${isExpanded ? 'expanded' : 'minimized'} ${isDragging ? 'dragging' : ''}`}
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
-      }}
-    >
-      {!isExpanded ? (
-        /* Minimized State */
+    <>
+      {/* Minimized Avatar - Always rendered when not expanded */}
+      {!isExpanded && (
         <div
-          className="nova-minimized"
-          onMouseDown={handleMouseDown}
-          onClick={(e) => {
-            if (!isDragging) {
-              setIsExpanded(true);
-              setHasNotification(false);
-            }
-          }}
-          onDoubleClick={() => {
-            setIsFullscreen(true);
-            setIsExpanded(false);
+          ref={widgetRef}
+          className={`nova-widget minimized ${isDragging ? 'dragging' : ''}`}
+          style={{
+            left: `${position.x}px`,
+            top: `${position.y}px`
           }}
         >
-          <div className="nova-avatar-container">
-            <img
-              src={spritePath}
-              alt="Nova"
-              className="nova-avatar pixelated"
-            />
-            {hasNotification && <div className="nova-notification-badge" />}
-          </div>
-          <div className="nova-speech-bubble">
-            {EMOTIONAL_STATES[emotionalState].emoji} {currentNudge ? currentNudge.message : EMOTIONAL_STATES[emotionalState].message}
+          <div
+            className="nova-minimized"
+            onMouseDown={handleMouseDown}
+            onClick={(e) => {
+              if (!wasDragged) {
+                setIsExpanded(true);
+                setHasNotification(false);
+              }
+            }}
+            onDoubleClick={() => {
+              setIsFullscreen(true);
+              setIsExpanded(false);
+            }}
+          >
+            <div className="nova-avatar-container">
+              <img
+                src={spritePath}
+                alt="Nova"
+                className="nova-avatar pixelated"
+              />
+              {hasNotification && <div className="nova-notification-badge" />}
+            </div>
+            <div className="nova-speech-bubble">
+              {EMOTIONAL_STATES[emotionalState].emoji} {currentNudge ? currentNudge.message : EMOTIONAL_STATES[emotionalState].message}
+            </div>
           </div>
         </div>
-      ) : (
-        /* Expanded State */
-        <div className="nova-expanded">
+      )}
+
+      {/* Expanded Chat - Rendered separately with fixed positioning */}
+      {isExpanded && (
+        <div
+          className="nova-expanded"
+          style={getExpandedPosition()}
+        >
           {/* Header */}
           <div className="nova-header">
             <div className="flex items-center gap-2">
@@ -525,7 +590,7 @@ CONTEXT-AWARE RESPONSES:
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

@@ -90,7 +90,7 @@ export default function PurposeDashboard() {
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="px-4 pt-6 pb-4 space-y-6">
         {/* Top Stats - 2x2 Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
@@ -261,10 +261,16 @@ export default function PurposeDashboard() {
               "Build a successful software business while maintaining freedom, continuous growth, and financial independence. Make meaningful impact through technology and innovation."
             </p>
             <div className="flex items-center gap-3">
-              <button className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-semibold rounded-lg hover:from-orange-600 hover:to-red-600 transition-all">
+              <button
+                onClick={() => alert('Vision editing will be available in a future update.\n\nThis feature will allow you to refine and update your life vision statement.')}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-semibold rounded-lg hover:from-orange-600 hover:to-red-600 transition-all"
+              >
                 Update Vision
               </button>
-              <button className="px-4 py-2 bg-white/5 border border-white/10 text-white text-sm font-semibold rounded-lg hover:bg-white/10 transition-all">
+              <button
+                onClick={() => alert('Weekly Review will be available in a future update.\n\nThis feature will guide you through a structured review of your values alignment and progress.')}
+                className="px-4 py-2 bg-white/5 border border-white/10 text-white text-sm font-semibold rounded-lg hover:bg-white/10 transition-all"
+              >
                 Weekly Review
               </button>
             </div>

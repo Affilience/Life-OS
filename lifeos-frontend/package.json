@@ -35,7 +35,6 @@
     "framer-motion": "^12.23.24",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.548.0",
-    "openai": "^6.9.1",
     "pixi.js": "^7.4.3",
     "playwright": "^1.57.0",
     "postcss": "^8.5.6",

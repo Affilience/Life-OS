@@ -6,7 +6,7 @@
 import React from 'react';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import {
-  FileText, Rocket, Book, Headphones, Video, GraduationCap,
+  FileText, Book, Headphones, Video, GraduationCap,
   FolderOpen, ChevronLeft, ChevronRight, Library
 } from 'lucide-react';
 
@@ -16,7 +16,6 @@ export default function Sidebar() {
     books,
     media,
     collections,
-    projects,
     activeView,
     setActiveView,
     sidebarCollapsed,
@@ -31,7 +30,6 @@ export default function Sidebar() {
   // Navigation sections
   const mainNav = [
     { id: 'all-notes', label: 'All Notes', icon: FileText, count: notes.length },
-    { id: 'projects', label: 'Projects', icon: Rocket, count: projects.length },
   ];
 
   const libraryNav = [

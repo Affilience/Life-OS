@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Sparkles, TrendingUp, BarChart3, CheckCircle2, Calendar } from 'lucide-react';
 
-export default function WeeklyInsightsWidget() {
+const WeeklyInsightsWidget = memo(function WeeklyInsightsWidget() {
   // Quick insights - valuable metrics (placeholder data for now)
   const insights = [
     {
@@ -67,4 +67,6 @@ export default function WeeklyInsightsWidget() {
       </div>
     </div>
   );
-}
+});
+
+export default WeeklyInsightsWidget;

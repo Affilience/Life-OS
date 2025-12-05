@@ -30,7 +30,11 @@ export default function WidgetWrapper({ widgetId, children, className = '' }) {
                   : 'bg-gradient-to-b from-purple-500/20 to-transparent'
               }
             `}
-            onMouseDown={() => setIsDragging(true)}
+            onMouseDown={(e) => {
+              // Only set dragging if we're not clicking on a button
+              if (e.target.closest('button')) return;
+              setIsDragging(true);
+            }}
             onMouseUp={() => setIsDragging(false)}
           >
             {/* Left side - drag indicator */}
@@ -52,17 +56,28 @@ export default function WidgetWrapper({ widgetId, children, className = '' }) {
               </span>
             </div>
 
-            {/* Right side - actions */}
-            <div className="flex items-center gap-1">
+            {/* Right side - actions - outside drag handle to prevent event issues */}
+            <div
+              className="flex items-center gap-1"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
+                  console.log('Removing widget:', widgetId);
                   toggleWidget(widgetId);
                 }}
-                className="p-1.5 hover:bg-red-500/30 rounded-lg transition-all duration-200 group/remove"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                className="p-1.5 hover:bg-red-500/30 rounded-lg transition-all duration-200 group/remove cursor-pointer z-50"
                 title="Remove widget"
+                type="button"
               >
-                <X className="w-3.5 h-3.5 text-white/60 group-hover/remove:text-red-400 transition-colors" />
+                <X className="w-3.5 h-3.5 text-white/60 group-hover/remove:text-red-400 transition-colors pointer-events-none" />
               </button>
             </div>
           </div>

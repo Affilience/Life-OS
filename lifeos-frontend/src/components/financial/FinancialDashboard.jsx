@@ -1,98 +1,80 @@
 import React, { useState } from 'react';
 import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  PieChart,
-  Target,
   Wallet,
-  PiggyBank,
+  Target,
 } from 'lucide-react';
-import Card from '../ui/Card';
-import PageHeader from '../shared/PageHeader';
-import OverviewTab from './OverviewTab';
-import IncomeTab from './IncomeTab';
-import ExpensesTab from './ExpensesTab';
-import NetWorthTab from './NetWorthTab';
-import GoalsTab from './GoalsTab';
-import EnvelopeBudgetTab from './EnvelopeBudgetTab';
-import SinkingFundsTab from './SinkingFundsTab';
+import UnifiedBudgetTab from './UnifiedBudgetTab';
+import FinancialGoalsTab from './FinancialGoalsTab';
+
+/**
+ * FinancialDashboard - Streamlined 2-tab financial management
+ *
+ * Tabs:
+ * 1. Budget - All income, expenses, budgets, and visualizations in one place
+ * 2. Goals - Savings goals with daily/weekly/monthly payment allocations
+ */
 
 const FinancialDashboard = () => {
-  const [activeView, setActiveView] = useState('overview');
+  const [activeTab, setActiveTab] = useState('budget');
 
-  const views = [
-    { id: 'overview', label: 'Overview', icon: DollarSign },
-    { id: 'budget', label: 'Budget', icon: Wallet },
-    { id: 'sinking', label: 'Sinking Funds', icon: PiggyBank },
-    { id: 'income', label: 'Income', icon: TrendingUp },
-    { id: 'expenses', label: 'Expenses', icon: TrendingDown },
-    { id: 'networth', label: 'Net Worth', icon: PieChart },
-    { id: 'goals', label: 'Goals', icon: Target },
+  const tabs = [
+    { id: 'budget', name: 'Budget', icon: Wallet },
+    { id: 'goals', name: 'Goals', icon: Target },
   ];
 
-  const renderView = () => {
-    switch (activeView) {
-      case 'overview':
-        return <OverviewTab />;
-      case 'budget':
-        return <EnvelopeBudgetTab />;
-      case 'sinking':
-        return <SinkingFundsTab />;
-      case 'income':
-        return <IncomeTab />;
-      case 'expenses':
-        return <ExpensesTab />;
-      case 'networth':
-        return <NetWorthTab />;
-      case 'goals':
-        return <GoalsTab />;
-      default:
-        return <OverviewTab />;
-    }
-  };
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title="Nebula"
-        subtitle="Track income, expenses, net worth, and financial goals"
-        icon={DollarSign}
-        module="financial"
-        variant="icon"
-      />
-
-      {/* View Navigation */}
-      <Card padding="none">
-        <div className="flex border-b border-border">
-          {views.map((view) => {
-            const Icon = view.icon;
-            const isActive = activeView === view.id;
+    <div className="financial-page min-h-screen bg-[#0c0a10]">
+      {/* Tab Navigation */}
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+        <div className="flex overflow-x-auto hide-scrollbar">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
             return (
               <button
-                key={view.id}
-                onClick={() => setActiveView(view.id)}
-                className={`
-                  flex items-center gap-2 px-6 py-4 text-sm font-medium
-                  border-b-2 -mb-px transition-all duration-fast
-                  ${isActive
-                    ? 'border-success text-text-high bg-muted'
-                    : 'border-transparent text-text-med hover:text-text-high hover:bg-muted/50'
-                  }
-                `}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-emerald-500/20 text-emerald-400 border-b-2 border-emerald-500'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
+                }`}
               >
-                <Icon size={18} />
-                <span>{view.label}</span>
+                <Icon className="w-5 h-5" />
+                <span className="text-sm font-semibold">{tab.name}</span>
               </button>
             );
           })}
         </div>
+      </div>
 
-        {/* View Content */}
-        <div className="p-6">
-          {renderView()}
-        </div>
-      </Card>
+      {/* Active Tab Content */}
+      <div className="tab-content">
+        {activeTab === 'budget' && <UnifiedBudgetTab />}
+        {activeTab === 'goals' && <FinancialGoalsTab />}
+      </div>
+
+      <style>{`
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .tab-content {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };

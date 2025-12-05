@@ -3,34 +3,13 @@
  * Shows daily totals vs recommended daily values with visual progress bars
  */
 
-import { X, Droplets, Pill, Flame, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { X, Droplets, Pill, Flame, Sparkles, Settings } from 'lucide-react';
+import { useHealthStore } from '../../stores/healthStore';
+import MicronutrientGoalsModal, { FDA_DAILY_VALUES } from './MicronutrientGoalsModal';
 
-// Recommended Daily Values (based on FDA guidelines for adults)
-const DAILY_VALUES = {
-  // Minerals
-  sodium: { value: 2300, unit: 'mg', name: 'Sodium', category: 'mineral' },
-  potassium: { value: 4700, unit: 'mg', name: 'Potassium', category: 'mineral' },
-  calcium: { value: 1300, unit: 'mg', name: 'Calcium', category: 'mineral' },
-  iron: { value: 18, unit: 'mg', name: 'Iron', category: 'mineral' },
-  magnesium: { value: 420, unit: 'mg', name: 'Magnesium', category: 'mineral' },
-  phosphorus: { value: 1250, unit: 'mg', name: 'Phosphorus', category: 'mineral' },
-  zinc: { value: 11, unit: 'mg', name: 'Zinc', category: 'mineral' },
-  // Vitamins
-  vitaminA: { value: 900, unit: 'mcg', name: 'Vitamin A', category: 'vitamin' },
-  vitaminC: { value: 90, unit: 'mg', name: 'Vitamin C', category: 'vitamin' },
-  vitaminD: { value: 20, unit: 'mcg', name: 'Vitamin D', category: 'vitamin' },
-  vitaminE: { value: 15, unit: 'mg', name: 'Vitamin E', category: 'vitamin' },
-  vitaminK: { value: 120, unit: 'mcg', name: 'Vitamin K', category: 'vitamin' },
-  vitaminB6: { value: 1.7, unit: 'mg', name: 'Vitamin B6', category: 'vitamin' },
-  vitaminB12: { value: 2.4, unit: 'mcg', name: 'Vitamin B12', category: 'vitamin' },
-  folate: { value: 400, unit: 'mcg', name: 'Folate', category: 'vitamin' },
-  // Fats breakdown
-  saturatedFat: { value: 20, unit: 'g', name: 'Saturated Fat', category: 'fat', warn: true },
-  transFat: { value: 0, unit: 'g', name: 'Trans Fat', category: 'fat', warn: true },
-  cholesterol: { value: 300, unit: 'mg', name: 'Cholesterol', category: 'fat', warn: true },
-  fiber: { value: 28, unit: 'g', name: 'Fiber', category: 'other' },
-  sugar: { value: 50, unit: 'g', name: 'Sugar', category: 'other', warn: true },
-};
+// Re-export for backwards compatibility
+const DAILY_VALUES = FDA_DAILY_VALUES;
 
 // Category styling
 const CATEGORY_STYLES = {
@@ -68,11 +47,13 @@ const CATEGORY_STYLES = {
   },
 };
 
-function NutrientRow({ nutrientKey, currentValue, dvInfo }) {
-  const percentage = dvInfo.value > 0
-    ? Math.round((currentValue / dvInfo.value) * 100)
+function NutrientRow({ nutrientKey, currentValue, dvInfo, customGoal }) {
+  const goalValue = customGoal ?? dvInfo.value;
+  const percentage = goalValue > 0
+    ? Math.round((currentValue / goalValue) * 100)
     : 0;
 
+  const isCustom = customGoal !== undefined && customGoal !== dvInfo.value;
   const isWarning = dvInfo.warn && percentage > 100;
   const isGood = !dvInfo.warn && percentage >= 80;
 
@@ -91,10 +72,15 @@ function NutrientRow({ nutrientKey, currentValue, dvInfo }) {
   return (
     <div className="py-2">
       <div className="flex justify-between items-center mb-1">
-        <span className="text-sm text-fg-secondary">{dvInfo.name}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm text-fg-secondary">{dvInfo.name}</span>
+          {isCustom && (
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-500" title="Custom goal" />
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-fg-primary">
-            {currentValue}{dvInfo.unit}
+            {currentValue}/{goalValue}{dvInfo.unit}
           </span>
           <span className={`text-xs px-1.5 py-0.5 rounded ${
             isWarning ? 'bg-red-500/20 text-red-400' :

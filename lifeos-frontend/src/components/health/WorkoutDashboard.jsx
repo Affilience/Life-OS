@@ -1,7 +1,6 @@
 import React from 'react';
 import { useWorkoutStore } from '../../stores/workoutStore';
 import { calculateWorkoutStreak, getWeeklyFrequency } from '../../services/workoutCalculations';
-import { WORKOUT_TEMPLATES } from '../../data/exerciseDatabase';
 import {
   Dumbbell,
   Flame,
@@ -15,6 +14,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import WorkoutCharts from './charts/WorkoutCharts';
+import WorkoutTemplates from './WorkoutTemplates';
 import { EmptyState } from '../ui';
 import './WorkoutDashboard.css';
 
@@ -138,39 +138,8 @@ export default function WorkoutDashboard() {
         <WorkoutCharts />
       </div>
 
-      {/* Quick Start Templates */}
-      <div className="templates-section">
-        <div className="section-header">
-          <h2 className="section-title">Quick Start Templates</h2>
-          <p className="section-description">Choose a workout to get started</p>
-        </div>
-
-        <div className="templates-grid">
-          {WORKOUT_TEMPLATES.map((template) => (
-            <div
-              key={template.id}
-              onClick={() => startWorkout(template.id)}
-              className="template-card"
-            >
-              <div className="template-icon">{template.icon}</div>
-              <div className="template-content">
-                <h3 className="template-name">{template.name}</h3>
-                <p className="template-description">{template.description}</p>
-                <div className="template-meta">
-                  <span className="template-exercises">{template.exercises.length} exercises</span>
-                  <span className="template-duration">
-                    <Clock className="w-3 h-3" />
-                    ~45 min
-                  </span>
-                </div>
-              </div>
-              <div className="template-arrow">
-                <ChevronRight className="w-5 h-5" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Workout Templates - Create, Manage & Quick Start */}
+      <WorkoutTemplates />
 
       {/* Recent Workouts */}
       <div className="recent-workouts-section">

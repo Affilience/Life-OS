@@ -1,46 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Target,
   Trophy,
   Flame,
-  Calendar,
-  Sparkles,
-  Zap,
-  Clock,
-  Star,
-  Crown,
-  Globe,
-  Swords,
-  Link,
-  CalendarDays,
-  Award
+  ListTodo,
+  Swords
 } from 'lucide-react';
+import Card from '../components/ui/Card';
 import PageHeader from '../components/shared/PageHeader';
-import DailyQuests from '../components/missions/DailyQuests';
-import WeeklyQuests from '../components/missions/WeeklyQuests';
-import MonthlyEpicQuests from '../components/missions/MonthlyEpicQuests';
-import QuestChains from '../components/missions/QuestChains';
-import CrossModuleQuests from '../components/missions/CrossModuleQuests';
-import BossBattles from '../components/missions/BossBattles';
 import Achievements from '../components/missions/Achievements';
 import StreaksView from '../components/missions/StreaksView';
-import Challenges from '../components/missions/Challenges';
+import PlanTomorrowTab from '../components/productivity/PlanTomorrowTab';
 import useQuestsStore from '../stores/questsStore';
 import useDailyTasksStore from '../stores/dailyTasksStore';
 
-const TABS = [
-  { id: 'daily', label: 'Daily', icon: Calendar, color: 'from-cyan-500 to-blue-500', description: 'Daily quests reset at midnight' },
-  { id: 'weekly', label: 'Weekly', icon: CalendarDays, color: 'from-blue-500 to-indigo-500', description: '7-day challenges' },
-  { id: 'monthly', label: 'Epic', icon: Crown, color: 'from-purple-500 to-pink-500', description: 'Monthly legendary quests' },
-  { id: 'chains', label: 'Journeys', icon: Link, color: 'from-indigo-500 to-purple-500', description: 'Multi-part quest chains' },
-  { id: 'crossmodule', label: 'Cross-Module', icon: Globe, color: 'from-cyan-500 to-teal-500', description: 'Span multiple life areas' },
-  { id: 'boss', label: 'Boss Battles', icon: Swords, color: 'from-orange-500 to-red-500', description: 'Challenge powerful bosses' },
-  { id: 'achievements', label: 'Achievements', icon: Trophy, color: 'from-yellow-500 to-orange-500', description: 'Your trophy collection' },
-  { id: 'streaks', label: 'Streaks', icon: Flame, color: 'from-orange-500 to-red-500', description: 'Maintain momentum' },
-];
-
 const Missions = () => {
-  const [activeTab, setActiveTab] = useState('daily');
+  const [activeTab, setActiveTab] = useState('plan');
 
   // Get stats from stores
   const { getQuestSummary, questStats } = useQuestsStore();
@@ -52,147 +26,93 @@ const Missions = () => {
 
   // Calculate quick stats
   const quickStats = useMemo(() => ({
-    credits: questStats.totalCreditsEarned || 0,
     streak: streak,
-    achievements: questStats.totalQuestsCompleted || 0,
-    bosses: questStats.bossesDefeated || 0,
+    completed: questStats.totalQuestsCompleted || 0,
   }), [questStats, streak]);
+
+  const tabs = [
+    { id: 'plan', label: 'Today', icon: ListTodo },
+    { id: 'streaks', label: 'Streaks', icon: Flame },
+    { id: 'achievements', label: 'Achievements', icon: Trophy },
+  ];
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'daily':
-        return <DailyQuests />;
-      case 'weekly':
-        return <WeeklyQuests />;
-      case 'monthly':
-        return <MonthlyEpicQuests />;
-      case 'chains':
-        return <QuestChains />;
-      case 'crossmodule':
-        return <CrossModuleQuests />;
-      case 'boss':
-        return <BossBattles />;
+      case 'plan':
+        return <PlanTomorrowTab />;
       case 'achievements':
         return <Achievements />;
       case 'streaks':
         return <StreaksView />;
       default:
-        return <DailyQuests />;
+        return <PlanTomorrowTab />;
     }
   };
 
   // Get notification counts for tabs
   const getTabNotification = (tabId) => {
     switch (tabId) {
-      case 'daily':
+      case 'plan':
         return todayStats.total - todayStats.completed;
-      case 'weekly':
-        return questSummary.weekly.total - questSummary.weekly.completed;
-      case 'monthly':
-        return questSummary.monthly.total - questSummary.monthly.completed;
-      case 'chains':
-        return questSummary.chains.available;
-      case 'crossmodule':
-        return questSummary.crossModule.active;
-      case 'boss':
-        return questSummary.bossBattles.active;
       default:
         return 0;
     }
   };
 
   return (
-    <div className="min-h-screen pb-24 md:pb-8">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0c0a10]/95 backdrop-blur-md border-b border-white/5">
-        <div className="max-w-7xl mx-auto p-4 md:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <PageHeader
-              title="Quest Hub"
-              subtitle="Daily quests, epic challenges, and legendary journeys"
-              module="missions"
-              variant="gradient"
-              className="mb-0"
-            />
+    <div className="space-y-8 animate-fade-in">
+      <PageHeader
+        title="Quests"
+        stats={`${quickStats.streak} day streak · ${quickStats.completed} completed`}
+        icon={Swords}
+        module="missions"
+        variant="icon"
+      />
 
-            {/* Quick Stats */}
-            <div className="hidden md:flex items-center gap-3">
-              <div className="bg-[#1a1724] border border-yellow-500/30 rounded-xl px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-yellow-400" />
-                  <span className="text-lg font-bold text-white">{quickStats.credits.toLocaleString()}</span>
-                  <span className="text-xs text-white/60">Credits</span>
-                </div>
-              </div>
-              <div className="bg-[#1a1724] border border-orange-500/30 rounded-xl px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-orange-400" />
-                  <span className="text-lg font-bold text-white">{quickStats.streak}</span>
-                  <span className="text-xs text-white/60">Day Streak</span>
-                </div>
-              </div>
-              <div className="bg-[#1a1724] border border-purple-500/30 rounded-xl px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-purple-400" />
-                  <span className="text-lg font-bold text-white">{quickStats.achievements}</span>
-                  <span className="text-xs text-white/60">Completed</span>
-                </div>
-              </div>
-              {quickStats.bosses > 0 && (
-                <div className="bg-[#1a1724] border border-red-500/30 rounded-xl px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <Swords className="w-4 h-4 text-red-400" />
-                    <span className="text-lg font-bold text-white">{quickStats.bosses}</span>
-                    <span className="text-xs text-white/60">Bosses</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Tab Navigation */}
+      <Card padding="none">
+        <div className="flex border-b border-border overflow-x-auto scrollbar-hide">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            const notification = getTabNotification(tab.id);
 
-          {/* Tab Navigation */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              const notification = getTabNotification(tab.id);
-
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm
-                    whitespace-nowrap transition-all duration-200
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-2 px-6 py-4 text-sm font-medium
+                  border-b-2 -mb-px transition-all duration-fast whitespace-nowrap
+                  ${isActive
+                    ? 'border-purple-500 text-text-high bg-muted'
+                    : 'border-transparent text-text-med hover:text-text-high hover:bg-muted/50'
+                  }
+                `}
+              >
+                <Icon size={18} />
+                <span>{tab.label}</span>
+                {notification > 0 && (
+                  <span className={`
+                    ml-1.5 px-2 py-0.5 text-xs rounded-full
                     ${isActive
-                      ? `bg-gradient-to-r ${tab.color} text-white shadow-lg`
-                      : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10'
+                      ? 'bg-purple-500/30 text-purple-300'
+                      : 'bg-white/10 text-white/60'
                     }
-                  `}
-                  title={tab.description}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                  {notification > 0 && !isActive && (
-                    <span className={`
-                      ml-1 px-1.5 py-0.5 text-xs rounded-full
-                      ${tab.id === 'boss' ? 'bg-red-500' : 'bg-purple-500'}
-                      text-white
-                    `}>
-                      {notification}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                  `}>
+                    {notification}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Tab Content */}
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
-        {renderTabContent()}
-      </div>
+        {/* Tab Content */}
+        <div className="p-6">
+          {renderTabContent()}
+        </div>
+      </Card>
     </div>
   );
 };

@@ -61,3 +61,16 @@
   color: var(--color-error-500);
   line-height: var(--line-height-tight);
 }
+
+/* Mobile: Ensure minimum touch target size (44px WCAG) */
+@media (hover: none) and (pointer: coarse) {
+  .input-field {
+    min-height: var(--touch-target-min, 44px);
+    padding: var(--space-3) var(--space-4);
+    font-size: 16px; /* Prevent iOS zoom on focus */
+  }
+
+  .input-textarea {
+    min-height: 100px;
+  }
+}

@@ -1,9 +1,18 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookOpen, TrendingUp, Calendar, Heart, Sparkles, Pen } from 'lucide-react';
+import { format } from 'date-fns';
 import MiniLineChart from '../shared/charts/MiniLineChart';
 import StatCard from '../shared/charts/StatCard';
 
 export default function JournalDashboard() {
+  const navigate = useNavigate();
+
+  const handleStartWriting = () => {
+    const today = new Date();
+    navigate(`/journal/${format(today, 'yyyy')}/${format(today, 'MM')}`);
+  };
+
   // Mock data for journal stats
   const moodTrendData = [
     { label: 'Mon', value: 7 },
@@ -51,7 +60,7 @@ export default function JournalDashboard() {
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="px-4 pt-6 pb-4 space-y-6">
         {/* Top Stats - 2x2 Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
@@ -189,7 +198,10 @@ export default function JournalDashboard() {
             <p className="text-gray-300 text-sm italic mb-4">
               "What moment today made you feel most alive? How can you create more of those moments?"
             </p>
-            <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all">
+            <button
+              onClick={handleStartWriting}
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
+            >
               Start Writing
             </button>
           </div>

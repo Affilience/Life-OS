@@ -15,20 +15,22 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-export default function CreateTimeBlockModal({ initialData, onClose }) {
-  const { createTimeBlock } = useCalendarStore();
+export default function CreateTimeBlockModal({ initialData, editBlock, onClose }) {
+  const { createTimeBlock, updateTimeBlock } = useCalendarStore();
+
+  const isEditMode = Boolean(editBlock);
 
   const [formData, setFormData] = useState({
-    title: '',
-    date: initialData?.date || new Date().toISOString().split('T')[0],
-    startTime: initialData?.startTime || '09:00',
-    endTime: initialData?.endTime || '10:00',
-    module: 'productivity',
-    type: 'deep_work',
-    priority: 'medium',
-    energyLevel: 'medium',
-    notes: '',
-    tags: '',
+    title: editBlock?.title || '',
+    date: editBlock?.date || initialData?.date || new Date().toISOString().split('T')[0],
+    startTime: editBlock?.startTime || initialData?.startTime || '09:00',
+    endTime: editBlock?.endTime || initialData?.endTime || '10:00',
+    module: editBlock?.module || 'productivity',
+    type: editBlock?.type || 'deep_work',
+    priority: editBlock?.priority || 'medium',
+    energyLevel: editBlock?.energyLevel || 'medium',
+    notes: editBlock?.notes || '',
+    tags: editBlock?.tags?.join(', ') || '',
   });
 
   const modules = [
@@ -77,7 +79,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
       .map((tag) => tag.trim())
       .filter((tag) => tag);
 
-    createTimeBlock({
+    const blockData = {
       title: formData.title,
       date: formData.date,
       startTime: formData.startTime,
@@ -89,7 +91,13 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
       energyLevel: formData.energyLevel,
       notes: formData.notes,
       tags: tagsArray,
-    });
+    };
+
+    if (isEditMode) {
+      updateTimeBlock(editBlock.id, blockData);
+    } else {
+      createTimeBlock(blockData);
+    }
 
     onClose();
   };
@@ -119,9 +127,11 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
                 <Clock className="w-6 h-6" style={{ color: selectedModule.color }} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Create Time Block</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  {isEditMode ? 'Edit Time Block' : 'Create Time Block'}
+                </h2>
                 <p className="text-sm text-white/60">
-                  Schedule time for focused work
+                  {isEditMode ? 'Update your scheduled time block' : 'Schedule time for focused work'}
                 </p>
               </div>
             </div>
@@ -345,7 +355,7 @@ export default function CreateTimeBlockModal({ initialData, onClose }) {
               type="submit"
               className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-500/30"
             >
-              Create Time Block
+              {isEditMode ? 'Save Changes' : 'Create Time Block'}
             </button>
           </div>
         </form>

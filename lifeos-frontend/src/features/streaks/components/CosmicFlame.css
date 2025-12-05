@@ -1,0 +1,219 @@
+/* Cosmic Flame Animation - CSS-only animated fire effect */
+
+.cosmic-flame-container {
+  position: relative;
+  width: 80px;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.cosmic-flame {
+  position: relative;
+  width: 60px;
+  height: 80px;
+}
+
+/* Base flame layers */
+.flame-layer {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: flicker 0.3s ease-in-out infinite alternate;
+}
+
+/* Outer flame - red/orange */
+.flame-outer {
+  width: 50px;
+  height: 70px;
+  background: linear-gradient(to top, #ff4500, #ff6b35, #ffa500);
+  filter: blur(2px);
+  opacity: 0.8;
+  animation-delay: 0s;
+}
+
+/* Middle flame - orange/yellow */
+.flame-middle {
+  width: 40px;
+  height: 60px;
+  background: linear-gradient(to top, #ff6b35, #ffa500, #ffd700);
+  filter: blur(1px);
+  opacity: 0.9;
+  animation-delay: 0.1s;
+}
+
+/* Inner flame - yellow/white */
+.flame-inner {
+  width: 28px;
+  height: 45px;
+  background: linear-gradient(to top, #ffd700, #ffed4a, #fffacd);
+  filter: blur(0.5px);
+  animation-delay: 0.15s;
+}
+
+/* Core flame - white hot */
+.flame-core {
+  width: 16px;
+  height: 30px;
+  background: linear-gradient(to top, #fffacd, #ffffff);
+  animation-delay: 0.2s;
+}
+
+/* Glow effect beneath flame */
+.flame-glow {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 40px;
+  background: radial-gradient(ellipse at center, rgba(255, 100, 0, 0.6) 0%, transparent 70%);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* Flicker animation */
+@keyframes flicker {
+  0% {
+    transform: translateX(-50%) scaleY(1) scaleX(1);
+  }
+  25% {
+    transform: translateX(-52%) scaleY(1.02) scaleX(0.98);
+  }
+  50% {
+    transform: translateX(-48%) scaleY(0.98) scaleX(1.02);
+  }
+  75% {
+    transform: translateX(-50%) scaleY(1.01) scaleX(0.99);
+  }
+  100% {
+    transform: translateX(-50%) scaleY(0.99) scaleX(1.01);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateX(-50%) scale(1.1);
+  }
+}
+
+/* Spark particles */
+.spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #ffd700;
+  border-radius: 50%;
+  animation: spark-rise 1s ease-out infinite;
+}
+
+.spark:nth-child(1) { left: 30%; animation-delay: 0s; }
+.spark:nth-child(2) { left: 50%; animation-delay: 0.3s; }
+.spark:nth-child(3) { left: 70%; animation-delay: 0.6s; }
+.spark:nth-child(4) { left: 40%; animation-delay: 0.15s; }
+.spark:nth-child(5) { left: 60%; animation-delay: 0.45s; }
+
+@keyframes spark-rise {
+  0% {
+    bottom: 20%;
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    bottom: 120%;
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+/* Size variations */
+.cosmic-flame-container.size-sm {
+  width: 40px;
+  height: 50px;
+}
+.cosmic-flame-container.size-sm .cosmic-flame { width: 30px; height: 40px; }
+.cosmic-flame-container.size-sm .flame-outer { width: 25px; height: 35px; }
+.cosmic-flame-container.size-sm .flame-middle { width: 20px; height: 30px; }
+.cosmic-flame-container.size-sm .flame-inner { width: 14px; height: 22px; }
+.cosmic-flame-container.size-sm .flame-core { width: 8px; height: 15px; }
+.cosmic-flame-container.size-sm .flame-glow { width: 40px; height: 20px; }
+
+.cosmic-flame-container.size-lg {
+  width: 120px;
+  height: 150px;
+}
+.cosmic-flame-container.size-lg .cosmic-flame { width: 90px; height: 120px; }
+.cosmic-flame-container.size-lg .flame-outer { width: 75px; height: 105px; }
+.cosmic-flame-container.size-lg .flame-middle { width: 60px; height: 90px; }
+.cosmic-flame-container.size-lg .flame-inner { width: 42px; height: 68px; }
+.cosmic-flame-container.size-lg .flame-core { width: 24px; height: 45px; }
+.cosmic-flame-container.size-lg .flame-glow { width: 120px; height: 60px; }
+
+/* Color variations based on streak tier */
+.cosmic-flame-container.tier-building .flame-outer { background: linear-gradient(to top, #6b7280, #9ca3af, #d1d5db); }
+.cosmic-flame-container.tier-building .flame-middle { background: linear-gradient(to top, #9ca3af, #d1d5db, #e5e7eb); }
+.cosmic-flame-container.tier-building .flame-inner { background: linear-gradient(to top, #d1d5db, #e5e7eb, #f3f4f6); }
+.cosmic-flame-container.tier-building .flame-glow { background: radial-gradient(ellipse at center, rgba(156, 163, 175, 0.4) 0%, transparent 70%); }
+
+.cosmic-flame-container.tier-strong .flame-outer { background: linear-gradient(to top, #22c55e, #4ade80, #86efac); }
+.cosmic-flame-container.tier-strong .flame-middle { background: linear-gradient(to top, #4ade80, #86efac, #bbf7d0); }
+.cosmic-flame-container.tier-strong .flame-inner { background: linear-gradient(to top, #86efac, #bbf7d0, #dcfce7); }
+.cosmic-flame-container.tier-strong .flame-glow { background: radial-gradient(ellipse at center, rgba(34, 197, 94, 0.5) 0%, transparent 70%); }
+
+.cosmic-flame-container.tier-rare .flame-outer { background: linear-gradient(to top, #3b82f6, #60a5fa, #93c5fd); }
+.cosmic-flame-container.tier-rare .flame-middle { background: linear-gradient(to top, #60a5fa, #93c5fd, #bfdbfe); }
+.cosmic-flame-container.tier-rare .flame-inner { background: linear-gradient(to top, #93c5fd, #bfdbfe, #dbeafe); }
+.cosmic-flame-container.tier-rare .flame-glow { background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.5) 0%, transparent 70%); }
+
+.cosmic-flame-container.tier-epic .flame-outer { background: linear-gradient(to top, #a855f7, #c084fc, #d8b4fe); }
+.cosmic-flame-container.tier-epic .flame-middle { background: linear-gradient(to top, #c084fc, #d8b4fe, #e9d5ff); }
+.cosmic-flame-container.tier-epic .flame-inner { background: linear-gradient(to top, #d8b4fe, #e9d5ff, #f3e8ff); }
+.cosmic-flame-container.tier-epic .flame-glow { background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.5) 0%, transparent 70%); }
+
+.cosmic-flame-container.tier-legendary .flame-outer { background: linear-gradient(to top, #f59e0b, #fbbf24, #fcd34d); }
+.cosmic-flame-container.tier-legendary .flame-middle { background: linear-gradient(to top, #fbbf24, #fcd34d, #fde68a); }
+.cosmic-flame-container.tier-legendary .flame-inner { background: linear-gradient(to top, #fcd34d, #fde68a, #fef3c7); }
+.cosmic-flame-container.tier-legendary .flame-core { background: linear-gradient(to top, #fef3c7, #ffffff); }
+.cosmic-flame-container.tier-legendary .flame-glow { background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.6) 0%, transparent 70%); }
+
+.cosmic-flame-container.tier-cosmic .flame-outer {
+  background: linear-gradient(to top, #ec4899, #f472b6, #a855f7, #818cf8);
+  animation: rainbow-shift 3s linear infinite, flicker 0.3s ease-in-out infinite alternate;
+}
+.cosmic-flame-container.tier-cosmic .flame-middle {
+  background: linear-gradient(to top, #f472b6, #c084fc, #a78bfa, #93c5fd);
+  animation: rainbow-shift 3s linear infinite reverse, flicker 0.3s ease-in-out infinite alternate;
+}
+.cosmic-flame-container.tier-cosmic .flame-inner {
+  background: linear-gradient(to top, #c084fc, #a78bfa, #93c5fd, #fcd34d);
+}
+.cosmic-flame-container.tier-cosmic .flame-core {
+  background: linear-gradient(to top, #fef3c7, #ffffff);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+}
+.cosmic-flame-container.tier-cosmic .flame-glow {
+  background: radial-gradient(ellipse at center, rgba(236, 72, 153, 0.4), rgba(168, 85, 247, 0.3), transparent 70%);
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+
+@keyframes rainbow-shift {
+  0% { filter: hue-rotate(0deg) blur(2px); }
+  100% { filter: hue-rotate(360deg) blur(2px); }
+}
+
+/* Inactive/broken streak */
+.cosmic-flame-container.inactive {
+  filter: grayscale(1);
+  opacity: 0.3;
+}
+.cosmic-flame-container.inactive .flame-layer,
+.cosmic-flame-container.inactive .spark {
+  animation-play-state: paused;
+}

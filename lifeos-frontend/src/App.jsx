@@ -10,6 +10,8 @@ const ReactQueryDevtools = import.meta.env.DEV
 import MainLayout from './components/layout/MainLayout';
 import LoadingScreen from './components/shared/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './components/ui/Toast';
+import { CommandPalette } from './components/ui/CommandPalette';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -52,8 +54,10 @@ const Calendar = lazy(() => import('./pages/CalendarNew'));
 const PurposeValues = lazy(() => import('./pages/PurposeValues'));
 const Financial = lazy(() => import('./pages/Financial'));
 const Missions = lazy(() => import('./pages/Missions'));
+const Streaks = lazy(() => import('./pages/Streaks'));
 const Rewards = lazy(() => import('./pages/Rewards'));
 const Discoveries = lazy(() => import('./pages/Discoveries'));
+const Resolutions = lazy(() => import('./pages/Resolutions'));
 
 // Gamification and demo pages
 const Gamification = lazy(() => import('./pages/AtomCosmosDemo'));
@@ -120,15 +124,16 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Suspense fallback={<LoadingScreen />}>
-          <Routes>
-            {/* DEVELOPMENT: Auth route disabled */}
-            {/* <Route path="/auth" element={<Auth />} /> */}
+      <ToastProvider position="bottom-right" maxToasts={5}>
+        <Router>
+          <Suspense fallback={<LoadingScreen />}>
+            <Routes>
+              {/* DEVELOPMENT: Auth route disabled */}
+              {/* <Route path="/auth" element={<Auth />} /> */}
 
-            {/* DEVELOPMENT: All routes unprotected - direct access */}
-            <Route path="/*" element={
-              <MainLayout>
+              {/* DEVELOPMENT: All routes unprotected - direct access */}
+              <Route path="/*" element={
+                <MainLayout>
                 <Routes>
                   {/* Main mobile navigation - 5 tabs: Home, Modules, Character, Social, Quests, Settings */}
                   <Route path="/" element={<Dashboard />} />
@@ -157,7 +162,9 @@ function App() {
                   <Route path="/purpose" element={<PurposeValues />} />
                   <Route path="/financial" element={<Financial />} />
                   <Route path="/rewards" element={<Rewards />} />
+                  <Route path="/streaks" element={<Streaks />} />
                   <Route path="/discoveries" element={<Discoveries />} />
+                  <Route path="/resolutions" element={<Resolutions />} />
                   <Route path="/learn" element={<Learn />} />
                   <Route path="/skills" element={<Skills />} />
                   <Route path="/avatar" element={
@@ -179,14 +186,17 @@ function App() {
               </MainLayout>
             } />
           </Routes>
-        </Suspense>
-      </Router>
-      {/* React Query DevTools - only in development */}
-      {import.meta.env.DEV && (
-        <Suspense fallback={null}>
-          <ReactQueryDevtools initialIsOpen={false} />
-        </Suspense>
-      )}
+          </Suspense>
+          {/* Command Palette - Cmd+K (must be inside Router) */}
+          <CommandPalette />
+        </Router>
+        {/* React Query DevTools - only in development */}
+        {import.meta.env.DEV && (
+          <Suspense fallback={null}>
+            <ReactQueryDevtools initialIsOpen={false} />
+          </Suspense>
+        )}
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

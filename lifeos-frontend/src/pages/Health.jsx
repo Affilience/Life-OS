@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Dumbbell, BarChart3, Apple, Moon, Activity } from 'lucide-react';
+import { Dumbbell, BarChart3, Apple, Activity } from 'lucide-react';
 import HealthDashboard from '../components/health/HealthDashboard';
 import WorkoutsTab from '../components/health/WorkoutsTab';
 import NutritionTab from '../components/health/NutritionTab';
-import SleepTabSimple from '../components/health/SleepTabSimple';
 import CardioTab from '../components/health/CardioTab';
 
 export default function Health() {
@@ -13,7 +12,6 @@ export default function Health() {
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
     { id: 'workouts', name: 'Workouts', icon: Dumbbell },
     { id: 'nutrition', name: 'Nutrition', icon: Apple },
-    { id: 'sleep', name: 'Sleep', icon: Moon },
     { id: 'cardio', name: 'Cardio', icon: Activity },
   ];
 
@@ -47,7 +45,6 @@ export default function Health() {
         {activeTab === 'dashboard' && <HealthDashboard />}
         {activeTab === 'workouts' && <WorkoutsTab />}
         {activeTab === 'nutrition' && <NutritionTab />}
-        {activeTab === 'sleep' && <SleepTabSimple />}
         {activeTab === 'cardio' && <CardioTab />}
       </div>
 

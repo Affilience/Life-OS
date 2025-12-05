@@ -54,13 +54,116 @@ export const calculatePace = (distance, durationSeconds) => {
   return (durationSeconds / 60) / distance; // minutes per unit
 };
 
+// MET (Metabolic Equivalent of Task) values for different activities
+// MET represents the energy cost of physical activities
+// 1 MET = 1 kcal/kg/hour at rest
+const MET_VALUES = {
+  // Cardio activities
+  running: { low: 8.0, moderate: 10.0, high: 12.5, veryHigh: 16.0 }, // Based on pace
+  cycling: { low: 4.0, moderate: 6.8, high: 10.0, veryHigh: 14.0 },
+  swimming: { low: 5.8, moderate: 7.0, high: 9.8, veryHigh: 11.0 },
+  rowing: { low: 4.8, moderate: 7.0, high: 8.5, veryHigh: 12.0 },
+  walking: { low: 2.5, moderate: 3.5, high: 4.5, veryHigh: 5.0 },
+  hiking: { low: 5.3, moderate: 6.0, high: 7.5, veryHigh: 9.0 },
+  elliptical: { low: 4.6, moderate: 5.0, high: 6.0, veryHigh: 8.0 },
+  stairmaster: { low: 6.0, moderate: 8.0, high: 9.0, veryHigh: 12.0 },
+  jumpRope: { low: 8.8, moderate: 10.0, high: 12.0, veryHigh: 14.0 },
+  // Weight training
+  weightTraining: { low: 3.5, moderate: 5.0, high: 6.0, veryHigh: 8.0 },
+  // Other workout types
+  hiit: { low: 8.0, moderate: 10.0, high: 12.0, veryHigh: 15.0 },
+  yoga: { low: 2.5, moderate: 3.0, high: 4.0, veryHigh: 5.0 },
+  default: { low: 4.0, moderate: 5.5, high: 7.0, veryHigh: 9.0 },
+};
+
+// Get intensity level from RPE (1-10) or pace
+const getIntensityLevel = (rpe = 5, pace = null, activityType = null) => {
+  // If we have pace data for running, use that to determine intensity
+  if (activityType === 'running' && pace) {
+    if (pace > 12) return 'low';      // Slower than 12 min/mile
+    if (pace > 9) return 'moderate';  // 9-12 min/mile
+    if (pace > 7) return 'high';      // 7-9 min/mile
+    return 'veryHigh';                // Faster than 7 min/mile
+  }
+
+  // Use RPE scale
+  if (rpe <= 3) return 'low';
+  if (rpe <= 5) return 'moderate';
+  if (rpe <= 7) return 'high';
+  return 'veryHigh';
+};
+
+/**
+ * Calculate calories burned during exercise
+ * Formula: Calories = MET × weight(kg) × time(hours)
+ *
+ * @param {string} activityType - Type of activity (running, cycling, weightTraining, etc.)
+ * @param {number} durationMinutes - Duration in minutes
+ * @param {number} weightKg - User's weight in kg (default 70kg / ~154lbs)
+ * @param {number} intensity - RPE 1-10 scale (default 5)
+ * @param {number} pace - Pace in min/mile for running (optional)
+ * @returns {number} Estimated calories burned
+ */
+export const calculateCaloriesBurned = (
+  activityType,
+  durationMinutes,
+  weightKg = 70,
+  intensity = 5,
+  pace = null
+) => {
+  if (!durationMinutes || durationMinutes <= 0) return 0;
+
+  // Normalize activity type
+  const normalizedType = activityType?.toLowerCase().replace(/[\s-_]/g, '') || 'default';
+
+  // Map common workout types to MET categories
+  const typeMapping = {
+    'pushday': 'weightTraining',
+    'pullday': 'weightTraining',
+    'legs': 'weightTraining',
+    'upperbody': 'weightTraining',
+    'lowerbody': 'weightTraining',
+    'fullbody': 'weightTraining',
+    'cardio': 'running',
+    'running': 'running',
+    'cycling': 'cycling',
+    'swimming': 'swimming',
+    'rowing': 'rowing',
+    'walking': 'walking',
+    'hiking': 'hiking',
+    'elliptical': 'elliptical',
+    'stairmaster': 'stairmaster',
+    'stairclimber': 'stairmaster',
+    'jumprope': 'jumpRope',
+    'hiit': 'hiit',
+    'yoga': 'yoga',
+  };
+
+  const mappedType = typeMapping[normalizedType] || 'default';
+  const metValues = MET_VALUES[mappedType] || MET_VALUES.default;
+
+  // Get intensity level
+  const intensityLevel = getIntensityLevel(intensity, pace, mappedType);
+  const met = metValues[intensityLevel];
+
+  // Calculate calories: MET × weight(kg) × time(hours)
+  const durationHours = durationMinutes / 60;
+  const caloriesBurned = met * weightKg * durationHours;
+
+  return Math.round(caloriesBurned);
+};
+
 export const useWorkoutStore = create(
   persist(
     (set, get) => ({
       // Data
       workouts: SAMPLE_WORKOUTS,
       templates: WORKOUT_TEMPLATES,
+      customTemplates: [], // User-created workout templates
       cardioWorkouts: [], // Separate array for cardio sessions
+
+      // Exercise weight history (auto-populate previous weights)
+      exerciseHistory: {}, // { exerciseId: { lastWeight: X, lastReps: Y, bestWeight: Z, bestReps: W } }
 
       // Active workout state
       activeWorkout: null,
@@ -80,8 +183,11 @@ export const useWorkoutStore = create(
 
       // Start a new workout
       startWorkout: (templateId = null) => {
+        const state = get();
+        // Check both built-in and custom templates
         const template = templateId
-          ? get().templates.find(t => t.id === templateId)
+          ? state.templates.find(t => t.id === templateId) ||
+            state.customTemplates.find(t => t.id === templateId)
           : null;
 
         const newWorkout = {
@@ -89,16 +195,26 @@ export const useWorkoutStore = create(
           date: new Date().toISOString(),
           startTime: new Date().toISOString(),
           name: template?.name || 'Quick Workout',
-          exercises: template?.exercises.map(e => ({
-            exerciseId: e.exerciseId,
-            sets: Array(e.sets).fill(null).map(() => ({
-              weight: 0,
-              reps: 0,
-              completed: false,
-            })),
-            targetSets: e.sets,
-            targetReps: e.targetReps,
-          })) || [],
+          templateId: template?.id || null,
+          exercises: template?.exercises.map(e => {
+            // Auto-populate with last used weights
+            const history = state.exerciseHistory[e.exerciseId];
+            const defaultWeight = history?.lastWeight || 0;
+            const defaultReps = e.targetReps || history?.lastReps || 0;
+
+            return {
+              exerciseId: e.exerciseId,
+              sets: Array(e.sets).fill(null).map(() => ({
+                weight: defaultWeight,
+                reps: defaultReps,
+                completed: false,
+              })),
+              targetSets: e.sets,
+              targetReps: e.targetReps,
+              lastWeight: history?.lastWeight,
+              bestWeight: history?.bestWeight,
+            };
+          }) || [],
           notes: '',
           totalVolume: 0,
           prsAchieved: 0,
@@ -244,12 +360,23 @@ export const useWorkoutStore = create(
           });
         });
 
+        // Auto-calculate calories burned for weight training
+        // Estimate intensity based on volume and PRs achieved
+        const avgIntensity = prsAchieved > 0 ? 7 : (completedSets > 10 ? 6 : 5);
+        const estimatedCalories = calculateCaloriesBurned(
+          'weightTraining',
+          duration,
+          70, // Default weight in kg - could be pulled from user profile
+          avgIntensity
+        );
+
         const completedWorkout = {
           ...state.activeWorkout,
           endTime: new Date().toISOString(),
           duration,
           totalVolume: Math.round(totalVolume),
           prsAchieved,
+          caloriesBurned: estimatedCalories,
         };
 
         // Award XP for completing workout
@@ -271,8 +398,38 @@ export const useWorkoutStore = create(
           prsAchieved,
         });
 
+        // Update exercise history for weight pre-population
+        const updatedHistory = { ...state.exerciseHistory };
+        state.activeWorkout.exercises.forEach(exercise => {
+          const completedSetsForExercise = exercise.sets.filter(s => s.completed && s.setType !== 'warmup');
+          if (completedSetsForExercise.length > 0) {
+            // Get the best set (highest weight or highest reps at same weight)
+            const bestSet = completedSetsForExercise.reduce((best, current) => {
+              if (!best) return current;
+              if (current.weight > best.weight) return current;
+              if (current.weight === best.weight && current.reps > best.reps) return current;
+              return best;
+            }, null);
+
+            // Get the last set for default weights
+            const lastSet = completedSetsForExercise[completedSetsForExercise.length - 1];
+
+            const existingHistory = updatedHistory[exercise.exerciseId] || {};
+            updatedHistory[exercise.exerciseId] = {
+              lastWeight: lastSet?.weight || existingHistory.lastWeight || 0,
+              lastReps: lastSet?.reps || existingHistory.lastReps || 0,
+              bestWeight: Math.max(bestSet?.weight || 0, existingHistory.bestWeight || 0),
+              bestReps: bestSet?.weight >= (existingHistory.bestWeight || 0)
+                ? bestSet?.reps || existingHistory.bestReps || 0
+                : existingHistory.bestReps || 0,
+              lastUsed: new Date().toISOString(),
+            };
+          }
+        });
+
         set({
           workouts: [completedWorkout, ...state.workouts],
+          exerciseHistory: updatedHistory,
           activeWorkout: null,
           isWorkoutActive: false,
           workoutStartTime: null,
@@ -340,6 +497,145 @@ export const useWorkoutStore = create(
       },
 
       // ==================
+      // CUSTOM TEMPLATE ACTIONS
+      // ==================
+
+      // Create a custom workout template
+      createTemplate: (templateData) => {
+        const state = get();
+        const newTemplate = {
+          id: `custom-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          timesUsed: 0,
+          lastUsed: null,
+          isCustom: true,
+          ...templateData,
+        };
+
+        set({
+          customTemplates: [...state.customTemplates, newTemplate],
+        });
+
+        return newTemplate;
+      },
+
+      // Update a custom template
+      updateTemplate: (templateId, updates) => {
+        set((state) => ({
+          customTemplates: state.customTemplates.map(t =>
+            t.id === templateId
+              ? { ...t, ...updates, updatedAt: new Date().toISOString() }
+              : t
+          ),
+        }));
+      },
+
+      // Delete a custom template
+      deleteTemplate: (templateId) => {
+        set((state) => ({
+          customTemplates: state.customTemplates.filter(t => t.id !== templateId),
+        }));
+      },
+
+      // Duplicate a template (built-in or custom) as a new custom template
+      duplicateTemplate: (templateId, newName = null) => {
+        const state = get();
+        const sourceTemplate =
+          state.templates.find(t => t.id === templateId) ||
+          state.customTemplates.find(t => t.id === templateId);
+
+        if (!sourceTemplate) return null;
+
+        const newTemplate = {
+          id: `custom-${Date.now()}`,
+          name: newName || `${sourceTemplate.name} (Copy)`,
+          description: sourceTemplate.description,
+          exercises: [...sourceTemplate.exercises],
+          icon: sourceTemplate.icon,
+          color: sourceTemplate.color,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          timesUsed: 0,
+          lastUsed: null,
+          isCustom: true,
+        };
+
+        set({
+          customTemplates: [...state.customTemplates, newTemplate],
+        });
+
+        return newTemplate;
+      },
+
+      // Save current workout as a template
+      saveWorkoutAsTemplate: (name, description = '') => {
+        const state = get();
+        if (!state.activeWorkout || state.activeWorkout.exercises.length === 0) return null;
+
+        const exercises = state.activeWorkout.exercises.map(e => ({
+          exerciseId: e.exerciseId,
+          sets: e.sets.length,
+          targetReps: e.targetReps || 10,
+        }));
+
+        const newTemplate = {
+          id: `custom-${Date.now()}`,
+          name: name || state.activeWorkout.name || 'Custom Workout',
+          description,
+          exercises,
+          icon: '🏋️',
+          color: '#a855f7',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          timesUsed: 0,
+          lastUsed: null,
+          isCustom: true,
+        };
+
+        set({
+          customTemplates: [...state.customTemplates, newTemplate],
+        });
+
+        return newTemplate;
+      },
+
+      // Track template usage
+      incrementTemplateUsage: (templateId) => {
+        set((state) => ({
+          customTemplates: state.customTemplates.map(t =>
+            t.id === templateId
+              ? { ...t, timesUsed: (t.timesUsed || 0) + 1, lastUsed: new Date().toISOString() }
+              : t
+          ),
+        }));
+      },
+
+      // Get all templates (built-in + custom), sorted by usage
+      getAllTemplates: () => {
+        const state = get();
+        const all = [
+          ...state.templates.map(t => ({ ...t, isCustom: false })),
+          ...state.customTemplates,
+        ];
+        return all.sort((a, b) => (b.timesUsed || 0) - (a.timesUsed || 0));
+      },
+
+      // Get exercise weight suggestion based on history
+      getWeightSuggestion: (exerciseId) => {
+        const state = get();
+        const history = state.exerciseHistory[exerciseId];
+        if (!history) return null;
+
+        return {
+          suggested: history.lastWeight,
+          lastUsed: history.lastWeight,
+          personal_best: history.bestWeight,
+          lastReps: history.lastReps,
+        };
+      },
+
+      // ==================
       // CARDIO ACTIONS
       // ==================
 
@@ -365,6 +661,16 @@ export const useWorkoutStore = create(
         const pace = calculatePace(distance, durationSeconds);
         const speed = paceToSpeed(pace);
 
+        // Auto-calculate calories if not provided
+        const durationMinutes = Math.round(durationSeconds / 60);
+        const estimatedCalories = calories || calculateCaloriesBurned(
+          activityType,
+          durationMinutes,
+          70, // Default weight in kg - could be pulled from user profile
+          perceivedEffort || 5,
+          pace
+        );
+
         const newCardioWorkout = {
           id: `cardio-${Date.now()}`,
           date,
@@ -377,7 +683,7 @@ export const useWorkoutStore = create(
           perceivedEffort,
           heartRateAvg,
           heartRateMax,
-          calories,
+          calories: estimatedCalories,
           elevation,
           weather,
           splits,

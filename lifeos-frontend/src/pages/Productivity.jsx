@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
-import { Clock, BarChart3, CheckSquare, FolderKanban, DollarSign, Calendar } from 'lucide-react';
+import { Clock, BarChart3, FolderKanban } from 'lucide-react';
 import ProductivityDashboard from '../components/productivity/ProductivityDashboard';
 import WorkSessionsTab from '../components/productivity/WorkSessionsTab';
-import TasksTab from '../components/productivity/TasksTab';
 import ProjectsTab from '../components/productivity/ProjectsTab';
-import IncomeTab from '../components/productivity/IncomeTab';
-import PlanTomorrowTab from '../components/productivity/PlanTomorrowTab';
 
 export default function Productivity() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const tabs = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
-    { id: 'daily', name: 'Daily Plan', icon: Calendar },
     { id: 'sessions', name: 'Work Sessions', icon: Clock },
-    { id: 'tasks', name: 'Tasks', icon: CheckSquare },
     { id: 'projects', name: 'Projects', icon: FolderKanban },
-    { id: 'income', name: 'Income', icon: DollarSign },
   ];
 
   return (
@@ -47,11 +41,8 @@ export default function Productivity() {
       {/* Active Tab Content */}
       <div className="tab-content">
         {activeTab === 'dashboard' && <ProductivityDashboard />}
-        {activeTab === 'daily' && <PlanTomorrowTab />}
         {activeTab === 'sessions' && <WorkSessionsTab />}
-        {activeTab === 'tasks' && <TasksTab />}
         {activeTab === 'projects' && <ProjectsTab />}
-        {activeTab === 'income' && <IncomeTab />}
       </div>
 
       <style>{`

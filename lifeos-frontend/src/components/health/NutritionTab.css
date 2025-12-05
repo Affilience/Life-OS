@@ -699,6 +699,226 @@
   color: #ef4444;
 }
 
+/* Barcode Scan Button */
+.barcode-scan-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+  border: 1px dashed rgba(139, 92, 246, 0.3);
+  border-radius: 1rem;
+  color: #a78bfa;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.barcode-scan-btn:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.15));
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #c4b5fd;
+}
+
+.barcode-hint {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+/* Scanned Product Card */
+.scanned-product-card {
+  background: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scanned-product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.scanned-product-info {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.scanned-product-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+.scanned-product-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.scanned-product-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scanned-product-brand {
+  font-size: 0.8125rem;
+  color: #a78bfa;
+  margin: 0 0 0.25rem 0;
+}
+
+.scanned-product-serving {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.scanned-product-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.scanned-product-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.scanned-product-macros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.scanned-macro {
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+}
+
+.scanned-macro-value {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.scanned-macro-label {
+  display: block;
+  font-size: 0.6875rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.125rem;
+}
+
+.scanned-macro.protein .scanned-macro-value {
+  color: #60a5fa;
+}
+
+.scanned-macro.carbs .scanned-macro-value {
+  color: #fbbf24;
+}
+
+.scanned-macro.fat .scanned-macro-value {
+  color: #f472b6;
+}
+
+/* Nutri-Score Badge */
+.nutri-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  align-self: flex-start;
+}
+
+.nutri-score-a {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.nutri-score-b {
+  background: rgba(132, 204, 22, 0.2);
+  color: #84cc16;
+  border: 1px solid rgba(132, 204, 22, 0.3);
+}
+
+.nutri-score-c {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.nutri-score-d {
+  background: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.nutri-score-e {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.log-scanned-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  border: none;
+  border-radius: 0.75rem;
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.log-scanned-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .nutrition-tab {
@@ -799,5 +1019,418 @@
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 1rem;
   padding: 2rem;
+}
+
+/* Water Tracker Section - Flexible Units */
+.water-tracker-section {
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.water-tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.water-tracker-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.water-tracker-title h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.water-tracker-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.water-tracker-count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.water-current {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.water-divider {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.water-goal {
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.water-unit {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.50);
+  margin-left: 0.25rem;
+}
+
+.water-settings-btn {
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.water-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Water Progress Bar */
+.water-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.water-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.water-progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #3b82f6, #06b6d4);
+  border-radius: 4px;
+  transition: width 300ms ease;
+}
+
+.water-progress-percent {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3b82f6;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Water Quick Add Buttons */
+.water-quick-add {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.water-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 0.5rem;
+  color: rgba(59, 130, 246, 0.9);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.water-quick-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.water-quick-btn.primary {
+  flex: 1;
+  justify-content: center;
+  background: linear-gradient(to right, #3b82f6, #06b6d4);
+  border: none;
+  color: white;
+}
+
+.water-quick-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.water-quick-btn.remove {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: rgba(239, 68, 68, 0.8);
+}
+
+.water-quick-btn.remove:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.water-quick-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Water Goal Reached */
+.water-goal-reached {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 0.5rem;
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Water Settings Panel */
+.water-settings-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+}
+
+.water-settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.water-settings-header h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.water-settings-header button {
+  padding: 0.25rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+
+.water-settings-header button:hover {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.water-setting {
+  margin-bottom: 1rem;
+}
+
+.water-setting:last-child {
+  margin-bottom: 0;
+}
+
+.water-setting label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.5rem;
+}
+
+.water-setting input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 0.875rem;
+}
+
+.water-setting input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.container-presets,
+.unit-options {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.container-presets button,
+.unit-options button {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.container-presets button:hover,
+.unit-options button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.container-presets button.active,
+.unit-options button.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #3b82f6;
+}
+
+/* Responsive Water Tracker */
+@media (max-width: 480px) {
+  .water-tracker-section {
+    padding: 1.25rem;
+  }
+
+  .water-quick-add {
+    gap: 0.375rem;
+  }
+
+  .water-quick-btn {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  .container-presets,
+  .unit-options {
+    gap: 0.375rem;
+  }
+
+  .container-presets button,
+  .unit-options button {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+}
+
+/* ============================================
+   Nutrition Sub-tabs Navigation
+   ============================================ */
+
+.nutrition-sub-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nutrition-sub-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.nutrition-sub-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.nutrition-sub-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.nutrition-sub-tab.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+/* ============================================
+   Meal Plans Content
+   ============================================ */
+
+.meal-plans-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.meal-plans-sub-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.meal-plans-sub-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.meal-plans-sub-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.meal-plans-sub-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.meal-plans-sub-tab.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.meal-plans-sub-content {
+  min-height: 400px;
+}
+
+/* ============================================
+   Supplements Content
+   ============================================ */
+
+.supplements-content {
+  min-height: 400px;
 }
 

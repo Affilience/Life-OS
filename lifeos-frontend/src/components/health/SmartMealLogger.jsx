@@ -319,7 +319,9 @@ export default function SmartMealLogger({ onMealLogged }) {
               </div>
               {result.source && (
                 <span className="text-xs px-2 py-1 bg-violet-500/20 text-violet-300 rounded-full">
-                  {result.source === 'cache' ? 'Instant' : 'AI Analyzed'}
+                  {result.source === 'cache' ? 'Instant' :
+                   result.dataSources?.usda > 0 ? 'USDA Data' :
+                   result.dataSources?.web > 0 ? 'Web Data' : 'AI Analyzed'}
                 </span>
               )}
             </div>
@@ -366,9 +368,21 @@ export default function SmartMealLogger({ onMealLogged }) {
                   className="p-3 bg-black/20 rounded-lg border border-white/5"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium text-fg-primary capitalize">
-                      {item.food}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-fg-primary capitalize">
+                        {item.food}
+                      </span>
+                      {item.source && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          item.source === 'usda' ? 'bg-green-500/20 text-green-400' :
+                          item.source === 'web' ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-amber-500/20 text-amber-400'
+                        }`}>
+                          {item.source === 'usda' ? 'USDA' :
+                           item.source === 'web' ? 'Web' : 'Est.'}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-fg-secondary font-semibold">
                       {item.calories} cal
                     </span>
@@ -377,11 +391,10 @@ export default function SmartMealLogger({ onMealLogged }) {
                     <span>P: {item.protein}g</span>
                     <span>C: {item.carbs}g</span>
                     <span>F: {item.fat}g</span>
-                    {item.amount && item.unit && (
-                      <span className="ml-auto text-fg-quaternary">
-                        {item.amount} {item.unit}
-                      </span>
-                    )}
+                    <span className="ml-auto text-fg-quaternary">
+                      {item.grams ? `${item.grams}g` :
+                       item.amount && item.unit ? `${item.amount} ${item.unit}` : ''}
+                    </span>
                   </div>
                 </div>
               ))}

@@ -74,7 +74,7 @@ export default function SkillsDashboard() {
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="px-4 pt-6 pb-4 space-y-6">
         {/* Top Stats - 2x2 Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard

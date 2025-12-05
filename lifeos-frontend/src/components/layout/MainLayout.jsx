@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
-import NovaWidget from '../nova/NovaWidget';
+
+// Lazy load NovaWidget - defer AI companion until after initial render
+const NovaWidget = lazy(() => import('../nova/NovaWidget'));
 
 /**
  * LifeOS MainLayout (AppShell)
@@ -14,6 +16,13 @@ import NovaWidget from '../nova/NovaWidget';
 
 const MainLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showNova, setShowNova] = useState(false);
+
+  // Defer Nova widget load until after initial paint (2 second delay)
+  useEffect(() => {
+    const timer = setTimeout(() => setShowNova(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0c0a10] text-white">
@@ -28,8 +37,12 @@ const MainLayout = ({ children }) => {
       {/* Bottom Navigation (mobile only) */}
       <BottomNav />
 
-      {/* Nova AI Companion Widget */}
-      <NovaWidget userLevel={15} />
+      {/* Nova AI Companion Widget - lazy loaded after initial render */}
+      {showNova && (
+        <Suspense fallback={null}>
+          <NovaWidget userLevel={15} />
+        </Suspense>
+      )}
     </div>
   );
 };

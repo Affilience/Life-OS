@@ -565,6 +565,158 @@ p {
   }
 }
 
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%) scale(0.95);
+  }
+}
+
+.animate-toast-enter {
+  animation: toast-enter 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.animate-toast-exit {
+  animation: toast-exit 200ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Celebration Animations */
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) translateX(var(--vx, 0)) rotate(var(--rotation, 720deg));
+    opacity: 0;
+  }
+}
+
+@keyframes achievement-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-100%) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes achievement-exit {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px) scale(0.95);
+  }
+}
+
+@keyframes streak-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes streak-exit {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 40px rgba(251, 191, 36, 0.8));
+  }
+}
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-confetti {
+  animation: confetti var(--duration, 3s) ease-out forwards;
+}
+
+.animate-achievement-enter {
+  animation: achievement-enter 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+.animate-achievement-exit {
+  animation: achievement-exit 0.3s ease-in forwards;
+}
+
+.animate-streak-enter {
+  animation: streak-enter 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+.animate-streak-exit {
+  animation: streak-exit 0.3s ease-in forwards;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
 /* ============================================================================
    UTILITY CLASSES
    ============================================================================ */
@@ -741,5 +893,87 @@ p {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   MOBILE OPTIMIZATIONS
+   ============================================================================ */
+
+/* Safe Area Insets for notched devices */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+
+  /* Touch target minimum (WCAG AAA) */
+  --touch-target-min: 44px;
+
+  /* Bottom nav height */
+  --bottom-nav-height: 64px;
+}
+
+/* Mobile breakpoint adjustments */
+@media (max-width: 768px) {
+  :root {
+    /* Reduce spacing on mobile */
+    --space-6: 1.25rem;  /* 20px instead of 24px */
+    --space-8: 1.5rem;   /* 24px instead of 32px */
+
+    /* Slightly larger base font for readability */
+    --font-size-xs: 0.8125rem;  /* 13px instead of 12px */
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    /* Further reduce spacing on small phones */
+    --space-6: 1rem;     /* 16px */
+    --space-8: 1.25rem;  /* 20px */
+
+    /* Larger text for small screens */
+    --font-size-xs: 0.8125rem;  /* 13px */
+    --font-size-sm: 0.9375rem;  /* 15px instead of 14px */
+  }
+}
+
+/* Prevent horizontal overflow on mobile */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Hide scrollbars on mobile but allow scrolling */
+@media (max-width: 768px) {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Touch-friendly tap highlight */
+@media (hover: none) and (pointer: coarse) {
+  * {
+    -webkit-tap-highlight-color: rgba(139, 92, 246, 0.1);
+  }
+
+  /* Disable hover effects on touch devices to prevent sticky states */
+  .hover-lift:hover,
+  .hover-lift-glow:hover,
+  .hover-subtle:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Active states instead of hover on touch */
+  .hover-lift:active,
+  .hover-lift-glow:active {
+    transform: scale(0.98);
   }
 }

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { X, DollarSign, Calendar, Briefcase, FileText, Clock } from 'lucide-react';
 import Button from '../shared/Button';
+import { useFinancialStore } from '../../stores/financialStore';
 import './AddIncomeModal.css';
 
 const AddIncomeModal = ({ onClose }) => {
+  const { addTransaction } = useFinancialStore();
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     source: '',
@@ -37,15 +39,18 @@ const AddIncomeModal = ({ onClose }) => {
     }
 
     const incomeData = {
-      ...formData,
+      type: 'income',
       amount: parseFloat(formData.amount),
+      category: formData.category,
+      description: formData.source,
+      date: formData.date,
+      notes: formData.notes,
+      project: formData.project,
       hoursWorked: formData.hoursWorked ? parseFloat(formData.hoursWorked) : null,
-      effectiveRate: formData.hoursWorked ? parseFloat(calculateEffectiveRate()) : null,
-      timestamp: new Date().toISOString()
+      effectiveRate: formData.hoursWorked ? parseFloat(calculateEffectiveRate()) : null
     };
 
-    console.log('Income logged:', incomeData);
-    alert('Income entry added successfully!');
+    addTransaction(incomeData);
     onClose();
   };
 

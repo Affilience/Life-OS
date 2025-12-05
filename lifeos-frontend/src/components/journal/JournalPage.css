@@ -110,11 +110,16 @@
   white-space: pre-wrap;
   word-wrap: break-word;
   margin-bottom: 24px;
+  /* Align text to notebook lines */
+  padding-top: 28px;
+  margin-top: -28px;
 }
 
 .entry-text p {
-  margin: 0 0 32px 0;
+  margin: 0 0 36px 0;
   text-indent: 0;
+  /* Each line sits on the ruled lines */
+  line-height: 36px;
 }
 
 .entry-text p:last-child {

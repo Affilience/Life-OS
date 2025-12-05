@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Zap,
@@ -12,7 +12,7 @@ import {
   Dumbbell
 } from 'lucide-react';
 
-export default function ModuleHealthWidget() {
+const ModuleHealthWidget = memo(function ModuleHealthWidget() {
   const navigate = useNavigate();
 
   // All Modules Health (placeholder data for now)
@@ -63,4 +63,6 @@ export default function ModuleHealthWidget() {
       </div>
     </div>
   );
-}
+});
+
+export default ModuleHealthWidget;

@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { Plus, Target, Clock, TrendingUp, Flame, Star, ChevronRight, Filter, Search } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Target, Clock, TrendingUp, Flame } from 'lucide-react';
+import useSkillsStore, {
+  getProficiencyLevel,
+  getXpProgress,
+  SKILL_CATEGORIES,
+} from '../stores/skillsStore';
+import LogPracticeModal from '../components/skills/LogPracticeModal';
+import SkillDetailView from '../components/skills/SkillDetailView';
 
 /**
  * Skills - Individual Skill Learning & Tracking
@@ -16,149 +23,69 @@ import { Plus, Target, Clock, TrendingUp, Flame, Star, ChevronRight, Filter, Sea
  */
 
 const Skills = () => {
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [filterLevel, setFilterLevel] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [showAddSkill, setShowAddSkill] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [showLogPractice, setShowLogPractice] = useState(false);
   const [logPracticeSkill, setLogPracticeSkill] = useState(null);
-  const [practiceMinutes, setPracticeMinutes] = useState('');
-  const [practiceNotes, setPracticeNotes] = useState('');
 
-  // Skill categories
-  const categories = [
-    { id: 'programming', name: 'Programming', icon: '💻', color: 'blue' },
-    { id: 'language', name: 'Languages', icon: '🌍', color: 'green' },
-    { id: 'creative', name: 'Creative', icon: '🎨', color: 'purple' },
-    { id: 'fitness', name: 'Fitness', icon: '💪', color: 'red' },
-    { id: 'business', name: 'Business', icon: '💼', color: 'yellow' },
-    { id: 'other', name: 'Other', icon: '✨', color: 'slate' },
-  ];
+  // New skill form state
+  const [newSkillName, setNewSkillName] = useState('');
+  const [newSkillCategory, setNewSkillCategory] = useState('other');
+  const [newSkillDescription, setNewSkillDescription] = useState('');
+  const [newSkillIcon, setNewSkillIcon] = useState('✨');
 
-  // Proficiency levels
-  const proficiencyLevels = [
-    { id: 'beginner', name: 'Beginner', xpRange: [0, 1000], color: 'slate' },
-    { id: 'novice', name: 'Novice', xpRange: [1000, 2500], color: 'green' },
-    { id: 'intermediate', name: 'Intermediate', xpRange: [2500, 5000], color: 'blue' },
-    { id: 'advanced', name: 'Advanced', xpRange: [5000, 10000], color: 'purple' },
-    { id: 'expert', name: 'Expert', xpRange: [10000, Infinity], color: 'orange' },
-  ];
+  // Get skills from store
+  const { skills, getOverallStats, addSkill, getSkillStats } = useSkillsStore();
+  const overallStats = useMemo(() => getOverallStats(), [skills, getOverallStats]);
 
-  // Mock skills data - will be replaced with store/API
-  const mockSkills = [
-    {
-      id: 1,
-      name: 'Python Programming',
-      category: 'programming',
-      xp: 2800,
-      totalMinutes: 1240,
-      streak: 7,
-      lastPracticed: '2024-01-20',
-      description: 'Backend development, data science, automation',
-      icon: '🐍',
-    },
-    {
-      id: 2,
-      name: 'Spanish',
-      category: 'language',
-      xp: 1200,
-      totalMinutes: 890,
-      streak: 14,
-      lastPracticed: '2024-01-21',
-      description: 'Conversational Spanish for travel and business',
-      icon: '🇪🇸',
-    },
-    {
-      id: 3,
-      name: 'Digital Marketing',
-      category: 'business',
-      xp: 1800,
-      totalMinutes: 620,
-      streak: 3,
-      lastPracticed: '2024-01-19',
-      description: 'SEO, social media, content marketing',
-      icon: '📱',
-    },
-    {
-      id: 4,
-      name: 'Guitar',
-      category: 'creative',
-      xp: 4200,
-      totalMinutes: 2840,
-      streak: 21,
-      lastPracticed: '2024-01-21',
-      description: 'Acoustic guitar, fingerstyle and strumming',
-      icon: '🎸',
-    },
-  ];
-
-  // Calculate proficiency level
-  const getProficiencyLevel = (xp) => {
-    return proficiencyLevels.find(level =>
-      xp >= level.xpRange[0] && xp < level.xpRange[1]
-    ) || proficiencyLevels[0];
-  };
-
-  // Filter skills
-  const filteredSkills = mockSkills.filter(skill => {
-    const matchesCategory = filterCategory === 'all' || skill.category === filterCategory;
-    const levelData = getProficiencyLevel(skill.xp);
-    const matchesLevel = filterLevel === 'all' || levelData.id === filterLevel;
-    const matchesSearch = skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          skill.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesLevel && matchesSearch;
-  });
-
-  // Calculate XP progress to next level
-  const getXpProgress = (xp) => {
-    const currentLevel = getProficiencyLevel(xp);
-    const levelIndex = proficiencyLevels.findIndex(l => l.id === currentLevel.id);
-
-    if (levelIndex === proficiencyLevels.length - 1) {
-      return { percent: 100, current: xp, next: xp };
-    }
-
-    const nextLevel = proficiencyLevels[levelIndex + 1];
-    const rangeStart = currentLevel.xpRange[0];
-    const rangeEnd = nextLevel.xpRange[0];
-    const progress = ((xp - rangeStart) / (rangeEnd - rangeStart)) * 100;
-
-    return {
-      percent: Math.min(100, progress),
-      current: xp - rangeStart,
-      next: rangeEnd - rangeStart,
-    };
-  };
 
   // Quick log practice
-  const handleQuickLog = (skillId) => {
-    const skill = mockSkills.find(s => s.id === skillId);
+  const handleQuickLog = (skill) => {
     setLogPracticeSkill(skill);
     setShowLogPractice(true);
   };
 
-  const handleSavePractice = () => {
-    if (!practiceMinutes || practiceMinutes <= 0) {
-      alert('Please enter valid practice time');
-      return;
-    }
+  // Handle practice logged
+  const handlePracticeLogged = (result) => {
+    // Could show a toast notification here
+    console.log('Practice logged:', result);
+  };
 
-    console.log('Logging practice:', {
-      skill: logPracticeSkill.name,
-      minutes: practiceMinutes,
-      notes: practiceNotes
+  // Handle add new skill
+  const handleAddSkill = () => {
+    if (!newSkillName.trim()) return;
+
+    addSkill({
+      name: newSkillName.trim(),
+      category: newSkillCategory,
+      description: newSkillDescription.trim(),
+      icon: newSkillIcon,
     });
 
-    // TODO: Add to store/API
-
-    // Reset and close
-    setPracticeMinutes('');
-    setPracticeNotes('');
-    setShowLogPractice(false);
-    setLogPracticeSkill(null);
+    // Reset form
+    setNewSkillName('');
+    setNewSkillCategory('other');
+    setNewSkillDescription('');
+    setNewSkillIcon('✨');
+    setShowAddSkill(false);
   };
+
+  // Skill icon options
+  const iconOptions = ['✨', '💻', '🎸', '🎨', '📱', '🌍', '💪', '📚', '🎯', '🚀', '⚡', '🔥', '🎮', '🎹', '📷', '✍️'];
+
+  // If a skill is selected, show detail view
+  if (selectedSkill) {
+    return (
+      <SkillDetailView
+        skill={selectedSkill}
+        onClose={() => setSelectedSkill(null)}
+        onLogPractice={() => {
+          setLogPracticeSkill(selectedSkill);
+          setShowLogPractice(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -171,18 +98,18 @@ const Skills = () => {
           {/* Quick Stats */}
           <div className="flex justify-center gap-6 text-center">
             <div>
-              <div className="text-2xl font-bold text-white">{mockSkills.length}</div>
+              <div className="text-2xl font-bold text-white">{overallStats.totalSkills}</div>
               <div className="text-xs text-slate-500 uppercase tracking-wide">Active Skills</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-purple-400">
-                {mockSkills.reduce((sum, s) => sum + s.totalMinutes, 0)}
+                {overallStats.totalHours}h
               </div>
-              <div className="text-xs text-slate-500 uppercase tracking-wide">Total Minutes</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">Total Hours</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-orange-400">
-                {Math.max(...mockSkills.map(s => s.streak))}
+                {overallStats.bestStreak}
               </div>
               <div className="text-xs text-slate-500 uppercase tracking-wide">Best Streak</div>
             </div>
@@ -191,82 +118,13 @@ const Skills = () => {
       </div>
 
       <div className="px-4">
-        {/* Filters & Search */}
-        <div className="mb-6 space-y-3">
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search skills..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#1a1724]/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-purple-500/50"
-            />
-          </div>
-
-          {/* Category Filter */}
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-            <button
-              onClick={() => setFilterCategory('all')}
-              className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filterCategory === 'all'
-                  ? 'bg-purple-500 text-white'
-                  : 'bg-[#1a1724]/50 text-slate-400 hover:text-white'
-              }`}
-            >
-              All Categories
-            </button>
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setFilterCategory(cat.id)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filterCategory === cat.id
-                    ? `bg-${cat.color}-500 text-white`
-                    : 'bg-[#1a1724]/50 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>{cat.icon}</span>
-                <span>{cat.name}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Level Filter */}
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-            <button
-              onClick={() => setFilterLevel('all')}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filterLevel === 'all'
-                  ? 'bg-slate-700 text-white'
-                  : 'bg-[#1a1724]/50 text-slate-500 hover:text-white'
-              }`}
-            >
-              All Levels
-            </button>
-            {proficiencyLevels.map(level => (
-              <button
-                key={level.id}
-                onClick={() => setFilterLevel(level.id)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  filterLevel === level.id
-                    ? `bg-${level.color}-500/20 text-${level.color}-400 border border-${level.color}-500/30`
-                    : 'bg-[#1a1724]/50 text-slate-500 hover:text-white'
-                }`}
-              >
-                {level.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Skills Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {filteredSkills.map(skill => {
+          {skills.map(skill => {
             const proficiency = getProficiencyLevel(skill.xp);
             const progress = getXpProgress(skill.xp);
-            const category = categories.find(c => c.id === skill.category);
+            const category = SKILL_CATEGORIES.find(c => c.id === skill.category);
+            const stats = getSkillStats(skill.id);
 
             return (
               <div
@@ -285,8 +143,8 @@ const Skills = () => {
                         {skill.name}
                       </h3>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-xs px-2 py-0.5 rounded bg-${category.color}-500/20 text-${category.color}-400`}>
-                          {category.name}
+                        <span className={`text-xs px-2 py-0.5 rounded bg-${category?.color || 'slate'}-500/20 text-${category?.color || 'slate'}-400`}>
+                          {category?.name || skill.category}
                         </span>
                         <span className={`text-xs px-2 py-0.5 rounded bg-${proficiency.color}-500/20 text-${proficiency.color}-400`}>
                           {proficiency.name}
@@ -297,7 +155,9 @@ const Skills = () => {
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-slate-400 mb-4 line-clamp-2">{skill.description}</p>
+                {skill.description && (
+                  <p className="text-sm text-slate-400 mb-4 line-clamp-2">{skill.description}</p>
+                )}
 
                 {/* Progress Bar */}
                 <div className="mb-4">
@@ -318,14 +178,14 @@ const Skills = () => {
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
                       <Flame className="w-3.5 h-3.5" />
-                      <span className="text-sm font-bold">{skill.streak}</span>
+                      <span className="text-sm font-bold">{stats?.streak || 0}</span>
                     </div>
                     <div className="text-xs text-slate-500">Day Streak</div>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-cyan-400 mb-1">
                       <Clock className="w-3.5 h-3.5" />
-                      <span className="text-sm font-bold">{Math.round(skill.totalMinutes / 60)}h</span>
+                      <span className="text-sm font-bold">{stats?.totalHours || 0}h</span>
                     </div>
                     <div className="text-xs text-slate-500">Time</div>
                   </div>
@@ -342,7 +202,7 @@ const Skills = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleQuickLog(skill.id);
+                    handleQuickLog(skill);
                   }}
                   className="w-full py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg text-sm font-semibold text-purple-400 transition-all"
                 >
@@ -354,20 +214,19 @@ const Skills = () => {
         </div>
 
         {/* Empty State */}
-        {filteredSkills.length === 0 && (
+        {skills.length === 0 && (
           <div className="text-center py-12">
             <Target className="w-16 h-16 mx-auto mb-4 text-slate-700" />
-            <h3 className="text-lg font-semibold text-white mb-2">No skills found</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">No skills yet</h3>
             <p className="text-sm text-slate-400 mb-6">
-              {searchQuery || filterCategory !== 'all' || filterLevel !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Start tracking your first skill to see it here'}
+              Start tracking your first skill to see it here
             </p>
-            {!searchQuery && filterCategory === 'all' && filterLevel === 'all' && (
-              <button className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-colors">
-                Add Your First Skill
-              </button>
-            )}
+            <button
+              onClick={() => setShowAddSkill(true)}
+              className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Add Your First Skill
+            </button>
           </div>
         )}
 
@@ -383,83 +242,24 @@ const Skills = () => {
 
       {/* Log Practice Modal */}
       {showLogPractice && logPracticeSkill && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#12101a] border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="text-3xl">{logPracticeSkill.icon}</div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Log Practice</h3>
-                  <p className="text-sm text-slate-400">{logPracticeSkill.name}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowLogPractice(false);
-                  setLogPracticeSkill(null);
-                  setPracticeMinutes('');
-                  setPracticeNotes('');
-                }}
-                className="text-slate-400 hover:text-white"
-              >
-                <Plus className="w-5 h-5 rotate-45" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Duration (minutes) *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={practiceMinutes}
-                  onChange={(e) => setPracticeMinutes(e.target.value)}
-                  placeholder="30"
-                  className="w-full px-4 py-2.5 bg-[#1a1724] border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Notes (optional)
-                </label>
-                <textarea
-                  value={practiceNotes}
-                  onChange={(e) => setPracticeNotes(e.target.value)}
-                  placeholder="What did you work on?"
-                  rows={3}
-                  className="w-full px-4 py-2.5 bg-[#1a1724] border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => {
-                    setShowLogPractice(false);
-                    setLogPracticeSkill(null);
-                    setPracticeMinutes('');
-                    setPracticeNotes('');
-                  }}
-                  className="flex-1 py-2.5 bg-[#1a1724] hover:bg-slate-700 border border-slate-700 rounded-lg text-white font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSavePractice}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg text-white font-semibold transition-all"
-                >
-                  Save Practice
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <LogPracticeModal
+          skill={logPracticeSkill}
+          onClose={() => {
+            setShowLogPractice(false);
+            setLogPracticeSkill(null);
+          }}
+          onSuccess={(result) => {
+            handlePracticeLogged(result);
+            // Refresh selected skill if viewing detail
+            if (selectedSkill && selectedSkill.id === logPracticeSkill.id) {
+              const updatedSkill = skills.find(s => s.id === selectedSkill.id);
+              if (updatedSkill) setSelectedSkill(updatedSkill);
+            }
+          }}
+        />
       )}
 
-      {/* Add Skill Modal (Placeholder) */}
+      {/* Add Skill Modal */}
       {showAddSkill && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#12101a] border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
@@ -473,28 +273,109 @@ const Skills = () => {
               </button>
             </div>
 
-            <div className="text-center py-8 text-slate-400">
-              <Target className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-              <p>Add new skill functionality coming soon...</p>
-              <button
-                onClick={() => setShowAddSkill(false)}
-                className="mt-4 px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors"
-              >
-                Close
-              </button>
+            <div className="space-y-4">
+              {/* Icon Selection */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Icon
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {iconOptions.map(icon => (
+                    <button
+                      key={icon}
+                      onClick={() => setNewSkillIcon(icon)}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-all ${
+                        newSkillIcon === icon
+                          ? 'bg-purple-500/30 border-2 border-purple-500'
+                          : 'bg-[#1a1724] border border-slate-700 hover:border-slate-500'
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Skill Name */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Skill Name *
+                </label>
+                <input
+                  type="text"
+                  value={newSkillName}
+                  onChange={(e) => setNewSkillName(e.target.value)}
+                  placeholder="e.g., JavaScript, Piano, Photography"
+                  className="w-full px-4 py-2.5 bg-[#1a1724] border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                  autoFocus
+                />
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Category
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {SKILL_CATEGORIES.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setNewSkillCategory(cat.id)}
+                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${
+                        newSkillCategory === cat.id
+                          ? `bg-${cat.color}-500/20 text-${cat.color}-400 border border-${cat.color}-500/30`
+                          : 'bg-[#1a1724] text-slate-400 border border-slate-700 hover:border-slate-500'
+                      }`}
+                    >
+                      <span>{cat.icon}</span>
+                      <span>{cat.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={newSkillDescription}
+                  onChange={(e) => setNewSkillDescription(e.target.value)}
+                  placeholder="What aspects of this skill do you want to develop?"
+                  rows={2}
+                  className="w-full px-4 py-2.5 bg-[#1a1724] border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 resize-none"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowAddSkill(false);
+                    setNewSkillName('');
+                    setNewSkillCategory('other');
+                    setNewSkillDescription('');
+                    setNewSkillIcon('✨');
+                  }}
+                  className="flex-1 py-2.5 bg-[#1a1724] hover:bg-slate-700 border border-slate-700 rounded-lg text-white font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddSkill}
+                  disabled={!newSkillName.trim()}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed rounded-lg text-white font-semibold transition-all"
+                >
+                  Add Skill
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       <style>{`
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
         .line-clamp-2 {
           display: -webkit-box;
           -webkit-line-clamp: 2;

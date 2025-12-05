@@ -187,13 +187,21 @@
   }
 
   .nav-actions {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     width: 100%;
+    justify-content: center;
+    gap: var(--space-2);
   }
 
   .week-grid {
-    grid-template-columns: 40px repeat(7, 1fr);
-    min-width: 700px;
+    grid-template-columns: 40px repeat(7, minmax(80px, 1fr));
+    min-width: unset;
+  }
+
+  .week-grid-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .time-label {
@@ -225,8 +233,16 @@
 
 @media (max-width: 480px) {
   .week-grid {
-    grid-template-columns: 30px repeat(7, 1fr);
-    min-width: 600px;
+    grid-template-columns: 30px repeat(7, minmax(60px, 1fr));
+    min-width: unset;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .week-grid-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
   }
 
   .time-label {
@@ -236,6 +252,7 @@
   .day-header {
     height: 35px;
     padding: var(--space-1);
+    scroll-snap-align: start;
   }
 
   .day-name {
@@ -252,6 +269,15 @@
 
   .time-slot {
     height: 35px;
+  }
+
+  .week-range {
+    font-size: var(--font-size-base);
+  }
+
+  .nav-actions {
+    flex-wrap: wrap;
+    gap: var(--space-2);
   }
 }
 

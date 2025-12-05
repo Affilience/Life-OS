@@ -28,8 +28,11 @@ export default function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#12101a]/95 backdrop-blur-lg border-t border-white/10 safe-area-inset-bottom md:hidden">
-      <div className="flex justify-around items-center h-16">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 bg-[#12101a]/95 backdrop-blur-lg border-t border-white/10 md:hidden"
+      style={{ paddingBottom: 'var(--safe-area-bottom)' }}
+    >
+      <div className="flex justify-around items-center" style={{ minHeight: 'var(--touch-target-min, 44px)', height: '64px' }}>
         {tabs.map((tab) => {
           const active = isActive(tab.path);
 

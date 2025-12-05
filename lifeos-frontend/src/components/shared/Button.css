@@ -121,3 +121,25 @@
   width: 48px;
   height: 48px;
 }
+
+/* Mobile: Ensure minimum touch target size (44px WCAG) */
+@media (hover: none) and (pointer: coarse) {
+  .button-small {
+    min-height: var(--touch-target-min, 44px);
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .button-medium {
+    min-height: var(--touch-target-min, 44px);
+  }
+
+  .button-icon-only {
+    min-width: var(--touch-target-min, 44px);
+    min-height: var(--touch-target-min, 44px);
+  }
+
+  .button-icon-only.button-small {
+    min-width: var(--touch-target-min, 44px);
+    min-height: var(--touch-target-min, 44px);
+  }
+}

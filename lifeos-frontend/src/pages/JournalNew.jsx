@@ -90,8 +90,7 @@ export default function JournalNew() {
     <div className="min-h-screen bg-[#0c0a10] text-white p-6 md:p-8 animate-fade-in">
       <PageHeader
         title="Starlog"
-        subtitle="Personal journal and daily reflections"
-        stats={`${entryCount} entries · ${weeklyEntries} this week${streakInfo.current > 0 ? ` · ${streakInfo.current} day streak 🔥` : ''}`}
+        stats={`${entryCount} entries · ${weeklyEntries} this week${streakInfo.current > 0 ? ` · ${streakInfo.current}🔥` : ''}`}
         icon={BookOpen}
         module="journal"
         variant="icon"

@@ -243,7 +243,7 @@ export const usePetStore = create(
     (set, get) => ({
       // User's pet collection - ALL UNLOCKED FOR TESTING
       ownedPets: Object.keys(PET_DATABASE), // All pets unlocked
-      activePets: ['common_kitsune_pup'], // Pets currently equipped
+      activePets: ['common_kitsune_pup', 'epic_phoenix', 'uncommon_griffin_chick', 'rare_azure_dragon'], // Pets currently equipped
       maxSlots: 6, // All pet slots unlocked (max 6)
 
       // Unlock a new pet

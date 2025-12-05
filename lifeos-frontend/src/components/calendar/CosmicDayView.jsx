@@ -25,6 +25,7 @@ export default function CosmicDayView() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [editingBlock, setEditingBlock] = useState(null);
 
   // Time slots (6am to 11pm)
   const hours = Array.from({ length: 18 }, (_, i) => i + 6);
@@ -257,7 +258,15 @@ export default function CosmicDayView() {
               {/* Render Time Blocks */}
               <div className="absolute inset-0">
                 {dayBlocks.map((block) => (
-                  <CosmicTimeBlock key={block.id} block={block} heightMultiplier={1.25} />
+                  <CosmicTimeBlock
+                    key={block.id}
+                    block={block}
+                    heightMultiplier={1.25}
+                    onEdit={(block) => {
+                      setEditingBlock(block);
+                      setShowCreateModal(true);
+                    }}
+                  />
                 ))}
               </div>
 
@@ -268,13 +277,15 @@ export default function CosmicDayView() {
         </div>
       </div>
 
-      {/* Create Time Block Modal */}
+      {/* Create/Edit Time Block Modal */}
       {showCreateModal && (
         <CreateTimeBlockModal
           initialData={selectedSlot}
+          editBlock={editingBlock}
           onClose={() => {
             setShowCreateModal(false);
             setSelectedSlot(null);
+            setEditingBlock(null);
           }}
         />
       )}

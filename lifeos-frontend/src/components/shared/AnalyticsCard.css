@@ -134,3 +134,53 @@
   min-height: 300px;
   position: relative;
 }
+
+/* Mobile: Responsive font sizes and spacing */
+@media (max-width: 768px) {
+  .analytics-card {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .metric-value {
+    font-size: 36px;
+  }
+
+  .analytics-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .analytics-content {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .analytics-card {
+    padding: var(--space-3);
+  }
+
+  .metric-value {
+    font-size: 28px;
+  }
+
+  .analytics-header {
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+  }
+
+  .analytics-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .time-range-selector {
+    gap: var(--space-1);
+  }
+
+  .range-button {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+}

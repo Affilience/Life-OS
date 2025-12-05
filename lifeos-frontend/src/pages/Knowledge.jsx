@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Book, BarChart3, Library, Quote, FileText } from 'lucide-react';
+import { BarChart3, Library, FileText } from 'lucide-react';
 import KnowledgeDashboard from '../components/knowledge/KnowledgeDashboard';
 import KnowledgeNew from './KnowledgeNew';
 import NotesTab from '../components/knowledge/NotesTab';
-import QuotesGallery from '../components/knowledge/QuotesGallery';
 
 export default function Knowledge() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -12,7 +11,6 @@ export default function Knowledge() {
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
     { id: 'library', name: 'Library', icon: Library },
     { id: 'notes', name: 'Notes', icon: FileText },
-    { id: 'quotes', name: 'Quotes', icon: Quote },
   ];
 
   return (
@@ -45,11 +43,6 @@ export default function Knowledge() {
         {activeTab === 'dashboard' && <KnowledgeDashboard />}
         {activeTab === 'library' && <KnowledgeNew />}
         {activeTab === 'notes' && <NotesTab />}
-        {activeTab === 'quotes' && (
-          <div className="p-6 bg-[#0c0a10] min-h-screen">
-            <QuotesGallery />
-          </div>
-        )}
       </div>
 
       <style>{`
