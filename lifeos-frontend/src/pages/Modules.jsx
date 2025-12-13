@@ -87,9 +87,9 @@ export default function Modules() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#0c0a10] pb-24">
+    <div className="min-h-screen bg-bg-0 pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-white/5 px-6 py-4">
+      <div className="sticky top-0 z-40 bg-bg-0 border-b border-border-subtle px-6 py-4">
         <PageHeader
           title="Modules"
           icon={LayoutGrid}
@@ -99,20 +99,20 @@ export default function Modules() {
         />
       </div>
 
-      {/* Simple Grid */}
-      <div className="px-4 pt-6 pb-4 grid grid-cols-4 gap-3">
+      {/* Simple Grid - 2 cols on mobile, 4 cols on tablet+ */}
+      <div className="px-4 pt-6 pb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
         {CORE_MODULES.map((module) => (
           <button
             key={module.id}
             onClick={() => navigate(module.route)}
-            className="flex flex-col items-center py-4 rounded-xl bg-[#1a1724] border border-white/10 group transition-all duration-150 hover:bg-[#221e2e] hover:border-violet-500/30 active:scale-95"
+            className="flex flex-col items-center py-5 sm:py-4 rounded-xl bg-bg-1 border border-border group transition-all duration-150 hover:bg-bg-2 hover:border-primary-500/30 active:scale-95"
           >
             {/* Icon */}
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${module.color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
+            <div className={`w-14 h-14 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${module.color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
               <img
                 src={MODULE_ICONS[module.iconKey]}
                 alt={module.name}
-                className="w-8 h-8"
+                className="w-9 h-9 sm:w-8 sm:h-8"
                 style={{
                   imageRendering: 'pixelated',
                   filter: `drop-shadow(0 0 6px ${module.glowColor})`,
@@ -120,7 +120,7 @@ export default function Modules() {
               />
             </div>
             {/* Name */}
-            <span className="text-xs font-medium text-white/80">{module.name}</span>
+            <span className="text-sm sm:text-xs font-medium text-text-secondary">{module.name}</span>
           </button>
         ))}
       </div>

@@ -1,12 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Dumbbell, BarChart3, Apple, Activity } from 'lucide-react';
 import HealthDashboard from '../components/health/HealthDashboard';
 import WorkoutsTab from '../components/health/WorkoutsTab';
 import NutritionTab from '../components/health/NutritionTab';
 import CardioTab from '../components/health/CardioTab';
+import { HealthSetup } from '../components/onboarding/setup';
+import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
 
 export default function Health() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
+
+  // Handle navigation state for tab switching (e.g., from NovaGuide)
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
+
+  // Show setup wizard if health module not configured during onboarding
+  const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('health');
 
   const tabs = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
@@ -16,9 +31,9 @@ export default function Health() {
   ];
 
   return (
-    <div className="health-page min-h-screen bg-[#0c0a10]">
+    <div className="health-page min-h-screen bg-bg-0">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+      <div className="sticky top-0 z-40 bg-bg-0 border-b border-border" data-tour="health-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -26,10 +41,11 @@ export default function Health() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                data-tour={`health-tab-${tab.id}`}
                 className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
                   activeTab === tab.id
                     ? 'bg-green-500/20 text-green-400 border-b-2 border-green-500'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
+                    : 'text-text-muted hover:text-text-primary hover:bg-bg-1/50'
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -40,12 +56,19 @@ export default function Health() {
         </div>
       </div>
 
+      {/* First-Run Setup (during onboarding) */}
+      {showSetup && (
+        <div className="px-4 pt-4">
+          <HealthSetup />
+        </div>
+      )}
+
       {/* Active Tab Content */}
       <div className="tab-content">
-        {activeTab === 'dashboard' && <HealthDashboard />}
-        {activeTab === 'workouts' && <WorkoutsTab />}
-        {activeTab === 'nutrition' && <NutritionTab />}
-        {activeTab === 'cardio' && <CardioTab />}
+        {activeTab === 'dashboard' && <div data-tour="health-dashboard-section"><HealthDashboard /></div>}
+        {activeTab === 'workouts' && <div data-tour="health-workouts-section"><WorkoutsTab /></div>}
+        {activeTab === 'nutrition' && <div data-tour="health-nutrition-section"><NutritionTab /></div>}
+        {activeTab === 'cardio' && <div data-tour="health-cardio-section"><CardioTab /></div>}
       </div>
 
       <style>{`

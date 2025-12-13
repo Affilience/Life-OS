@@ -1,0 +1,56 @@
+{
+  "name": "Journal & Diary",
+  "route": "/journal",
+  "navigation": "Sidebar → Modules → Journal (pen icon)",
+  "purpose": "Free-form daily entries, mood tracking, reflection prompts, and personal insights.",
+  "key_features": [
+    {
+      "name": "Daily Entries",
+      "description": "Write free-form journal entries with rich text formatting"
+    },
+    {
+      "name": "Mood Tracking",
+      "description": "Log daily mood with emoji scale and notes"
+    },
+    {
+      "name": "Reflection Prompts",
+      "description": "AI-generated prompts to guide reflection"
+    },
+    {
+      "name": "Calendar Heatmap",
+      "description": "Visual calendar showing journaling consistency"
+    },
+    {
+      "name": "Entry History",
+      "description": "Browse and search past entries"
+    },
+    {
+      "name": "Tags & Categories",
+      "description": "Organize entries with tags for easy retrieval"
+    }
+  ],
+  "data_tracked": [
+    "Journal entries (date, content, mood, tags, word_count)",
+    "Mood history (date, mood_level, notes)",
+    "Gratitude items",
+    "Reflection answers"
+  ],
+  "common_user_actions": [
+    "Write today's journal entry",
+    "Log my mood",
+    "Read past entries",
+    "Find entries about a topic",
+    "Check journaling streak",
+    "Get a reflection prompt"
+  ],
+  "related_modules": [
+    "Dashboard - Mood trends shown",
+    "Health - Mood correlates with sleep/exercise",
+    "Quests - Journaling streaks earn XP"
+  ],
+  "tips": [
+    "Journal at the same time daily for habit formation",
+    "Use tags like #gratitude, #reflection, #goals",
+    "Morning pages help clarify thinking for the day"
+  ]
+}

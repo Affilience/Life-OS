@@ -8,6 +8,7 @@ import {
   Video, Star, Search, Grid3x3, List, Plus, Check, Play,
   Clock, ExternalLink
 } from 'lucide-react';
+import AddMediaModal from './AddMediaModal';
 import './MediaViews.css';
 
 const STATUS_TABS = [
@@ -22,6 +23,7 @@ export default function VideosView() {
   const [activeTab, setActiveTab] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Filter only videos
   const videos = useMemo(() =>
@@ -228,10 +230,18 @@ export default function VideosView() {
         )}
       </div>
 
-      {/* Add FAB */}
-      <button className="add-fab video">
-        <Plus size={24} />
+      {/* Add Video Button */}
+      <button className="add-fab video" onClick={() => setShowAddModal(true)}>
+        <Plus size={20} />
+        <span>Add Video</span>
       </button>
+
+      {/* Add Media Modal */}
+      <AddMediaModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        defaultType="youtube"
+      />
     </div>
   );
 }

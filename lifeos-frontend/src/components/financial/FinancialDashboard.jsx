@@ -25,7 +25,7 @@ const FinancialDashboard = () => {
   return (
     <div className="financial-page min-h-screen bg-[#0c0a10]">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800" data-tour="financial-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -33,6 +33,7 @@ const FinancialDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                data-tour={`financial-tab-${tab.id}`}
                 className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
                   activeTab === tab.id
                     ? 'bg-emerald-500/20 text-emerald-400 border-b-2 border-emerald-500'

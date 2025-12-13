@@ -22,6 +22,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { RESOLUTION_CATEGORIES, useResolutionStore } from '../../stores/resolutionStore';
+import { triggerGamification } from '../../hooks/useGamification';
 
 const CATEGORY_ICONS = {
   Heart,
@@ -92,6 +93,8 @@ export default function AddResolutionModal({ onClose }) {
       actionSteps: formData.actionSteps.filter(s => s.trim()),
     };
     addResolution(resolution);
+    // Award XP for creating a new resolution
+    triggerGamification('resolutionCreated', { xpOverride: 30, module: 'purpose' });
     onClose();
   };
 

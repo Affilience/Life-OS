@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   PieChart,
   Pie,
@@ -7,14 +7,20 @@ import {
   Legend,
   Tooltip
 } from 'recharts';
+import { useFinancialStore } from '../../../stores/financialStore';
 
-// Mock asset allocation data
-const data = [
-  { name: 'Cash & Savings', value: 3500, color: '#00c853' },
-  { name: 'Investments', value: 2000, color: '#288cfa' },
-  { name: 'Business Value', value: 2500, color: '#7c3aed' },
-  { name: 'Equipment', value: 500, color: '#fbbf24' }
-];
+// Colors for asset types
+const ASSET_COLORS = {
+  savings: '#00c853',
+  checking: '#288cfa',
+  investment: '#7c3aed',
+  crypto: '#ec4899',
+  retirement: '#14b8a6',
+  property: '#f97316',
+  business: '#fbbf24',
+  cash: '#06b6d4',
+  other: '#95afc0'
+};
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({
@@ -61,8 +67,42 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function AssetAllocationChart() {
+  const { accounts } = useFinancialStore();
+
+  // Calculate asset allocation from accounts
+  const data = useMemo(() => {
+    // Group accounts by type
+    const assetsByType = {};
+    (accounts || []).forEach(acc => {
+      if (acc.balance > 0) {
+        const type = acc.type || 'other';
+        assetsByType[type] = (assetsByType[type] || 0) + acc.balance;
+      }
+    });
+
+    // Convert to chart data format
+    const chartData = Object.entries(assetsByType)
+      .map(([type, value]) => ({
+        name: type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        value: Math.round(value),
+        color: ASSET_COLORS[type.toLowerCase()] || ASSET_COLORS.other
+      }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+
+    return chartData;
+  }, [accounts]);
+
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const dataWithTotal = data.map(item => ({ ...item, total }));
+
+  if (data.length === 0) {
+    return (
+      <div className="chart-container flex items-center justify-center h-[300px]">
+        <p className="text-white/50 text-sm">No asset data to display</p>
+      </div>
+    );
+  }
 
   return (
     <div className="chart-container">

@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { SAMPLE_WORKOUTS, WORKOUT_TEMPLATES } from '../data/exerciseDatabase';
+import { WORKOUT_TEMPLATES } from '../data/exerciseDatabase';
 import { useAvatarStore } from './avatarStore';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+import { triggerGamification } from '../hooks/useGamification';
+import useAchievementsStore from './achievementsStore';
 
 // Cardio activity types
 export const CARDIO_TYPES = {
@@ -153,14 +157,207 @@ export const calculateCaloriesBurned = (
   return Math.round(caloriesBurned);
 };
 
+// Supabase sync helpers
+const syncWorkoutToSupabase = async (workout, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      // Delete exercises first (foreign key constraint)
+      await supabase.from('health_exercises').delete().eq('workout_id', workout.id);
+      await supabase.from('health_workouts').delete().eq('id', workout.id);
+      return;
+    }
+
+    const dbWorkout = {
+      id: workout.id,
+      user_id: DEV_USER_ID,
+      workout_date: workout.date,
+      workout_type: workout.templateId ? 'strength' : 'general',
+      name: workout.name,
+      duration_minutes: workout.duration || 0,
+      calories_burned: workout.caloriesBurned || 0,
+      notes: workout.notes || '',
+      rating: workout.prsAchieved > 0 ? 5 : 4,
+    };
+
+    await supabase.from('health_workouts').upsert(dbWorkout, { onConflict: 'id' });
+
+    // Sync exercises
+    if (workout.exercises && workout.exercises.length > 0) {
+      // Delete existing exercises for this workout
+      await supabase.from('health_exercises').delete().eq('workout_id', workout.id);
+
+      // Insert new exercises
+      const exercises = workout.exercises.flatMap((exercise, exerciseIndex) =>
+        exercise.sets
+          .filter(set => set.completed)
+          .map((set, setIndex) => ({
+            id: crypto.randomUUID(),
+            workout_id: workout.id,
+            exercise_name: exercise.exerciseId,
+            sets: 1,
+            reps: set.reps || 0,
+            weight_kg: set.weight || 0,
+            notes: set.isPR ? 'PR' : '',
+            position: exerciseIndex * 100 + setIndex,
+          }))
+      );
+
+      if (exercises.length > 0) {
+        await supabase.from('health_exercises').insert(exercises);
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing workout to Supabase:', error);
+  }
+};
+
+const syncCardioToSupabase = async (cardio, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      await supabase.from('health_workouts').delete().eq('id', cardio.id);
+      return;
+    }
+
+    const dbCardio = {
+      id: cardio.id,
+      user_id: DEV_USER_ID,
+      workout_date: cardio.date,
+      workout_type: cardio.activityType || 'cardio',
+      name: CARDIO_TYPES[cardio.activityType]?.name || 'Cardio',
+      duration_minutes: Math.round((cardio.durationSeconds || 0) / 60),
+      calories_burned: cardio.calories || 0,
+      notes: cardio.notes || '',
+      rating: cardio.prs && cardio.prs.length > 0 ? 5 : 4,
+    };
+
+    await supabase.from('health_workouts').upsert(dbCardio, { onConflict: 'id' });
+
+    // Store cardio-specific data in health_exercises as a single entry
+    await supabase.from('health_exercises').delete().eq('workout_id', cardio.id);
+    await supabase.from('health_exercises').insert({
+      id: crypto.randomUUID(),
+      workout_id: cardio.id,
+      exercise_name: cardio.activityType,
+      distance_km: (cardio.distance || 0) * 1.60934, // Convert miles to km
+      duration_seconds: cardio.durationSeconds || 0,
+      notes: JSON.stringify({
+        pace: cardio.pace,
+        speed: cardio.speed,
+        heartRateAvg: cardio.heartRateAvg,
+        heartRateMax: cardio.heartRateMax,
+        perceivedEffort: cardio.perceivedEffort,
+        prs: cardio.prs || [],
+      }),
+      position: 0,
+    });
+  } catch (error) {
+    console.error('Error syncing cardio to Supabase:', error);
+  }
+};
+
 export const useWorkoutStore = create(
   persist(
     (set, get) => ({
       // Data
-      workouts: SAMPLE_WORKOUTS,
+      workouts: [],
       templates: WORKOUT_TEMPLATES,
       customTemplates: [], // User-created workout templates
+      customExercises: {}, // User-created custom exercises { id: exerciseData }
       cardioWorkouts: [], // Separate array for cardio sessions
+
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          // Load workouts with exercises
+          const { data: workoutsData, error: workoutsError } = await supabase
+            .from('health_workouts')
+            .select(`
+              *,
+              health_exercises (*)
+            `)
+            .eq('user_id', DEV_USER_ID)
+            .order('workout_date', { ascending: false });
+
+          if (workoutsError) throw workoutsError;
+
+          // Separate strength workouts from cardio
+          const strengthWorkouts = [];
+          const cardioWorkouts = [];
+
+          (workoutsData || []).forEach(w => {
+            const exercises = w.health_exercises || [];
+            const isCardio = Object.keys(CARDIO_TYPES).includes(w.workout_type) ||
+                            (exercises.length === 1 && exercises[0].distance_km);
+
+            if (isCardio && exercises.length > 0) {
+              // Parse cardio workout
+              const exercise = exercises[0];
+              let extraData = {};
+              try {
+                extraData = exercise.notes ? JSON.parse(exercise.notes) : {};
+              } catch (e) { /* ignore parse errors */ }
+
+              cardioWorkouts.push({
+                id: w.id,
+                date: w.workout_date,
+                activityType: exercise.exercise_name || w.workout_type,
+                distance: (exercise.distance_km || 0) / 1.60934, // km to miles
+                durationSeconds: exercise.duration_seconds || (w.duration_minutes * 60),
+                pace: extraData.pace || 0,
+                speed: extraData.speed || 0,
+                notes: w.notes || '',
+                perceivedEffort: extraData.perceivedEffort,
+                heartRateAvg: extraData.heartRateAvg,
+                heartRateMax: extraData.heartRateMax,
+                calories: w.calories_burned || 0,
+                prs: extraData.prs || [],
+              });
+            } else {
+              // Parse strength workout - group exercises by exercise_name
+              const exerciseGroups = {};
+              exercises.forEach(e => {
+                if (!exerciseGroups[e.exercise_name]) {
+                  exerciseGroups[e.exercise_name] = {
+                    exerciseId: e.exercise_name,
+                    sets: [],
+                    targetSets: 0,
+                    targetReps: 10,
+                  };
+                }
+                exerciseGroups[e.exercise_name].sets.push({
+                  weight: e.weight_kg || 0,
+                  reps: e.reps || 0,
+                  completed: true,
+                  isPR: e.notes === 'PR',
+                });
+                exerciseGroups[e.exercise_name].targetSets++;
+              });
+
+              strengthWorkouts.push({
+                id: w.id,
+                date: w.workout_date,
+                startTime: w.workout_date,
+                endTime: w.workout_date,
+                name: w.name || 'Workout',
+                templateId: null,
+                exercises: Object.values(exerciseGroups),
+                notes: w.notes || '',
+                duration: w.duration_minutes || 0,
+                totalVolume: exercises.reduce((sum, e) => sum + ((e.weight_kg || 0) * (e.reps || 0)), 0),
+                prsAchieved: exercises.filter(e => e.notes === 'PR').length,
+                caloriesBurned: w.calories_burned || 0,
+              });
+            }
+          });
+
+          set({
+            workouts: strengthWorkouts,
+            cardioWorkouts,
+          });
+        } catch (error) {
+          console.error('Error initializing workouts from Supabase:', error);
+        }
+      },
 
       // Exercise weight history (auto-populate previous weights)
       exerciseHistory: {}, // { exerciseId: { lastWeight: X, lastReps: Y, bestWeight: Z, bestReps: W } }
@@ -191,7 +388,7 @@ export const useWorkoutStore = create(
           : null;
 
         const newWorkout = {
-          id: `workout-${Date.now()}`,
+          id: crypto.randomUUID(),
           date: new Date().toISOString(),
           startTime: new Date().toISOString(),
           name: template?.name || 'Quick Workout',
@@ -380,23 +577,49 @@ export const useWorkoutStore = create(
         };
 
         // Award XP for completing workout
-        // Base XP: 20 for completing a workout
+        // Base XP: 30 for completing a workout
         // Bonus: 2 XP per completed set
-        // PR bonus: 10 XP per PR achieved
+        // PR bonus: 15 XP per PR achieved
         // Duration bonus: 1 XP per 5 minutes (encourages longer workouts)
-        let xpEarned = 20; // Base completion XP
+        let xpEarned = 30; // Base completion XP
         xpEarned += completedSets * 2; // Set completion bonus
-        xpEarned += prsAchieved * 10; // PR bonus
+        xpEarned += prsAchieved * 15; // PR bonus
         xpEarned += Math.floor(duration / 5); // Duration bonus
 
-        // Add XP to avatar
-        const avatarStore = useAvatarStore.getState();
-        avatarStore.addXP(xpEarned);
-        avatarStore.updateModuleProgress('fitness', {
-          workoutsCompleted: 1,
-          totalVolume: Math.round(totalVolume),
-          prsAchieved,
+        // Trigger unified gamification (XP + achievement stats + pet/equipment unlocks)
+        // Include duration and workout type for perk bonuses
+        triggerGamification('workoutCompleted', {
+          xpOverride: xpEarned,
+          module: 'fitness',
+          durationMinutes: duration,
+          workoutType: 'strength', // Strength training for the completeWorkout function
         });
+
+        // Track additional achievement stats
+        const achievementsStore = useAchievementsStore.getState();
+
+        // Track PRs achieved
+        if (prsAchieved > 0) {
+          achievementsStore.incrementStat('prsAchieved', prsAchieved);
+
+          // Check if multiple PRs in single workout (hidden achievement)
+          if (prsAchieved >= 3) {
+            achievementsStore.incrementStat('prsSingleWorkout', 1);
+          }
+        }
+
+        // Track total volume lifted (sum of weight * reps for all sets)
+        if (totalVolume > 0) {
+          achievementsStore.incrementStat('totalVolume', totalVolume);
+        }
+
+        // Track calories burned (using the already calculated estimatedCalories from above)
+        if (estimatedCalories > 0) {
+          achievementsStore.incrementStat('caloriesBurned', estimatedCalories);
+        }
+
+        // Check achievements after updating stats
+        achievementsStore.checkAchievements();
 
         // Update exercise history for weight pre-population
         const updatedHistory = { ...state.exerciseHistory };
@@ -436,6 +659,9 @@ export const useWorkoutStore = create(
           currentExerciseIndex: 0,
         });
 
+        // Sync to Supabase
+        syncWorkoutToSupabase(completedWorkout);
+
         return completedWorkout;
       },
 
@@ -451,9 +677,13 @@ export const useWorkoutStore = create(
 
       // Delete workout
       deleteWorkout: (id) => {
+        const workoutToDelete = get().workouts.find(w => w.id === id);
         set((state) => ({
           workouts: state.workouts.filter(w => w.id !== id),
         }));
+        if (workoutToDelete) {
+          syncWorkoutToSupabase(workoutToDelete, 'delete');
+        }
       },
 
       // Update workout notes
@@ -504,7 +734,7 @@ export const useWorkoutStore = create(
       createTemplate: (templateData) => {
         const state = get();
         const newTemplate = {
-          id: `custom-${Date.now()}`,
+          id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           timesUsed: 0,
@@ -548,7 +778,7 @@ export const useWorkoutStore = create(
         if (!sourceTemplate) return null;
 
         const newTemplate = {
-          id: `custom-${Date.now()}`,
+          id: crypto.randomUUID(),
           name: newName || `${sourceTemplate.name} (Copy)`,
           description: sourceTemplate.description,
           exercises: [...sourceTemplate.exercises],
@@ -580,7 +810,7 @@ export const useWorkoutStore = create(
         }));
 
         const newTemplate = {
-          id: `custom-${Date.now()}`,
+          id: crypto.randomUUID(),
           name: name || state.activeWorkout.name || 'Custom Workout',
           description,
           exercises,
@@ -672,7 +902,7 @@ export const useWorkoutStore = create(
         );
 
         const newCardioWorkout = {
-          id: `cardio-${Date.now()}`,
+          id: crypto.randomUUID(),
           date,
           activityType,
           distance: parseFloat(distance) || 0,
@@ -735,32 +965,68 @@ export const useWorkoutStore = create(
         };
 
         // Award XP
-        let xpEarned = 15; // Base cardio XP
+        let xpEarned = 25; // Base cardio XP
         xpEarned += Math.floor(durationSeconds / 300); // 1 XP per 5 minutes
         xpEarned += Math.floor(distance * 5); // 5 XP per mile/unit
         xpEarned += prs.length * 15; // 15 XP per PR
 
-        const avatarStore = useAvatarStore.getState();
-        avatarStore.addXP(xpEarned);
-        avatarStore.updateModuleProgress('fitness', {
-          cardioSessionsCompleted: 1,
-          cardioDistance: distance,
-          cardioDuration: durationSeconds,
+        // Trigger unified gamification
+        // Include duration and workout type for perk bonuses
+        triggerGamification('workoutCompleted', {
+          xpOverride: xpEarned,
+          module: 'fitness',
+          durationMinutes: Math.floor(durationSeconds / 60),
+          workoutType: 'cardio', // Cardio workout
         });
+
+        // Track cardio-specific achievement stats
+        const achievementsStore = useAchievementsStore.getState();
+
+        // Track cardio sessions
+        achievementsStore.incrementStat('cardioSessions', 1);
+
+        // Track cardio distance (only for distance-based activities)
+        const distanceUnits = ['miles', 'km'];
+        const activityConfig = CARDIO_TYPES[activityType];
+        if (activityConfig && distanceUnits.includes(activityConfig.unit) && distance > 0) {
+          // Convert to miles if needed (assuming input is already in the correct unit)
+          achievementsStore.incrementStat('cardioMiles', Math.round(distance * 100) / 100);
+        }
+
+        // Track calories burned from cardio (rough: ~8 cal per minute for cardio)
+        const cardioCalories = Math.round((durationSeconds / 60) * 8);
+        if (cardioCalories > 0) {
+          achievementsStore.incrementStat('caloriesBurned', cardioCalories);
+        }
+
+        // Track cardio PRs
+        if (prs.length > 0) {
+          achievementsStore.incrementStat('prsAchieved', prs.length);
+        }
+
+        // Check achievements after updating stats
+        achievementsStore.checkAchievements();
 
         set({
           cardioWorkouts: [newCardioWorkout, ...state.cardioWorkouts],
           cardioRecords: updatedRecords,
         });
 
+        // Sync to Supabase
+        syncCardioToSupabase(newCardioWorkout);
+
         return { workout: newCardioWorkout, xpEarned, prs };
       },
 
       // Delete cardio workout
       deleteCardioWorkout: (id) => {
+        const cardioToDelete = get().cardioWorkouts.find(w => w.id === id);
         set((state) => ({
           cardioWorkouts: state.cardioWorkouts.filter(w => w.id !== id),
         }));
+        if (cardioToDelete) {
+          syncCardioToSupabase(cardioToDelete, 'delete');
+        }
       },
 
       // Get cardio history for a specific activity type
@@ -882,6 +1148,80 @@ export const useWorkoutStore = create(
           .sort((a, b) => a.period.localeCompare(b.period));
       },
 
+      // ==================
+      // CUSTOM EXERCISE ACTIONS
+      // ==================
+
+      // Create a custom exercise
+      createCustomExercise: (exerciseData) => {
+        const state = get();
+        const id = exerciseData.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const newExercise = {
+          id,
+          name: exerciseData.name,
+          category: exerciseData.category || 'other',
+          subcategory: exerciseData.subcategory || 'custom',
+          muscleGroups: exerciseData.muscleGroups || [],
+          equipment: exerciseData.equipment || 'other',
+          type: exerciseData.type || 'compound',
+          icon: exerciseData.icon || '🏋️',
+          isCustom: true,
+          createdAt: new Date().toISOString(),
+          trackingType: exerciseData.trackingType || null,
+        };
+
+        set({
+          customExercises: {
+            ...state.customExercises,
+            [id]: newExercise,
+          },
+        });
+
+        return newExercise;
+      },
+
+      // Update a custom exercise
+      updateCustomExercise: (exerciseId, updates) => {
+        const state = get();
+        if (!state.customExercises[exerciseId]) return null;
+
+        const updatedExercise = {
+          ...state.customExercises[exerciseId],
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        };
+
+        set({
+          customExercises: {
+            ...state.customExercises,
+            [exerciseId]: updatedExercise,
+          },
+        });
+
+        return updatedExercise;
+      },
+
+      // Delete a custom exercise
+      deleteCustomExercise: (exerciseId) => {
+        const state = get();
+        const { [exerciseId]: deleted, ...remaining } = state.customExercises;
+        set({ customExercises: remaining });
+      },
+
+      // Get all exercises (built-in + custom)
+      getAllExercises: () => {
+        const state = get();
+        // Import the EXERCISE_DATABASE dynamically would cause circular dependency
+        // So we access it through the component that calls this function
+        return state.customExercises;
+      },
+
+      // Check if an exercise exists (built-in or custom)
+      getCustomExercise: (exerciseId) => {
+        return get().customExercises[exerciseId] || null;
+      },
+
       // UI actions
       setViewMode: (mode) => set({ viewMode: mode }),
       setCurrentExerciseIndex: (index) => set({ currentExerciseIndex: index }),
@@ -891,3 +1231,8 @@ export const useWorkoutStore = create(
     }
   )
 );
+
+// Initialize function for App.jsx
+export const initializeWorkoutStore = async () => {
+  return useWorkoutStore.getState().initializeFromSupabase();
+};

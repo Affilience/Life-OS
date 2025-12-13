@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
+import './TrendLineChart.css';
 
 export default function ComparisonBarChart({
   data,
@@ -32,8 +33,9 @@ export default function ComparisonBarChart({
   };
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+    <div className="comparison-chart-container">
+      <ResponsiveContainer width="100%" height={350}>
+        <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={1}/>
@@ -81,7 +83,8 @@ export default function ComparisonBarChart({
             />
           ))}
         </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

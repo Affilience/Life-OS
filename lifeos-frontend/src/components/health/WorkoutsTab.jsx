@@ -5,13 +5,30 @@
 
 import React from 'react';
 import WorkoutTracker from './WorkoutTracker';
+import { FitnessSetup } from '../onboarding/setup';
+import useIntegratedOnboardingStore from '../../stores/integratedOnboardingStore';
 
 export default function WorkoutsTab() {
+  const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
+
+  // Show setup wizard if fitness module not configured during onboarding
+  const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('fitness');
+
   return (
     <div style={{
-      margin: '-24px', // Counteract the parent padding to make it full-width
+      width: '100%',
+      maxWidth: '100%',
       minHeight: '600px',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
     }}>
+      {/* First-Run Setup (during onboarding) */}
+      {showSetup && (
+        <div style={{ padding: '24px', paddingBottom: 0 }}>
+          <FitnessSetup />
+        </div>
+      )}
+
       <WorkoutTracker />
     </div>
   );

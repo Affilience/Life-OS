@@ -1,0 +1,62 @@
+{
+  "name": "Health & Fitness",
+  "route": "/health",
+  "navigation": "Sidebar → Modules → Health (heart icon)",
+  "purpose": "Track workouts, nutrition, sleep, and recovery. Monitor physical well-being.",
+  "tabs": [
+    {
+      "name": "Overview",
+      "description": "Dashboard with health score, recent activity, and key metrics"
+    },
+    {
+      "name": "Workouts",
+      "description": "Log exercises, view workout history, track workout streaks"
+    },
+    {
+      "name": "Nutrition",
+      "description": "Log meals, track calories and macros, smart meal logging with AI"
+    },
+    {
+      "name": "Cardio",
+      "description": "Track cardio sessions, steps, and cardiovascular health"
+    },
+    {
+      "name": "Sleep",
+      "description": "Log sleep duration and quality, view sleep patterns"
+    },
+    {
+      "name": "Supplements",
+      "description": "Track supplement intake and schedules"
+    },
+    {
+      "name": "Meal Planning",
+      "description": "Plan weekly meals, manage recipes, generate grocery lists"
+    }
+  ],
+  "data_tracked": [
+    "Workouts (exercise_type, duration, intensity, calories_burned, notes)",
+    "Nutrition (meal_type, calories, protein, carbs, fats, foods)",
+    "Sleep (hours_slept, quality_rating, wake_feeling)",
+    "Body metrics (weight, body_fat, measurements)",
+    "Supplements (name, dosage, time_taken)"
+  ],
+  "common_user_actions": [
+    "Log a workout",
+    "Log a meal",
+    "Check calories today",
+    "View workout streak",
+    "Log sleep",
+    "Check macros",
+    "Plan meals for the week"
+  ],
+  "related_modules": [
+    "Dashboard - Health score and workout streak shown",
+    "Calendar - Workouts can be scheduled as events",
+    "Quests - Health activities earn XP"
+  ],
+  "tips": [
+    "Use Smart Meal Logger to quickly log meals with AI",
+    "Workout streaks give bonus XP multipliers",
+    "Sleep quality affects next day's energy recommendations"
+  ]
+}

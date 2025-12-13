@@ -1,17 +1,18 @@
 /**
  * Financial Store - Zustand state management for financial tracking
  * Manages transactions, budgets, savings goals, accounts, and envelope budgeting
+ * Hybrid pattern: optimistic local updates + async Supabase sync
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase, getCurrentUserId } from '../lib/supabase';
+import { DEV_USER_ID, isDevMode } from '../lib/dev-auth';
 import {
-  SAMPLE_TRANSACTIONS,
-  SAMPLE_BUDGETS,
-  SAMPLE_SAVINGS_GOALS,
-  SAMPLE_ACCOUNTS,
   CATEGORIES,
 } from '../data/financialData';
+import { triggerGamification } from '../hooks/useGamification';
+import useAchievementsStore from './achievementsStore';
 
 // ============================================================
 // ENVELOPE BUDGET CATEGORIES
@@ -255,14 +256,437 @@ const calculateContributionStreak = (contributions, newContribution) => {
   return streak;
 };
 
+// ============================================================
+// SUPABASE SYNC HELPERS
+// ============================================================
+
+// Initialize store from Supabase
+const initializeFromSupabase = async (set, get) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    // Load transactions (limit to last 500 for performance, user can load more on demand)
+    const { data: transactions, error: txnError } = await supabase
+      .from('financial_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('transaction_date', { ascending: false })
+      .limit(500);
+
+    if (txnError) throw txnError;
+
+    // Load budgets
+    const { data: budgets, error: budgetError } = await supabase
+      .from('financial_budgets')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    if (budgetError) throw budgetError;
+
+    // Load savings goals
+    const { data: goals, error: goalsError } = await supabase
+      .from('financial_goals')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (goalsError) throw goalsError;
+
+    // Load goal contributions (limit to last 200)
+    const { data: contributions, error: contribError } = await supabase
+      .from('financial_goal_contributions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (contribError) throw contribError;
+
+    // Load accounts
+    const { data: accounts, error: accountsError } = await supabase
+      .from('financial_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('active', true);
+
+    if (accountsError) throw accountsError;
+
+    // Load envelope budgets
+    const { data: envelopes, error: envelopesError } = await supabase
+      .from('financial_envelope_budgets')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (envelopesError) throw envelopesError;
+
+    // Load sinking funds
+    const { data: sinkingFunds, error: fundsError } = await supabase
+      .from('financial_sinking_funds')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    if (fundsError) throw fundsError;
+
+    // Load financial settings from user_profiles
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('financial_settings')
+      .eq('id', userId)
+      .maybeSingle();
+
+    // Transform data to match store format
+    const transformedTransactions = transactions?.map(t => ({
+      id: t.id,
+      date: t.transaction_date,
+      amount: parseFloat(t.amount),
+      type: t.transaction_type,
+      category: t.category,
+      subcategory: t.subcategory,
+      merchant: t.merchant,
+      description: t.description,
+      account: t.account_id,
+      tags: t.tags || [],
+      recurring: t.is_recurring,
+    })) || [];
+
+    const transformedBudgets = budgets?.map(b => ({
+      id: b.id,
+      category: b.category,
+      limit: parseFloat(b.budget_limit),
+      period: b.period || 'monthly',
+      spent: 0,
+    })) || [];
+
+    // Group contributions by goal
+    const contribByGoal = {};
+    contributions?.forEach(c => {
+      if (!contribByGoal[c.goal_id]) contribByGoal[c.goal_id] = [];
+      contribByGoal[c.goal_id].push({
+        id: c.id,
+        amount: c.is_withdrawal ? -parseFloat(c.amount) : parseFloat(c.amount),
+        date: c.created_at,
+        note: c.note || '',
+        isWithdrawal: c.is_withdrawal,
+      });
+    });
+
+    const transformedGoals = goals?.map(g => ({
+      id: g.id,
+      name: g.goal_name,
+      target: parseFloat(g.target_amount),
+      current: parseFloat(g.current_amount || 0),
+      deadline: g.deadline,
+      icon: g.icon || '💰',
+      color: g.color || 'from-green-500 to-emerald-500',
+      priority: g.priority || 0,
+      contributions: contribByGoal[g.id] || [],
+      milestonesReached: g.milestones_reached || [],
+      lastContributionDate: g.last_contribution_date,
+      contributionStreak: g.contribution_streak || 0,
+    })) || [];
+
+    const transformedAccounts = accounts?.map(a => ({
+      id: a.id,
+      name: a.account_name,
+      type: a.account_type,
+      balance: parseFloat(a.current_balance || 0),
+      institution: a.institution,
+      icon: a.icon || '🏦',
+      color: a.color || '#64748b',
+      lastUpdated: a.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+    })) || [];
+
+    // Transform envelope budgets to nested structure { monthKey: { categoryId: amount } }
+    const transformedEnvelopes = {};
+    envelopes?.forEach(e => {
+      if (!transformedEnvelopes[e.month_key]) {
+        transformedEnvelopes[e.month_key] = {};
+      }
+      transformedEnvelopes[e.month_key][e.category_id] = parseFloat(e.allocated_amount);
+    });
+
+    const transformedSinkingFunds = sinkingFunds?.map(f => ({
+      id: f.id,
+      name: f.name,
+      targetAmount: parseFloat(f.target_amount),
+      currentAmount: parseFloat(f.current_amount || 0),
+      targetDate: f.target_date,
+      monthlyContribution: parseFloat(f.monthly_contribution || 0),
+      icon: f.icon || '💰',
+      color: f.color || 'from-amber-500 to-yellow-500',
+      createdAt: f.created_at,
+    })) || [];
+
+    const settings = profile?.financial_settings || {};
+
+    // Update store with data from Supabase
+    // Always sync savingsGoals and accounts to ensure Supabase is the source of truth
+    // This clears out any stale localStorage data that may have been persisted before Supabase sync
+    const updates = {
+      savingsGoals: transformedGoals,  // Always sync from Supabase (empty array if no goals)
+      accounts: transformedAccounts,    // Always sync from Supabase
+    };
+
+    // Only update other fields if we have data (preserves local state for gradual sync)
+    if (transformedTransactions.length > 0) updates.transactions = transformedTransactions;
+    if (transformedBudgets.length > 0) updates.budgets = transformedBudgets;
+    if (Object.keys(transformedEnvelopes).length > 0) updates.envelopeBudgets = transformedEnvelopes;
+    if (transformedSinkingFunds.length > 0) updates.sinkingFunds = transformedSinkingFunds;
+    if (settings.monthlyIncomeTarget) updates.monthlyIncomeTarget = settings.monthlyIncomeTarget;
+    if (settings.envelopeSettings) updates.envelopeSettings = settings.envelopeSettings;
+
+    set(updates);
+
+    console.log('Financial store initialized from Supabase');
+  } catch (error) {
+    console.error('Error initializing financial store from Supabase:', error);
+  }
+};
+
+// Sync transaction to Supabase
+const syncTransactionToSupabase = async (transaction, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase
+        .from('financial_transactions')
+        .delete()
+        .eq('id', transaction.id)
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('financial_transactions')
+        .upsert({
+          id: transaction.id,
+          user_id: userId,
+          transaction_date: transaction.date?.split('T')[0] || new Date().toISOString().split('T')[0],
+          amount: transaction.amount,
+          transaction_type: transaction.type,
+          category: transaction.category,
+          subcategory: transaction.subcategory,
+          merchant: transaction.merchant,
+          description: transaction.description,
+          account_id: transaction.account,
+          tags: transaction.tags || [],
+          is_recurring: transaction.recurring || false,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing transaction to Supabase:', error);
+  }
+};
+
+// Sync budget to Supabase
+const syncBudgetToSupabase = async (budget, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase
+        .from('financial_budgets')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', budget.id)
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('financial_budgets')
+        .upsert({
+          id: budget.id,
+          user_id: userId,
+          category: budget.category,
+          budget_limit: budget.limit,
+          period: budget.period || 'monthly',
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing budget to Supabase:', error);
+  }
+};
+
+// Sync savings goal to Supabase
+const syncGoalToSupabase = async (goal, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase
+        .from('financial_goals')
+        .update({ status: 'deleted', updated_at: new Date().toISOString() })
+        .eq('id', goal.id)
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('financial_goals')
+        .upsert({
+          id: goal.id,
+          user_id: userId,
+          goal_name: goal.name,
+          target_amount: goal.target,
+          current_amount: goal.current,
+          deadline: goal.deadline,
+          icon: goal.icon || '💰',
+          color: goal.color || 'from-green-500 to-emerald-500',
+          priority: goal.priority || 0,
+          milestones_reached: goal.milestonesReached || [],
+          last_contribution_date: goal.lastContributionDate,
+          contribution_streak: goal.contributionStreak || 0,
+          status: goal.current >= goal.target ? 'completed' : 'active',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing goal to Supabase:', error);
+  }
+};
+
+// Sync contribution to Supabase
+const syncContributionToSupabase = async (goalId, contribution) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    await supabase
+      .from('financial_goal_contributions')
+      .upsert({
+        id: contribution.id,
+        user_id: userId,
+        goal_id: goalId,
+        amount: Math.abs(contribution.amount),
+        note: contribution.note || '',
+        is_withdrawal: contribution.isWithdrawal || contribution.amount < 0,
+        created_at: contribution.date || new Date().toISOString(),
+      }, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Error syncing contribution to Supabase:', error);
+  }
+};
+
+// Sync account to Supabase
+const syncAccountToSupabase = async (account, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase
+        .from('financial_accounts')
+        .update({ active: false, updated_at: new Date().toISOString() })
+        .eq('id', account.id)
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('financial_accounts')
+        .upsert({
+          id: account.id,
+          user_id: userId,
+          account_name: account.name,
+          account_type: account.type,
+          current_balance: account.balance,
+          institution: account.institution,
+          icon: account.icon || '🏦',
+          color: account.color || '#64748b',
+          active: true,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing account to Supabase:', error);
+  }
+};
+
+// Sync envelope budget to Supabase
+const syncEnvelopeToSupabase = async (monthKey, categoryId, amount) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    // Generate a deterministic ID based on user, month, and category
+    const envelopeId = `${userId}-${monthKey}-${categoryId}`.replace(/[^a-zA-Z0-9-]/g, '-');
+
+    await supabase
+      .from('financial_envelope_budgets')
+      .upsert({
+        id: envelopeId,
+        user_id: userId,
+        month_key: monthKey,
+        category_id: categoryId,
+        allocated_amount: amount,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Error syncing envelope to Supabase:', error);
+  }
+};
+
+// Sync sinking fund to Supabase
+const syncSinkingFundToSupabase = async (fund, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase
+        .from('financial_sinking_funds')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', fund.id)
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('financial_sinking_funds')
+        .upsert({
+          id: fund.id,
+          user_id: userId,
+          name: fund.name,
+          target_amount: fund.targetAmount,
+          current_amount: fund.currentAmount || 0,
+          target_date: fund.targetDate,
+          monthly_contribution: fund.monthlyContribution || 0,
+          icon: fund.icon || '💰',
+          color: fund.color || 'from-amber-500 to-yellow-500',
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing sinking fund to Supabase:', error);
+  }
+};
+
+// Sync financial settings to user_profiles
+const syncSettingsToSupabase = async (settings) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    await supabase
+      .from('user_profiles')
+      .update({
+        financial_settings: settings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+  } catch (error) {
+    console.error('Error syncing financial settings to Supabase:', error);
+  }
+};
+
 export const useFinancialStore = create(
   persist(
     (set, get) => ({
       // State
-      transactions: SAMPLE_TRANSACTIONS,
-      budgets: SAMPLE_BUDGETS,
-      savingsGoals: SAMPLE_SAVINGS_GOALS,
-      accounts: SAMPLE_ACCOUNTS,
+      transactions: [],
+      budgets: [],
+      savingsGoals: [],
+      accounts: [],
       selectedPeriod: 'month', // 'week' | 'month' | 'year' | 'all'
       selectedAccount: 'all',
       selectedCategory: 'all',
@@ -272,6 +696,9 @@ export const useFinancialStore = create(
       monthlyIncomeTarget: 3000, // Expected monthly income for zero-based budgeting
       envelopeSettings: {}, // { categoryId: { rollover: true, ... } }
       sinkingFunds: [], // For irregular expenses
+
+      // Initialize from Supabase
+      initializeFromSupabase: () => initializeFromSupabase(set, get),
 
       // Transaction CRUD
       addTransaction: (transaction) => {
@@ -283,6 +710,15 @@ export const useFinancialStore = create(
         set((state) => ({
           transactions: [newTransaction, ...state.transactions],
         }));
+        // Sync to Supabase
+        syncTransactionToSupabase(newTransaction);
+
+        // Award XP for logging transactions
+        const isIncome = transaction.type === 'income';
+        triggerGamification(isIncome ? 'incomeLogged' : 'expenseLogged', {
+          xpOverride: isIncome ? 10 : 5,
+          module: 'financial',
+        });
       },
 
       updateTransaction: (id, updates) => {
@@ -291,12 +727,18 @@ export const useFinancialStore = create(
             txn.id === id ? { ...txn, ...updates } : txn
           ),
         }));
+        // Sync to Supabase
+        const transaction = get().transactions.find(t => t.id === id);
+        if (transaction) syncTransactionToSupabase(transaction);
       },
 
       deleteTransaction: (id) => {
+        const transaction = get().transactions.find(t => t.id === id);
         set((state) => ({
           transactions: state.transactions.filter((txn) => txn.id !== id),
         }));
+        // Sync to Supabase
+        if (transaction) syncTransactionToSupabase(transaction, 'delete');
       },
 
       // Budget CRUD
@@ -310,6 +752,8 @@ export const useFinancialStore = create(
         set((state) => ({
           budgets: [...state.budgets, newBudget],
         }));
+        // Sync to Supabase
+        syncBudgetToSupabase(newBudget);
       },
 
       updateBudget: (id, updates) => {
@@ -318,12 +762,18 @@ export const useFinancialStore = create(
             budget.id === id ? { ...budget, ...updates } : budget
           ),
         }));
+        // Sync to Supabase
+        const budget = get().budgets.find(b => b.id === id);
+        if (budget) syncBudgetToSupabase(budget);
       },
 
       deleteBudget: (id) => {
+        const budget = get().budgets.find(b => b.id === id);
         set((state) => ({
           budgets: state.budgets.filter((budget) => budget.id !== id),
         }));
+        // Sync to Supabase
+        if (budget) syncBudgetToSupabase(budget, 'delete');
       },
 
       // Savings Goal CRUD
@@ -336,20 +786,47 @@ export const useFinancialStore = create(
         set((state) => ({
           savingsGoals: [...state.savingsGoals, newGoal],
         }));
+        // Sync to Supabase
+        syncGoalToSupabase(newGoal);
+
+        // Award XP for creating a savings goal
+        triggerGamification('savingsGoalCreated', {
+          xpOverride: 15,
+          module: 'financial',
+        });
       },
 
       updateSavingsGoal: (id, updates) => {
+        const oldGoal = get().savingsGoals.find(g => g.id === id);
+        const wasCompleted = oldGoal && oldGoal.current >= oldGoal.target;
+
         set((state) => ({
           savingsGoals: state.savingsGoals.map((goal) =>
             goal.id === id ? { ...goal, ...updates } : goal
           ),
         }));
+
+        // Check if goal just got completed
+        const updatedGoal = get().savingsGoals.find(g => g.id === id);
+        if (updatedGoal && !wasCompleted && updatedGoal.current >= updatedGoal.target) {
+          // Award XP for completing a savings goal
+          triggerGamification('savingsGoalCompleted', {
+            xpOverride: 75,
+            module: 'financial',
+          });
+        }
+
+        // Sync to Supabase
+        if (updatedGoal) syncGoalToSupabase(updatedGoal);
       },
 
       deleteSavingsGoal: (id) => {
+        const goal = get().savingsGoals.find(g => g.id === id);
         set((state) => ({
           savingsGoals: state.savingsGoals.filter((goal) => goal.id !== id),
         }));
+        // Sync to Supabase
+        if (goal) syncGoalToSupabase(goal, 'delete');
       },
 
       contributeSavingsGoal: (id, amount, note = '') => {
@@ -399,12 +876,54 @@ export const useFinancialStore = create(
           };
         });
 
-        // Return milestone info for celebration
+        // Sync contribution and goal to Supabase
         const goal = get().savingsGoals.find(g => g.id === id);
+        if (goal) {
+          syncContributionToSupabase(id, contribution);
+          syncGoalToSupabase(goal);
+        }
+
+        // Return milestone info for celebration
         const oldPercent = ((goal?.current || 0) - amount) / (goal?.target || 1) * 100;
         const newPercent = (goal?.current || 0) / (goal?.target || 1) * 100;
         const milestones = [25, 50, 75, 100];
         const crossedMilestones = milestones.filter(m => oldPercent < m && newPercent >= m);
+
+        // Track achievement stats for savings
+        const achievementsStore = useAchievementsStore.getState();
+
+        // Track contribution made
+        achievementsStore.incrementStat('savingsContributions', 1);
+
+        // Track total amount saved
+        if (amount > 0) {
+          achievementsStore.incrementStat('totalSaved', amount);
+        }
+
+        // Track milestone achievements
+        if (crossedMilestones.includes(25)) {
+          achievementsStore.incrementStat('savingsMilestone25', 1);
+        }
+        if (crossedMilestones.includes(50)) {
+          achievementsStore.incrementStat('savingsMilestone50', 1);
+        }
+        if (crossedMilestones.includes(75)) {
+          achievementsStore.incrementStat('savingsMilestone75', 1);
+        }
+
+        // Track contribution streak (weeks)
+        if (goal?.contributionStreak) {
+          achievementsStore.updateStat('savingsStreakWeeks', goal.contributionStreak);
+        }
+
+        // Trigger gamification for XP
+        triggerGamification('savingsContribution', {
+          xpOverride: 15,
+          module: 'financial',
+        });
+
+        // Check achievements
+        achievementsStore.checkAchievements();
 
         return { crossedMilestones, newPercent, goal };
       },
@@ -423,6 +942,9 @@ export const useFinancialStore = create(
               : goal
           ),
         }));
+        // Sync to Supabase
+        const goal = get().savingsGoals.find(g => g.id === goalId);
+        if (goal) syncGoalToSupabase(goal);
       },
 
       // Withdraw from goal (e.g., if user needs money back)
@@ -446,6 +968,12 @@ export const useFinancialStore = create(
               : goal
           ),
         }));
+        // Sync to Supabase
+        const goal = get().savingsGoals.find(g => g.id === id);
+        if (goal) {
+          syncContributionToSupabase(id, withdrawal);
+          syncGoalToSupabase(goal);
+        }
       },
 
       // Account CRUD
@@ -458,6 +986,8 @@ export const useFinancialStore = create(
         set((state) => ({
           accounts: [...state.accounts, newAccount],
         }));
+        // Sync to Supabase
+        syncAccountToSupabase(newAccount);
       },
 
       updateAccount: (id, updates) => {
@@ -466,12 +996,18 @@ export const useFinancialStore = create(
             acc.id === id ? { ...acc, ...updates } : acc
           ),
         }));
+        // Sync to Supabase
+        const account = get().accounts.find(a => a.id === id);
+        if (account) syncAccountToSupabase(account);
       },
 
       deleteAccount: (id) => {
+        const account = get().accounts.find(a => a.id === id);
         set((state) => ({
           accounts: state.accounts.filter((acc) => acc.id !== id),
         }));
+        // Sync to Supabase
+        if (account) syncAccountToSupabase(account, 'delete');
       },
 
       // Filters
@@ -689,6 +1225,8 @@ export const useFinancialStore = create(
             },
           },
         }));
+        // Sync to Supabase
+        syncEnvelopeToSupabase(monthKey, categoryId, amount);
       },
 
       // Set all envelopes for a month at once
@@ -699,6 +1237,10 @@ export const useFinancialStore = create(
             [monthKey]: budgets,
           },
         }));
+        // Sync all envelopes to Supabase
+        Object.entries(budgets).forEach(([categoryId, amount]) => {
+          syncEnvelopeToSupabase(monthKey, categoryId, amount);
+        });
       },
 
       // Copy envelopes from one month to another
@@ -712,11 +1254,18 @@ export const useFinancialStore = create(
             [targetMonth]: { ...sourceBudgets },
           },
         }));
+        // Sync all copied envelopes to Supabase
+        Object.entries(sourceBudgets).forEach(([categoryId, amount]) => {
+          syncEnvelopeToSupabase(targetMonth, categoryId, amount);
+        });
       },
 
       // Set monthly income target
       setMonthlyIncomeTarget: (amount) => {
         set({ monthlyIncomeTarget: amount });
+        // Sync settings to Supabase
+        const { envelopeSettings } = get();
+        syncSettingsToSupabase({ monthlyIncomeTarget: amount, envelopeSettings });
       },
 
       // Get envelope status for all categories in a month
@@ -854,6 +1403,8 @@ export const useFinancialStore = create(
         set((state) => ({
           sinkingFunds: [...state.sinkingFunds, newFund],
         }));
+        // Sync to Supabase
+        syncSinkingFundToSupabase(newFund);
 
         return newFund.id;
       },
@@ -864,12 +1415,18 @@ export const useFinancialStore = create(
             f.id === id ? { ...f, ...updates } : f
           ),
         }));
+        // Sync to Supabase
+        const fund = get().sinkingFunds.find(f => f.id === id);
+        if (fund) syncSinkingFundToSupabase(fund);
       },
 
       deleteSinkingFund: (id) => {
+        const fund = get().sinkingFunds.find(f => f.id === id);
         set((state) => ({
           sinkingFunds: state.sinkingFunds.filter((f) => f.id !== id),
         }));
+        // Sync to Supabase
+        if (fund) syncSinkingFundToSupabase(fund, 'delete');
       },
 
       contributeSinkingFund: (id, amount) => {
@@ -878,6 +1435,9 @@ export const useFinancialStore = create(
             f.id === id ? { ...f, currentAmount: f.currentAmount + amount } : f
           ),
         }));
+        // Sync to Supabase
+        const fund = get().sinkingFunds.find(f => f.id === id);
+        if (fund) syncSinkingFundToSupabase(fund);
       },
 
       withdrawSinkingFund: (id, amount) => {
@@ -886,6 +1446,9 @@ export const useFinancialStore = create(
             f.id === id ? { ...f, currentAmount: Math.max(0, f.currentAmount - amount) } : f
           ),
         }));
+        // Sync to Supabase
+        const fund = get().sinkingFunds.find(f => f.id === id);
+        if (fund) syncSinkingFundToSupabase(fund);
       },
 
       getTopMerchants: (limit = 5) => {
@@ -1007,3 +1570,9 @@ export const useFinancialStore = create(
 
 // Export helper
 export { getMonthKey };
+
+// Initialize financial store from Supabase
+export const initializeFinancialStore = async () => {
+  const store = useFinancialStore.getState();
+  await store.initializeFromSupabase();
+};

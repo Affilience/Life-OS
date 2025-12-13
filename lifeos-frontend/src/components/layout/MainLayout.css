@@ -10,7 +10,10 @@
   margin-left: 250px; /* Account for fixed sidebar */
   margin-top: 60px; /* Account for fixed topbar */
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: calc(100vh - 60px);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Mobile: No sidebar, account for bottom nav */
@@ -21,6 +24,8 @@
     padding: var(--space-4);
     padding-bottom: calc(var(--bottom-nav-height, 64px) + var(--safe-area-bottom, 0px) + var(--space-4));
     min-height: calc(100vh - 60px - var(--safe-area-top, 0px));
+    width: 100%;
+    max-width: 100vw;
   }
 }
 

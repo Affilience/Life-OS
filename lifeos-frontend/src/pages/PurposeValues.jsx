@@ -7,6 +7,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePurposeStore } from '../stores/purposeStore';
+import { PurposeSetup } from '../components/onboarding/setup';
+import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
 import {
   Compass,
   Target,
@@ -30,6 +32,10 @@ const PurposeValues = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { coreValues, decisions } = usePurposeStore();
   const navigate = useNavigate();
+  const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
+
+  // Show setup wizard if purpose module not configured during onboarding
+  const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('purpose');
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: Compass },
@@ -60,13 +66,14 @@ const PurposeValues = () => {
   return (
     <div className="purpose-page min-h-screen bg-[#0c0a10]">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800" data-tour="purpose-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
+                data-tour={`purpose-tab-${tab.id}`}
                 onClick={() => {
                   if (tab.isLink && tab.href) {
                     navigate(tab.href);
@@ -88,9 +95,23 @@ const PurposeValues = () => {
         </div>
       </div>
 
+      {/* Setup Wizard (if needed) */}
+      {showSetup && (
+        <div className="p-4">
+          <PurposeSetup
+            onComplete={() => {
+              useIntegratedOnboardingStore.getState().markModuleComplete('purpose');
+            }}
+            onSkip={() => {
+              useIntegratedOnboardingStore.getState().markModuleComplete('purpose');
+            }}
+          />
+        </div>
+      )}
+
       {/* Active Tab Content */}
       <div className="tab-content">
-        {renderView()}
+        {!showSetup && renderView()}
       </div>
 
       <style>{`
@@ -131,7 +152,7 @@ function OverviewView() {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-tour="purpose-overview-stats">
         <Card padding="md" hover>
           <Stat
             label="Core Values"
@@ -165,7 +186,7 @@ function OverviewView() {
       </div>
 
       {/* Mission Statement */}
-      <Card padding="md">
+      <Card padding="md" data-tour="purpose-mission-preview">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
             <Target className="w-5 h-5 text-purple-400" />
@@ -195,7 +216,7 @@ function OverviewView() {
           <div className="space-y-2">
             {topValues.map((value, idx) => (
               <div
-                key={value.id}
+                key={`${value.id}-${idx}`}
                 className="flex items-center gap-3 rounded-lg p-3"
                 style={{
                   background: 'rgba(39, 39, 42, 0.4)',
@@ -251,7 +272,7 @@ function MissionView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="purpose-mission-section">
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-500/20 mb-4">
           <Target className="w-8 h-8 text-purple-400" />
@@ -414,7 +435,7 @@ function ValuesView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="purpose-values-section">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>Your Core Values</h2>
@@ -441,6 +462,7 @@ function ValuesView() {
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-purple-500/30"
+            data-tour="add-value-btn"
             style={{
               background: 'linear-gradient(to right, #8b5cf6, #ec4899)',
               color: 'rgba(255, 255, 255, 0.87)',
@@ -526,7 +548,7 @@ function VisionView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="purpose-vision-section">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold mb-2" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>Your Life Vision</h2>
         <p style={{ color: 'rgba(255, 255, 255, 0.60)' }}>Paint a picture of your future across different time horizons</p>
@@ -657,7 +679,7 @@ function DecisionsView() {
   const completedDecisions = decisions.filter((d) => d.outcome !== 'pending');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="purpose-decisions-section">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>Decision Journal</h2>
@@ -668,6 +690,7 @@ function DecisionsView() {
         <button
           onClick={() => setShowAddModal(true)}
           className="px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-purple-500/30"
+          data-tour="log-decision-btn"
           style={{
             background: 'linear-gradient(to right, #8b5cf6, #3b82f6)',
             color: 'rgba(255, 255, 255, 0.87)',

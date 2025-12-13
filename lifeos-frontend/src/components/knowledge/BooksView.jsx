@@ -8,6 +8,7 @@ import {
   Book, Star, Search, Grid3x3, List, Plus, Check, BookOpen,
   Clock, Filter
 } from 'lucide-react';
+import AddBookModal from './AddBookModal';
 import './MediaViews.css';
 
 const STATUS_TABS = [
@@ -22,6 +23,7 @@ export default function BooksView() {
   const [activeTab, setActiveTab] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const filteredBooks = useMemo(() => {
     let items = books;
@@ -236,10 +238,14 @@ export default function BooksView() {
         )}
       </div>
 
-      {/* Add FAB */}
-      <button className="add-fab">
-        <Plus size={24} />
+      {/* Add Book Button */}
+      <button className="add-fab book" onClick={() => setShowAddModal(true)}>
+        <Plus size={20} />
+        <span>Add Book</span>
       </button>
+
+      {/* Add Book Modal */}
+      <AddBookModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
     </div>
   );
 }

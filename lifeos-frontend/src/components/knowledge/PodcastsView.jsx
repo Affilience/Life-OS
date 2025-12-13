@@ -8,6 +8,7 @@ import {
   Headphones, Star, Search, Grid3x3, List, Plus, Check, Play,
   Clock, ExternalLink
 } from 'lucide-react';
+import AddMediaModal from './AddMediaModal';
 import './MediaViews.css';
 
 const STATUS_TABS = [
@@ -22,6 +23,7 @@ export default function PodcastsView() {
   const [activeTab, setActiveTab] = useState('all');
   const [viewMode, setViewMode] = useState('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Filter only podcasts
   const podcasts = useMemo(() =>
@@ -228,10 +230,18 @@ export default function PodcastsView() {
         )}
       </div>
 
-      {/* Add FAB */}
-      <button className="add-fab podcast">
-        <Plus size={24} />
+      {/* Add Podcast Button */}
+      <button className="add-fab podcast" onClick={() => setShowAddModal(true)}>
+        <Plus size={20} />
+        <span>Add Podcast</span>
       </button>
+
+      {/* Add Media Modal */}
+      <AddMediaModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        defaultType="podcast"
+      />
     </div>
   );
 }

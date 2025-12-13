@@ -12,6 +12,78 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+import { triggerGamification } from '../hooks/useGamification';
+import useAchievementsStore from './achievementsStore';
+
+// =============================================================================
+// QUEST REQUIREMENT TO STATS MAPPING
+// Maps quest requirement.type to achievementsStore stats for auto-completion
+// =============================================================================
+const QUEST_REQUIREMENT_TO_STAT = {
+  // Health & Fitness
+  workouts: 'workouts',
+  workout_streak: 'workoutStreakDays',
+  morning_workout: 'workouts',
+  workout: 'workouts',
+
+  // Knowledge
+  reading_sessions: 'booksCompleted', // Approximate - reading sessions tracked via books
+  reading_hours: 'readingHours',
+  books_completed: 'booksCompleted',
+  notes_created: 'notesCreated',
+  reading_minutes: 'readingHours', // Will convert minutes to hours
+  articles_read: 'articlesRead',
+
+  // Productivity
+  deep_work_sessions: 'pomodorosCompleted', // Approximate mapping
+  deep_work_hours: 'deepWorkHours',
+  tasks_completed: 'tasksCompleted',
+  projects_completed: 'projectsCompleted',
+  pomodoros_completed: 'pomodorosCompleted',
+
+  // Journal
+  journal_entries: 'journalEntries',
+  journal_streak: 'journalStreakDays',
+  journal_days: 'journalEntries', // Days with journal entries
+  morning_entry: 'journalEntries',
+  mood_logs: 'moodEntriesLogged',
+  gratitude_entries: 'gratitudeEntriesCreated',
+
+  // Financial
+  budget_setup: 'budgetsCreated',
+  expenses_logged: 'expensesLogged',
+  daily_expense_logging: 'expensesLogged',
+  expense_logged: 'expensesLogged',
+  income_logged: 'incomeLogged',
+  savings_contributions: 'savingsContributions',
+  under_budget_months: 'underBudgetMonths',
+  budget_review: 'budgetsCreated',
+
+  // Calendar
+  time_blocks_completed: 'timeBlocksCompleted',
+  events_created: 'eventsCreated',
+
+  // Skills
+  practice_sessions: 'practiceSessionsCompleted',
+  skills_leveled_up: 'skillsLeveledUp',
+
+  // Streaks
+  streak_days: 'streakDays',
+  consecutive_days: 'consecutiveDays',
+  perfect_days: 'consecutiveDays',
+
+  // Multi-stat requirements (handled specially)
+  workouts_and_streak: null,
+  reading_and_books: null,
+  books_and_notes: null,
+  deep_work_streak: null,
+  savings_rate: null,
+  under_budget_streak: null,
+  all_envelopes_under_budget: null,
+  multi_module_completion: null,
+};
 
 // Helper functions
 const getDateString = (date = new Date()) => date.toISOString().split('T')[0];
@@ -394,12 +466,74 @@ export const BOSS_BATTLE_TEMPLATES = [
   },
 ];
 
+// Supabase sync helper - sync quest completion to user_missions
+const syncQuestCompletionToSupabase = async (questData) => {
+  try {
+    // We'll create a user_missions entry for tracking
+    const { data: existingMission } = await supabase
+      .from('user_missions')
+      .select('id')
+      .eq('user_id', DEV_USER_ID)
+      .eq('mission_id', questData.missionId || questData.templateId || questData.id)
+      .maybeSingle();
+
+    if (existingMission) {
+      // Update existing
+      await supabase
+        .from('user_missions')
+        .update({
+          status: questData.completed ? 'completed' : 'active',
+          progress: { current: questData.progress, target: questData.target },
+          completion_percentage: Math.round((questData.progress / questData.target) * 100),
+          completed_at: questData.completed ? new Date().toISOString() : null,
+          rewards_claimed: questData.completed,
+        })
+        .eq('id', existingMission.id);
+    }
+  } catch (error) {
+    console.error('Error syncing quest to Supabase:', error);
+  }
+};
+
 const useQuestsStore = create(
   persist(
     (set, get) => ({
       // ============================================================
       // STATE
       // ============================================================
+
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          // Load user's mission progress
+          const { data: userMissions, error: missionsError } = await supabase
+            .from('user_missions')
+            .select(`
+              *,
+              mission:missions (*)
+            `)
+            .eq('user_id', DEV_USER_ID);
+
+          if (missionsError) throw missionsError;
+
+          // Calculate stats from completed missions
+          const completedMissions = (userMissions || []).filter(m => m.status === 'completed');
+          const totalXP = completedMissions.reduce((sum, m) => sum + (m.mission?.xp_reward || 0), 0);
+          const totalCredits = completedMissions.reduce((sum, m) => sum + (m.mission?.credits_reward || 0), 0);
+
+          // Update quest stats from Supabase data
+          set(state => ({
+            questStats: {
+              ...state.questStats,
+              totalQuestsCompleted: completedMissions.length,
+              totalXPEarned: totalXP,
+              totalCreditsEarned: totalCredits,
+            },
+          }));
+        } catch (error) {
+          console.error('Error initializing quests from Supabase:', error);
+        }
+      },
 
       // Active quests by type
       weeklyQuests: {}, // { weekKey: [quests] }
@@ -468,41 +602,54 @@ const useQuestsStore = create(
       },
 
       updateWeeklyQuestProgress: (questId, progress, weekKey = getWeekKey()) => {
-        set(state => {
-          const quests = state.weeklyQuests[weekKey] || [];
-          const quest = quests.find(q => q.id === questId);
+        const quests = get().weeklyQuests[weekKey] || [];
+        const quest = quests.find(q => q.id === questId);
 
-          if (!quest) return state;
+        if (!quest) return;
 
-          const isNowComplete = progress >= quest.requirement.count && !quest.completed;
+        const isNowComplete = progress >= quest.requirement.count && !quest.completed;
 
-          return {
-            weeklyQuests: {
-              ...state.weeklyQuests,
-              [weekKey]: quests.map(q =>
-                q.id === questId
-                  ? {
-                      ...q,
-                      progress,
-                      completed: progress >= q.requirement.count,
-                      completedAt: isNowComplete ? new Date().toISOString() : q.completedAt,
-                    }
-                  : q
-              ),
-            },
-            questStats: isNowComplete ? {
-              ...state.questStats,
-              totalQuestsCompleted: state.questStats.totalQuestsCompleted + 1,
-              weeklyQuestsCompleted: state.questStats.weeklyQuestsCompleted + 1,
-              totalXPEarned: state.questStats.totalXPEarned + quest.xpReward,
-              totalCreditsEarned: state.questStats.totalCreditsEarned + quest.creditsReward,
-            } : state.questStats,
-            completedQuests: isNowComplete ? [
-              ...state.completedQuests,
-              { questId, type: 'weekly', completedAt: new Date().toISOString(), xpEarned: quest.xpReward, creditsEarned: quest.creditsReward }
-            ] : state.completedQuests,
-          };
-        });
+        set(state => ({
+          weeklyQuests: {
+            ...state.weeklyQuests,
+            [weekKey]: quests.map(q =>
+              q.id === questId
+                ? {
+                    ...q,
+                    progress,
+                    completed: progress >= q.requirement.count,
+                    completedAt: isNowComplete ? new Date().toISOString() : q.completedAt,
+                  }
+                : q
+            ),
+          },
+          questStats: isNowComplete ? {
+            ...state.questStats,
+            totalQuestsCompleted: state.questStats.totalQuestsCompleted + 1,
+            weeklyQuestsCompleted: state.questStats.weeklyQuestsCompleted + 1,
+            totalXPEarned: state.questStats.totalXPEarned + quest.xpReward,
+            totalCreditsEarned: state.questStats.totalCreditsEarned + quest.creditsReward,
+          } : state.questStats,
+          completedQuests: isNowComplete ? [
+            ...state.completedQuests,
+            { questId, type: 'weekly', completedAt: new Date().toISOString(), xpEarned: quest.xpReward, creditsEarned: quest.creditsReward }
+          ] : state.completedQuests,
+        }));
+
+        // Sync to database and trigger unified gamification when quest is completed
+        if (isNowComplete) {
+          triggerGamification('weeklyQuestCompleted', {
+            xpOverride: quest.xpReward,
+            module: quest.module || 'productivity',
+          });
+
+          syncQuestCompletionToSupabase({
+            ...quest,
+            progress,
+            target: quest.requirement.count,
+            completed: true,
+          });
+        }
       },
 
       // ============================================================
@@ -545,45 +692,58 @@ const useQuestsStore = create(
       },
 
       updateMonthlyQuestProgress: (questId, progress, monthKey = getMonthKey()) => {
-        set(state => {
-          const quests = state.monthlyQuests[monthKey] || [];
-          const quest = quests.find(q => q.id === questId);
+        const quests = get().monthlyQuests[monthKey] || [];
+        const quest = quests.find(q => q.id === questId);
 
-          if (!quest) return state;
+        if (!quest) return;
 
-          const target = typeof quest.requirement.count === 'number'
-            ? quest.requirement.count
-            : Object.values(quest.requirement).find(v => typeof v === 'number') || 1;
+        const target = typeof quest.requirement.count === 'number'
+          ? quest.requirement.count
+          : Object.values(quest.requirement).find(v => typeof v === 'number') || 1;
 
-          const isNowComplete = progress >= target && !quest.completed;
+        const isNowComplete = progress >= target && !quest.completed;
 
-          return {
-            monthlyQuests: {
-              ...state.monthlyQuests,
-              [monthKey]: quests.map(q =>
-                q.id === questId
-                  ? {
-                      ...q,
-                      progress,
-                      completed: progress >= target,
-                      completedAt: isNowComplete ? new Date().toISOString() : q.completedAt,
-                    }
-                  : q
-              ),
-            },
-            questStats: isNowComplete ? {
-              ...state.questStats,
-              totalQuestsCompleted: state.questStats.totalQuestsCompleted + 1,
-              monthlyQuestsCompleted: state.questStats.monthlyQuestsCompleted + 1,
-              totalXPEarned: state.questStats.totalXPEarned + quest.xpReward,
-              totalCreditsEarned: state.questStats.totalCreditsEarned + quest.creditsReward,
-            } : state.questStats,
-            completedQuests: isNowComplete ? [
-              ...state.completedQuests,
-              { questId, type: 'monthly', completedAt: new Date().toISOString(), xpEarned: quest.xpReward, creditsEarned: quest.creditsReward }
-            ] : state.completedQuests,
-          };
-        });
+        set(state => ({
+          monthlyQuests: {
+            ...state.monthlyQuests,
+            [monthKey]: quests.map(q =>
+              q.id === questId
+                ? {
+                    ...q,
+                    progress,
+                    completed: progress >= target,
+                    completedAt: isNowComplete ? new Date().toISOString() : q.completedAt,
+                  }
+                : q
+            ),
+          },
+          questStats: isNowComplete ? {
+            ...state.questStats,
+            totalQuestsCompleted: state.questStats.totalQuestsCompleted + 1,
+            monthlyQuestsCompleted: state.questStats.monthlyQuestsCompleted + 1,
+            totalXPEarned: state.questStats.totalXPEarned + quest.xpReward,
+            totalCreditsEarned: state.questStats.totalCreditsEarned + quest.creditsReward,
+          } : state.questStats,
+          completedQuests: isNowComplete ? [
+            ...state.completedQuests,
+            { questId, type: 'monthly', completedAt: new Date().toISOString(), xpEarned: quest.xpReward, creditsEarned: quest.creditsReward }
+          ] : state.completedQuests,
+        }));
+
+        // Sync to database and trigger unified gamification when quest is completed
+        if (isNowComplete) {
+          triggerGamification('monthlyQuestCompleted', {
+            xpOverride: quest.xpReward,
+            module: quest.module || 'productivity',
+          });
+
+          syncQuestCompletionToSupabase({
+            ...quest,
+            progress,
+            target,
+            completed: true,
+          });
+        }
       },
 
       // ============================================================
@@ -661,6 +821,14 @@ const useQuestsStore = create(
             if (updatedChain.completedSteps.length === template.totalSteps) {
               updatedChain.completedAt = new Date().toISOString();
             }
+          }
+
+          // Trigger unified gamification if entire chain is complete
+          if (isStepComplete && updatedChain.completedSteps.length === template.totalSteps) {
+            triggerGamification('questChainCompleted', {
+              xpOverride: template.rewards.xp,
+              module: template.module || 'productivity',
+            });
           }
 
           return {
@@ -760,6 +928,14 @@ const useQuestsStore = create(
           const updatedQuests = [...quests];
           updatedQuests[questIndex] = updatedQuest;
 
+          // Trigger unified gamification if cross-module quest is complete
+          if (isNowComplete) {
+            triggerGamification('crossModuleQuestCompleted', {
+              xpOverride: quest.xpReward,
+              module: 'productivity', // Cross-module quests are overall productivity
+            });
+          }
+
           return {
             crossModuleQuests: updatedQuests,
             questStats: isNowComplete ? {
@@ -836,6 +1012,12 @@ const useQuestsStore = create(
           const updatedBattles = [...battles];
 
           if (isDefeated) {
+            // Trigger unified gamification for defeating boss
+            triggerGamification('bossDefeated', {
+              xpOverride: battle.xpReward,
+              module: 'productivity',
+            });
+
             // Move to completed
             updatedBattles.splice(battleIndex, 1);
             return {
@@ -904,6 +1086,189 @@ const useQuestsStore = create(
         return get().questStats;
       },
 
+      // ============================================================
+      // AUTO-COMPLETION SYSTEM
+      // Automatically checks and updates quest progress based on stats
+      // ============================================================
+
+      /**
+       * Check all active quests against current stats and auto-complete if conditions are met
+       * This is called after any action that could affect quest progress
+       */
+      checkAndUpdateQuestProgress: () => {
+        const achievementsStore = useAchievementsStore.getState();
+        const stats = achievementsStore.stats;
+        const weekKey = getWeekKey();
+        const monthKey = getMonthKey();
+
+        // Helper to get current stat value for a requirement type
+        const getStatValue = (requirementType, requirement) => {
+          const statName = QUEST_REQUIREMENT_TO_STAT[requirementType];
+          if (!statName) return null;
+
+          let value = stats[statName] || 0;
+
+          // Handle special conversions
+          if (requirementType === 'reading_minutes') {
+            // Convert hours to minutes for comparison
+            value = value * 60;
+          }
+
+          return value;
+        };
+
+        // Helper to check multi-stat requirements
+        const checkMultiStatRequirement = (requirement) => {
+          switch (requirement.type) {
+            case 'workouts_and_streak':
+              return {
+                met: (stats.workouts || 0) >= requirement.workouts &&
+                     (stats.workoutStreakDays || 0) >= requirement.streak,
+                progress: Math.min(stats.workouts || 0, requirement.workouts)
+              };
+            case 'reading_and_books':
+              return {
+                met: (stats.readingHours || 0) >= requirement.hours &&
+                     (stats.booksCompleted || 0) >= requirement.books,
+                progress: Math.min(stats.readingHours || 0, requirement.hours)
+              };
+            case 'books_and_notes':
+              return {
+                met: (stats.booksCompleted || 0) >= requirement.books &&
+                     (stats.notesCreated || 0) >= requirement.notes,
+                progress: Math.min(stats.booksCompleted || 0, requirement.books)
+              };
+            default:
+              return { met: false, progress: 0 };
+          }
+        };
+
+        // Check weekly quests
+        const weeklyQuests = get().weeklyQuests[weekKey] || [];
+        weeklyQuests.forEach(quest => {
+          if (quest.completed) return;
+
+          const { requirement } = quest;
+          let currentProgress = 0;
+
+          // Handle multi-stat requirements
+          if (QUEST_REQUIREMENT_TO_STAT[requirement.type] === null) {
+            const result = checkMultiStatRequirement(requirement);
+            if (result.met) {
+              get().updateWeeklyQuestProgress(quest.id, requirement.count || 1, weekKey);
+            }
+            return;
+          }
+
+          // Get stat value for this requirement
+          currentProgress = getStatValue(requirement.type, requirement);
+          if (currentProgress === null) return;
+
+          // Update quest progress if changed
+          if (currentProgress !== quest.progress) {
+            get().updateWeeklyQuestProgress(quest.id, currentProgress, weekKey);
+          }
+        });
+
+        // Check monthly quests
+        const monthlyQuests = get().monthlyQuests[monthKey] || [];
+        monthlyQuests.forEach(quest => {
+          if (quest.completed) return;
+
+          const { requirement } = quest;
+          let currentProgress = 0;
+
+          // Handle multi-stat requirements
+          if (QUEST_REQUIREMENT_TO_STAT[requirement.type] === null) {
+            const result = checkMultiStatRequirement(requirement);
+            if (result.met) {
+              const target = requirement.count || Object.values(requirement).find(v => typeof v === 'number') || 1;
+              get().updateMonthlyQuestProgress(quest.id, target, monthKey);
+            }
+            return;
+          }
+
+          // Get stat value for this requirement
+          currentProgress = getStatValue(requirement.type, requirement);
+          if (currentProgress === null) return;
+
+          // Update quest progress if changed
+          if (currentProgress !== quest.progress) {
+            get().updateMonthlyQuestProgress(quest.id, currentProgress, monthKey);
+          }
+        });
+
+        // Check quest chains
+        const { questChains } = get();
+        Object.entries(questChains).forEach(([chainId, chainProgress]) => {
+          if (!chainProgress.started || chainProgress.completedAt) return;
+
+          const template = QUEST_CHAIN_TEMPLATES.find(c => c.id === chainId);
+          if (!template) return;
+
+          const currentStep = template.steps[chainProgress.currentStep - 1];
+          if (!currentStep) return;
+
+          const { requirement } = currentStep;
+
+          // Handle multi-stat requirements
+          if (QUEST_REQUIREMENT_TO_STAT[requirement.type] === null) {
+            const result = checkMultiStatRequirement(requirement);
+            if (result.met) {
+              const target = requirement.count || Object.values(requirement).find(v => typeof v === 'number') || 1;
+              get().updateQuestChainProgress(chainId, target);
+            }
+            return;
+          }
+
+          // Get stat value for this requirement
+          const currentProgress = getStatValue(requirement.type, requirement);
+          if (currentProgress === null) return;
+
+          // Update chain progress if changed
+          const existingProgress = chainProgress.progress[chainProgress.currentStep] || 0;
+          if (currentProgress > existingProgress) {
+            get().updateQuestChainProgress(chainId, currentProgress);
+          }
+        });
+
+        // Check cross-module quests
+        const crossModuleQuests = get().crossModuleQuests;
+        crossModuleQuests.forEach(quest => {
+          if (quest.completed) return;
+
+          quest.requirements.forEach((requirement, index) => {
+            if (quest.requirementsMet[index]) return;
+
+            const currentProgress = getStatValue(requirement.type, requirement);
+            if (currentProgress === null) return;
+
+            const target = requirement.count || 1;
+            if (currentProgress >= target && quest.progress[index] < target) {
+              get().updateCrossModuleQuestProgress(quest.id, index, currentProgress);
+            }
+          });
+        });
+
+        // Check boss battles
+        const activeBossBattles = get().activeBossBattles;
+        activeBossBattles.forEach(battle => {
+          if (battle.defeated || battle.playerDefeated) return;
+
+          const { requirements } = battle;
+          if (!requirements) return;
+
+          const currentProgress = getStatValue(requirements.type, requirements);
+          if (currentProgress === null) return;
+
+          // Calculate damage based on progress
+          const tasksCompleted = currentProgress - battle.tasksCompleted;
+          if (tasksCompleted > 0) {
+            get().dealDamageToBoss(battle.id, tasksCompleted);
+          }
+        });
+      },
+
       getRecentCompletedQuests: (limit = 10) => {
         const { completedQuests } = get();
         return completedQuests
@@ -961,5 +1326,10 @@ const useQuestsStore = create(
     }
   )
 );
+
+// Initialize function for App.jsx
+export const initializeQuestsStore = async () => {
+  return useQuestsStore.getState().initializeFromSupabase();
+};
 
 export default useQuestsStore;

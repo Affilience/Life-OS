@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, FileText, Book, Headphones, Video, GraduationCap, FolderOpen, Library } from 'lucide-react';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import PageHeader from '../shared/PageHeader';
 import Sidebar from './Sidebar';
@@ -17,6 +17,53 @@ import BooksView from './BooksView';
 import PodcastsView from './PodcastsView';
 import VideosView from './VideosView';
 import CoursesView from './CoursesView';
+
+// Mobile navigation tabs
+function MobileNav() {
+  const { notes, books, media, collections, activeView, setActiveView } = useKnowledgeStore();
+
+  const podcasts = media.filter(m => m.type === 'podcast');
+  const videos = media.filter(m => m.type === 'youtube' || m.type === 'video');
+  const courses = media.filter(m => m.type === 'course');
+
+  const navItems = [
+    { id: 'library', label: 'Library', icon: Library },
+    { id: 'all-notes', label: 'Notes', icon: FileText },
+    { id: 'books', label: 'Books', icon: Book },
+    { id: 'podcasts', label: 'Podcasts', icon: Headphones },
+    { id: 'videos', label: 'Videos', icon: Video },
+    { id: 'courses', label: 'Courses', icon: GraduationCap },
+    { id: 'collections', label: 'Collections', icon: FolderOpen },
+  ];
+
+  return (
+    <div className="md:hidden bg-[#12101a]/60 border-b border-white/5 overflow-x-auto">
+      <div className="flex px-2 py-2 gap-1 min-w-max">
+        {navItems.map(item => {
+          const Icon = item.icon;
+          const isActive = activeView === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveView(item.id)}
+              className={`
+                flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium
+                transition-all duration-150 whitespace-nowrap
+                ${isActive
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                  : 'text-white/60 hover:bg-[#1a1724]/50 hover:text-white'
+                }
+              `}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // MainCanvas component - Main content area
 function MainCanvas() {
@@ -39,10 +86,10 @@ function MainCanvas() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#0c0a10] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-[#0c0a10] min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="border-b border-white/5 bg-[#0c0a10] overflow-visible relative z-20">
-        <div className="px-6 py-4">
+      <div className="border-b border-white/5 bg-[#0c0a10] overflow-visible relative z-20 flex-shrink-0">
+        <div className="px-4 md:px-6 py-4">
           <PageHeader
             title={getViewTitle()}
             icon={BookOpen}
@@ -50,8 +97,10 @@ function MainCanvas() {
             variant="default"
             className="mb-0"
             actions={
-              <div className="flex items-center gap-3">
-                <SearchBar />
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="hidden sm:block">
+                  <SearchBar />
+                </div>
                 <QuickCapture />
               </div>
             }
@@ -60,7 +109,7 @@ function MainCanvas() {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
         {/* Library View - Overview of all content */}
         {activeView === 'library' && <LibraryView />}
 
@@ -167,9 +216,22 @@ function MainCanvas() {
 // Main KnowledgeModule Container
 export default function KnowledgeModule() {
   return (
-    <div className="flex h-screen w-full bg-[#0c0a10]">
-      <Sidebar />
-      <MainCanvas />
+    <div className="flex flex-col min-h-screen w-full bg-[#0c0a10]" data-tour="library-section">
+      {/* Mobile Navigation - horizontal tabs at top */}
+      <MobileNav />
+
+      {/* Main content area */}
+      <div className="flex flex-1 min-h-0">
+        {/* Sidebar - hidden on mobile, shown on tablet+ */}
+        <div data-tour="library-sidebar" className="hidden md:block flex-shrink-0">
+          <Sidebar />
+        </div>
+
+        {/* Main Canvas - takes remaining width */}
+        <div className="flex-1 min-w-0">
+          <MainCanvas />
+        </div>
+      </div>
     </div>
   );
 }

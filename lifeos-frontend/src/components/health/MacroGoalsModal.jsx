@@ -80,7 +80,7 @@ function MacroInput({ macroKey, value, onChange, config }) {
         <label className={`font-medium ${textClasses[config.color]}`}>
           {config.label}
         </label>
-        <span className="text-xs text-fg-tertiary">{config.unit}</span>
+        <span className="text-xs text-white/50">{config.unit}</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -91,7 +91,7 @@ function MacroInput({ macroKey, value, onChange, config }) {
           step={config.step}
           value={value}
           onChange={(e) => onChange(macroKey, parseInt(e.target.value))}
-          className="flex-1 h-2 bg-surface-alt rounded-lg appearance-none cursor-pointer
+          className="flex-1 h-2 bg-[#0c0a10] rounded-lg appearance-none cursor-pointer
             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4
             [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
             [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-lg
@@ -103,12 +103,12 @@ function MacroInput({ macroKey, value, onChange, config }) {
           onChange={(e) => onChange(macroKey, parseInt(e.target.value) || config.min)}
           min={config.min}
           max={config.max}
-          className={`w-20 px-2 py-1.5 text-sm text-center rounded-lg bg-surface-alt border
+          className={`w-20 px-2 py-1.5 text-sm text-center rounded-lg bg-[#0c0a10] border
             transition-colors focus:outline-none ${colorClasses[config.color]}`}
         />
       </div>
 
-      <p className="mt-2 text-xs text-fg-quaternary">{config.hint}</p>
+      <p className="mt-2 text-xs text-white/40">{config.hint}</p>
     </div>
   );
 }
@@ -145,21 +145,21 @@ export default function MacroGoalsModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md max-h-[90vh] overflow-hidden bg-surface border border-border-subtle rounded-2xl shadow-2xl flex flex-col">
+      <div className="w-full max-w-md max-h-[90vh] overflow-hidden bg-[#1a1724] border border-white/10 rounded-2xl shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border-subtle">
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
               <Target size={20} className="text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-fg-primary">Nutrition Goals</h3>
-              <p className="text-xs text-fg-tertiary">Set your daily macro targets</p>
+              <h3 className="font-semibold text-white">Nutrition Goals</h3>
+              <p className="text-xs text-white/60">Set your daily macro targets</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-surface-alt transition-colors text-fg-tertiary hover:text-fg-secondary"
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
           >
             <X size={20} />
           </button>
@@ -178,11 +178,11 @@ export default function MacroGoalsModal({ onClose }) {
           ))}
 
           {/* Calorie Balance Info */}
-          <div className="p-3 rounded-lg bg-surface-alt border border-border-subtle">
+          <div className="p-3 rounded-lg bg-[#0c0a10] border border-white/10">
             <div className="flex items-start gap-2">
-              <Info size={16} className="text-fg-tertiary mt-0.5 flex-shrink-0" />
+              <Info size={16} className="text-white/50 mt-0.5 flex-shrink-0" />
               <div className="text-xs">
-                <p className="text-fg-secondary mb-1">
+                <p className="text-white/80 mb-1">
                   <strong>Macro breakdown:</strong> {proteinCals} (protein) + {carbsCals} (carbs) + {fatCals} (fat) = {totalMacroCals} kcal
                 </p>
                 {Math.abs(calorieDiff) > 50 && (
@@ -199,11 +199,11 @@ export default function MacroGoalsModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border-subtle flex items-center justify-between">
+        <div className="p-4 border-t border-white/10 flex items-center justify-between">
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-fg-secondary hover:text-fg-primary
-              rounded-lg hover:bg-surface-alt transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white
+              rounded-lg hover:bg-white/10 transition-colors"
           >
             <RotateCcw size={16} />
             Reset to Defaults
@@ -211,8 +211,8 @@ export default function MacroGoalsModal({ onClose }) {
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-fg-secondary hover:text-fg-primary
-                rounded-lg hover:bg-surface-alt transition-colors"
+              className="px-4 py-2 text-sm text-white/70 hover:text-white
+                rounded-lg hover:bg-white/10 transition-colors"
             >
               Cancel
             </button>

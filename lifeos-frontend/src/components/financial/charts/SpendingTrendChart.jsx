@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -9,22 +9,7 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
-
-// Mock data for last 12 months
-const data = [
-  { month: 'Jan', income: 2400, expenses: 1800, net: 600 },
-  { month: 'Feb', income: 2600, expenses: 1900, net: 700 },
-  { month: 'Mar', income: 2500, expenses: 2100, net: 400 },
-  { month: 'Apr', income: 2800, expenses: 1850, net: 950 },
-  { month: 'May', income: 2700, expenses: 1950, net: 750 },
-  { month: 'Jun', income: 3000, expenses: 2000, net: 1000 },
-  { month: 'Jul', income: 2900, expenses: 1900, net: 1000 },
-  { month: 'Aug', income: 2850, expenses: 2050, net: 800 },
-  { month: 'Sep', income: 2950, expenses: 1875, net: 1075 },
-  { month: 'Oct', income: 2850, expenses: 1420, net: 1430 },
-  { month: 'Nov', income: 0, expenses: 0, net: 0 },
-  { month: 'Dec', income: 0, expenses: 0, net: 0 }
-];
+import { useFinancialStore } from '../../../stores/financialStore';
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload) return null;
@@ -42,6 +27,49 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function SpendingTrendChart() {
+  const { transactions } = useFinancialStore();
+
+  // Calculate monthly income/expenses from transactions
+  const data = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const today = new Date();
+
+    // Build last 12 months
+    const monthlyData = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData.push({
+        month: monthNames[d.getMonth()],
+        monthKey,
+        income: 0,
+        expenses: 0
+      });
+    }
+
+    // Sum transactions by month
+    (transactions || []).forEach(txn => {
+      if (!txn.date) return;
+      const txnMonthKey = txn.date.substring(0, 7);
+      const monthEntry = monthlyData.find(m => m.monthKey === txnMonthKey);
+      if (monthEntry) {
+        if (txn.type === 'income') {
+          monthEntry.income += txn.amount || 0;
+        } else if (txn.type === 'expense') {
+          monthEntry.expenses += Math.abs(txn.amount || 0);
+        }
+      }
+    });
+
+    // Calculate net and return
+    return monthlyData.map(m => ({
+      month: m.month,
+      income: Math.round(m.income),
+      expenses: Math.round(m.expenses),
+      net: Math.round(m.income - m.expenses)
+    }));
+  }, [transactions]);
+
   return (
     <div className="chart-container">
       <ResponsiveContainer width="100%" height={300}>

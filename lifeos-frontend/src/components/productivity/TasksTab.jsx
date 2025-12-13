@@ -13,6 +13,9 @@ import {
   Filter,
   TrendingUp,
   X,
+  ChevronDown,
+  ChevronRight,
+  ListTree,
 } from 'lucide-react';
 import useProductivityStore from '../../stores/productivityStore';
 import { EmptyState } from '../ui';
@@ -26,6 +29,13 @@ export default function TasksTab() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    // Subtask functions
+    addSubtask,
+    getSubtasks,
+    getSubtaskStats,
+    toggleSubtaskComplete,
+    deleteSubtask,
+    getTopLevelTasks,
   } = useProductivityStore();
 
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -38,6 +48,11 @@ export default function TasksTab() {
 
   // Quick Add Form
   const [quickAddTitle, setQuickAddTitle] = useState('');
+
+  // Subtask state
+  const [expandedTasks, setExpandedTasks] = useState({}); // { taskId: boolean }
+  const [addingSubtaskTo, setAddingSubtaskTo] = useState(null); // taskId of parent
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   // Full Form State
   const [formData, setFormData] = useState({
@@ -116,6 +131,31 @@ export default function TasksTab() {
     }
   };
 
+  // Subtask handlers
+  const toggleExpanded = (taskId) => {
+    setExpandedTasks(prev => ({ ...prev, [taskId]: !prev[taskId] }));
+  };
+
+  const handleAddSubtask = (parentTaskId) => {
+    if (!newSubtaskTitle.trim()) return;
+
+    addSubtask(parentTaskId, { title: newSubtaskTitle });
+    setNewSubtaskTitle('');
+    setAddingSubtaskTo(null);
+    // Auto-expand parent to show new subtask
+    setExpandedTasks(prev => ({ ...prev, [parentTaskId]: true }));
+  };
+
+  const handleToggleSubtask = (subtaskId) => {
+    toggleSubtaskComplete(subtaskId);
+  };
+
+  const handleDeleteSubtask = (subtaskId) => {
+    if (confirm('Are you sure you want to delete this subtask?')) {
+      deleteSubtask(subtaskId);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'No deadline';
     const date = new Date(dateString);
@@ -147,8 +187,8 @@ export default function TasksTab() {
     return `status-badge status-${status}`;
   };
 
-  // Filter and sort tasks
-  let filteredTasks = tasks;
+  // Filter and sort tasks - start with top-level tasks only
+  let filteredTasks = tasks.filter(t => !t.parentTaskId);
 
   // Filter by status
   if (filterStatus !== 'all') {
@@ -196,7 +236,7 @@ export default function TasksTab() {
           <h2 className="tab-title">Tasks</h2>
           <p className="tab-description">Manage and organize your tasks by priority and project</p>
         </div>
-        <button onClick={() => setShowQuickAdd(!showQuickAdd)} className="add-task-btn">
+        <button onClick={() => setShowQuickAdd(!showQuickAdd)} className="add-task-btn" data-tour="add-task-btn">
           <Plus className="w-5 h-5" />
           Quick Add Task
         </button>
@@ -321,106 +361,212 @@ export default function TasksTab() {
           size="md"
         />
       ) : (
-        <div className="tasks-list">
+        <div className="tasks-list" data-tour="tasks-list">
           {filteredTasks.map((task) => {
             const project = projects.find((p) => p.id === task.projectId);
+            const subtasks = getSubtasks(task.id);
+            const subtaskStats = getSubtaskStats(task.id);
+            const hasSubtasks = subtasks.length > 0;
+            const isExpanded = expandedTasks[task.id];
 
             return (
-              <div key={task.id} className={`task-item ${task.status === 'completed' ? 'completed' : ''}`}>
-                {/* Checkbox */}
-                <button
-                  onClick={() => toggleTaskComplete(task.id)}
-                  className="task-checkbox"
-                >
-                  {task.status === 'completed' ? (
-                    <CheckCircle2 className="w-5 h-5 checkbox-checked" />
-                  ) : (
-                    <Circle className="w-5 h-5 checkbox-unchecked" />
-                  )}
-                </button>
-
-                {/* Content */}
-                <div className="task-content">
-                  <div className="task-title-row">
-                    <h3 className="task-title">{task.title}</h3>
-                    <div className="task-badges">
-                      <span
-                        className="priority-badge"
-                        style={{
-                          backgroundColor: `${getPriorityColor(task.priority)}20`,
-                          color: getPriorityColor(task.priority),
-                          borderColor: `${getPriorityColor(task.priority)}40`,
-                        }}
-                      >
-                        <Flag className="w-3 h-3" />
-                        {task.priority}
-                      </span>
-                      <span className={getStatusBadgeClass(task.status)}>
-                        {task.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  {task.description && (
-                    <p className="task-description">{task.description}</p>
-                  )}
-
-                  <div className="task-meta">
-                    {project && (
-                      <>
-                        <div className="task-meta-item">
-                          <Folder className="w-4 h-4" />
-                          <span>{project.name}</span>
-                        </div>
-                        <span className="task-meta-separator">•</span>
-                      </>
+              <div key={task.id} className="task-item-wrapper">
+                <div className={`task-item ${task.status === 'completed' ? 'completed' : ''}`}>
+                  {/* Expand/Collapse for subtasks */}
+                  <button
+                    onClick={() => hasSubtasks && toggleExpanded(task.id)}
+                    className={`task-expand-btn ${hasSubtasks ? 'has-subtasks' : 'no-subtasks'}`}
+                    disabled={!hasSubtasks}
+                  >
+                    {hasSubtasks ? (
+                      isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <span className="w-4 h-4" />
                     )}
-                    {task.dueDate && (
-                      <>
-                        <div className="task-meta-item">
-                          <Calendar className="w-4 h-4" />
-                          <span>{formatDate(task.dueDate)}</span>
-                        </div>
-                      </>
-                    )}
-                    {task.estimatedTime > 0 && (
-                      <>
-                        <span className="task-meta-separator">•</span>
-                        <div className="task-meta-item">
-                          <Clock className="w-4 h-4" />
-                          <span>{(task.estimatedTime / 3600).toFixed(1)}h</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  </button>
 
-                  {task.tags && task.tags.length > 0 && (
-                    <div className="task-tags">
-                      <Tag className="w-3 h-3" />
-                      {task.tags.map((tag, index) => (
-                        <span key={index} className="task-tag">
-                          {tag}
+                  {/* Checkbox */}
+                  <button
+                    onClick={() => toggleTaskComplete(task.id)}
+                    className="task-checkbox"
+                  >
+                    {task.status === 'completed' ? (
+                      <CheckCircle2 className="w-5 h-5 checkbox-checked" />
+                    ) : (
+                      <Circle className="w-5 h-5 checkbox-unchecked" />
+                    )}
+                  </button>
+
+                  {/* Content */}
+                  <div className="task-content">
+                    <div className="task-title-row">
+                      <h3 className="task-title">{task.title}</h3>
+                      <div className="task-badges">
+                        {/* Subtask count badge */}
+                        {hasSubtasks && (
+                          <span className="subtask-badge">
+                            <ListTree className="w-3 h-3" />
+                            {subtaskStats.completed}/{subtaskStats.total}
+                          </span>
+                        )}
+                        <span
+                          className="priority-badge"
+                          style={{
+                            backgroundColor: `${getPriorityColor(task.priority)}20`,
+                            color: getPriorityColor(task.priority),
+                            borderColor: `${getPriorityColor(task.priority)}40`,
+                          }}
+                        >
+                          <Flag className="w-3 h-3" />
+                          {task.priority}
                         </span>
-                      ))}
+                        <span className={getStatusBadgeClass(task.status)}>
+                          {task.status}
+                        </span>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Subtask progress bar */}
+                    {hasSubtasks && (
+                      <div className="subtask-progress">
+                        <div
+                          className="subtask-progress-fill"
+                          style={{ width: `${(subtaskStats.completed / subtaskStats.total) * 100}%` }}
+                        />
+                      </div>
+                    )}
+
+                    {task.description && (
+                      <p className="task-description">{task.description}</p>
+                    )}
+
+                    <div className="task-meta">
+                      {project && (
+                        <>
+                          <div className="task-meta-item">
+                            <Folder className="w-4 h-4" />
+                            <span>{project.name}</span>
+                          </div>
+                          <span className="task-meta-separator">•</span>
+                        </>
+                      )}
+                      {task.dueDate && (
+                        <>
+                          <div className="task-meta-item">
+                            <Calendar className="w-4 h-4" />
+                            <span>{formatDate(task.dueDate)}</span>
+                          </div>
+                        </>
+                      )}
+                      {task.estimatedTime > 0 && (
+                        <>
+                          <span className="task-meta-separator">•</span>
+                          <div className="task-meta-item">
+                            <Clock className="w-4 h-4" />
+                            <span>{(task.estimatedTime / 3600).toFixed(1)}h</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {task.tags && task.tags.length > 0 && (
+                      <div className="task-tags">
+                        <Tag className="w-3 h-3" />
+                        {task.tags.map((tag, index) => (
+                          <span key={index} className="task-tag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="task-actions">
+                    <button
+                      onClick={() => setAddingSubtaskTo(addingSubtaskTo === task.id ? null : task.id)}
+                      className="task-action-btn subtask"
+                      title="Add subtask"
+                    >
+                      <ListTree className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleOpenEditModal(task)}
+                      className="task-action-btn edit"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="task-action-btn delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Actions */}
-                <div className="task-actions">
-                  <button
-                    onClick={() => handleOpenEditModal(task)}
-                    className="task-action-btn edit"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTask(task.id)}
-                    className="task-action-btn delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {/* Add Subtask Form */}
+                {addingSubtaskTo === task.id && (
+                  <div className="add-subtask-form">
+                    <input
+                      type="text"
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      placeholder="Enter subtask title..."
+                      className="subtask-input"
+                      autoFocus
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddSubtask(task.id)}
+                    />
+                    <button
+                      onClick={() => handleAddSubtask(task.id)}
+                      className="subtask-add-btn"
+                      disabled={!newSubtaskTitle.trim()}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAddingSubtaskTo(null);
+                        setNewSubtaskTitle('');
+                      }}
+                      className="subtask-cancel-btn"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Subtasks List */}
+                {isExpanded && hasSubtasks && (
+                  <div className="subtasks-list">
+                    {subtasks.map((subtask) => (
+                      <div
+                        key={subtask.id}
+                        className={`subtask-item ${subtask.status === 'completed' ? 'completed' : ''}`}
+                      >
+                        <button
+                          onClick={() => handleToggleSubtask(subtask.id)}
+                          className="subtask-checkbox"
+                        >
+                          {subtask.status === 'completed' ? (
+                            <CheckCircle2 className="w-4 h-4 checkbox-checked" />
+                          ) : (
+                            <Circle className="w-4 h-4 checkbox-unchecked" />
+                          )}
+                        </button>
+                        <span className={`subtask-title ${subtask.status === 'completed' ? 'completed' : ''}`}>
+                          {subtask.title}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteSubtask(subtask.id)}
+                          className="subtask-delete-btn"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

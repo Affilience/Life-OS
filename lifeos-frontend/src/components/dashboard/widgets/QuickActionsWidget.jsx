@@ -9,27 +9,71 @@ import {
   Calendar,
   Target,
   Wallet,
+  LayoutGrid,
 } from 'lucide-react';
+import { useGamificationModeStore, TERMINOLOGY } from '../../../stores/gamificationModeStore';
 
-const QUICK_ACTIONS = [
-  { id: 'task', label: 'Add Task', icon: CheckSquare, color: 'from-blue-500 to-blue-600', path: '/productivity' },
-  { id: 'workout', label: 'Log Workout', icon: Dumbbell, color: 'from-green-500 to-green-600', path: '/health' },
-  { id: 'journal', label: 'Journal', icon: PenLine, color: 'from-purple-500 to-purple-600', path: '/journal' },
-  { id: 'learn', label: 'Learn', icon: BookOpen, color: 'from-yellow-500 to-yellow-600', path: '/knowledge' },
-  { id: 'schedule', label: 'Schedule', icon: Calendar, color: 'from-pink-500 to-pink-600', path: '/calendar' },
-  { id: 'goal', label: 'Goals', icon: Target, color: 'from-orange-500 to-orange-600', path: '/missions' },
-  { id: 'expense', label: 'Expense', icon: Wallet, color: 'from-emerald-500 to-emerald-600', path: '/financial' },
-];
+// Mode-specific action colors
+const getActionColors = (mode) => ({
+  cosmic: {
+    task: 'from-blue-500 to-blue-600',
+    workout: 'from-green-500 to-green-600',
+    journal: 'from-purple-500 to-purple-600',
+    learn: 'from-yellow-500 to-yellow-600',
+    schedule: 'from-pink-500 to-pink-600',
+    goal: 'from-orange-500 to-orange-600',
+    expense: 'from-emerald-500 to-emerald-600',
+  },
+  professional: {
+    task: 'from-blue-500 to-cyan-600',
+    workout: 'from-teal-500 to-teal-600',
+    journal: 'from-indigo-500 to-indigo-600',
+    learn: 'from-sky-500 to-sky-600',
+    schedule: 'from-blue-600 to-blue-700',
+    goal: 'from-cyan-500 to-cyan-600',
+    expense: 'from-emerald-500 to-emerald-600',
+  },
+  minimal: {
+    task: 'from-gray-500 to-gray-600',
+    workout: 'from-gray-500 to-gray-600',
+    journal: 'from-gray-500 to-gray-600',
+    learn: 'from-gray-500 to-gray-600',
+    schedule: 'from-gray-500 to-gray-600',
+    goal: 'from-gray-500 to-gray-600',
+    expense: 'from-gray-500 to-gray-600',
+  },
+});
+
+const getQuickActions = (mode) => {
+  const colors = getActionColors(mode)[mode] || getActionColors('cosmic').cosmic;
+  const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
+
+  return [
+    { id: 'task', label: 'Add Task', icon: CheckSquare, color: colors.task, path: '/productivity' },
+    { id: 'workout', label: 'Log Workout', icon: Dumbbell, color: colors.workout, path: '/health' },
+    { id: 'journal', label: 'Journal', icon: PenLine, color: colors.journal, path: '/journal' },
+    { id: 'learn', label: 'Learn', icon: BookOpen, color: colors.learn, path: '/knowledge' },
+    { id: 'schedule', label: 'Schedule', icon: Calendar, color: colors.schedule, path: '/calendar' },
+    { id: 'goal', label: terms.task + 's', icon: Target, color: colors.goal, path: '/quests' },
+    { id: 'expense', label: 'Expense', icon: Wallet, color: colors.expense, path: '/financial' },
+  ];
+};
 
 const QuickActionsWidget = memo(function QuickActionsWidget() {
   const navigate = useNavigate();
+  const mode = useGamificationModeStore((state) => state.mode);
+  const QUICK_ACTIONS = getQuickActions(mode);
+
+  // Mode-specific header icon
+  const HeaderIcon = mode === 'cosmic' ? Zap : mode === 'professional' ? LayoutGrid : LayoutGrid;
+  const headerIconColor = mode === 'cosmic' ? 'text-yellow-400' : mode === 'professional' ? 'text-blue-400' : 'text-gray-400';
 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3 flex-shrink-0">
-        <Zap className="w-4 h-4 text-yellow-400" />
-        <h3 className="text-sm font-semibold text-white/60">Quick Actions</h3>
+        <HeaderIcon className={`w-4 h-4 ${headerIconColor}`} />
+        <h3 className="text-sm font-semibold text-text-muted">Quick Actions</h3>
       </div>
 
       {/* Actions Grid */}

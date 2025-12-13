@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+import { triggerGamification } from '../hooks/useGamification';
 
 // XP earned per minute of practice
 const XP_PER_MINUTE = 2;
@@ -114,89 +117,122 @@ export const getPracticeHeatmap = (sessions, days = 30) => {
   return heatmap;
 };
 
-// Initial mock data
-const initialSkills = [
-  {
-    id: 1,
-    name: 'Python Programming',
-    category: 'programming',
-    xp: 2800,
-    totalMinutes: 1400,
-    description: 'Backend development, data science, automation',
-    icon: '🐍',
-    createdAt: '2024-01-01',
-    sessions: [
-      { id: 1, date: '2025-01-20', minutes: 45, notes: 'Worked on Django REST API', xpEarned: 90 },
-      { id: 2, date: '2025-01-19', minutes: 60, notes: 'Data analysis with pandas', xpEarned: 120 },
-      { id: 3, date: '2025-01-18', minutes: 30, notes: 'Python async patterns', xpEarned: 60 },
-    ],
-    goals: [
-      { id: 1, text: 'Build a complete REST API', completed: false },
-      { id: 2, text: 'Learn machine learning basics', completed: false },
-    ],
-    milestones: ['Completed Python basics', 'Built first web scraper'],
-  },
-  {
-    id: 2,
-    name: 'Spanish',
-    category: 'language',
-    xp: 1200,
-    totalMinutes: 600,
-    description: 'Conversational Spanish for travel and business',
-    icon: '🇪🇸',
-    createdAt: '2024-02-15',
-    sessions: [
-      { id: 1, date: '2025-01-21', minutes: 20, notes: 'Vocabulary practice', xpEarned: 40 },
-      { id: 2, date: '2025-01-20', minutes: 30, notes: 'Conversation practice', xpEarned: 60 },
-    ],
-    goals: [
-      { id: 1, text: 'Hold 5-minute conversation', completed: false },
-    ],
-    milestones: ['Learned 500 words'],
-  },
-  {
-    id: 3,
-    name: 'Guitar',
-    category: 'creative',
-    xp: 4200,
-    totalMinutes: 2100,
-    description: 'Acoustic guitar, fingerstyle and strumming',
-    icon: '🎸',
-    createdAt: '2023-06-01',
-    sessions: [
-      { id: 1, date: '2025-01-21', minutes: 45, notes: 'Practiced fingerpicking patterns', xpEarned: 90 },
-      { id: 2, date: '2025-01-20', minutes: 60, notes: 'New song - Blackbird', xpEarned: 120 },
-      { id: 3, date: '2025-01-19', minutes: 30, notes: 'Chord transitions', xpEarned: 60 },
-    ],
-    goals: [
-      { id: 1, text: 'Learn 10 complete songs', completed: true },
-      { id: 2, text: 'Master barre chords', completed: false },
-    ],
-    milestones: ['First song learned', 'Performed for friends', '100 hours practiced'],
-  },
-  {
-    id: 4,
-    name: 'Digital Marketing',
-    category: 'business',
-    xp: 1800,
-    totalMinutes: 900,
-    description: 'SEO, social media, content marketing',
-    icon: '📱',
-    createdAt: '2024-03-01',
-    sessions: [
-      { id: 1, date: '2025-01-19', minutes: 40, notes: 'SEO keyword research', xpEarned: 80 },
-    ],
-    goals: [
-      { id: 1, text: 'Launch first ad campaign', completed: false },
-    ],
-    milestones: ['Google Analytics certified'],
-  },
-];
+// Supabase sync helpers
+const syncSkillToSupabase = async (skill, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      await supabase.from('skills').delete().eq('id', skill.id);
+      return;
+    }
+
+    const dbSkill = {
+      id: skill.id,
+      user_id: DEV_USER_ID,
+      name: skill.name,
+      description: skill.description || '',
+      category: skill.category || 'other',
+      xp: skill.xp || 0,
+      total_practice_hours: (skill.totalMinutes || 0) / 60,
+      icon: skill.icon || '✨',
+      color: skill.color || null,
+      status: 'active',
+      started_at: skill.createdAt,
+    };
+
+    await supabase.from('skills').upsert(dbSkill, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Error syncing skill to Supabase:', error);
+  }
+};
+
+const syncPracticeLogToSupabase = async (skillId, session, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      await supabase.from('skill_practice_logs').delete().eq('id', session.id);
+      return;
+    }
+
+    const dbLog = {
+      id: session.id,
+      skill_id: skillId,
+      user_id: DEV_USER_ID,
+      practice_date: session.date,
+      duration_minutes: session.minutes,
+      notes: session.notes || '',
+    };
+
+    await supabase.from('skill_practice_logs').upsert(dbLog, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Error syncing practice log to Supabase:', error);
+  }
+};
 
 const useSkillsStore = create(
   persist(
     (set, get) => ({
-      skills: initialSkills,
+      skills: [],
+      isInitialized: false,
+
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          // Store current skills to preserve local data like goals and milestones
+          const currentSkills = get().skills;
+
+          // Load skills
+          const { data: skillsData, error: skillsError } = await supabase
+            .from('skills')
+            .select('*')
+            .eq('user_id', DEV_USER_ID);
+
+          if (skillsError) throw skillsError;
+
+          // Load practice logs for all skills
+          const { data: logsData, error: logsError } = await supabase
+            .from('skill_practice_logs')
+            .select('*')
+            .eq('user_id', DEV_USER_ID)
+            .order('practice_date', { ascending: false });
+
+          if (logsError) throw logsError;
+
+          // Transform skills from DB format to store format
+          const skills = (skillsData || []).map(skill => {
+            // Get sessions for this skill
+            const sessions = (logsData || [])
+              .filter(log => log.skill_id === skill.id)
+              .map(log => ({
+                id: log.id,
+                date: log.practice_date,
+                minutes: log.duration_minutes,
+                notes: log.notes || '',
+                xpEarned: calculateXpFromMinutes(log.duration_minutes),
+              }));
+
+            // Preserve local goals and milestones from current state
+            const existingSkill = currentSkills.find(s => s.id === skill.id);
+
+            return {
+              id: skill.id,
+              name: skill.name,
+              category: skill.category || 'other',
+              xp: skill.xp || 0,
+              totalMinutes: Math.round((skill.total_practice_hours || 0) * 60),
+              description: skill.description || '',
+              icon: skill.icon || '✨',
+              createdAt: skill.started_at || skill.created_at,
+              sessions,
+              goals: existingSkill?.goals || [], // Preserve local goals
+              milestones: existingSkill?.milestones || [], // Preserve local milestones
+            };
+          });
+
+          set({ skills, isInitialized: true });
+        } catch (error) {
+          console.error('Error initializing skills from Supabase:', error);
+          set({ isInitialized: true }); // Mark as initialized even on error to prevent infinite retries
+        }
+      },
 
       // Get all skills
       getSkills: () => get().skills,
@@ -207,7 +243,7 @@ const useSkillsStore = create(
       // Add new skill
       addSkill: (skillData) => {
         const newSkill = {
-          id: Date.now(),
+          id: crypto.randomUUID(),
           ...skillData,
           xp: 0,
           totalMinutes: 0,
@@ -221,6 +257,9 @@ const useSkillsStore = create(
           skills: [...state.skills, newSkill],
         }));
 
+        // Sync to Supabase
+        syncSkillToSupabase(newSkill);
+
         return newSkill;
       },
 
@@ -231,13 +270,26 @@ const useSkillsStore = create(
             skill.id === id ? { ...skill, ...updates } : skill
           ),
         }));
+
+        // Sync to Supabase
+        const updatedSkill = get().skills.find(s => s.id === id);
+        if (updatedSkill) {
+          syncSkillToSupabase(updatedSkill);
+        }
       },
 
       // Delete skill
       deleteSkill: (id) => {
+        const skillToDelete = get().skills.find(s => s.id === id);
+
         set(state => ({
           skills: state.skills.filter(skill => skill.id !== id),
         }));
+
+        // Sync to Supabase
+        if (skillToDelete) {
+          syncSkillToSupabase(skillToDelete, 'delete');
+        }
       },
 
       // Log practice session
@@ -246,7 +298,7 @@ const useSkillsStore = create(
         const today = new Date().toISOString().split('T')[0];
 
         const session = {
-          id: Date.now(),
+          id: crypto.randomUUID(),
           date: today,
           minutes: parseInt(minutes),
           notes,
@@ -267,6 +319,31 @@ const useSkillsStore = create(
             return skill;
           }),
         }));
+
+        // Sync practice log and updated skill to Supabase
+        syncPracticeLogToSupabase(skillId, session);
+        const updatedSkill = get().skills.find(s => s.id === skillId);
+        if (updatedSkill) {
+          syncSkillToSupabase(updatedSkill);
+        }
+
+        // Trigger unified gamification for practice session
+        // Include duration for perk bonuses (flow state, etc.)
+        triggerGamification('practiceSession', {
+          xpOverride: Math.max(10, xpEarned),
+          module: 'skills',
+          durationMinutes: parseInt(minutes),
+        });
+
+        // Check if skill level increased (mastery check)
+        const oldLevel = getProficiencyLevel(updatedSkill.xp - xpEarned);
+        const newLevel = getProficiencyLevel(updatedSkill.xp);
+        if (oldLevel.id !== newLevel.id) {
+          triggerGamification('skillLevelUp', { xpOverride: 25 });
+          if (newLevel.id === 'expert') {
+            triggerGamification('skillMastered', { xpOverride: 100 });
+          }
+        }
 
         return { session, xpEarned };
       },
@@ -371,8 +448,17 @@ const useSkillsStore = create(
     }),
     {
       name: 'lifeos-skills-storage',
+      partialize: (state) => ({
+        skills: state.skills,
+      }),
     }
   )
 );
+
+// Initialize skills store from Supabase
+export const initializeSkillsStore = async () => {
+  const store = useSkillsStore.getState();
+  await store.initializeFromSupabase();
+};
 
 export default useSkillsStore;

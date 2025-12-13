@@ -3,14 +3,17 @@
  *
  * Displays 6 stat-based perk trees (BODY, MIND, SPIRIT, WEALTH, SOCIAL, CRAFT)
  * with constellation-style visuals and progressive unlocking.
+ *
+ * Now integrated with perkStore for REAL perk effects!
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Lock, Unlock, Star, Sparkles, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Unlock, Info, Zap, Star } from 'lucide-react';
 import { PERK_TREES } from '../../data/perkTrees';
 import { useStats } from '../../hooks/useStats';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
+import usePerkStore from '../../stores/perkStore';
 
 // Tier colors for visual hierarchy
 const TIER_COLORS = {
@@ -37,49 +40,49 @@ export default function SkyrimPerkTree() {
   const { stats, totalPower } = useStats();
   const { mode } = useGamificationModeStore();
 
+  // Get perk store state and actions
+  const {
+    statLevels,
+    unlockedPerksByTree,
+    activeEffects,
+    setStatLevel,
+    recalculatePerks,
+  } = usePerkStore();
+
   const treeKeys = Object.keys(PERK_TREES);
   const currentTreeKey = treeKeys[currentTreeIndex];
   const currentTree = PERK_TREES[currentTreeKey];
 
-  // Calculate user's level for this tree (simplified - based on related stat)
-  const getUserLevel = (treeKey) => {
-    // Map trees to primary stats
-    const treeStatMap = {
-      body: 'STR',
-      mind: 'INT',
-      spirit: 'WIS',
-      wealth: 'DEF',
-      social: 'WIS',
-      craft: 'INT',
+  // Sync equipment stats to perk store on mount
+  useEffect(() => {
+    // Map equipment stats to perk tree stats
+    // Convert equipment stats (0-100+) to perk stat levels (1-100)
+    const mappedStats = {
+      body: Math.max(1, Math.min(100, Math.floor((stats.STR || 0) + (stats.VIT || 0)) / 2)),
+      mind: Math.max(1, Math.min(100, stats.INT || 1)),
+      spirit: Math.max(1, Math.min(100, stats.WIS || 1)),
+      wealth: Math.max(1, Math.min(100, stats.DEF || 1)),
+      social: Math.max(1, Math.min(100, Math.floor((stats.WIS || 0) + (stats.INT || 0)) / 3)),
+      craft: Math.max(1, Math.min(100, Math.floor((stats.INT || 0) + (stats.STR || 0)) / 3)),
     };
-    const statKey = treeStatMap[treeKey];
-    // Use stat value as a proxy for level (1-100)
-    return stats[statKey] || 1;
-  };
 
-  const userLevel = getUserLevel(currentTreeKey);
+    // Only update if stats have meaningful values
+    if (totalPower > 0) {
+      Object.entries(mappedStats).forEach(([stat, level]) => {
+        if (statLevels[stat] !== level && level > 1) {
+          setStatLevel(stat, level);
+        }
+      });
+    }
+  }, [stats, totalPower]);
 
-  // Check if perk is unlocked based on level and prerequisites
-  const isPerkUnlocked = (perk, unlockedPerks) => {
-    if (userLevel < perk.level) return false;
-    if (perk.prerequisites.length === 0) return true;
-    return perk.prerequisites.every(prereqId => unlockedPerks.has(prereqId));
-  };
+  // Get user level from perk store
+  const userLevel = statLevels[currentTreeKey] || 1;
 
-  // Calculate unlocked perks for current tree
+  // Get unlocked perks from perk store (these are the REAL unlocked perks)
   const unlockedPerks = useMemo(() => {
-    const unlocked = new Set();
-    // Sort perks by level to process in order
-    const sortedPerks = [...currentTree.perks].sort((a, b) => a.level - b.level);
-
-    sortedPerks.forEach(perk => {
-      if (isPerkUnlocked(perk, unlocked)) {
-        unlocked.add(perk.id);
-      }
-    });
-
-    return unlocked;
-  }, [currentTree, userLevel]);
+    return new Set(unlockedPerksByTree[currentTreeKey] || []);
+  }, [unlockedPerksByTree, currentTreeKey]);
 
   // Navigation
   const nextTree = () => {
@@ -98,7 +101,7 @@ export default function SkyrimPerkTree() {
   const progressPercent = Math.round((unlockedCount / totalPerks) * 100);
 
   return (
-    <div className="relative w-full min-h-[600px] bg-[#0a0812] rounded-2xl overflow-hidden">
+    <div className="relative w-full min-h-[500px] sm:min-h-[550px] md:min-h-[600px] bg-[#0a0812] rounded-2xl overflow-hidden">
       {/* Cosmic Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#0a0812] via-[#12101a] to-[#0a0812]" />
@@ -121,7 +124,7 @@ export default function SkyrimPerkTree() {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 p-6 text-center">
+      <div className="relative z-10 p-4 text-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentTreeKey}
@@ -131,7 +134,7 @@ export default function SkyrimPerkTree() {
             transition={{ duration: 0.3 }}
           >
             <h2
-              className="text-4xl font-bold tracking-wider mb-2"
+              className="text-2xl sm:text-3xl font-bold tracking-wider"
               style={{
                 color: currentTree.color,
                 textShadow: `0 0 30px ${currentTree.color}`
@@ -139,27 +142,19 @@ export default function SkyrimPerkTree() {
             >
               {currentTree.name}
             </h2>
-            <div className="flex items-center justify-center gap-4 text-sm text-white/60">
-              <span className="flex items-center gap-1">
-                <Star className="w-4 h-4" style={{ color: currentTree.color }} />
-                Level {userLevel}
-              </span>
-              <span>•</span>
-              <span>{unlockedCount}/{totalPerks} Perks</span>
-              <span>•</span>
-              <span>{progressPercent}% Complete</span>
-            </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Constellation Canvas */}
-      <div className="relative z-10 flex items-center justify-center" style={{ height: '450px' }}>
+      <div className="relative z-10 flex items-center justify-center h-[420px] sm:h-[470px] md:h-[520px]">
         <AnimatePresence mode="wait">
           <motion.svg
             key={currentTreeKey}
-            viewBox="0 0 800 600"
-            className="w-full h-full max-w-4xl"
+            viewBox="0 0 500 450"
+            className="w-full h-full"
+            style={{ maxWidth: '900px' }}
+            preserveAspectRatio="xMidYMid meet"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
@@ -197,13 +192,24 @@ export default function SkyrimPerkTree() {
                 const isActive = unlockedPerks.has(perk.id) && unlockedPerks.has(prereqId);
                 const isPartial = unlockedPerks.has(prereqId) && !unlockedPerks.has(perk.id);
 
+                // Transform to fit 500x450 viewBox with proper spacing
+                // Original data: x ~160-620 (center 400), y ~-25-530
+                // Target: x 50-450 (center 250), y 20-420
+                const transformX = (ox) => ((ox - 400) * 0.45) + 250;
+                const transformY = (oy) => ((oy + 30) * 0.72) + 20;
+
+                const x1 = transformX(prereqPerk.position.x);
+                const y1 = transformY(prereqPerk.position.y);
+                const x2 = transformX(perk.position.x);
+                const y2 = transformY(perk.position.y);
+
                 return (
                   <motion.line
                     key={`${prereqId}-${perk.id}`}
-                    x1={prereqPerk.position.x}
-                    y1={prereqPerk.position.y}
-                    x2={perk.position.x}
-                    y2={perk.position.y}
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
                     stroke={isActive ? currentTree.color : isPartial ? currentTree.color : '#334155'}
                     strokeWidth={isActive ? 3 : 2}
                     strokeOpacity={isActive ? 0.9 : isPartial ? 0.4 : 0.2}
@@ -228,7 +234,13 @@ export default function SkyrimPerkTree() {
               const canUnlockSoon = !isUnlocked &&
                 perk.prerequisites.every(prereqId => unlockedPerks.has(prereqId));
 
-              const nodeSize = perk.type === 'keystone' ? 18 : perk.tier === 'master' ? 16 : 12;
+              const nodeSize = perk.type === 'keystone' ? 16 : perk.tier === 'master' ? 14 : perk.tier === 'expert' ? 12 : 10;
+
+              // Transform to fit 500x450 viewBox with proper spacing
+              const transformX = (ox) => ((ox - 400) * 0.45) + 250;
+              const transformY = (oy) => ((oy + 30) * 0.72) + 20;
+              const x = transformX(perk.position.x);
+              const y = transformY(perk.position.y);
 
               return (
                 <g
@@ -241,8 +253,8 @@ export default function SkyrimPerkTree() {
                   {/* Glow effect for unlocked perks */}
                   {isUnlocked && (
                     <motion.circle
-                      cx={perk.position.x}
-                      cy={perk.position.y}
+                      cx={x}
+                      cy={y}
                       r={nodeSize * 3}
                       fill={`url(#perkGlow-${currentTreeKey})`}
                       initial={{ scale: 0, opacity: 0 }}
@@ -253,8 +265,8 @@ export default function SkyrimPerkTree() {
 
                   {/* Main node */}
                   <motion.circle
-                    cx={perk.position.x}
-                    cy={perk.position.y}
+                    cx={x}
+                    cy={y}
                     r={nodeSize}
                     fill={isUnlocked ? currentTree.color : canUnlockSoon ? '#475569' : '#1e293b'}
                     stroke={isUnlocked ? 'white' : canUnlockSoon ? currentTree.color : '#334155'}
@@ -275,8 +287,8 @@ export default function SkyrimPerkTree() {
                   {/* Inner detail for keystones */}
                   {perk.type === 'keystone' && (
                     <motion.circle
-                      cx={perk.position.x}
-                      cy={perk.position.y}
+                      cx={x}
+                      cy={y}
                       r={nodeSize * 0.5}
                       fill={isUnlocked ? 'white' : '#475569'}
                       initial={{ scale: 0 }}
@@ -293,8 +305,8 @@ export default function SkyrimPerkTree() {
                       transition={{ delay: index * 0.03 + 0.2 }}
                     >
                       <text
-                        x={perk.position.x}
-                        y={perk.position.y + 4}
+                        x={x}
+                        y={y + 4}
                         textAnchor="middle"
                         fill={canUnlockSoon ? currentTree.color : '#64748b'}
                         fontSize="12"
@@ -312,8 +324,8 @@ export default function SkyrimPerkTree() {
                       animate={{ opacity: 1, y: 0 }}
                     >
                       <rect
-                        x={perk.position.x - 60}
-                        y={perk.position.y - nodeSize - 30}
+                        x={x - 60}
+                        y={y - nodeSize - 30}
                         width="120"
                         height="22"
                         rx="4"
@@ -322,8 +334,8 @@ export default function SkyrimPerkTree() {
                         strokeWidth="1"
                       />
                       <text
-                        x={perk.position.x}
-                        y={perk.position.y - nodeSize - 14}
+                        x={x}
+                        y={y - nodeSize - 14}
                         textAnchor="middle"
                         fill="white"
                         fontSize="11"
@@ -354,29 +366,6 @@ export default function SkyrimPerkTree() {
         <ChevronRight className="w-6 h-6 text-white" />
       </button>
 
-      {/* Tree Navigation Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {treeKeys.map((key, index) => {
-          const tree = PERK_TREES[key];
-          return (
-            <button
-              key={key}
-              onClick={() => {
-                setCurrentTreeIndex(index);
-                setSelectedPerk(null);
-              }}
-              className={`w-3 h-3 rounded-full transition-all ${
-                index === currentTreeIndex ? 'scale-125' : 'opacity-50 hover:opacity-80'
-              }`}
-              style={{
-                backgroundColor: tree.color,
-                boxShadow: index === currentTreeIndex ? `0 0 10px ${tree.color}` : 'none'
-              }}
-              title={tree.name}
-            />
-          );
-        })}
-      </div>
 
       {/* Selected Perk Detail Panel */}
       <AnimatePresence>
@@ -444,30 +433,6 @@ export default function SkyrimPerkTree() {
         )}
       </AnimatePresence>
 
-      {/* Progress Bar */}
-      <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10 w-64">
-        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full rounded-full"
-            style={{ backgroundColor: currentTree.color }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.5 }}
-          />
-        </div>
-      </div>
-
-      {/* Tier Legend */}
-      <div className="absolute bottom-4 left-4 z-10 flex gap-3 text-xs text-white/50">
-        {Object.entries(TIER_COLORS).map(([tier, colors]) => (
-          <div key={tier} className="flex items-center gap-1">
-            <div
-              className={`w-2 h-2 rounded-full bg-gradient-to-r ${colors.bg}`}
-            />
-            <span className="capitalize">{tier}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

@@ -1,11 +1,165 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useAvatarStore } from './avatarStore';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+import { triggerGamification } from '../hooks/useGamification';
 
 /**
  * Productivity Store
  * Manages work sessions, projects, tasks, and business income
  */
+
+// Supabase sync helpers - use select+insert/update pattern to avoid 409 conflicts
+const syncSessionToSupabase = async (session, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      const { error } = await supabase.from('productivity_sessions').delete().eq('id', session.id);
+      if (error) console.error('Error deleting session:', error);
+      return;
+    }
+
+    const dbSession = {
+      id: session.id,
+      user_id: DEV_USER_ID,
+      project_id: session.projectId || null,
+      title: session.type || 'Work Session',
+      description: session.notes || '',
+      session_type: session.type === 'deep-work' ? 'deep_work' : session.type || 'deep_work',
+      planned_duration_minutes: null,
+      actual_duration_minutes: Math.round(session.duration / 60),
+      focus_quality: session.focusQuality,
+      tags: session.tags || [],
+      started_at: session.startTime,
+      ended_at: session.endTime,
+    };
+
+    const { data: existing } = await supabase
+      .from('productivity_sessions')
+      .select('id')
+      .eq('id', session.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase.from('productivity_sessions').update(dbSession).eq('id', session.id);
+      if (error) console.error('Error updating session:', error);
+    } else {
+      const { error } = await supabase.from('productivity_sessions').insert(dbSession);
+      if (error) console.error('Error inserting session:', error);
+    }
+  } catch (error) {
+    console.error('Error syncing session to Supabase:', error);
+  }
+};
+
+const syncProjectToSupabase = async (project, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      const { error } = await supabase.from('productivity_projects').delete().eq('id', project.id);
+      if (error) console.error('Error deleting project:', error);
+      return;
+    }
+
+    const dbProject = {
+      id: project.id,
+      user_id: DEV_USER_ID,
+      name: project.name,
+      description: project.description || '',
+      status: project.status || 'active',
+      priority: project.priority === 'high' ? 1 : project.priority === 'medium' ? 2 : 3,
+      color: project.color,
+      start_date: project.startDate,
+      due_date: project.dueDate,
+      estimated_hours: project.estimatedTime ? Math.round(project.estimatedTime / 3600) : null,
+      actual_hours: project.totalTimeSpent ? Math.round(project.totalTimeSpent / 3600) : 0,
+      progress_percentage: project.progress || 0,
+    };
+
+    const { data: existing } = await supabase
+      .from('productivity_projects')
+      .select('id')
+      .eq('id', project.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase.from('productivity_projects').update(dbProject).eq('id', project.id);
+      if (error) console.error('Error updating project:', error);
+    } else {
+      const { error } = await supabase.from('productivity_projects').insert(dbProject);
+      if (error) console.error('Error inserting project:', error);
+    }
+  } catch (error) {
+    console.error('Error syncing project to Supabase:', error);
+  }
+};
+
+const syncTaskToSupabase = async (task, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      const { error } = await supabase.from('productivity_tasks').delete().eq('id', task.id);
+      if (error) console.error('Error deleting task:', error);
+      return;
+    }
+
+    const dbTask = {
+      id: task.id,
+      user_id: DEV_USER_ID,
+      project_id: task.projectId || null,
+      title: task.title,
+      description: task.description || '',
+      status: task.status === 'pending' ? 'todo' : task.status === 'active' ? 'in_progress' : task.status,
+      priority: task.priority === 'high' ? 1 : task.priority === 'medium' ? 2 : 3,
+      estimated_minutes: task.estimatedTime ? Math.round(task.estimatedTime / 60) : null,
+      due_date: task.dueDate,
+      completed_at: task.completedAt,
+      tags: task.tags || [],
+      parent_task_id: task.parentTaskId || null,
+      subtask_order: task.subtaskOrder || 0,
+    };
+
+    const { data: existing } = await supabase
+      .from('productivity_tasks')
+      .select('id')
+      .eq('id', task.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase.from('productivity_tasks').update(dbTask).eq('id', task.id);
+      if (error) console.error('Error updating task:', error);
+    } else {
+      const { error } = await supabase.from('productivity_tasks').insert(dbTask);
+      if (error) console.error('Error inserting task:', error);
+    }
+  } catch (error) {
+    console.error('Error syncing task to Supabase:', error);
+  }
+};
+
+const syncIncomeToSupabase = async (income, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      await supabase.from('productivity_income').delete().eq('id', income.id);
+      return;
+    }
+
+    const dbIncome = {
+      id: income.id,
+      user_id: DEV_USER_ID,
+      project_id: income.projectId || null,
+      amount: income.amount,
+      currency: income.currency || 'USD',
+      source: income.source,
+      income_date: income.date,
+      hours_worked: income.hoursWorked,
+      notes: income.notes || '',
+      tags: income.tags || [],
+    };
+
+    await supabase.from('productivity_income').upsert(dbIncome, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Error syncing income to Supabase:', error);
+  }
+};
 
 const useProductivityStore = create(
   persist(
@@ -13,7 +167,119 @@ const useProductivityStore = create(
       // ============================================================
       // WORK SESSIONS STATE
       // ============================================================
-      sessions: [
+      sessions: [],
+
+      // ============================================================
+      // INITIALIZE FROM SUPABASE
+      // ============================================================
+      initializeFromSupabase: async () => {
+        try {
+          // Load sessions (limit to 200 most recent)
+          const { data: sessionsData, error: sessionsError } = await supabase
+            .from('productivity_sessions')
+            .select('*')
+            .eq('user_id', DEV_USER_ID)
+            .order('started_at', { ascending: false })
+            .limit(200);
+
+          if (sessionsError) throw sessionsError;
+
+          // Load projects (limit to 100)
+          const { data: projectsData, error: projectsError } = await supabase
+            .from('productivity_projects')
+            .select('*')
+            .eq('user_id', DEV_USER_ID)
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+          if (projectsError) throw projectsError;
+
+          // Load tasks (limit to 500, includes incomplete and recent completed)
+          const { data: tasksData, error: tasksError } = await supabase
+            .from('productivity_tasks')
+            .select('*')
+            .eq('user_id', DEV_USER_ID)
+            .order('created_at', { ascending: false })
+            .limit(500);
+
+          if (tasksError) throw tasksError;
+
+          // Load income (limit to 200 most recent)
+          const { data: incomeData, error: incomeError } = await supabase
+            .from('productivity_income')
+            .select('*')
+            .eq('user_id', DEV_USER_ID)
+            .order('income_date', { ascending: false })
+            .limit(200);
+
+          if (incomeError) throw incomeError;
+
+          // Transform data from DB format to store format
+          const sessions = (sessionsData || []).map(s => ({
+            id: s.id,
+            projectId: s.project_id,
+            type: s.session_type === 'deep_work' ? 'deep-work' : s.session_type,
+            startTime: s.started_at,
+            endTime: s.ended_at,
+            duration: (s.actual_duration_minutes || 0) * 60,
+            focusQuality: s.focus_quality,
+            notes: s.description || '',
+            tags: s.tags || [],
+          }));
+
+          const projects = (projectsData || []).map(p => ({
+            id: p.id,
+            name: p.name,
+            description: p.description || '',
+            status: p.status || 'active',
+            priority: p.priority === 1 ? 'high' : p.priority === 2 ? 'medium' : 'low',
+            progress: p.progress_percentage || 0,
+            color: p.color || '#8b5cf6',
+            startDate: p.start_date,
+            dueDate: p.due_date,
+            totalTimeSpent: (p.actual_hours || 0) * 3600,
+            estimatedTime: (p.estimated_hours || 0) * 3600,
+            createdAt: p.created_at,
+            updatedAt: p.updated_at,
+          }));
+
+          const tasks = (tasksData || []).map(t => ({
+            id: t.id,
+            projectId: t.project_id,
+            title: t.title,
+            description: t.description || '',
+            status: t.status === 'todo' ? 'pending' : t.status === 'in_progress' ? 'active' : t.status,
+            priority: t.priority === 1 ? 'high' : t.priority === 2 ? 'medium' : 'low',
+            dueDate: t.due_date,
+            completedAt: t.completed_at,
+            tags: t.tags || [],
+            estimatedTime: (t.estimated_minutes || 0) * 60,
+            createdAt: t.created_at,
+            parentTaskId: t.parent_task_id || null,
+            subtaskOrder: t.subtask_order || 0,
+          }));
+
+          const incomeTransactions = (incomeData || []).map(i => ({
+            id: i.id,
+            projectId: i.project_id,
+            amount: parseFloat(i.amount) || 0,
+            currency: i.currency || 'USD',
+            source: i.source,
+            date: i.income_date,
+            hoursWorked: i.hours_worked,
+            effectiveRate: i.hours_worked ? (i.amount / i.hours_worked).toFixed(2) : 0,
+            notes: i.notes || '',
+            tags: i.tags || [],
+          }));
+
+          set({ sessions, projects, tasks, incomeTransactions });
+        } catch (error) {
+          console.error('Error initializing productivity from Supabase:', error);
+        }
+      },
+
+      // Keep sample sessions for initial state if DB is empty
+      _sampleSessions: [
         {
           id: '1',
           projectId: 'proj-1',
@@ -199,7 +465,7 @@ const useProductivityStore = create(
 
       startSession: (projectId, type) => {
         const newSession = {
-          id: `session-${Date.now()}`,
+          id: crypto.randomUUID(),
           projectId,
           type,
           startTime: new Date().toISOString(),
@@ -273,33 +539,42 @@ const useProductivityStore = create(
               : p
           );
           set({ projects: updatedProjects });
+
+          // Sync updated project
+          const updatedProject = updatedProjects.find(p => p.id === activeSession.projectId);
+          if (updatedProject) {
+            syncProjectToSupabase(updatedProject);
+          }
         }
 
         // Award XP based on session duration and focus quality
-        // Base XP: 1 XP per minute worked
-        // Quality multiplier: focusQuality/10 (0.1 to 1.0)
-        // Session type bonus: Deep Work gets 1.5x multiplier
         const minutes = Math.floor(sessionTimer / 60);
-        let xpEarned = minutes;
-
-        // Apply focus quality multiplier
+        let xpEarned = minutes * 2; // 2 XP per minute base
         const qualityMultiplier = focusQuality / 10;
         xpEarned = Math.floor(xpEarned * qualityMultiplier);
 
-        // Apply session type bonus
         if (activeSession.type === 'deep-work') {
           xpEarned = Math.floor(xpEarned * 1.5);
         } else if (activeSession.type === 'learning') {
           xpEarned = Math.floor(xpEarned * 1.3);
         }
 
-        // Minimum 1 XP for completing any session
-        xpEarned = Math.max(1, xpEarned);
+        xpEarned = Math.max(5, xpEarned);
 
-        // Add XP to avatar
-        const avatarStore = useAvatarStore.getState();
-        avatarStore.addXP(xpEarned);
-        avatarStore.updateModuleProgress('productivity', { sessionsCompleted: 1 });
+        // Track deep work minutes for achievements
+        if (activeSession.type === 'deep-work') {
+          triggerGamification('deepWorkMinutes', {
+            count: minutes,
+            xpOverride: xpEarned,
+            module: 'productivity'
+          });
+        } else {
+          // Regular session - still give XP
+          triggerGamification('pomodoroCompleted', {
+            xpOverride: xpEarned,
+            module: 'productivity'
+          });
+        }
 
         set({
           sessions: [completedSession, ...sessions],
@@ -307,6 +582,9 @@ const useProductivityStore = create(
           sessionTimer: 0,
           timerInterval: null,
         });
+
+        // Sync session to Supabase
+        syncSessionToSupabase(completedSession);
       },
 
       cancelSession: () => {
@@ -322,9 +600,13 @@ const useProductivityStore = create(
       },
 
       deleteSession: (sessionId) => {
+        const sessionToDelete = get().sessions.find(s => s.id === sessionId);
         set((state) => ({
           sessions: state.sessions.filter((s) => s.id !== sessionId),
         }));
+        if (sessionToDelete) {
+          syncSessionToSupabase(sessionToDelete, 'delete');
+        }
       },
 
       // ============================================================
@@ -333,7 +615,7 @@ const useProductivityStore = create(
 
       addProject: (project) => {
         const newProject = {
-          id: `proj-${Date.now()}`,
+          id: crypto.randomUUID(),
           ...project,
           totalTimeSpent: 0,
           createdAt: new Date().toISOString(),
@@ -342,6 +624,7 @@ const useProductivityStore = create(
         set((state) => ({
           projects: [newProject, ...state.projects],
         }));
+        syncProjectToSupabase(newProject);
       },
 
       updateProject: (projectId, updates) => {
@@ -352,12 +635,20 @@ const useProductivityStore = create(
               : p
           ),
         }));
+        const updatedProject = get().projects.find(p => p.id === projectId);
+        if (updatedProject) {
+          syncProjectToSupabase(updatedProject);
+        }
       },
 
       deleteProject: (projectId) => {
+        const projectToDelete = get().projects.find(p => p.id === projectId);
         set((state) => ({
           projects: state.projects.filter((p) => p.id !== projectId),
         }));
+        if (projectToDelete) {
+          syncProjectToSupabase(projectToDelete, 'delete');
+        }
       },
 
       // ============================================================
@@ -366,7 +657,7 @@ const useProductivityStore = create(
 
       addTask: (task) => {
         const newTask = {
-          id: `task-${Date.now()}`,
+          id: crypto.randomUUID(),
           ...task,
           status: task.status || 'pending',
           completedAt: null,
@@ -375,6 +666,7 @@ const useProductivityStore = create(
         set((state) => ({
           tasks: [newTask, ...state.tasks],
         }));
+        syncTaskToSupabase(newTask);
       },
 
       updateTask: (taskId, updates) => {
@@ -383,6 +675,10 @@ const useProductivityStore = create(
             t.id === taskId ? { ...t, ...updates } : t
           ),
         }));
+        const updatedTask = get().tasks.find(t => t.id === taskId);
+        if (updatedTask) {
+          syncTaskToSupabase(updatedTask);
+        }
       },
 
       toggleTaskComplete: (taskId) => {
@@ -395,13 +691,15 @@ const useProductivityStore = create(
 
           // Award XP when completing a task (not when uncompleting)
           if (nowCompleted) {
-            // Base XP by priority: High = 15, Medium = 10, Low = 5
-            let xpEarned = task.priority === 'high' ? 15 : task.priority === 'medium' ? 10 : 5;
+            // Base XP by priority: High = 30, Medium = 20, Low = 15
+            const xpByPriority = { high: 30, medium: 20, low: 15 };
+            const xpEarned = xpByPriority[task.priority] || 20;
 
-            // Add XP to avatar
-            const avatarStore = useAvatarStore.getState();
-            avatarStore.addXP(xpEarned);
-            avatarStore.updateModuleProgress('productivity', { tasksCompleted: 1 });
+            // Trigger unified gamification (XP + achievement stats + pet/equipment unlocks)
+            triggerGamification('taskCompleted', {
+              xpOverride: xpEarned,
+              module: 'productivity'
+            });
           }
         }
 
@@ -417,12 +715,134 @@ const useProductivityStore = create(
               : t
           ),
         }));
+        const updatedTask = get().tasks.find(t => t.id === taskId);
+        if (updatedTask) {
+          syncTaskToSupabase(updatedTask);
+        }
       },
 
       deleteTask: (taskId) => {
+        const taskToDelete = get().tasks.find(t => t.id === taskId);
         set((state) => ({
           tasks: state.tasks.filter((t) => t.id !== taskId),
         }));
+        if (taskToDelete) {
+          syncTaskToSupabase(taskToDelete, 'delete');
+        }
+      },
+
+      // ============================================================
+      // SUBTASK ACTIONS
+      // ============================================================
+
+      // Add a subtask to a parent task
+      addSubtask: (parentTaskId, subtask) => {
+        const { tasks } = get();
+        const parentTask = tasks.find(t => t.id === parentTaskId);
+        if (!parentTask) return null;
+
+        // Count existing subtasks to set order
+        const existingSubtasks = tasks.filter(t => t.parentTaskId === parentTaskId);
+        const subtaskOrder = existingSubtasks.length;
+
+        const newSubtask = {
+          id: crypto.randomUUID(),
+          title: subtask.title,
+          description: subtask.description || '',
+          projectId: parentTask.projectId, // Inherit parent's project
+          status: 'pending',
+          priority: subtask.priority || parentTask.priority, // Default to parent's priority
+          dueDate: subtask.dueDate || null,
+          completedAt: null,
+          tags: subtask.tags || [],
+          estimatedTime: subtask.estimatedTime || 1800, // 30 min default
+          parentTaskId: parentTaskId,
+          subtaskOrder: subtaskOrder,
+          createdAt: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          tasks: [newSubtask, ...state.tasks],
+        }));
+
+        syncTaskToSupabase(newSubtask);
+        return newSubtask.id;
+      },
+
+      // Get subtasks for a parent task
+      getSubtasks: (parentTaskId) => {
+        const { tasks } = get();
+        return tasks
+          .filter(t => t.parentTaskId === parentTaskId)
+          .sort((a, b) => a.subtaskOrder - b.subtaskOrder);
+      },
+
+      // Get subtask completion stats for a parent task
+      getSubtaskStats: (parentTaskId) => {
+        const subtasks = get().getSubtasks(parentTaskId);
+        const total = subtasks.length;
+        const completed = subtasks.filter(s => s.status === 'completed').length;
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        return { total, completed, percentage };
+      },
+
+      // Toggle subtask completion
+      toggleSubtaskComplete: (subtaskId) => {
+        const { tasks } = get();
+        const subtask = tasks.find(t => t.id === subtaskId);
+
+        if (subtask && subtask.parentTaskId) {
+          const wasCompleted = subtask.status === 'completed';
+          const nowCompleted = !wasCompleted;
+
+          // Award XP when completing a subtask (half of regular task XP)
+          if (nowCompleted) {
+            const xpByPriority = { high: 15, medium: 10, low: 8 };
+            const xpEarned = xpByPriority[subtask.priority] || 10;
+
+            triggerGamification('taskCompleted', {
+              xpOverride: xpEarned,
+              module: 'productivity'
+            });
+          }
+        }
+
+        set((state) => ({
+          tasks: state.tasks.map((t) =>
+            t.id === subtaskId
+              ? {
+                  ...t,
+                  status: t.status === 'completed' ? 'pending' : 'completed',
+                  completedAt:
+                    t.status === 'completed' ? null : new Date().toISOString(),
+                }
+              : t
+          ),
+        }));
+
+        const updatedSubtask = get().tasks.find(t => t.id === subtaskId);
+        if (updatedSubtask) {
+          syncTaskToSupabase(updatedSubtask);
+        }
+      },
+
+      // Delete a subtask
+      deleteSubtask: (subtaskId) => {
+        const subtaskToDelete = get().tasks.find(t => t.id === subtaskId);
+        if (!subtaskToDelete) return;
+
+        set((state) => ({
+          tasks: state.tasks.filter((t) => t.id !== subtaskId),
+        }));
+
+        syncTaskToSupabase(subtaskToDelete, 'delete');
+      },
+
+      // Get top-level tasks only (excluding subtasks)
+      getTopLevelTasks: () => {
+        const { tasks } = get();
+        return tasks.filter(t => !t.parentTaskId);
       },
 
       // ============================================================
@@ -431,7 +851,7 @@ const useProductivityStore = create(
 
       addIncomeTransaction: (transaction) => {
         const newTransaction = {
-          id: `income-${Date.now()}`,
+          id: crypto.randomUUID(),
           ...transaction,
           effectiveRate: transaction.hoursWorked
             ? (transaction.amount / transaction.hoursWorked).toFixed(2)
@@ -440,6 +860,7 @@ const useProductivityStore = create(
         set((state) => ({
           incomeTransactions: [newTransaction, ...state.incomeTransactions],
         }));
+        syncIncomeToSupabase(newTransaction);
       },
 
       updateIncomeTransaction: (transactionId, updates) => {
@@ -457,14 +878,22 @@ const useProductivityStore = create(
               : t
           ),
         }));
+        const updatedIncome = get().incomeTransactions.find(t => t.id === transactionId);
+        if (updatedIncome) {
+          syncIncomeToSupabase(updatedIncome);
+        }
       },
 
       deleteIncomeTransaction: (transactionId) => {
+        const incomeToDelete = get().incomeTransactions.find(t => t.id === transactionId);
         set((state) => ({
           incomeTransactions: state.incomeTransactions.filter(
             (t) => t.id !== transactionId
           ),
         }));
+        if (incomeToDelete) {
+          syncIncomeToSupabase(incomeToDelete, 'delete');
+        }
       },
 
       // ============================================================
@@ -473,7 +902,8 @@ const useProductivityStore = create(
 
       getTasksByProject: (projectId) => {
         const { tasks } = get();
-        return tasks.filter((t) => t.projectId === projectId);
+        // Return only top-level tasks for the project (subtasks shown under their parent)
+        return tasks.filter((t) => t.projectId === projectId && !t.parentTaskId);
       },
 
       getSessionsByProject: (projectId) => {
@@ -577,5 +1007,10 @@ const useProductivityStore = create(
     }
   )
 );
+
+// Initialize function for App.jsx
+export const initializeProductivityStore = async () => {
+  return useProductivityStore.getState().initializeFromSupabase();
+};
 
 export default useProductivityStore;

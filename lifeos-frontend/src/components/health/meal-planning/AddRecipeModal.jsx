@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, ChefHat } from 'lucide-react';
+import { X, Plus, Trash2, ChefHat, Sparkles, Loader2 } from 'lucide-react';
 import { useHealthStore } from '../../../stores/healthStore';
+import { parseNutrition } from '../../../services/nutritionAI';
 
 const RECIPE_CATEGORIES = [
   { id: 'breakfast', name: 'Breakfast', emoji: '🌅' },
@@ -39,8 +40,55 @@ export default function AddRecipeModal({ onClose, editRecipe = null }) {
     editRecipe?.ingredients || [{ name: '', quantity: 1, unit: 'unit', category: 'other' }]
   );
 
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [calculateError, setCalculateError] = useState(null);
+
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Auto-calculate nutrition from ingredients using AI
+  const calculateNutrition = async () => {
+    const validIngredients = ingredients.filter(ing => ing.name.trim());
+    if (validIngredients.length === 0) {
+      setCalculateError('Add at least one ingredient first');
+      return;
+    }
+
+    setIsCalculating(true);
+    setCalculateError(null);
+
+    try {
+      // Format ingredients as a meal description
+      const mealDescription = validIngredients
+        .map(ing => {
+          const qty = ing.quantity || 1;
+          const unit = ing.unit !== 'unit' ? ing.unit : '';
+          return `${qty}${unit ? ' ' + unit : ''} ${ing.name}`.trim();
+        })
+        .join(', ');
+
+      const result = await parseNutrition(mealDescription);
+
+      if (result.success && result.totals) {
+        // Calculate per-serving values
+        const servings = parseInt(formData.servings) || 1;
+        setFormData(prev => ({
+          ...prev,
+          calories: Math.round(result.totals.calories / servings),
+          protein: Math.round(result.totals.protein / servings),
+          carbs: Math.round(result.totals.carbs / servings),
+          fat: Math.round(result.totals.fat / servings),
+        }));
+      } else {
+        setCalculateError('Could not calculate nutrition. Try being more specific with ingredients.');
+      }
+    } catch (err) {
+      console.error('Nutrition calculation error:', err);
+      setCalculateError(err.message || 'Failed to calculate nutrition');
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   const handleIngredientChange = (index, field, value) => {
@@ -190,9 +238,32 @@ export default function AddRecipeModal({ onClose, editRecipe = null }) {
 
           {/* Nutrition Info */}
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
-              Nutrition (per serving)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-white/70">
+                Nutrition (per serving)
+              </label>
+              <button
+                type="button"
+                onClick={calculateNutrition}
+                disabled={isCalculating || ingredients.filter(ing => ing.name.trim()).length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 disabled:bg-white/5 disabled:cursor-not-allowed text-purple-400 disabled:text-white/30 rounded-lg text-xs font-medium transition-colors"
+              >
+                {isCalculating ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Calculating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Auto-Calculate
+                  </>
+                )}
+              </button>
+            </div>
+            {calculateError && (
+              <p className="text-xs text-red-400 mb-2">{calculateError}</p>
+            )}
             <div className="grid grid-cols-4 gap-2">
               <div>
                 <input

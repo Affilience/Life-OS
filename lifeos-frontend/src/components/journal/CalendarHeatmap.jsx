@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, TrendingUp, Flame, Target } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
 import Card from '../shared/Card';
 import StatCard from '../shared/StatCard';
 import './CalendarHeatmap.css';
@@ -8,28 +10,46 @@ const CalendarHeatmap = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [hoveredDate, setHoveredDate] = useState(null);
 
-  // Generate mock journal data for the heatmap
-  const generateJournalData = () => {
-    const data = {};
-    const startDate = new Date(selectedYear, 0, 1);
-    const endDate = new Date(selectedYear, 11, 31);
-    
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
-      // Simulate random journal activity (70% chance of no entry)
-      if (Math.random() > 0.7) {
-        data[dateStr] = {
-          hasEntry: true,
-          mood: Math.floor(Math.random() * 10) + 1,
-          wordCount: Math.floor(Math.random() * 500) + 50,
-          title: `Entry for ${d.toLocaleDateString()}`
-        };
-      }
-    }
-    return data;
-  };
+  // Fetch real journal entries from Supabase
+  const { data: entries = [] } = useQuery({
+    queryKey: ['journal-entries', selectedYear],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
 
-  const [journalData] = useState(generateJournalData());
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${selectedYear}-12-31`;
+
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('id, entry_date, content, mood_rating')
+        .eq('user_id', user.id)
+        .gte('entry_date', startDate)
+        .lte('entry_date', endDate)
+        .order('entry_date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching journal entries:', error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
+  // Transform entries into heatmap data format
+  const journalData = useMemo(() => {
+    const data = {};
+    entries.forEach(entry => {
+      const dateStr = entry.entry_date;
+      data[dateStr] = {
+        hasEntry: true,
+        mood: entry.mood_rating || 5,
+        wordCount: entry.content?.length || 0,
+        title: `Entry for ${new Date(dateStr).toLocaleDateString()}`
+      };
+    });
+    return data;
+  }, [entries]);
 
   // Get intensity level for heatmap (0-4)
   const getIntensity = (date) => {
@@ -138,9 +158,51 @@ const CalendarHeatmap = () => {
   function calculateAverageMood() {
     const entries = Object.values(journalData).filter(d => d.hasEntry);
     if (entries.length === 0) return 0;
-    
+
     const sum = entries.reduce((acc, entry) => acc + entry.mood, 0);
     return (sum / entries.length).toFixed(1);
+  }
+
+  function getMostActiveMonth() {
+    const monthCounts = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    Object.keys(journalData).forEach(dateStr => {
+      if (journalData[dateStr].hasEntry) {
+        const month = new Date(dateStr).getMonth();
+        monthCounts[month] = (monthCounts[month] || 0) + 1;
+      }
+    });
+
+    const entries = Object.entries(monthCounts);
+    if (entries.length === 0) return 'No entries yet';
+
+    const [bestMonth, count] = entries.reduce((a, b) => a[1] > b[1] ? a : b);
+    return `${months[bestMonth]} ${selectedYear} with ${count} entries`;
+  }
+
+  function getBestMoodMonth() {
+    const monthMoods = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    Object.keys(journalData).forEach(dateStr => {
+      if (journalData[dateStr].hasEntry) {
+        const month = new Date(dateStr).getMonth();
+        if (!monthMoods[month]) monthMoods[month] = [];
+        monthMoods[month].push(journalData[dateStr].mood);
+      }
+    });
+
+    const entries = Object.entries(monthMoods);
+    if (entries.length === 0) return 'No entries yet';
+
+    const avgByMonth = entries.map(([month, moods]) => [
+      month,
+      moods.reduce((a, b) => a + b, 0) / moods.length
+    ]);
+
+    const [bestMonth, avg] = avgByMonth.reduce((a, b) => a[1] > b[1] ? a : b);
+    return `${months[bestMonth]} ${selectedYear} with ${avg.toFixed(1)}/10 average`;
   }
 
   const formatDate = (date) => {
@@ -294,11 +356,11 @@ const CalendarHeatmap = () => {
         <div className="insights-grid">
           <div className="insight-item">
             <h4>Most Active Month</h4>
-            <p>March 2025 with 12 entries</p>
+            <p>{getMostActiveMonth()}</p>
           </div>
           <div className="insight-item">
             <h4>Best Mood Month</h4>
-            <p>June 2025 with 8.2/10 average</p>
+            <p>{getBestMoodMonth()}</p>
           </div>
           <div className="insight-item">
             <h4>Writing Goal</h4>
@@ -306,7 +368,7 @@ const CalendarHeatmap = () => {
           </div>
           <div className="insight-item">
             <h4>Consistency</h4>
-            <p>{totalEntries > 100 ? 'Excellent' : totalEntries > 50 ? 'Good' : 'Keep going!'}</p>
+            <p>{totalEntries > 100 ? 'Excellent' : totalEntries > 50 ? 'Good' : totalEntries > 0 ? 'Keep going!' : 'Start journaling!'}</p>
           </div>
         </div>
       </Card>

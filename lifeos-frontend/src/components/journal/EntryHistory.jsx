@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, Calendar, Tag, BookOpen, TrendingUp, Clock } from 'lucide-react';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
 import StatCard from '../shared/StatCard';
 import MoodSelector from './MoodSelector';
 import { EmptyState } from '../ui';
+import { useJournalStore } from '../../features/journal/journal.store';
 import './EntryHistory.css';
 
 const EntryHistory = () => {
@@ -14,69 +15,27 @@ const EntryHistory = () => {
   const [selectedTag, setSelectedTag] = useState('all');
   const [expandedEntryId, setExpandedEntryId] = useState(null);
 
-  // Mock journal entries data
-  const [entries] = useState([
-    {
-      id: 1,
-      title: 'A Productive Day',
-      content: 'Today was incredibly productive. I managed to complete three major tasks and felt really accomplished. The weather was perfect, which definitely boosted my mood. I had a great conversation with my team about the new project direction.',
-      mood: 8,
-      tags: ['work', 'productivity', 'team'],
-      date: '2025-10-26',
-      wordCount: 245,
-      createdAt: '2025-10-26T08:30:00Z'
-    },
-    {
-      id: 2,
-      title: 'Challenging Morning',
-      content: 'Started the day with some technical difficulties that were quite frustrating. However, I managed to work through them and learned something new in the process. Sometimes challenges lead to growth.',
-      mood: 5,
-      tags: ['challenges', 'learning', 'growth'],
-      date: '2025-10-25',
-      wordCount: 189,
-      createdAt: '2025-10-25T09:15:00Z'
-    },
-    {
-      id: 3,
-      title: 'Weekend Reflections',
-      content: 'Spent the weekend relaxing and reflecting on the past week. Had some great moments with family and friends. Feeling grateful for the relationships in my life and looking forward to what\'s ahead.',
-      mood: 9,
-      tags: ['family', 'gratitude', 'reflection'],
-      date: '2025-10-24',
-      wordCount: 312,
-      createdAt: '2025-10-24T19:45:00Z'
-    },
-    {
-      id: 4,
-      title: 'Learning Journey',
-      content: 'Dove deep into a new technology today. The learning curve is steep but I\'m excited about the possibilities. Made some progress on understanding the core concepts.',
-      mood: 7,
-      tags: ['learning', 'technology', 'progress'],
-      date: '2025-10-23',
-      wordCount: 156,
-      createdAt: '2025-10-23T16:20:00Z'
-    },
-    {
-      id: 5,
-      title: 'Tough Day',
-      content: 'Had one of those days where nothing seemed to go right. Feeling overwhelmed and stressed. Need to take some time to recharge and reset tomorrow.',
-      mood: 3,
-      tags: ['stress', 'overwhelm', 'recharge'],
-      date: '2025-10-22',
-      wordCount: 98,
-      createdAt: '2025-10-22T20:10:00Z'
-    },
-    {
-      id: 6,
-      title: 'Creative Breakthrough',
-      content: 'Had an amazing creative session today! Ideas were flowing and I made significant progress on my side project. There\'s something magical about being in the zone.',
-      mood: 9,
-      tags: ['creativity', 'breakthrough', 'project'],
-      date: '2025-10-21',
-      wordCount: 201,
-      createdAt: '2025-10-21T14:30:00Z'
-    }
-  ]);
+  // Use journal store for entries
+  const { entries: storeEntries, hydrate, loading } = useJournalStore();
+
+  // Load entries on mount
+  useEffect(() => {
+    hydrate();
+  }, []);
+
+  // Transform store entries to match expected format
+  const entries = useMemo(() => {
+    return (storeEntries || []).map(e => ({
+      id: e.id || e.date,
+      title: e.title || 'Untitled Entry',
+      content: e.content || e.preview || '',
+      mood: e.mood || 5,
+      tags: e.tags || [],
+      date: e.date,
+      wordCount: e.wordCount || 0,
+      createdAt: e.createdAt || e.date
+    }));
+  }, [storeEntries]);
 
   // Get all unique tags
   const allTags = [...new Set(entries.flatMap(entry => entry.tags))];
@@ -116,8 +75,10 @@ const EntryHistory = () => {
   // Calculate stats
   const stats = {
     totalEntries: entries.length,
-    averageMood: (entries.reduce((sum, entry) => sum + entry.mood, 0) / entries.length).toFixed(1),
-    totalWords: entries.reduce((sum, entry) => sum + entry.wordCount, 0),
+    averageMood: entries.length > 0
+      ? (entries.reduce((sum, entry) => sum + (entry.mood || 0), 0) / entries.length).toFixed(1)
+      : '0.0',
+    totalWords: entries.reduce((sum, entry) => sum + (entry.wordCount || 0), 0),
     entriesThisWeek: entries.filter(entry => {
       const entryDate = new Date(entry.date);
       const weekAgo = new Date();

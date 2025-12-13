@@ -60,6 +60,10 @@ export default function RestTimer({ onComplete, onSkip, defaultDuration: propDef
     }
   }, [soundEnabled]);
 
+  // Use a ref to track if timer should be running to avoid dependency issues
+  const onCompleteRef = React.useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
   useEffect(() => {
     if (isPaused || timeLeft <= 0) return;
 
@@ -67,7 +71,8 @@ export default function RestTimer({ onComplete, onSkip, defaultDuration: propDef
       setTimeLeft(prev => {
         if (prev <= 1) {
           playCompletionSound();
-          onComplete();
+          // Use ref to avoid stale closure
+          setTimeout(() => onCompleteRef.current?.(), 0);
           return 0;
         }
         return prev - 1;
@@ -75,7 +80,7 @@ export default function RestTimer({ onComplete, onSkip, defaultDuration: propDef
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isPaused, timeLeft, onComplete, playCompletionSound]);
+  }, [isPaused, playCompletionSound]); // Removed timeLeft from deps - we use prev in setTimeLeft
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -113,7 +118,7 @@ export default function RestTimer({ onComplete, onSkip, defaultDuration: propDef
       <div className={`rest-timer-card ${isLowTime ? 'low-time' : ''}`}>
         {/* Circular Progress Timer */}
         <div className="timer-progress-container" onClick={() => setShowPresets(!showPresets)}>
-          <svg width="80" height="80" className="timer-progress-svg">
+          <svg viewBox="0 0 80 80" className="timer-progress-svg">
             <defs>
               <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor={isLowTime ? '#ef4444' : '#8b5cf6'} />

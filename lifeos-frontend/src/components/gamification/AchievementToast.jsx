@@ -2,13 +2,28 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { getRarityColor } from '../../stores/gamificationStore';
+import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 
 /**
  * Achievement Toast - Notification when achievements are unlocked
  *
+ * Mode-aware:
+ * - COSMIC: Full animated toast with glow effects and XP display
+ * - PROFESSIONAL: Clean toast with "Milestone" terminology
+ * - MINIMAL: Returns null (achievements hidden)
+ *
  * Appears at top-right corner with achievement details
  */
 export default function AchievementToast({ achievement, isVisible, onClose }) {
+  // Get mode visibility and terminology
+  const mode = useGamificationModeStore((state) => state.mode);
+  const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
+  const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+
+  // In minimal mode or if achievement popups are disabled, don't show
+  if (!visibility.showAchievementPopups) {
+    return null;
+  }
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
@@ -71,7 +86,7 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
                 {/* Title & Description */}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-white/60 uppercase tracking-wider mb-1">
-                    Achievement Unlocked
+                    {terms.achievement} Unlocked
                   </p>
                   <h4 className="text-white font-bold text-lg leading-tight mb-1">
                     {achievement.title || achievement.name}
@@ -99,7 +114,7 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
                     <div className="flex items-center gap-1.5 text-sm">
                       <span className="text-cyan-400">⚡</span>
                       <span className="text-white font-semibold">
-                        +{achievement.xp_reward} XP
+                        +{achievement.xp_reward} {terms.xp}
                       </span>
                     </div>
                   )}
@@ -108,7 +123,7 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
                     <div className="flex items-center gap-1.5 text-sm">
                       <span className="text-purple-400">💎</span>
                       <span className="text-white font-semibold">
-                        +{achievement.credit_reward}
+                        +{achievement.credit_reward} {terms.credits}
                       </span>
                     </div>
                   )}
@@ -146,10 +161,19 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
 
 /**
  * Achievement Toast Manager - Manages queue of achievement notifications
+ * Mode-aware: respects showAchievementPopups visibility setting
  */
 export function AchievementToastManager({ achievements = [] }) {
   const [queue, setQueue] = React.useState([]);
   const [current, setCurrent] = React.useState(null);
+
+  // Get visibility settings
+  const visibility = VISIBILITY[useGamificationModeStore.getState().mode] || VISIBILITY.cosmic;
+
+  // If achievement popups are disabled, don't process queue
+  if (!visibility.showAchievementPopups) {
+    return null;
+  }
 
   // Add new achievements to queue
   React.useEffect(() => {

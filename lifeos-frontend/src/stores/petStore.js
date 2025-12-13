@@ -5,6 +5,27 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+
+// Lazy store imports to avoid circular dependencies
+// These are resolved at runtime when checkUnlocks is called
+let avatarStoreRef = null;
+let achievementsStoreRef = null;
+
+const getAvatarStore = () => {
+  if (!avatarStoreRef) {
+    avatarStoreRef = import('./avatarStore').then(m => m.useAvatarStore);
+  }
+  return avatarStoreRef;
+};
+
+const getAchievementsStore = () => {
+  if (!achievementsStoreRef) {
+    achievementsStoreRef = import('./achievementsStore').then(m => m.default);
+  }
+  return achievementsStoreRef;
+};
 
 // Pet database with all available pets
 export const PET_DATABASE = {
@@ -241,23 +262,80 @@ export const TIER_INFO = {
 export const usePetStore = create(
   persist(
     (set, get) => ({
-      // User's pet collection - ALL UNLOCKED FOR TESTING
-      ownedPets: Object.keys(PET_DATABASE), // All pets unlocked
-      activePets: ['common_kitsune_pup', 'epic_phoenix', 'uncommon_griffin_chick', 'rare_azure_dragon'], // Pets currently equipped
-      maxSlots: 6, // All pet slots unlocked (max 6)
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          // Load user's pets
+          const { data: userPets, error: petsError } = await supabase
+            .from('user_pets')
+            .select(`
+              *,
+              pet:pets (*)
+            `)
+            .eq('user_id', DEV_USER_ID);
+
+          if (petsError) throw petsError;
+
+          if (userPets && userPets.length > 0) {
+            const ownedPets = userPets.map(up => up.pet?.name?.toLowerCase().replace(/\s+/g, '_') || up.pet_id);
+            const activePets = userPets.filter(up => up.is_active).map(up => up.pet?.name?.toLowerCase().replace(/\s+/g, '_') || up.pet_id);
+
+            set({
+              ownedPets: ownedPets.length > 0 ? ownedPets : Object.keys(PET_DATABASE),
+              activePets: activePets.length > 0 ? activePets : ['common_kitsune_pup'],
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing pets from Supabase:', error);
+        }
+      },
+
+      // User's pet collection - starts empty, unlocked through gameplay
+      ownedPets: [], // Pets unlocked through achievements, levels, etc.
+      activePets: [], // Pets currently equipped
+      maxSlots: 1, // Starts with 1 slot, unlocks more through progression
 
       // Unlock a new pet
-      unlockPet: (petId) => {
+      unlockPet: async (petId) => {
         const { ownedPets } = get();
         if (!ownedPets.includes(petId) && PET_DATABASE[petId]) {
           set({ ownedPets: [...ownedPets, petId] });
+
+          // Sync to database
+          try {
+            await supabase.from('user_pets').upsert({
+              user_id: DEV_USER_ID,
+              pet_id: petId,
+              is_active: false,
+              unlocked_at: new Date().toISOString(),
+            }, { onConflict: 'user_id,pet_id' });
+
+            // Log to timeline
+            const pet = PET_DATABASE[petId];
+            await supabase.from('timeline').insert({
+              user_id: DEV_USER_ID,
+              module: 'companions',
+              entry_type: 'pet_unlocked',
+              title: `New Companion: ${pet.name}`,
+              description: pet.description,
+              metadata: {
+                pet_id: petId,
+                tier: pet.tier,
+                culture: pet.culture,
+                bonus: pet.bonusDescription,
+              },
+            });
+          } catch (error) {
+            console.error('Error syncing pet unlock to database:', error);
+          }
+
           return true;
         }
         return false;
       },
 
       // Equip/unequip pets
-      equipPet: (petId) => {
+      equipPet: async (petId) => {
         const { activePets, maxSlots, ownedPets } = get();
 
         if (!ownedPets.includes(petId)) return false;
@@ -265,6 +343,15 @@ export const usePetStore = create(
         // If already active, unequip it
         if (activePets.includes(petId)) {
           set({ activePets: activePets.filter(id => id !== petId) });
+          // Sync to database
+          try {
+            await supabase.from('user_pets')
+              .update({ is_active: false })
+              .eq('user_id', DEV_USER_ID)
+              .eq('pet_id', petId);
+          } catch (error) {
+            console.error('Error syncing pet unequip:', error);
+          }
           return true;
         }
 
@@ -273,13 +360,31 @@ export const usePetStore = create(
 
         // Equip the pet
         set({ activePets: [...activePets, petId] });
+        // Sync to database
+        try {
+          await supabase.from('user_pets')
+            .update({ is_active: true })
+            .eq('user_id', DEV_USER_ID)
+            .eq('pet_id', petId);
+        } catch (error) {
+          console.error('Error syncing pet equip:', error);
+        }
         return true;
       },
 
       // Unequip a pet
-      unequipPet: (petId) => {
+      unequipPet: async (petId) => {
         const { activePets } = get();
         set({ activePets: activePets.filter(id => id !== petId) });
+        // Sync to database
+        try {
+          await supabase.from('user_pets')
+            .update({ is_active: false })
+            .eq('user_id', DEV_USER_ID)
+            .eq('pet_id', petId);
+        } catch (error) {
+          console.error('Error syncing pet unequip:', error);
+        }
       },
 
       // Unlock additional pet slots
@@ -348,9 +453,140 @@ export const usePetStore = create(
       isPetActive: (petId) => {
         return get().activePets.includes(petId);
       },
+
+      // Check unlock conditions and unlock eligible pets
+      checkUnlocks: async () => {
+        const { ownedPets, unlockPet, unlockSlot, maxSlots } = get();
+
+        // Import stores dynamically to avoid circular dependencies
+        const [useAvatarStore, achievementsStore] = await Promise.all([
+          getAvatarStore(),
+          getAchievementsStore()
+        ]);
+
+        const avatarState = useAvatarStore.getState();
+        const achievementsState = achievementsStore.getState();
+        const stats = achievementsState.stats || {};
+        const level = avatarState.level || 1;
+
+        const newUnlocks = [];
+
+        // Check each pet's unlock condition
+        Object.entries(PET_DATABASE).forEach(([petId, pet]) => {
+          if (ownedPets.includes(petId)) return; // Already owned
+
+          const method = pet.unlockMethod;
+          let shouldUnlock = false;
+
+          // Level-based unlocks
+          if (method.startsWith('level_')) {
+            const requiredLevel = parseInt(method.split('_')[1], 10);
+            shouldUnlock = level >= requiredLevel;
+          }
+
+          // Achievement-based unlocks (task count)
+          else if (method === 'achievement_100_tasks') {
+            shouldUnlock = (stats.tasksCompleted || 0) >= 100;
+          }
+          else if (method === 'streak_30_tasks') {
+            shouldUnlock = (stats.longestStreak || 0) >= 30;
+          }
+          else if (method === 'achievement_100_journal') {
+            shouldUnlock = (stats.journalEntriesCreated || 0) >= 100;
+          }
+          else if (method === 'achievement_complete_project') {
+            shouldUnlock = (stats.projectsCompleted || 0) >= 1;
+          }
+          else if (method === 'achievement_50_books') {
+            shouldUnlock = (stats.booksCompleted || 0) >= 50;
+          }
+          else if (method === 'achievement_break_restart') {
+            // Special condition: broke a 30+ day streak then started a new 7+ day streak
+            shouldUnlock = (stats.streaksBroken || 0) >= 1 && (stats.streaksMaintained || 0) >= 7;
+          }
+          else if (method === 'achievement_balanced_week') {
+            // Would need to track balanced weeks - simplified for now
+            shouldUnlock = (stats.balancedWeeks || 0) >= 1;
+          }
+          else if (method === 'achievement_52_weeks') {
+            shouldUnlock = (stats.weeksCompleted || 0) >= 52;
+          }
+          else if (method === 'achievement_master_skill') {
+            shouldUnlock = (stats.skillsMastered || 0) >= 1;
+          }
+
+          if (shouldUnlock) {
+            unlockPet(petId);
+            newUnlocks.push(pet);
+          }
+        });
+
+        // Unlock additional pet slots based on level
+        const slotUnlockLevels = [1, 10, 20, 30, 40, 50]; // Level thresholds for 1-6 slots
+        const targetSlots = slotUnlockLevels.filter(l => level >= l).length;
+        while (maxSlots < targetSlots && maxSlots < 6) {
+          unlockSlot();
+        }
+
+        return newUnlocks;
+      },
+
+      // Get pets available to unlock (shows what's coming next)
+      getNextUnlocks: async () => {
+        const { ownedPets } = get();
+
+        // Use lazy imports to avoid circular dependencies
+        const [useAvatarStore, achievementsStore] = await Promise.all([
+          getAvatarStore(),
+          getAchievementsStore()
+        ]);
+
+        const level = useAvatarStore.getState().level || 1;
+        const stats = achievementsStore.getState().stats || {};
+
+        return Object.entries(PET_DATABASE)
+          .filter(([petId]) => !ownedPets.includes(petId))
+          .map(([petId, pet]) => {
+            let progress = 0;
+            let target = 1;
+            const method = pet.unlockMethod;
+
+            if (method.startsWith('level_')) {
+              target = parseInt(method.split('_')[1], 10);
+              progress = level;
+            } else if (method === 'achievement_100_tasks') {
+              target = 100;
+              progress = stats.tasksCompleted || 0;
+            } else if (method === 'streak_30_tasks') {
+              target = 30;
+              progress = stats.longestStreak || 0;
+            } else if (method === 'achievement_100_journal') {
+              target = 100;
+              progress = stats.journalEntriesCreated || 0;
+            } else if (method === 'achievement_50_books') {
+              target = 50;
+              progress = stats.booksCompleted || 0;
+            }
+
+            return {
+              ...pet,
+              id: petId,
+              progress,
+              target,
+              progressPercent: Math.min(100, Math.round((progress / target) * 100)),
+            };
+          })
+          .sort((a, b) => b.progressPercent - a.progressPercent)
+          .slice(0, 5); // Show top 5 closest to unlock
+      },
     }),
     {
       name: 'pet-storage',
     }
   )
 );
+
+// Export initialization function for App.jsx
+export const initializePetStore = async () => {
+  return usePetStore.getState().initializeFromSupabase();
+};

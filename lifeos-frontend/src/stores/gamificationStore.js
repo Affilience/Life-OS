@@ -1,7 +1,56 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
 import { calculateTotalStats, calculateStatBreakdown, getModuleXPMultiplier } from '../utils/statsSystem';
+import { useAvatarStore } from './avatarStore';
+import { calculateXPForLevel, calculateLevelFromTotalXP } from '../data/avatarEvolution';
+
+// ============================================
+// HELPER FUNCTIONS (must be defined before store)
+// ============================================
+
+/**
+ * Process constellation data into summary format (simple version without joins)
+ */
+function processConstellationDataSimple(progressData, constellationName) {
+  const progress = progressData.find(
+    p => p.constellation_name === constellationName
+  );
+
+  if (!progress) {
+    return { unlocked: 0, total: 10, stars: [], moduleXP: 0 };
+  }
+
+  return {
+    unlocked: progress.unlocked_stars_count || 0,
+    total: 10,
+    stars: (progress.unlocked_star_ids || []).map((id, i) => ({
+      id,
+      number: i + 1,
+    })),
+    moduleXP: progress.module_xp || 0,
+  };
+}
+
+/**
+ * Process constellation data into summary format (with joins - legacy)
+ */
+function processConstellationData(progressData, constellationName) {
+  const stars = progressData.filter(
+    p => p.constellation_name === constellationName
+  );
+
+  return {
+    unlocked: stars.length,
+    total: 10,
+    stars: stars.map(s => ({
+      number: s.star_number,
+      name: s.constellation_stars?.star_name,
+      unlockedAt: s.unlocked_at,
+    })),
+  };
+}
 
 /**
  * Unified Gamification Store - Single Source of Truth
@@ -38,7 +87,7 @@ export const useGamificationStore = create(
       currentStage: 1, // Visual avatar stage (1-40+)
       totalXP: 0,
       currentXP: 0, // XP in current level
-      xpToNextLevel: 100,
+      xpToNextLevel: 500, // Base XP for level 1 (exponential scaling from avatarEvolution.js)
       xpMultiplier: 1.0, // From equipment, perks, streaks
 
       // ============================================
@@ -69,6 +118,13 @@ export const useGamificationStore = create(
       cosmicCredits: 0,
       lifetimeCreditsEarned: 0,
       lifetimeCreditsSpent: 0,
+
+      // ============================================
+      // CONSUMABLE INVENTORY
+      // ============================================
+
+      inventory: [], // Array of { id, itemId, name, effect, purchasedAt, quantity }
+      activeBoosts: [], // Array of { type, amount, expiresAt } - active consumable boosts
 
       // ============================================
       // STREAKS & SHIELDS (Momentum Chains)
@@ -171,14 +227,14 @@ export const useGamificationStore = create(
               .select('*')
               .eq('user_id', userId)
               .eq('module_id', 'cosmic_evolution')
-              .single(),
+              .maybeSingle(),
 
             // 2. Cosmic credits
             supabase
               .from('user_cosmic_currency')
               .select('*')
               .eq('user_id', userId)
-              .single(),
+              .maybeSingle(),
 
             // 3. Equipment (owned + equipped)
             supabase
@@ -189,19 +245,19 @@ export const useGamificationStore = create(
               `)
               .eq('user_id', userId),
 
-            // 4. Streaks
+            // 4. Streaks (active = current_streak > 0)
             supabase
               .from('momentum_chains')
               .select('*')
               .eq('user_id', userId)
-              .eq('is_active', true),
+              .gt('current_streak', 0),
 
             // 5. Missions
             supabase
               .from('user_missions')
-              .select('*')
+              .select('*, missions(*)')
               .eq('user_id', userId)
-              .in('status', ['active', 'in_progress']),
+              .eq('status', 'active'),
 
             // 6. Achievements
             supabase
@@ -215,10 +271,7 @@ export const useGamificationStore = create(
             // 7. Constellations
             supabase
               .from('user_constellation_progress')
-              .select(`
-                *,
-                constellation_stars (*)
-              `)
+              .select('*')
               .eq('user_id', userId),
 
             // 8. Unlocked perks
@@ -235,11 +288,11 @@ export const useGamificationStore = create(
           const progress = progressData.data;
           if (progress) {
             set({
-              level: progress.level,
-              currentStage: progress.current_stage,
-              totalXP: progress.xp,
-              currentXP: progress.xp % (progress.level * 100),
-              xpToNextLevel: progress.level * 100,
+              level: progress.level || 1,
+              currentStage: progress.current_stage || 1,
+              totalXP: progress.total_xp_earned || progress.current_xp || 0,
+              currentXP: progress.current_xp || 0,
+              xpToNextLevel: progress.xp_to_next_level || (progress.level || 1) * 150,
               xpMultiplier: progress.xp_multiplier || 1.0,
               totalDefense: progress.total_defense || 0,
               totalStrength: progress.total_strength || 0,
@@ -301,11 +354,11 @@ export const useGamificationStore = create(
           // Process constellations
           const constellationProgress = constellationsData.data || [];
           const constellations = {
-            orion: processConstellationData(constellationProgress, 'orion'),
-            phoenix: processConstellationData(constellationProgress, 'phoenix'),
-            athena: processConstellationData(constellationProgress, 'athena'),
-            chronos: processConstellationData(constellationProgress, 'chronos'),
-            plutus: processConstellationData(constellationProgress, 'plutus'),
+            orion: processConstellationDataSimple(constellationProgress, 'orion'),
+            phoenix: processConstellationDataSimple(constellationProgress, 'phoenix'),
+            athena: processConstellationDataSimple(constellationProgress, 'athena'),
+            chronos: processConstellationDataSimple(constellationProgress, 'chronos'),
+            plutus: processConstellationDataSimple(constellationProgress, 'plutus'),
           };
           set({ constellations });
 
@@ -336,41 +389,47 @@ export const useGamificationStore = create(
 
       /**
        * Add XP and trigger level up if needed
+       * Uses exponential XP scaling from avatarEvolution.js
+       * Also syncs to avatarStore for equipment unlocks
        */
-      addXP: async (amount, source = 'manual') => {
-        const { userId, level, totalXP, xpMultiplier } = get();
+      addXP: async (amount, source = 'manual', options = {}) => {
+        const { userId, totalXP, xpMultiplier } = get();
+        const { skipAvatarSync = false } = options;
 
         // Apply multiplier
         const adjustedAmount = Math.floor(amount * xpMultiplier);
         const newTotalXP = totalXP + adjustedAmount;
-        const xpNeeded = level * 100;
-        const newCurrentXP = newTotalXP % xpNeeded;
 
-        // Check for level up
-        let newLevel = level;
-        let leveledUp = false;
-        let stageTransition = false;
+        // Calculate new level using exponential scaling
+        const { level: newLevel, currentXP: newCurrentXP, xpToNextLevel: newXPToNext } = calculateLevelFromTotalXP(newTotalXP);
 
-        if (newTotalXP >= (level * 100)) {
-          newLevel = Math.floor(newTotalXP / 100) + 1;
-          leveledUp = true;
+        const oldLevel = get().level;
+        const leveledUp = newLevel > oldLevel;
 
-          // Check for stage transition (every 10 levels)
-          const oldStage = get().currentStage;
-          const newStage = Math.min(40, Math.floor(newLevel / 2.5) + 1);
-          stageTransition = newStage > oldStage;
-
-          set({
-            level: newLevel,
-            currentStage: newStage,
-          });
-        }
+        // Check for stage transition (stage = level, 40 stages for 40 levels)
+        const oldStage = get().currentStage;
+        const newStage = Math.min(40, newLevel);
+        const stageTransition = newStage > oldStage;
 
         set({
+          level: newLevel,
+          currentStage: newStage,
           totalXP: newTotalXP,
           currentXP: newCurrentXP,
-          xpToNextLevel: newLevel * 100,
+          xpToNextLevel: newXPToNext,
         });
+
+        // Also update avatarStore for equipment unlocks (unless skipped to avoid circular calls)
+        if (!skipAvatarSync) {
+          try {
+            const avatarStore = useAvatarStore.getState();
+            if (avatarStore.addXP) {
+              avatarStore.addXP(amount);
+            }
+          } catch (e) {
+            // Silently fail if avatarStore not available
+          }
+        }
 
         // Update database
         await supabase
@@ -441,7 +500,7 @@ export const useGamificationStore = create(
           .from('equipment_items')
           .select('*')
           .eq('id', equipmentId)
-          .single();
+          .maybeSingle();
 
         if (!itemData) return { success: false, error: 'Item not found' };
 
@@ -602,6 +661,94 @@ export const useGamificationStore = create(
       },
 
       // ============================================
+      // ACTIONS: INVENTORY
+      // ============================================
+
+      /**
+       * Add item to inventory
+       */
+      addToInventory: (item) => {
+        const { inventory } = get();
+
+        // Check if item already exists in inventory (stack consumables)
+        const existingIndex = inventory.findIndex(i => i.itemId === item.id);
+
+        if (existingIndex >= 0) {
+          // Increment quantity
+          const newInventory = [...inventory];
+          newInventory[existingIndex] = {
+            ...newInventory[existingIndex],
+            quantity: newInventory[existingIndex].quantity + 1,
+          };
+          set({ inventory: newInventory });
+        } else {
+          // Add new item
+          const inventoryItem = {
+            id: `${item.id}_${Date.now()}`,
+            itemId: item.id,
+            name: item.name,
+            description: item.description,
+            icon: item.icon,
+            sprite: item.sprite,
+            effect: item.effect,
+            rarity: item.rarity,
+            purchasedAt: new Date().toISOString(),
+            quantity: 1,
+          };
+          set({ inventory: [...inventory, inventoryItem] });
+        }
+
+        return { success: true };
+      },
+
+      /**
+       * Use item from inventory
+       */
+      useInventoryItem: (itemId) => {
+        const { inventory, activeBoosts, shieldsRemaining } = get();
+
+        const itemIndex = inventory.findIndex(i => i.itemId === itemId);
+        if (itemIndex < 0) {
+          return { success: false, error: 'Item not in inventory' };
+        }
+
+        const item = inventory[itemIndex];
+
+        // Apply effect
+        if (item.effect) {
+          if (item.effect.type === 'xp') {
+            get().addXP(item.effect.amount, 'consumable');
+          } else if (item.effect.type === 'shield') {
+            set({ shieldsRemaining: shieldsRemaining + item.effect.amount });
+          } else if (item.effect.type === 'xp_multiplier') {
+            // Store active boost with expiration in store state
+            const boostExpiry = Date.now() + (item.effect.duration * 60 * 60 * 1000);
+            const newActiveBoosts = [...activeBoosts, {
+              type: 'xp_multiplier',
+              amount: item.effect.amount,
+              expiresAt: boostExpiry,
+            }];
+            set({ activeBoosts: newActiveBoosts });
+          }
+        }
+
+        // Reduce quantity or remove item
+        const newInventory = [...inventory];
+        if (item.quantity > 1) {
+          newInventory[itemIndex] = {
+            ...item,
+            quantity: item.quantity - 1,
+          };
+        } else {
+          newInventory.splice(itemIndex, 1);
+        }
+
+        set({ inventory: newInventory });
+
+        return { success: true, effect: item.effect };
+      },
+
+      // ============================================
       // ACTIONS: STREAKS
       // ============================================
 
@@ -620,8 +767,12 @@ export const useGamificationStore = create(
             .insert({
               user_id: userId,
               module_id: module,
+              chain_type: module,
               current_streak: success ? 1 : 0,
-              is_active: success,
+              longest_streak: success ? 1 : 0,
+              total_days_active: success ? 1 : 0,
+              streak_started_at: success ? new Date().toISOString() : null,
+              last_activity_at: new Date().toISOString(),
             })
             .select()
             .single();
@@ -670,18 +821,19 @@ export const useGamificationStore = create(
       refreshStreaks: async () => {
         const { userId } = get();
 
+        // Get all streaks (including inactive ones for history)
         const { data: streaks } = await supabase
           .from('momentum_chains')
           .select('*')
-          .eq('user_id', userId)
-          .eq('is_active', true);
+          .eq('user_id', userId);
 
         if (streaks) {
           const globalStreak = streaks.find(s => s.is_global);
+          const activeStreaks = streaks.filter(s => s.current_streak > 0);
           set({
-            streaks,
+            streaks: activeStreaks,
             globalStreak,
-            shieldsRemaining: globalStreak?.shield_count || 0,
+            shieldsRemaining: globalStreak?.shields_available || 0,
           });
         }
       },
@@ -706,7 +858,7 @@ export const useGamificationStore = create(
           .eq('id', missionId)
           .eq('user_id', userId)
           .select()
-          .single();
+          .maybeSingle();
 
         if (mission) {
           // Award XP and credits
@@ -826,19 +978,16 @@ export const useGamificationStore = create(
 
         const { data: progress } = await supabase
           .from('user_constellation_progress')
-          .select(`
-            *,
-            constellation_stars (*)
-          `)
+          .select('*')
           .eq('user_id', userId);
 
         if (progress) {
           const constellations = {
-            orion: processConstellationData(progress, 'orion'),
-            phoenix: processConstellationData(progress, 'phoenix'),
-            athena: processConstellationData(progress, 'athena'),
-            chronos: processConstellationData(progress, 'chronos'),
-            plutus: processConstellationData(progress, 'plutus'),
+            orion: processConstellationDataSimple(progress, 'orion'),
+            phoenix: processConstellationDataSimple(progress, 'phoenix'),
+            athena: processConstellationDataSimple(progress, 'athena'),
+            chronos: processConstellationDataSimple(progress, 'chronos'),
+            plutus: processConstellationDataSimple(progress, 'plutus'),
           };
           set({ constellations });
         }
@@ -930,7 +1079,7 @@ export const useGamificationStore = create(
           currentStage: 1,
           totalXP: 0,
           currentXP: 0,
-          xpToNextLevel: 100,
+          xpToNextLevel: 500, // Base XP for level 1 (exponential scaling)
           xpMultiplier: 1.0,
           equippedItems: [],
           ownedEquipment: [],
@@ -967,39 +1116,23 @@ export const useGamificationStore = create(
         // Only persist minimal data - fetch rest from Supabase
         userId: state.userId,
         lastSyncedAt: state.lastSyncedAt,
+        // Persist inventory and active boosts locally (not in Supabase yet)
+        inventory: state.inventory,
+        activeBoosts: state.activeBoosts,
       }),
     }
   )
 );
 
 // ============================================
-// HELPER FUNCTIONS
+// EXPORTED HELPER FUNCTIONS
 // ============================================
-
-/**
- * Process constellation data into summary format
- */
-function processConstellationData(progressData, constellationName) {
-  const stars = progressData.filter(
-    p => p.constellation_name === constellationName
-  );
-
-  return {
-    unlocked: stars.length,
-    total: 10,
-    stars: stars.map(s => ({
-      number: s.star_number,
-      name: s.constellation_stars?.star_name,
-      unlockedAt: s.unlocked_at,
-    })),
-  };
-}
 
 /**
  * Calculate XP needed for a level
  */
 export function getXPForLevel(level) {
-  return level * 100;
+  return level * 150;
 }
 
 /**
@@ -1038,5 +1171,10 @@ export function formatXP(xp) {
   if (xp >= 1000) return `${(xp / 1000).toFixed(1)}K`;
   return xp.toString();
 }
+
+// Export initialization function for App.jsx (uses dev user ID)
+export const initializeGamificationStore = async () => {
+  return useGamificationStore.getState().initialize(DEV_USER_ID);
+};
 
 export default useGamificationStore;

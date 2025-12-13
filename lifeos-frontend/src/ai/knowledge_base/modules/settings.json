@@ -1,0 +1,52 @@
+{
+  "name": "Settings",
+  "route": "/settings",
+  "navigation": "Sidebar → Settings (cog icon)",
+  "purpose": "Configure app preferences, themes, notifications, and account settings.",
+  "sections": [
+    {
+      "name": "Profile",
+      "description": "Edit display name, avatar, bio, and personal info"
+    },
+    {
+      "name": "Appearance",
+      "description": "Choose theme (dark/light), accent colors, and visual preferences"
+    },
+    {
+      "name": "Notifications",
+      "description": "Configure push notifications, reminders, and Nova nudges"
+    },
+    {
+      "name": "Privacy",
+      "description": "Control data sharing, visibility, and AI access"
+    },
+    {
+      "name": "Data",
+      "description": "Export data, import data, clear cache"
+    },
+    {
+      "name": "Integrations",
+      "description": "Connect external services and APIs"
+    },
+    {
+      "name": "Account",
+      "description": "Email, password, logout, delete account"
+    }
+  ],
+  "themes": [
+    "Cosmic Violet (default dark theme)",
+    "Deep Space (darker)",
+    "Light Mode"
+  ],
+  "common_user_actions": [
+    "Change theme",
+    "Update profile",
+    "Configure notifications",
+    "Export my data",
+    "Change password",
+    "Adjust Nova settings"
+  ],
+  "related_modules": [
+    "All modules - Settings affect global behavior"
+  ]
+}

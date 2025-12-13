@@ -97,16 +97,30 @@
 
 @media (max-width: 768px) {
   .income-table-container {
-    overflow-x: scroll;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .income-table {
-    min-width: 600px;
+    min-width: 500px;
   }
 
   .income-table th,
   .income-table td {
     padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .income-table {
+    min-width: 400px;
+  }
+
+  .income-table th,
+  .income-table td {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
   }
 }
 

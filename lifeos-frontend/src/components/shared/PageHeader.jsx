@@ -77,6 +77,13 @@ const moduleColors = {
     text: 'text-amber-400',
     gradient: 'from-amber-400 to-orange-400',
   },
+  social: {
+    primary: '#ec4899',    // Pink
+    bg: 'bg-pink-500/10',
+    border: 'border-pink-500/20',
+    text: 'text-pink-400',
+    gradient: 'from-pink-400 to-rose-400',
+  },
   default: {
     primary: '#8b5cf6',
     bg: 'bg-violet-500/10',

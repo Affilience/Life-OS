@@ -1,0 +1,409 @@
+/**
+ * First Run Setup Styles
+ * Inline setup wizard for module configuration
+ */
+
+.first-run-setup {
+  background: linear-gradient(135deg,
+    rgba(139, 92, 246, 0.08) 0%,
+    rgba(6, 182, 212, 0.05) 100%
+  );
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Header */
+.setup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.setup-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.setup-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent, #8b5cf6);
+  border-radius: 10px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.setup-title h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--fg-primary, rgba(255, 255, 255, 0.92));
+}
+
+.setup-title p {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--fg-secondary, rgba(255, 255, 255, 0.64));
+}
+
+.setup-skip {
+  background: transparent;
+  border: none;
+  color: var(--fg-muted, rgba(255, 255, 255, 0.4));
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+}
+
+.setup-skip:hover {
+  color: var(--fg-secondary, rgba(255, 255, 255, 0.64));
+}
+
+/* Progress */
+.setup-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.setup-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-surface-alt, #1a1724);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.setup-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent, #8b5cf6), var(--accent-aux, #06b6d4));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.setup-progress-text {
+  font-size: 0.75rem;
+  color: var(--fg-secondary, rgba(255, 255, 255, 0.64));
+  white-space: nowrap;
+}
+
+/* Content */
+.setup-content {
+  min-height: 200px;
+}
+
+/* Navigation */
+.setup-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.setup-nav-spacer {
+  flex: 1;
+}
+
+.setup-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.setup-nav-btn.primary {
+  background: var(--accent, #8b5cf6);
+  color: white;
+}
+
+.setup-nav-btn.primary:hover:not(:disabled) {
+  background: var(--accent-3, #7c3aed);
+}
+
+.setup-nav-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setup-nav-btn.secondary {
+  background: var(--bg-surface, #12101a);
+  color: var(--fg-primary, rgba(255, 255, 255, 0.92));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.setup-nav-btn.secondary:hover {
+  border-color: var(--accent, #8b5cf6);
+}
+
+/* Setup Step */
+.setup-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.setup-step-header h4 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--fg-primary, rgba(255, 255, 255, 0.92));
+}
+
+.setup-step-header p {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--fg-secondary, rgba(255, 255, 255, 0.64));
+}
+
+.setup-step-content {
+  padding: 0.5rem 0;
+}
+
+.setup-step-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+/* Option Card */
+.setup-option-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem;
+  background: var(--bg-surface, #12101a);
+  border: 2px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.setup-option-card:last-child {
+  margin-bottom: 0;
+}
+
+.setup-option-card:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.setup-option-card.selected {
+  border-color: var(--accent, #8b5cf6);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.setup-option-card .option-icon {
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface-alt, #1a1724);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.setup-option-card.selected .option-icon {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.setup-option-card .option-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.setup-option-card .option-label {
+  font-weight: 600;
+  color: var(--fg-primary, rgba(255, 255, 255, 0.92));
+}
+
+.setup-option-card .option-desc {
+  font-size: 0.8rem;
+  color: var(--fg-secondary, rgba(255, 255, 255, 0.64));
+}
+
+.setup-option-card .option-check {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent, #8b5cf6);
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Number Input */
+.setup-number-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.setup-number-input label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fg-primary, rgba(255, 255, 255, 0.92));
+}
+
+.number-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.setup-number-input input {
+  width: 120px;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface, #12101a);
+  border: 2px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--fg-primary, rgba(255, 255, 255, 0.92));
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.setup-number-input input:focus {
+  border-color: var(--accent, #8b5cf6);
+}
+
+.number-unit {
+  font-size: 0.9rem;
+  color: var(--fg-secondary, rgba(255, 255, 255, 0.64));
+}
+
+.number-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.preset-btn {
+  padding: 0.5rem 0.875rem;
+  background: var(--bg-surface-alt, #1a1724);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 100px;
+  font-size: 0.8rem;
+  color: var(--fg-secondary, rgba(255, 255, 255, 0.64));
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.preset-btn.active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--accent, #8b5cf6);
+  color: var(--accent, #8b5cf6);
+}
+
+/* Chip Select */
+.setup-chip-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.setup-chip-select label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fg-primary, rgba(255, 255, 255, 0.92));
+}
+
+.chip-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip-option {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-surface, #12101a);
+  border: 2px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 100px;
+  font-size: 0.875rem;
+  color: var(--fg-primary, rgba(255, 255, 255, 0.92));
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chip-option:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.chip-option.selected {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--accent, #8b5cf6);
+  color: var(--accent, #8b5cf6);
+}
+
+.chip-icon {
+  font-size: 1rem;
+}
+
+.chip-hint {
+  font-size: 0.75rem;
+  color: var(--fg-muted, rgba(255, 255, 255, 0.4));
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .first-run-setup {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .setup-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .setup-skip {
+    align-self: flex-end;
+    margin-top: -2rem;
+  }
+
+  .setup-step-header h4 {
+    font-size: 1rem;
+  }
+
+  .setup-number-input input {
+    width: 100px;
+    font-size: 1.1rem;
+  }
+}

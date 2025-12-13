@@ -1,0 +1,58 @@
+{
+  "name": "Financial Tracking",
+  "route": "/financial",
+  "navigation": "Sidebar → Modules → Financial (dollar icon)",
+  "purpose": "Track income, expenses, net worth, budgets, and financial goals.",
+  "tabs": [
+    {
+      "name": "Overview",
+      "description": "Financial dashboard with net worth, monthly summary, key metrics"
+    },
+    {
+      "name": "Transactions",
+      "description": "Log and view income and expenses"
+    },
+    {
+      "name": "Budget",
+      "description": "Set category budgets and track spending against them"
+    },
+    {
+      "name": "Goals",
+      "description": "Set and track financial goals (savings, debt payoff, etc.)"
+    },
+    {
+      "name": "Analytics",
+      "description": "Charts showing spending trends, income sources, category breakdown"
+    }
+  ],
+  "data_tracked": [
+    "Transactions (amount, category, date, description, type: income/expense)",
+    "Budgets (category, monthly_limit, spent)",
+    "Financial goals (name, target_amount, current_amount, deadline)",
+    "Net worth (assets, liabilities, date)",
+    "Recurring transactions"
+  ],
+  "common_user_actions": [
+    "Log an expense",
+    "Log income",
+    "Check budget status",
+    "View spending by category",
+    "Update net worth",
+    "Check progress on savings goal",
+    "See this month's spending"
+  ],
+  "related_modules": [
+    "Dashboard - Financial snapshot shown",
+    "Quests - Financial goals as missions"
+  ],
+  "categories": [
+    "Housing", "Food", "Transportation", "Utilities", "Healthcare",
+    "Entertainment", "Shopping", "Subscriptions", "Savings", "Investments",
+    "Debt Payments", "Education", "Personal Care", "Gifts", "Other"
+  ],
+  "tips": [
+    "Log expenses immediately for accuracy",
+    "Review budget weekly to stay on track",
+    "Set up recurring transactions for regular bills"
+  ]
+}

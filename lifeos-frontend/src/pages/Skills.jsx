@@ -93,7 +93,19 @@ const Skills = () => {
       <div className="relative overflow-hidden bg-gradient-to-b from-slate-900/50 to-transparent border border-slate-800/50 rounded-xl">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
 
-        <div className="relative px-4 py-6 text-center">
+        <div className="relative px-4 py-6">
+          {/* Header with Add Button */}
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-bold text-white">Your Skills</h1>
+            <button
+              onClick={() => setShowAddSkill(true)}
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium flex items-center gap-2 transition-all shadow-lg shadow-purple-500/20"
+              data-tour="add-skill-btn"
+            >
+              <Plus className="w-4 h-4" />
+              Add Skill
+            </button>
+          </div>
 
           {/* Quick Stats */}
           <div className="flex justify-center gap-6 text-center">
@@ -119,7 +131,7 @@ const Skills = () => {
 
       <div className="px-4">
         {/* Skills Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" data-tour="skill-constellation">
           {skills.map(skill => {
             const proficiency = getProficiencyLevel(skill.xp);
             const progress = getXpProgress(skill.xp);
@@ -131,6 +143,7 @@ const Skills = () => {
                 key={skill.id}
                 className="bg-[#1a1724]/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-5 hover:border-purple-500/30 transition-all cursor-pointer group"
                 onClick={() => setSelectedSkill(skill)}
+                data-tour="skill-detail"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">

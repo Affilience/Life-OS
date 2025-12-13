@@ -1,6 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useWorkoutStore } from '../../stores/workoutStore';
 import { EXERCISE_DATABASE, CATEGORIES } from '../../data/exerciseDatabase';
+
+// Helper to get exercise data from built-in or custom exercises
+const getExerciseData = (exerciseId, customExercises) => {
+  return EXERCISE_DATABASE[exerciseId] || customExercises?.[exerciseId] || null;
+};
+
 import {
   Play,
   Plus,
@@ -32,6 +38,7 @@ export default function WorkoutTemplates() {
   const {
     templates,
     customTemplates,
+    customExercises,
     exerciseHistory,
     startWorkout,
     createTemplate,
@@ -161,6 +168,7 @@ export default function WorkoutTemplates() {
                 onDuplicate={() => handleDuplicate(template)}
                 onDelete={() => handleDelete(template.id)}
                 getExerciseWeightInfo={getExerciseWeightInfo}
+                customExercises={customExercises}
               />
             ))}
           </div>
@@ -183,6 +191,7 @@ export default function WorkoutTemplates() {
               onEdit={() => handleEdit(template)}
               onDuplicate={() => handleDuplicate(template)}
               getExerciseWeightInfo={getExerciseWeightInfo}
+              customExercises={customExercises}
             />
           ))}
         </div>
@@ -192,6 +201,7 @@ export default function WorkoutTemplates() {
       {showCreateModal && (
         <CreateTemplateModal
           template={editingTemplate}
+          customExercises={customExercises}
           onClose={() => {
             setShowCreateModal(false);
             setEditingTemplate(null);
@@ -212,22 +222,11 @@ export default function WorkoutTemplates() {
 }
 
 // Template Card Component
-function TemplateCard({ template, onStart, onEdit, onDuplicate, onDelete, getExerciseWeightInfo }) {
+function TemplateCard({ template, onStart, onEdit, onDuplicate, onDelete, getExerciseWeightInfo, customExercises }) {
   const [showMenu, setShowMenu] = useState(false);
 
   const exerciseCount = template.exercises?.length || 0;
   const totalSets = template.exercises?.reduce((sum, e) => sum + (e.sets || 0), 0) || 0;
-
-  // Get weight info for first 3 exercises
-  const exerciseWeights = template.exercises?.slice(0, 3).map(e => {
-    const info = getExerciseWeightInfo(e.exerciseId);
-    const exercise = EXERCISE_DATABASE[e.exerciseId];
-    return {
-      name: exercise?.name || e.exerciseId,
-      weight: info?.lastWeight,
-      best: info?.bestWeight,
-    };
-  }) || [];
 
   return (
     <div className="template-card" style={{ '--template-color': template.color || '#a855f7' }}>
@@ -280,20 +279,6 @@ function TemplateCard({ template, onStart, onEdit, onDuplicate, onDelete, getExe
         </div>
       </div>
 
-      {/* Weight suggestions */}
-      {exerciseWeights.some(e => e.weight) && (
-        <div className="weight-suggestions">
-          <div className="suggestions-label">Your weights:</div>
-          {exerciseWeights.map((ex, i) => (
-            ex.weight ? (
-              <div key={i} className="weight-item">
-                <span className="exercise-name">{ex.name}</span>
-                <span className="weight-value">{ex.weight} lbs</span>
-              </div>
-            ) : null
-          ))}
-        </div>
-      )}
 
       {template.isCustom && template.timesUsed > 0 && (
         <div className="usage-badge">
@@ -310,7 +295,7 @@ function TemplateCard({ template, onStart, onEdit, onDuplicate, onDelete, getExe
 }
 
 // Create/Edit Template Modal
-function CreateTemplateModal({ template, onClose, onSave }) {
+function CreateTemplateModal({ template, customExercises, onClose, onSave }) {
   const { exerciseHistory } = useWorkoutStore();
   const [name, setName] = useState(template?.name || '');
   const [description, setDescription] = useState(template?.description || '');
@@ -475,7 +460,7 @@ function CreateTemplateModal({ template, onClose, onSave }) {
             ) : (
               <div className="exercises-list">
                 {exercises.map((ex, index) => {
-                  const exercise = EXERCISE_DATABASE[ex.exerciseId];
+                  const exercise = getExerciseData(ex.exerciseId, customExercises);
                   const lastReps = getLastReps(ex.exerciseId);
                   return (
                     <div key={index} className="exercise-item">

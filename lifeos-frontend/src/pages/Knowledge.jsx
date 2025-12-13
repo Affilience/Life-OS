@@ -16,7 +16,7 @@ export default function Knowledge() {
   return (
     <div className="knowledge-page min-h-screen bg-[#0c0a10]">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800" data-tour="knowledge-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -24,6 +24,7 @@ export default function Knowledge() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                data-tour={`knowledge-tab-${tab.id}`}
                 className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
                   activeTab === tab.id
                     ? 'bg-blue-500/20 text-blue-400 border-b-2 border-blue-500'

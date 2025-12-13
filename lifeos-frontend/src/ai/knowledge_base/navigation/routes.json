@@ -1,0 +1,40 @@
+{
+  "routes": [
+    { "path": "/dashboard", "name": "Dashboard", "icon": "home", "description": "Main overview and insights" },
+    { "path": "/productivity", "name": "Productivity", "icon": "clipboard", "description": "Tasks, projects, deep work" },
+    { "path": "/health", "name": "Health", "icon": "heart", "description": "Workouts, nutrition, sleep" },
+    { "path": "/knowledge", "name": "Knowledge", "icon": "book", "description": "Books, notes, learning" },
+    { "path": "/journal", "name": "Journal", "icon": "pen", "description": "Daily entries, mood tracking" },
+    { "path": "/calendar", "name": "Calendar", "icon": "calendar", "description": "Time blocking, schedule" },
+    { "path": "/skills", "name": "Skills", "icon": "zap", "description": "Skill tracking, practice logs" },
+    { "path": "/financial", "name": "Financial", "icon": "dollar-sign", "description": "Income, expenses, budgets" },
+    { "path": "/character", "name": "Character", "icon": "user", "description": "Avatar, evolution, equipment" },
+    { "path": "/missions", "name": "Quests", "icon": "flag", "description": "Daily quests, achievements, streaks" },
+    { "path": "/social", "name": "Social", "icon": "users", "description": "Friends, guilds, leaderboards" },
+    { "path": "/settings", "name": "Settings", "icon": "settings", "description": "Preferences, account" }
+  ],
+  "quick_actions": [
+    { "action": "Log a workout", "route": "/health", "tab": "workouts" },
+    { "action": "Add a task", "route": "/productivity", "tab": "tasks" },
+    { "action": "Write in journal", "route": "/journal" },
+    { "action": "Log a meal", "route": "/health", "tab": "nutrition" },
+    { "action": "Check my streaks", "route": "/missions", "tab": "streaks" },
+    { "action": "View calendar", "route": "/calendar" },
+    { "action": "Log expense", "route": "/financial", "tab": "transactions" },
+    { "action": "Check goals", "route": "/financial", "tab": "goals" },
+    { "action": "View character", "route": "/character" },
+    { "action": "Check achievements", "route": "/missions", "tab": "achievements" }
+  ],
+  "common_questions": [
+    { "question": "Where do I log workouts?", "answer": "Health module at /health, Workouts tab" },
+    { "question": "Where do I track books?", "answer": "Knowledge module at /knowledge, Library tab" },
+    { "question": "Where are my tasks?", "answer": "Productivity module at /productivity, Tasks tab" },
+    { "question": "How do I see my streaks?", "answer": "Quests module at /missions, Streaks tab" },
+    { "question": "Where do I write journal entries?", "answer": "Journal module at /journal" },
+    { "question": "How do I track expenses?", "answer": "Financial module at /financial, Transactions tab" },
+    { "question": "Where is my calendar?", "answer": "Calendar module at /calendar" },
+    { "question": "How do I track skills?", "answer": "Skills module at /skills" },
+    { "question": "Where do I see my level?", "answer": "Character module at /character or Dashboard" },
+    { "question": "How do I change settings?", "answer": "Settings at /settings" }
+  ]
+}

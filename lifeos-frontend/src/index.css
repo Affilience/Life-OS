@@ -4,6 +4,382 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   MOBILE-FIRST GLOBAL UTILITIES
+   ============================================================================ */
+
+/* Responsive Container */
+.container-mobile {
+  width: 100%;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .container-mobile {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive Grid - Auto-fit columns */
+.grid-responsive {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid-responsive {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Responsive Stats Grid */
+.stats-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Responsive Table Wrapper - Allows horizontal scroll on mobile */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  min-width: 100%;
+}
+
+/* Stack on mobile utility */
+.stack-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (min-width: 640px) {
+  .stack-mobile {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* Touch-friendly button sizing */
+.touch-target {
+  min-height: var(--touch-target-min, 44px);
+  min-width: var(--touch-target-min, 44px);
+}
+
+/* Mobile-safe padding (accounts for notch/home indicator) */
+.safe-area-padding {
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+}
+
+.safe-area-bottom {
+  padding-bottom: calc(var(--safe-area-bottom) + var(--space-4));
+}
+
+/* Prevent text from being too small on mobile */
+.text-mobile-safe {
+  font-size: max(var(--font-size-sm), 14px);
+}
+
+/* Card that stacks content on mobile */
+.card-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .card-responsive {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+/* Full-width on mobile, constrained on desktop */
+.mobile-full {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .mobile-full {
+    width: auto;
+  }
+}
+
+/* Mobile-first flex gap */
+.gap-responsive {
+  gap: var(--space-3);
+}
+
+@media (min-width: 640px) {
+  .gap-responsive {
+    gap: var(--space-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gap-responsive {
+    gap: var(--space-6);
+  }
+}
+
+/* Truncate text with ellipsis */
+.truncate-mobile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Two-column on tablet, single on mobile */
+.cols-1-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .cols-1-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Responsive text sizes */
+.text-responsive-xl {
+  font-size: var(--font-size-lg);
+}
+
+@media (min-width: 640px) {
+  .text-responsive-xl {
+    font-size: var(--font-size-xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-xl {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+.text-responsive-2xl {
+  font-size: var(--font-size-xl);
+}
+
+@media (min-width: 640px) {
+  .text-responsive-2xl {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-2xl {
+    font-size: var(--font-size-3xl);
+  }
+}
+
+/* Hide on mobile, show on tablet+ */
+.hide-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-mobile {
+    display: block;
+  }
+}
+
+/* Show on mobile, hide on tablet+ */
+.show-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
+/* Flex version of hide/show */
+.hide-mobile-flex {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-mobile-flex {
+    display: flex;
+  }
+}
+
+.show-mobile-flex {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .show-mobile-flex {
+    display: none;
+  }
+}
+
+/* Mobile-optimized modal */
+.modal-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .modal-mobile {
+    align-items: center;
+    padding: var(--space-4);
+  }
+}
+
+.modal-content-mobile {
+  width: 100%;
+  max-height: 90vh;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .modal-content-mobile {
+    max-width: 500px;
+    max-height: 85vh;
+    border-radius: var(--radius-xl);
+  }
+}
+
+/* Scrollable horizontal list (for tabs, filters) */
+.scroll-x-mobile {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-x-mobile::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-x-mobile > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Minimum touch target for interactive elements */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  a,
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Larger tap targets for small buttons */
+  .btn-icon {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px;
+  }
+}
+
+/* Prevent zoom on iOS inputs */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Bottom sheet style for mobile modals */
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-1);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--space-4) + var(--safe-area-bottom));
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.bottom-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--text-muted);
+  border-radius: var(--radius-pill);
+  margin: 0 auto var(--space-4);
+}
+
+/* Fix for iOS bounce scroll */
+.no-bounce {
+  overscroll-behavior: none;
+}
+
+/* Spacing utilities for mobile */
+.p-mobile {
+  padding: var(--space-3);
+}
+
+@media (min-width: 640px) {
+  .p-mobile {
+    padding: var(--space-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .p-mobile {
+    padding: var(--space-6);
+  }
+}
+
 /* Custom Animations */
 @keyframes shimmer {
   0% {
@@ -16,4 +392,12 @@
 
 .animate-shimmer {
   animation: shimmer 2s infinite;
+}
+
+/* ============================================================================
+   RECHARTS GLOBAL FIX - Prevent chart overflow on mobile
+   ============================================================================ */
+.recharts-responsive-container {
+  width: 100% !important;
+  max-width: 100% !important;
 }

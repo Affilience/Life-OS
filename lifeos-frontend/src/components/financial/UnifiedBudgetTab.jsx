@@ -226,6 +226,7 @@ export default function UnifiedBudgetTab() {
           <button
             onClick={() => setShowCreateBudget(true)}
             className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 rounded-lg text-purple-400 font-medium transition-colors"
+            data-tour="create-budget-btn"
           >
             <Settings className="w-4 h-4" />
             Set Budgets
@@ -233,6 +234,7 @@ export default function UnifiedBudgetTab() {
           <button
             onClick={() => setShowAddIncome(true)}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg text-emerald-400 font-medium transition-colors"
+            data-tour="add-income-btn"
           >
             <ArrowUpRight className="w-4 h-4" />
             Add Income
@@ -240,6 +242,7 @@ export default function UnifiedBudgetTab() {
           <button
             onClick={() => setShowAddExpense(true)}
             className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 font-medium transition-colors"
+            data-tour="add-expense-btn"
           >
             <ArrowDownRight className="w-4 h-4" />
             Add Expense
@@ -248,7 +251,7 @@ export default function UnifiedBudgetTab() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-tour="financial-summary">
         {/* Income */}
         <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -299,7 +302,7 @@ export default function UnifiedBudgetTab() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="financial-charts">
         {/* Budget vs Actual Bar Chart */}
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
@@ -436,7 +439,7 @@ export default function UnifiedBudgetTab() {
       </div>
 
       {/* Category Budgets Grid */}
-      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-5">
+      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-5" data-tour="budget-categories">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Wallet className="w-5 h-5 text-purple-400" />

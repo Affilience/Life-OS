@@ -46,9 +46,9 @@ const Card = ({
   };
 
   const baseStyles = `
-    bg-[#12101a]/40
+    bg-bg-1/40
     backdrop-blur-sm
-    border border-white/10
+    border border-border
     rounded-lg
   `;
 
@@ -67,7 +67,7 @@ const Card = ({
     }
   }
 
-  const glowStyles = glow ? 'shadow-[0_0_40px_rgba(138,92,255,0.25)]' : '';
+  const glowStyles = glow ? 'shadow-glowSoft' : '';
 
   const paddingVariants = {
     none: '',
@@ -94,7 +94,7 @@ const Card = ({
 Card.Header = ({ children, className = '', ...props }) => {
   return (
     <div
-      className={`pb-4 mb-4 border-b border-white/10/50 ${className}`}
+      className={`pb-4 mb-4 border-b border-border-subtle ${className}`}
       {...props}
     >
       {children}

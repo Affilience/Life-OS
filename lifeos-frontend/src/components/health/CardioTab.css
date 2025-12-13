@@ -3,6 +3,9 @@
   padding: 1.5rem;
   max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -178,6 +181,10 @@
   border-radius: 1rem;
   padding: 1.5rem;
   margin-bottom: 2rem;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .charts-header {
@@ -230,6 +237,9 @@
 
 .chart-container {
   min-height: 300px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .chart-empty {

@@ -1,5 +1,33 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+
+// Sync dashboard settings to Supabase
+const syncDashboardToSupabase = async (settings) => {
+  try {
+    // Get existing preferences first
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('preferences')
+      .eq('id', DEV_USER_ID)
+      .maybeSingle();
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({
+        preferences: {
+          ...(existingProfile?.preferences || {}),
+          dashboard: settings
+        }
+      })
+      .eq('id', DEV_USER_ID);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error syncing dashboard to Supabase:', error);
+  }
+};
 
 // Helper function to compact layouts (remove gaps)
 function compactLayout(layout, cols) {
@@ -112,9 +140,9 @@ export const DASHBOARD_WIDGETS = {
     icon: '✅',
     defaultVisible: true,
     category: 'productivity',
-    minW: 2,
-    minH: 3,
-    maxH: 8,
+    minW: 1,
+    minH: 2,
+    maxH: 6,
   },
   weeklyInsights: {
     id: 'weeklyInsights',
@@ -221,23 +249,23 @@ const DEFAULT_LAYOUTS = {
   lg: [
     { i: 'streakStats', x: 0, y: 0, w: 2, h: 1 },
     { i: 'heroSection', x: 2, y: 0, w: 2, h: 2 },
-    { i: 'todaysPlan', x: 0, y: 1, w: 2, h: 4 },
+    { i: 'todaysPlan', x: 0, y: 1, w: 2, h: 2 },
     { i: 'weeklyInsights', x: 2, y: 2, w: 2, h: 2 },
-    { i: 'moduleHealth', x: 0, y: 5, w: 4, h: 3 },
+    { i: 'moduleHealth', x: 0, y: 3, w: 4, h: 3 },
   ],
   md: [
     { i: 'streakStats', x: 0, y: 0, w: 2, h: 1 },
     { i: 'heroSection', x: 0, y: 1, w: 2, h: 2 },
-    { i: 'todaysPlan', x: 0, y: 3, w: 2, h: 4 },
-    { i: 'weeklyInsights', x: 0, y: 7, w: 2, h: 2 },
-    { i: 'moduleHealth', x: 0, y: 9, w: 2, h: 4 },
+    { i: 'todaysPlan', x: 0, y: 3, w: 2, h: 2 },
+    { i: 'weeklyInsights', x: 0, y: 5, w: 2, h: 2 },
+    { i: 'moduleHealth', x: 0, y: 7, w: 2, h: 4 },
   ],
   sm: [
     { i: 'streakStats', x: 0, y: 0, w: 1, h: 1 },
     { i: 'heroSection', x: 0, y: 1, w: 1, h: 2 },
-    { i: 'todaysPlan', x: 0, y: 3, w: 1, h: 4 },
-    { i: 'weeklyInsights', x: 0, y: 7, w: 1, h: 3 },
-    { i: 'moduleHealth', x: 0, y: 10, w: 1, h: 5 },
+    { i: 'todaysPlan', x: 0, y: 3, w: 1, h: 2 },
+    { i: 'weeklyInsights', x: 0, y: 5, w: 1, h: 3 },
+    { i: 'moduleHealth', x: 0, y: 8, w: 1, h: 5 },
   ],
 };
 
@@ -261,17 +289,17 @@ export const DASHBOARD_PRESETS = {
       lg: [
         { i: 'streakStats', x: 0, y: 0, w: 4, h: 1 },
         { i: 'heroSection', x: 0, y: 1, w: 2, h: 2 },
-        { i: 'todaysPlan', x: 2, y: 1, w: 2, h: 5 },
+        { i: 'todaysPlan', x: 2, y: 1, w: 2, h: 2 },
       ],
       md: [
         { i: 'streakStats', x: 0, y: 0, w: 2, h: 1 },
         { i: 'heroSection', x: 0, y: 1, w: 2, h: 2 },
-        { i: 'todaysPlan', x: 0, y: 3, w: 2, h: 5 },
+        { i: 'todaysPlan', x: 0, y: 3, w: 2, h: 2 },
       ],
       sm: [
         { i: 'streakStats', x: 0, y: 0, w: 1, h: 1 },
         { i: 'heroSection', x: 0, y: 1, w: 1, h: 2 },
-        { i: 'todaysPlan', x: 0, y: 3, w: 1, h: 5 },
+        { i: 'todaysPlan', x: 0, y: 3, w: 1, h: 2 },
       ],
     },
   },
@@ -349,6 +377,47 @@ const useDashboardStore = create(
       layoutHistory: [],
       historyIndex: -1,
 
+      // Supabase sync state
+      isInitialized: false,
+
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .select('preferences')
+            .eq('id', DEV_USER_ID)
+            .maybeSingle();
+
+          if (error) throw error;
+
+          if (data?.preferences?.dashboard) {
+            const dashboard = data.preferences.dashboard;
+            set({
+              widgetVisibility: dashboard.widgetVisibility || get().widgetVisibility,
+              layouts: dashboard.layouts || get().layouts,
+              currentPreset: dashboard.currentPreset || get().currentPreset,
+              isInitialized: true,
+            });
+          } else {
+            set({ isInitialized: true });
+          }
+        } catch (error) {
+          console.error('Error initializing dashboard from Supabase:', error);
+          set({ isInitialized: true });
+        }
+      },
+
+      // Helper to sync current state to Supabase
+      syncToSupabase: () => {
+        const state = get();
+        syncDashboardToSupabase({
+          widgetVisibility: state.widgetVisibility,
+          layouts: state.layouts,
+          currentPreset: state.currentPreset,
+        });
+      },
+
       // Toggle edit mode
       toggleEditMode: () => {
         const state = get();
@@ -385,6 +454,9 @@ const useDashboardStore = create(
           layoutHistory: newHistory,
           historyIndex: newHistory.length - 1,
         });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // Force compact all layouts (remove gaps)
@@ -401,6 +473,9 @@ const useDashboardStore = create(
           layouts: newLayouts,
           currentPreset: null,
         });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // Undo last layout change
@@ -473,6 +548,9 @@ const useDashboardStore = create(
             layouts: newLayouts,
             currentPreset: null,
           });
+
+          // Sync to Supabase
+          get().syncToSupabase();
         } else {
           // Remove from layouts and re-compact
           const newLayouts = { ...state.layouts };
@@ -493,6 +571,9 @@ const useDashboardStore = create(
             layouts: newLayouts,
             currentPreset: null,
           });
+
+          // Sync to Supabase
+          get().syncToSupabase();
         }
       },
 
@@ -505,6 +586,9 @@ const useDashboardStore = create(
           },
           currentPreset: null,
         }));
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // Apply a preset layout
@@ -521,6 +605,9 @@ const useDashboardStore = create(
           layouts: preset.layouts,
           currentPreset: presetId,
         });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // Reset to default visibility and layout
@@ -532,6 +619,9 @@ const useDashboardStore = create(
           layouts: DEFAULT_LAYOUTS,
           currentPreset: 'full',
         });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // Check if a widget is visible
@@ -606,5 +696,13 @@ const useDashboardStore = create(
     }
   )
 );
+
+// Initialize dashboard store from Supabase
+export const initializeDashboardStore = async () => {
+  const store = useDashboardStore.getState();
+  if (!store.isInitialized) {
+    await store.initializeFromSupabase();
+  }
+};
 
 export default useDashboardStore;

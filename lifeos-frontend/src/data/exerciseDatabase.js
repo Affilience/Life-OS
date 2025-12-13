@@ -1,322 +1,40 @@
 // Comprehensive exercise database
-export const EXERCISE_DATABASE = {
-  // Chest
-  'bench-press': {
-    id: 'bench-press',
-    name: 'Bench Press',
-    category: 'chest',
-    muscleGroups: ['chest', 'triceps', 'shoulders'],
-    equipment: 'barbell',
-    type: 'compound',
-    icon: '💪',
-  },
-  'incline-bench-press': {
-    id: 'incline-bench-press',
-    name: 'Incline Bench Press',
-    category: 'chest',
-    muscleGroups: ['chest', 'shoulders', 'triceps'],
-    equipment: 'barbell',
-    type: 'compound',
-    icon: '💪',
-  },
-  'dumbbell-press': {
-    id: 'dumbbell-press',
-    name: 'Dumbbell Press',
-    category: 'chest',
-    muscleGroups: ['chest', 'triceps', 'shoulders'],
-    equipment: 'dumbbell',
-    type: 'compound',
-    icon: '💪',
-  },
-  'push-ups': {
-    id: 'push-ups',
-    name: 'Push-ups',
-    category: 'chest',
-    muscleGroups: ['chest', 'triceps', 'core'],
-    equipment: 'bodyweight',
-    type: 'compound',
-    icon: '🤸',
-  },
-  'dumbbell-fly': {
-    id: 'dumbbell-fly',
-    name: 'Dumbbell Fly',
-    category: 'chest',
-    muscleGroups: ['chest'],
-    equipment: 'dumbbell',
-    type: 'isolation',
-    icon: '💪',
-  },
+// Imports from modular category files for 500+ exercises
+import {
+  ALL_EXERCISES,
+  getExercisesByCategory,
+  getExercisesByEquipment,
+  getExercisesByMuscleGroup,
+  getExercisesBySubcategory,
+  searchExercises,
+  getExerciseCount,
+  getAllMuscleGroups,
+  getAllEquipmentTypes,
+  getAllSubcategories,
+} from './exercises/index.js';
 
-  // Back
-  'deadlift': {
-    id: 'deadlift',
-    name: 'Deadlift',
-    category: 'back',
-    muscleGroups: ['back', 'hamstrings', 'glutes', 'core'],
-    equipment: 'barbell',
-    type: 'compound',
-    icon: '🏋️',
-  },
-  'pull-ups': {
-    id: 'pull-ups',
-    name: 'Pull-ups',
-    category: 'back',
-    muscleGroups: ['back', 'biceps'],
-    equipment: 'bodyweight',
-    type: 'compound',
-    icon: '🤸',
-  },
-  'barbell-row': {
-    id: 'barbell-row',
-    name: 'Barbell Row',
-    category: 'back',
-    muscleGroups: ['back', 'biceps'],
-    equipment: 'barbell',
-    type: 'compound',
-    icon: '💪',
-  },
-  'lat-pulldown': {
-    id: 'lat-pulldown',
-    name: 'Lat Pulldown',
-    category: 'back',
-    muscleGroups: ['back', 'biceps'],
-    equipment: 'cable',
-    type: 'compound',
-    icon: '💪',
-  },
-  't-bar-row': {
-    id: 't-bar-row',
-    name: 'T-Bar Row',
-    category: 'back',
-    muscleGroups: ['back', 'biceps'],
-    equipment: 'barbell',
-    type: 'compound',
-    icon: '💪',
-  },
+// Export the full exercise database
+export const EXERCISE_DATABASE = ALL_EXERCISES;
 
-  // Legs
-  'squat': {
-    id: 'squat',
-    name: 'Squat',
-    category: 'legs',
-    muscleGroups: ['quads', 'glutes', 'hamstrings', 'core'],
-    equipment: 'barbell',
-    type: 'compound',
-    icon: '🏋️',
-  },
-  'leg-press': {
-    id: 'leg-press',
-    name: 'Leg Press',
-    category: 'legs',
-    muscleGroups: ['quads', 'glutes', 'hamstrings'],
-    equipment: 'machine',
-    type: 'compound',
-    icon: '🦵',
-  },
-  'lunges': {
-    id: 'lunges',
-    name: 'Lunges',
-    category: 'legs',
-    muscleGroups: ['quads', 'glutes', 'hamstrings'],
-    equipment: 'bodyweight',
-    type: 'compound',
-    icon: '🤸',
-  },
-  'romanian-deadlift': {
-    id: 'romanian-deadlift',
-    name: 'Romanian Deadlift',
-    category: 'legs',
-    muscleGroups: ['hamstrings', 'glutes', 'back'],
-    equipment: 'barbell',
-    type: 'compound',
-    icon: '🏋️',
-  },
-  'leg-curl': {
-    id: 'leg-curl',
-    name: 'Leg Curl',
-    category: 'legs',
-    muscleGroups: ['hamstrings'],
-    equipment: 'machine',
-    type: 'isolation',
-    icon: '🦵',
-  },
-  'leg-extension': {
-    id: 'leg-extension',
-    name: 'Leg Extension',
-    category: 'legs',
-    muscleGroups: ['quads'],
-    equipment: 'machine',
-    type: 'isolation',
-    icon: '🦵',
-  },
-  'calf-raise': {
-    id: 'calf-raise',
-    name: 'Calf Raise',
-    category: 'legs',
-    muscleGroups: ['calves'],
-    equipment: 'machine',
-    type: 'isolation',
-    icon: '🦵',
-  },
-
-  // Shoulders
-  'overhead-press': {
-    id: 'overhead-press',
-    name: 'Overhead Press',
-    category: 'shoulders',
-    muscleGroups: ['shoulders', 'triceps', 'core'],
-    equipment: 'barbell',
-    type: 'compound',
-    icon: '💪',
-  },
-  'lateral-raise': {
-    id: 'lateral-raise',
-    name: 'Lateral Raise',
-    category: 'shoulders',
-    muscleGroups: ['shoulders'],
-    equipment: 'dumbbell',
-    type: 'isolation',
-    icon: '💪',
-  },
-  'front-raise': {
-    id: 'front-raise',
-    name: 'Front Raise',
-    category: 'shoulders',
-    muscleGroups: ['shoulders'],
-    equipment: 'dumbbell',
-    type: 'isolation',
-    icon: '💪',
-  },
-  'rear-delt-fly': {
-    id: 'rear-delt-fly',
-    name: 'Rear Delt Fly',
-    category: 'shoulders',
-    muscleGroups: ['shoulders', 'back'],
-    equipment: 'dumbbell',
-    type: 'isolation',
-    icon: '💪',
-  },
-
-  // Arms
-  'bicep-curl': {
-    id: 'bicep-curl',
-    name: 'Bicep Curl',
-    category: 'arms',
-    muscleGroups: ['biceps'],
-    equipment: 'dumbbell',
-    type: 'isolation',
-    icon: '💪',
-  },
-  'hammer-curl': {
-    id: 'hammer-curl',
-    name: 'Hammer Curl',
-    category: 'arms',
-    muscleGroups: ['biceps', 'forearms'],
-    equipment: 'dumbbell',
-    type: 'isolation',
-    icon: '💪',
-  },
-  'tricep-dips': {
-    id: 'tricep-dips',
-    name: 'Tricep Dips',
-    category: 'arms',
-    muscleGroups: ['triceps', 'chest'],
-    equipment: 'bodyweight',
-    type: 'compound',
-    icon: '🤸',
-  },
-  'tricep-extension': {
-    id: 'tricep-extension',
-    name: 'Tricep Extension',
-    category: 'arms',
-    muscleGroups: ['triceps'],
-    equipment: 'dumbbell',
-    type: 'isolation',
-    icon: '💪',
-  },
-  'skull-crushers': {
-    id: 'skull-crushers',
-    name: 'Skull Crushers',
-    category: 'arms',
-    muscleGroups: ['triceps'],
-    equipment: 'barbell',
-    type: 'isolation',
-    icon: '💪',
-  },
-
-  // Core
-  'plank': {
-    id: 'plank',
-    name: 'Plank',
-    category: 'core',
-    muscleGroups: ['core'],
-    equipment: 'bodyweight',
-    type: 'isometric',
-    icon: '🧘',
-    trackingType: 'duration',
-  },
-  'crunches': {
-    id: 'crunches',
-    name: 'Crunches',
-    category: 'core',
-    muscleGroups: ['core'],
-    equipment: 'bodyweight',
-    type: 'isolation',
-    icon: '🧘',
-  },
-  'russian-twists': {
-    id: 'russian-twists',
-    name: 'Russian Twists',
-    category: 'core',
-    muscleGroups: ['core', 'obliques'],
-    equipment: 'bodyweight',
-    type: 'isolation',
-    icon: '🧘',
-  },
-  'ab-wheel': {
-    id: 'ab-wheel',
-    name: 'Ab Wheel Rollout',
-    category: 'core',
-    muscleGroups: ['core'],
-    equipment: 'other',
-    type: 'compound',
-    icon: '💪',
-  },
-
-  // Cardio
-  'running': {
-    id: 'running',
-    name: 'Running',
-    category: 'cardio',
-    muscleGroups: ['legs', 'cardiovascular'],
-    equipment: 'none',
-    type: 'cardio',
-    icon: '🏃',
-    trackingType: 'duration-distance',
-  },
-  'cycling': {
-    id: 'cycling',
-    name: 'Cycling',
-    category: 'cardio',
-    muscleGroups: ['legs', 'cardiovascular'],
-    equipment: 'bike',
-    type: 'cardio',
-    icon: '🚴',
-    trackingType: 'duration-distance',
-  },
-  'rowing': {
-    id: 'rowing',
-    name: 'Rowing',
-    category: 'cardio',
-    muscleGroups: ['back', 'legs', 'cardiovascular'],
-    equipment: 'machine',
-    type: 'cardio',
-    icon: '🚣',
-    trackingType: 'duration-distance',
-  },
+// Helper to get exercise by ID (built-in only - for components that don't need custom)
+export const getExerciseById = (exerciseId) => {
+  return ALL_EXERCISES[exerciseId] || null;
 };
 
-// Exercise categories
+// Re-export utility functions
+export {
+  getExercisesByCategory,
+  getExercisesByEquipment,
+  getExercisesByMuscleGroup,
+  getExercisesBySubcategory,
+  searchExercises,
+  getExerciseCount,
+  getAllMuscleGroups,
+  getAllEquipmentTypes,
+  getAllSubcategories,
+};
+
+// Exercise categories with visual styling
 export const CATEGORIES = [
   { id: 'chest', name: 'Chest', icon: '💪', color: '#ef4444' },
   { id: 'back', name: 'Back', icon: '🏋️', color: '#3b82f6' },
@@ -325,6 +43,30 @@ export const CATEGORIES = [
   { id: 'arms', name: 'Arms', icon: '💪', color: '#10b981' },
   { id: 'core', name: 'Core', icon: '🧘', color: '#06b6d4' },
   { id: 'cardio', name: 'Cardio', icon: '🏃', color: '#ec4899' },
+  { id: 'olympic', name: 'Olympic & Functional', icon: '🏋️', color: '#f97316' },
+];
+
+// Equipment types
+export const EQUIPMENT_TYPES = [
+  { id: 'barbell', name: 'Barbell', icon: '🏋️' },
+  { id: 'dumbbell', name: 'Dumbbell', icon: '💪' },
+  { id: 'machine', name: 'Machine', icon: '🏋️' },
+  { id: 'cable', name: 'Cable', icon: '🔗' },
+  { id: 'bodyweight', name: 'Bodyweight', icon: '🤸' },
+  { id: 'kettlebell', name: 'Kettlebell', icon: '🔔' },
+  { id: 'resistance-band', name: 'Resistance Band', icon: '🪢' },
+  { id: 'none', name: 'No Equipment', icon: '✋' },
+  { id: 'other', name: 'Other', icon: '🏃' },
+  { id: 'bike', name: 'Bike', icon: '🚴' },
+];
+
+// Exercise types
+export const EXERCISE_TYPES = [
+  { id: 'compound', name: 'Compound', description: 'Multi-joint movement' },
+  { id: 'isolation', name: 'Isolation', description: 'Single-joint movement' },
+  { id: 'isometric', name: 'Isometric', description: 'Static hold' },
+  { id: 'cardio', name: 'Cardio', description: 'Cardiovascular exercise' },
+  { id: 'plyometric', name: 'Plyometric', description: 'Explosive movement' },
 ];
 
 // Workout templates
@@ -352,7 +94,7 @@ export const WORKOUT_TEMPLATES = [
       { exerciseId: 'pull-ups', sets: 4, targetReps: 10 },
       { exerciseId: 'barbell-row', sets: 4, targetReps: 8 },
       { exerciseId: 'lat-pulldown', sets: 3, targetReps: 10 },
-      { exerciseId: 'bicep-curl', sets: 3, targetReps: 12 },
+      { exerciseId: 'barbell-curl', sets: 3, targetReps: 12 },
     ],
     icon: '🏋️',
     color: '#3b82f6',
@@ -362,11 +104,11 @@ export const WORKOUT_TEMPLATES = [
     name: 'Leg Day',
     description: 'Quads, hamstrings, and glutes',
     exercises: [
-      { exerciseId: 'squat', sets: 4, targetReps: 8 },
+      { exerciseId: 'back-squat', sets: 4, targetReps: 8 },
       { exerciseId: 'romanian-deadlift', sets: 3, targetReps: 10 },
       { exerciseId: 'leg-press', sets: 3, targetReps: 12 },
-      { exerciseId: 'lunges', sets: 3, targetReps: 12 },
-      { exerciseId: 'calf-raise', sets: 4, targetReps: 15 },
+      { exerciseId: 'walking-lunges', sets: 3, targetReps: 12 },
+      { exerciseId: 'standing-calf-raise', sets: 4, targetReps: 15 },
     ],
     icon: '🦵',
     color: '#8b5cf6',
@@ -376,7 +118,7 @@ export const WORKOUT_TEMPLATES = [
     name: 'Full Body',
     description: 'Complete workout',
     exercises: [
-      { exerciseId: 'squat', sets: 3, targetReps: 10 },
+      { exerciseId: 'back-squat', sets: 3, targetReps: 10 },
       { exerciseId: 'bench-press', sets: 3, targetReps: 10 },
       { exerciseId: 'barbell-row', sets: 3, targetReps: 10 },
       { exerciseId: 'overhead-press', sets: 3, targetReps: 10 },
@@ -385,16 +127,88 @@ export const WORKOUT_TEMPLATES = [
     icon: '🏋️',
     color: '#10b981',
   },
+  {
+    id: 'upper-body',
+    name: 'Upper Body',
+    description: 'Chest, back, shoulders, and arms',
+    exercises: [
+      { exerciseId: 'bench-press', sets: 4, targetReps: 8 },
+      { exerciseId: 'pull-ups', sets: 4, targetReps: 10 },
+      { exerciseId: 'overhead-press', sets: 3, targetReps: 10 },
+      { exerciseId: 'dumbbell-row', sets: 3, targetReps: 10 },
+      { exerciseId: 'barbell-curl', sets: 3, targetReps: 12 },
+      { exerciseId: 'tricep-pushdown', sets: 3, targetReps: 12 },
+    ],
+    icon: '💪',
+    color: '#ef4444',
+  },
+  {
+    id: 'lower-body',
+    name: 'Lower Body',
+    description: 'Quads, hamstrings, glutes, and calves',
+    exercises: [
+      { exerciseId: 'back-squat', sets: 4, targetReps: 8 },
+      { exerciseId: 'deadlift', sets: 3, targetReps: 5 },
+      { exerciseId: 'leg-press', sets: 3, targetReps: 12 },
+      { exerciseId: 'lying-leg-curl', sets: 3, targetReps: 12 },
+      { exerciseId: 'leg-extension', sets: 3, targetReps: 12 },
+      { exerciseId: 'standing-calf-raise', sets: 4, targetReps: 15 },
+    ],
+    icon: '🦵',
+    color: '#8b5cf6',
+  },
+  {
+    id: 'olympic-day',
+    name: 'Olympic Lifting',
+    description: 'Snatch, clean, and jerk variations',
+    exercises: [
+      { exerciseId: 'power-snatch', sets: 5, targetReps: 3 },
+      { exerciseId: 'power-clean', sets: 5, targetReps: 3 },
+      { exerciseId: 'push-jerk', sets: 4, targetReps: 3 },
+      { exerciseId: 'front-squat', sets: 3, targetReps: 5 },
+      { exerciseId: 'snatch-grip-deadlift', sets: 3, targetReps: 5 },
+    ],
+    icon: '🏋️',
+    color: '#f97316',
+  },
+  {
+    id: 'crossfit-wod',
+    name: 'CrossFit WOD',
+    description: 'High-intensity functional workout',
+    exercises: [
+      { exerciseId: 'power-clean', sets: 5, targetReps: 5 },
+      { exerciseId: 'burpees', sets: 3, targetReps: 15 },
+      { exerciseId: 'box-jumps', sets: 3, targetReps: 20 },
+      { exerciseId: 'kettlebell-swings', sets: 3, targetReps: 20 },
+      { exerciseId: 'toes-to-bar', sets: 3, targetReps: 15 },
+    ],
+    icon: '🏋️',
+    color: '#06b6d4',
+  },
+  {
+    id: 'cardio-hiit',
+    name: 'HIIT Cardio',
+    description: 'High-intensity interval training',
+    exercises: [
+      { exerciseId: 'burpees', sets: 4, targetReps: 10 },
+      { exerciseId: 'jumping-jacks', sets: 4, targetReps: 30 },
+      { exerciseId: 'high-knees', sets: 4, targetReps: 30 },
+      { exerciseId: 'mountain-climbers', sets: 4, targetReps: 20 },
+      { exerciseId: 'battle-ropes', sets: 4, targetReps: 30 },
+    ],
+    icon: '🏃',
+    color: '#ec4899',
+  },
 ];
 
-// Sample workout data
+// Sample workout data (for demo/testing)
 export const SAMPLE_WORKOUTS = [
   {
     id: 'workout-1',
     date: '2025-01-15T09:00:00Z',
     startTime: '2025-01-15T09:00:00Z',
     endTime: '2025-01-15T10:15:00Z',
-    duration: 75, // minutes
+    duration: 75,
     name: 'Push Day',
     exercises: [
       {
@@ -423,8 +237,8 @@ export const SAMPLE_WORKOUTS = [
         ],
       },
     ],
-    notes: 'Felt strong today! Hit a PR on bench press 💪',
-    totalVolume: 12500, // lbs
+    notes: 'Felt strong today! Hit a PR on bench press',
+    totalVolume: 12500,
     prsAchieved: 1,
   },
   {
@@ -473,7 +287,7 @@ export const SAMPLE_WORKOUTS = [
     name: 'Leg Day',
     exercises: [
       {
-        exerciseId: 'squat',
+        exerciseId: 'back-squat',
         sets: [
           { weight: 185, reps: 10, completed: true },
           { weight: 225, reps: 8, completed: true },
@@ -490,7 +304,7 @@ export const SAMPLE_WORKOUTS = [
         ],
       },
     ],
-    notes: 'Legs feeling strong 🦵',
+    notes: 'Legs feeling strong',
     totalVolume: 11750,
     prsAchieved: 0,
   },

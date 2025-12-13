@@ -1,17 +1,333 @@
 /**
  * Knowledge Module Store - Zustand
  * Manages all state for notes, books, media, tags, and collections
+ * Hybrid pattern: optimistic local updates + async Supabase sync
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import {
-  SAMPLE_NOTES,
-  SAMPLE_BOOKS,
-  SAMPLE_MEDIA,
-  SAMPLE_TAGS,
-  SAMPLE_COLLECTIONS,
-} from '../data/knowledgeData';
+import { supabase, getCurrentUserId } from '../lib/supabase';
+import { triggerGamification } from '../hooks/useGamification';
+
+// ============================================
+// SUPABASE SYNC HELPERS
+// ============================================
+
+const initializeFromSupabase = async (set, get) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    // Load notes (limit to 500 most recent)
+    const { data: notes } = await supabase
+      .from('knowledge_notes')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('archived', false)
+      .order('updated_at', { ascending: false })
+      .limit(500);
+
+    // Load books (limit to 200)
+    const { data: books } = await supabase
+      .from('knowledge_books')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(200);
+
+    // Load media (limit to 200)
+    const { data: media } = await supabase
+      .from('knowledge_media')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(200);
+
+    // Load tags (limit to 500)
+    const { data: tags } = await supabase
+      .from('knowledge_tags')
+      .select('*')
+      .eq('user_id', userId)
+      .limit(500);
+
+    // Load collections (limit to 100)
+    const { data: collections } = await supabase
+      .from('knowledge_collections')
+      .select('*')
+      .eq('user_id', userId)
+      .limit(100);
+
+    // Load projects (limit to 100)
+    const { data: projects } = await supabase
+      .from('knowledge_projects')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(100);
+
+    // Transform data
+    const transformedNotes = notes?.map(n => ({
+      id: n.id,
+      title: n.title,
+      content: n.content || '',
+      tags: n.tags || [],
+      linkedTo: n.linked_to || [],
+      linkedFrom: n.linked_from || [],
+      mediaAttachments: n.media_attachments || [],
+      createdAt: n.created_at,
+      updatedAt: n.updated_at,
+      isFavorite: n.is_favorite || false,
+    })) || [];
+
+    const transformedBooks = books?.map(b => ({
+      id: b.id,
+      type: 'book',
+      title: b.title,
+      author: b.author || 'Unknown',
+      coverImage: b.cover_image,
+      description: b.description || '',
+      status: b.status || 'want-to-read',
+      rating: b.rating,
+      progress: { current: b.progress_current || 0, total: b.progress_total || 0, unit: b.progress_unit || 'chapter' },
+      notes: b.notes || [],
+      tags: b.tags || [],
+      startedAt: b.started_at,
+      completedAt: b.completed_at,
+      createdAt: b.created_at,
+      isFavorite: b.is_favorite || false,
+      metadata: b.metadata || {},
+    })) || [];
+
+    const transformedMedia = media?.map(m => ({
+      id: m.id,
+      type: m.media_type || 'youtube',
+      title: m.title,
+      creator: m.creator || m.author || 'Unknown',
+      thumbnailUrl: m.thumbnail_url,
+      url: m.url || '',
+      duration: m.duration || '',
+      status: m.status || 'want-to-watch',
+      notes: m.linked_notes || [],
+      tags: m.tags || [],
+      watchedAt: m.watched_at,
+      createdAt: m.created_at,
+      isFavorite: m.is_favorite || false,
+    })) || [];
+
+    const transformedTags = tags?.map(t => ({
+      id: t.id,
+      name: t.name,
+      color: t.color || '#3b82f6',
+      count: t.count || 0,
+    })) || [];
+
+    const transformedCollections = collections?.map(c => ({
+      id: c.id,
+      name: c.name,
+      icon: c.icon || '📁',
+      description: c.description || '',
+      items: [],
+      color: c.color || '#8b5cf6',
+      createdAt: c.created_at,
+    })) || [];
+
+    const transformedProjects = projects?.map(p => ({
+      id: p.id,
+      title: p.title,
+      goal: p.goal || '',
+      status: p.status || 'nebula',
+      module: p.module || 'knowledge',
+      goals: p.goals || [],
+      tasks: p.tasks || [],
+      notes: p.notes || '',
+      tags: p.tags || [],
+      startDate: p.start_date,
+      targetDate: p.target_date,
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
+    })) || [];
+
+    // Always set from Supabase data (even if empty)
+    set({
+      notes: transformedNotes,
+      books: transformedBooks,
+      media: transformedMedia,
+      tags: transformedTags,
+      collections: transformedCollections,
+      projects: transformedProjects,
+      isInitialized: true,
+    });
+
+    console.log('Knowledge store initialized from Supabase');
+  } catch (error) {
+    console.error('Error initializing knowledge store from Supabase:', error);
+    set({ isInitialized: true }); // Mark as initialized even on error to prevent infinite retries
+  }
+};
+
+const syncNoteToSupabase = async (note, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase.from('knowledge_notes').update({ archived: true }).eq('id', note.id).eq('user_id', userId);
+    } else {
+      await supabase.from('knowledge_notes').upsert({
+        id: note.id,
+        user_id: userId,
+        title: note.title,
+        content: note.content,
+        tags: note.tags || [],
+        linked_to: note.linkedTo || [],
+        linked_from: note.linkedFrom || [],
+        media_attachments: note.mediaAttachments || [],
+        is_favorite: note.isFavorite || false,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing note to Supabase:', error);
+  }
+};
+
+const syncBookToSupabase = async (book, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase.from('knowledge_books').delete().eq('id', book.id).eq('user_id', userId);
+    } else {
+      await supabase.from('knowledge_books').upsert({
+        id: book.id,
+        user_id: userId,
+        title: book.title,
+        author: book.author,
+        cover_image: book.coverImage,
+        description: book.description,
+        status: book.status,
+        rating: book.rating,
+        progress_current: book.progress?.current || 0,
+        progress_total: book.progress?.total || 0,
+        progress_unit: book.progress?.unit || 'chapter',
+        notes: book.notes || [],
+        tags: book.tags || [],
+        started_at: book.startedAt,
+        completed_at: book.completedAt,
+        is_favorite: book.isFavorite || false,
+        metadata: book.metadata || {},
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing book to Supabase:', error);
+  }
+};
+
+const syncMediaToSupabase = async (media, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase.from('knowledge_media').delete().eq('id', media.id).eq('user_id', userId);
+    } else {
+      await supabase.from('knowledge_media').upsert({
+        id: media.id,
+        user_id: userId,
+        media_type: media.type,
+        title: media.title,
+        creator: media.creator,
+        thumbnail_url: media.thumbnailUrl,
+        url: media.url,
+        duration: media.duration,
+        status: media.status,
+        linked_notes: media.notes || [],
+        tags: media.tags || [],
+        watched_at: media.watchedAt,
+        is_favorite: media.isFavorite || false,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing media to Supabase:', error);
+  }
+};
+
+const syncTagToSupabase = async (tag, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase.from('knowledge_tags').delete().eq('name', tag.name).eq('user_id', userId);
+    } else {
+      await supabase.from('knowledge_tags').upsert({
+        id: tag.id,
+        user_id: userId,
+        name: tag.name,
+        color: tag.color,
+        count: tag.count || 0,
+      }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing tag to Supabase:', error);
+  }
+};
+
+const syncCollectionToSupabase = async (collection, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase.from('knowledge_collections').delete().eq('id', collection.id).eq('user_id', userId);
+    } else {
+      await supabase.from('knowledge_collections').upsert({
+        id: collection.id,
+        user_id: userId,
+        name: collection.name,
+        description: collection.description,
+        color: collection.color,
+        icon: collection.icon,
+        item_count: collection.items?.length || 0,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing collection to Supabase:', error);
+  }
+};
+
+const syncProjectToSupabase = async (project, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase.from('knowledge_projects').delete().eq('id', project.id).eq('user_id', userId);
+    } else {
+      await supabase.from('knowledge_projects').upsert({
+        id: project.id,
+        user_id: userId,
+        title: project.title,
+        goal: project.goal,
+        status: project.status,
+        module: project.module,
+        goals: project.goals || [],
+        tasks: project.tasks || [],
+        notes: project.notes,
+        tags: project.tags || [],
+        start_date: project.startDate,
+        target_date: project.targetDate,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing project to Supabase:', error);
+  }
+};
 
 export const useKnowledgeStore = create(
   persist(
@@ -19,12 +335,13 @@ export const useKnowledgeStore = create(
       // ============================================
       // DATA STATE
       // ============================================
-      notes: SAMPLE_NOTES,
-      books: SAMPLE_BOOKS,
-      media: SAMPLE_MEDIA,
-      tags: SAMPLE_TAGS,
-      collections: SAMPLE_COLLECTIONS,
-      projects: [], // Cosmic projects system
+      notes: [],
+      books: [],
+      media: [],
+      tags: [],
+      collections: [],
+      projects: [],
+      isInitialized: false,
 
       // ============================================
       // UI STATE
@@ -35,6 +352,9 @@ export const useKnowledgeStore = create(
       searchQuery: '',
       searchResults: [],
       isSearching: false,
+
+      // Initialize from Supabase
+      initializeFromSupabase: () => initializeFromSupabase(set, get),
 
       // ============================================
       // NOTES ACTIONS
@@ -62,6 +382,13 @@ export const useKnowledgeStore = create(
           activeView: 'note-detail',
           activeItemId: newNote.id,
         }));
+        syncNoteToSupabase(newNote);
+
+        // Award XP for creating a note
+        triggerGamification('noteCreated', {
+          xpOverride: 15,
+          module: 'knowledge',
+        });
 
         return newNote.id;
       },
@@ -81,12 +408,15 @@ export const useKnowledgeStore = create(
               : note
           ),
         }));
+        const note = get().notes.find(n => n.id === noteId);
+        if (note) syncNoteToSupabase(note);
       },
 
       /**
        * Delete a note
        */
       deleteNote: (noteId) => {
+        const note = get().notes.find(n => n.id === noteId);
         set((state) => {
           // Remove note from linkedFrom arrays of other notes
           const updatedNotes = state.notes
@@ -103,6 +433,7 @@ export const useKnowledgeStore = create(
             activeItemId: state.activeItemId === noteId ? null : state.activeItemId,
           };
         });
+        if (note) syncNoteToSupabase(note, 'delete');
       },
 
       /**
@@ -116,6 +447,8 @@ export const useKnowledgeStore = create(
               : note
           ),
         }));
+        const note = get().notes.find(n => n.id === noteId);
+        if (note) syncNoteToSupabase(note);
       },
 
       /**
@@ -197,6 +530,7 @@ export const useKnowledgeStore = create(
         set((state) => ({
           books: [newBook, ...state.books],
         }));
+        syncBookToSupabase(newBook);
 
         return newBook.id;
       },
@@ -216,6 +550,11 @@ export const useKnowledgeStore = create(
               }
               if (updates.status === 'completed' && !book.completedAt) {
                 updatedBook.completedAt = new Date().toISOString();
+                // Award XP for completing a book
+                triggerGamification('bookCompleted', {
+                  xpOverride: 50,
+                  module: 'knowledge',
+                });
               }
 
               return updatedBook;
@@ -223,17 +562,21 @@ export const useKnowledgeStore = create(
             return book;
           }),
         }));
+        const book = get().books.find(b => b.id === bookId);
+        if (book) syncBookToSupabase(book);
       },
 
       /**
        * Delete a book
        */
       deleteBook: (bookId) => {
+        const book = get().books.find(b => b.id === bookId);
         set((state) => ({
           books: state.books.filter((book) => book.id !== bookId),
           activeView: state.activeItemId === bookId ? 'books' : state.activeView,
           activeItemId: state.activeItemId === bookId ? null : state.activeItemId,
         }));
+        if (book) syncBookToSupabase(book, 'delete');
       },
 
       /**
@@ -281,6 +624,7 @@ export const useKnowledgeStore = create(
         set((state) => ({
           media: [newMedia, ...state.media],
         }));
+        syncMediaToSupabase(newMedia);
 
         return newMedia.id;
       },
@@ -304,17 +648,21 @@ export const useKnowledgeStore = create(
             return item;
           }),
         }));
+        const media = get().media.find(m => m.id === mediaId);
+        if (media) syncMediaToSupabase(media);
       },
 
       /**
        * Delete media item
        */
       deleteMedia: (mediaId) => {
+        const media = get().media.find(m => m.id === mediaId);
         set((state) => ({
           media: state.media.filter((item) => item.id !== mediaId),
           activeView: state.activeItemId === mediaId ? 'media' : state.activeView,
           activeItemId: state.activeItemId === mediaId ? null : state.activeItemId,
         }));
+        if (media) syncMediaToSupabase(media, 'delete');
       },
 
       // ============================================
@@ -338,6 +686,7 @@ export const useKnowledgeStore = create(
         set((state) => ({
           tags: [...state.tags, newTag],
         }));
+        syncTagToSupabase(newTag);
       },
 
       /**
@@ -355,12 +704,15 @@ export const useKnowledgeStore = create(
             tag.name === tagName ? { ...tag, count } : tag
           ),
         }));
+        const tag = get().tags.find(t => t.name === tagName);
+        if (tag) syncTagToSupabase(tag);
       },
 
       /**
        * Delete a tag
        */
       deleteTag: (tagName) => {
+        const tag = get().tags.find(t => t.name === tagName);
         set((state) => ({
           tags: state.tags.filter((tag) => tag.name !== tagName),
           notes: state.notes.map((note) => ({
@@ -376,6 +728,7 @@ export const useKnowledgeStore = create(
             tags: item.tags.filter((t) => t !== tagName),
           })),
         }));
+        if (tag) syncTagToSupabase(tag, 'delete');
       },
 
       // ============================================
@@ -399,6 +752,7 @@ export const useKnowledgeStore = create(
         set((state) => ({
           collections: [...state.collections, newCollection],
         }));
+        syncCollectionToSupabase(newCollection);
 
         return newCollection.id;
       },
@@ -412,15 +766,19 @@ export const useKnowledgeStore = create(
             col.id === collectionId ? { ...col, ...updates } : col
           ),
         }));
+        const collection = get().collections.find(c => c.id === collectionId);
+        if (collection) syncCollectionToSupabase(collection);
       },
 
       /**
        * Delete a collection
        */
       deleteCollection: (collectionId) => {
+        const collection = get().collections.find(c => c.id === collectionId);
         set((state) => ({
           collections: state.collections.filter((col) => col.id !== collectionId),
         }));
+        if (collection) syncCollectionToSupabase(collection, 'delete');
       },
 
       /**
@@ -434,6 +792,8 @@ export const useKnowledgeStore = create(
               : col
           ),
         }));
+        const collection = get().collections.find(c => c.id === collectionId);
+        if (collection) syncCollectionToSupabase(collection);
       },
 
       /**
@@ -447,6 +807,8 @@ export const useKnowledgeStore = create(
               : col
           ),
         }));
+        const collection = get().collections.find(c => c.id === collectionId);
+        if (collection) syncCollectionToSupabase(collection);
       },
 
       // ============================================
@@ -476,6 +838,7 @@ export const useKnowledgeStore = create(
         set((state) => ({
           projects: [newProject, ...state.projects],
         }));
+        syncProjectToSupabase(newProject);
 
         return newProject.id;
       },
@@ -495,15 +858,19 @@ export const useKnowledgeStore = create(
               : project
           ),
         }));
+        const project = get().projects.find(p => p.id === projectId);
+        if (project) syncProjectToSupabase(project);
       },
 
       /**
        * Delete a project
        */
       deleteProject: (projectId) => {
+        const project = get().projects.find(p => p.id === projectId);
         set((state) => ({
           projects: state.projects.filter((project) => project.id !== projectId),
         }));
+        if (project) syncProjectToSupabase(project, 'delete');
       },
 
       /**
@@ -714,3 +1081,9 @@ export const useKnowledgeStore = create(
     }
   )
 );
+
+// Initialize knowledge store from Supabase
+export const initializeKnowledgeStore = async () => {
+  const store = useKnowledgeStore.getState();
+  await store.initializeFromSupabase();
+};

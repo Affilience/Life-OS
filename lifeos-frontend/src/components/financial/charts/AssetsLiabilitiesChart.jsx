@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -9,20 +9,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-
-// Mock assets vs liabilities over time
-const data = [
-  { month: 'Jan', assets: 7200, liabilities: 0, netWorth: 7200 },
-  { month: 'Feb', assets: 7800, liabilities: 0, netWorth: 7800 },
-  { month: 'Mar', assets: 8100, liabilities: 0, netWorth: 8100 },
-  { month: 'Apr', assets: 8900, liabilities: 0, netWorth: 8900 },
-  { month: 'May', assets: 9600, liabilities: 0, netWorth: 9600 },
-  { month: 'Jun', assets: 10500, liabilities: 0, netWorth: 10500 },
-  { month: 'Jul', assets: 11400, liabilities: 0, netWorth: 11400 },
-  { month: 'Aug', assets: 12250, liabilities: 0, netWorth: 12250 },
-  { month: 'Sep', assets: 12600, liabilities: 0, netWorth: 12600 },
-  { month: 'Oct', assets: 13005, liabilities: 0, netWorth: 13005 }
-];
+import { useFinancialStore } from '../../../stores/financialStore';
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null;
@@ -46,6 +33,75 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function AssetsLiabilitiesChart() {
+  const { transactions, accounts } = useFinancialStore();
+
+  // Calculate assets and liabilities over time
+  const data = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const today = new Date();
+
+    // Get current totals from accounts
+    let currentAssets = 0;
+    let currentLiabilities = 0;
+    (accounts || []).forEach(acc => {
+      if (acc.balance >= 0) {
+        currentAssets += acc.balance;
+      } else {
+        currentLiabilities += Math.abs(acc.balance);
+      }
+    });
+
+    // Build monthly data
+    const monthlyData = [];
+    for (let i = 9; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData.push({
+        month: monthNames[d.getMonth()],
+        monthKey,
+        netChange: 0
+      });
+    }
+
+    // Calculate net change per month from transactions
+    (transactions || []).forEach(txn => {
+      if (!txn.date) return;
+      const txnMonthKey = txn.date.substring(0, 7);
+      const monthEntry = monthlyData.find(m => m.monthKey === txnMonthKey);
+      if (monthEntry) {
+        if (txn.type === 'income') {
+          monthEntry.netChange += txn.amount || 0;
+        } else if (txn.type === 'expense') {
+          monthEntry.netChange -= Math.abs(txn.amount || 0);
+        }
+      }
+    });
+
+    // Work backwards from current values
+    let runningAssets = currentAssets;
+    const result = [];
+    for (let i = monthlyData.length - 1; i >= 0; i--) {
+      const month = monthlyData[i];
+      result.unshift({
+        month: month.month,
+        assets: Math.round(runningAssets),
+        liabilities: Math.round(currentLiabilities), // Simplified: keep liabilities constant
+        netWorth: Math.round(runningAssets - currentLiabilities)
+      });
+      runningAssets -= month.netChange;
+    }
+
+    return result;
+  }, [transactions, accounts]);
+
+  if (data.length === 0 || data.every(d => d.assets === 0 && d.liabilities === 0)) {
+    return (
+      <div className="chart-container flex items-center justify-center h-[300px]">
+        <p className="text-white/50 text-sm">No data to display</p>
+      </div>
+    );
+  }
+
   return (
     <div className="chart-container">
       <ResponsiveContainer width="100%" height={300}>

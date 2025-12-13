@@ -311,6 +311,7 @@ export default function ProjectsTab() {
         <button
           onClick={handleOpenCreateModal}
           className="flex items-center gap-2 px-4 py-2.5 bg-violet-500 hover:bg-violet-600 text-white rounded-lg font-medium transition-colors"
+          data-tour="create-project-btn"
         >
           <Plus className="w-5 h-5" />
           New Project
@@ -383,7 +384,7 @@ export default function ProjectsTab() {
           size="md"
         />
       ) : (
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'} data-tour="projects-list">
           {filteredProjects.map((project) => {
             const stats = getProjectStats(project.id);
             const projectTasks = getTasksByProject(project.id);

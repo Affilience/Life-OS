@@ -116,6 +116,7 @@ export default function Sidebar() {
     <div
       className={`
         ${sidebarCollapsed ? 'w-16' : 'w-64'}
+        h-full
         bg-[#12101a]/40 backdrop-blur-md
         border-r border-white/5
         flex flex-col

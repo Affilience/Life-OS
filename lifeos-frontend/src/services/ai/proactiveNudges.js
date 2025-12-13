@@ -59,9 +59,9 @@ class ProactiveNudgeEngine {
    * Check for streaks about to break - HIGHEST PRIORITY
    */
   checkStreakNudge(context) {
-    const { streaks } = context;
+    const streaks = context.gamification?.streaks || {};
 
-    if (streaks.atRisk.length > 0) {
+    if (streaks.atRisk?.length > 0) {
       const mostValuable = streaks.atRisk.reduce((best, current) =>
         current.current > best.current ? current : best
       );
@@ -111,16 +111,16 @@ class ProactiveNudgeEngine {
    * Check if user has been inactive
    */
   checkInactivityNudge(context) {
-    const { time, today, progress } = context;
+    const { time, dailyTasks, health, productivity, fitness } = context;
 
     // Don't bother at night
     if (time.timeOfDay === 'night') return null;
 
     // Check if no tasks done and it's afternoon/evening
-    const noActivity = today.tasks.completed === 0 &&
-                       today.nutrition.mealsLogged === 0 &&
-                       !today.hasActiveSession &&
-                       !today.hasActiveWorkout;
+    const noActivity = dailyTasks?.today?.completed === 0 &&
+                       health?.todayNutrition?.mealsLogged === 0 &&
+                       !productivity?.activeSession &&
+                       !fitness?.hasActiveWorkout;
 
     if (noActivity && (time.timeOfDay === 'afternoon' || time.timeOfDay === 'evening')) {
       return {
@@ -143,8 +143,8 @@ class ProactiveNudgeEngine {
    * Check for task-related nudges
    */
   checkTaskNudge(context) {
-    const { time, today } = context;
-    const { tasks } = today;
+    const { time, dailyTasks } = context;
+    const tasks = dailyTasks?.today || { total: 0, completed: 0, completionRate: 0, remaining: 0 };
 
     // Morning reminder if tasks planned but not started
     if (time.timeOfDay === 'morning' && tasks.total > 0 && tasks.completed === 0) {
@@ -197,11 +197,12 @@ class ProactiveNudgeEngine {
    * Check nutrition progress
    */
   checkNutritionNudge(context) {
-    const { time, today } = context;
-    const { nutrition } = today;
+    const { time, health } = context;
+    const nutrition = health?.todayNutrition || {};
+    const goals = health?.dailyGoals || {};
 
     // Only check if goals are set
-    if (!nutrition.goals?.calories) return null;
+    if (!goals?.calories) return null;
 
     // Evening protein check
     if (time.timeOfDay === 'evening' && nutrition.proteinProgress < 70) {
@@ -209,7 +210,7 @@ class ProactiveNudgeEngine {
         type: 'nutrition_protein',
         priority: 5,
         emotionalState: 'concerned',
-        message: `You're at ${nutrition.protein}g protein (${nutrition.proteinProgress}% of goal). Consider a protein-rich dinner!`,
+        message: `You're at ${nutrition.protein || 0}g protein (${nutrition.proteinProgress || 0}% of goal). Consider a protein-rich dinner!`,
         actions: [
           { label: 'Log Meal', route: '/health' },
           { label: 'View Nutrition', route: '/health' },
@@ -219,12 +220,12 @@ class ProactiveNudgeEngine {
     }
 
     // Over-eating warning (>120% of calories before dinner)
-    if (time.timeOfDay !== 'evening' && nutrition.calorieProgress > 120) {
+    if (time.timeOfDay !== 'evening' && (nutrition.calorieProgress || 0) > 120) {
       return {
         type: 'nutrition_over',
         priority: 4,
         emotionalState: 'concerned',
-        message: `You're at ${nutrition.calorieProgress}% of your calorie goal already. Might want to go lighter on remaining meals.`,
+        message: `You're at ${nutrition.calorieProgress || 0}% of your calorie goal already. Might want to go lighter on remaining meals.`,
         actions: [
           { label: 'View Breakdown', route: '/health' },
           { label: 'Thanks for the heads up', action: 'dismiss' }
@@ -239,13 +240,19 @@ class ProactiveNudgeEngine {
    * Check budget status
    */
   checkBudgetNudge(context) {
-    const { financial, time } = context;
+    const { financial } = context;
 
     // Only if budget is set up
-    if (financial.budgetPercentUsed === 0 && financial.budgetRemaining === 0) return null;
+    const budgetPercentUsed = financial?.totalBudget > 0
+      ? Math.round((financial.totalSpent / financial.totalBudget) * 100)
+      : 0;
+    const budgetRemaining = (financial?.totalBudget || 0) - (financial?.totalSpent || 0);
+    const isOverBudget = budgetRemaining < 0;
+
+    if (budgetPercentUsed === 0 && budgetRemaining === 0) return null;
 
     // Over budget warning
-    if (financial.isOverBudget) {
+    if (isOverBudget) {
       return {
         type: 'budget_over',
         priority: 7,
@@ -260,12 +267,12 @@ class ProactiveNudgeEngine {
     }
 
     // Running low (>85% used)
-    if (financial.budgetPercentUsed > 85 && financial.budgetPercentUsed <= 100) {
+    if (budgetPercentUsed > 85 && budgetPercentUsed <= 100) {
       return {
         type: 'budget_low',
         priority: 5,
         emotionalState: 'concerned',
-        message: `${financial.budgetPercentUsed}% of your budget is used. $${financial.budgetRemaining.toFixed(0)} remaining.`,
+        message: `${budgetPercentUsed}% of your budget is used. $${budgetRemaining.toFixed(0)} remaining.`,
         actions: [
           { label: 'View Budget', route: '/financial' },
           { label: 'Got it', action: 'dismiss' }
@@ -283,11 +290,11 @@ class ProactiveNudgeEngine {
     const { fitness, time } = context;
 
     // Don't bother at night or if already working out
-    if (time.timeOfDay === 'night' || fitness.hasActiveWorkout) return null;
+    if (time.timeOfDay === 'night' || fitness?.hasActiveWorkout) return null;
 
     // Haven't worked out this week (and it's mid-week or later)
     const dayOfWeek = new Date().getDay();
-    if (fitness.workoutsThisWeek === 0 && fitness.cardioThisWeek === 0 && dayOfWeek >= 3) {
+    if ((fitness?.workoutsThisWeek || 0) === 0 && (fitness?.cardioThisWeek || 0) === 0 && dayOfWeek >= 3) {
       return {
         type: 'workout_reminder',
         priority: 4,
@@ -308,15 +315,17 @@ class ProactiveNudgeEngine {
    * Check for achievements to celebrate
    */
   checkCelebrationNudge(context) {
-    const { today, achievements, progress } = context;
+    const { dailyTasks, achievements, gamification } = context;
+    const tasks = dailyTasks?.today || { total: 0, completed: 0 };
+    const progress = gamification || {};
 
     // Completed all tasks
-    if (today.tasks.total >= 3 && today.tasks.completed === today.tasks.total) {
+    if (tasks.total >= 3 && tasks.completed === tasks.total) {
       return {
         type: 'celebration_tasks',
         priority: 6,
         emotionalState: 'proud',
-        message: `All ${today.tasks.total} tasks complete! You crushed it today!`,
+        message: `All ${tasks.total} tasks complete! You crushed it today!`,
         actions: [
           { label: 'View Stats', route: '/dashboard' },
           { label: 'Thanks Nova!', action: 'dismiss' }
@@ -325,8 +334,8 @@ class ProactiveNudgeEngine {
     }
 
     // Recent achievement unlocked
-    if (achievements.recent.length > 0) {
-      const latest = achievements.recent[achievements.recent.length - 1];
+    if (achievements?.recentAchievements?.length > 0) {
+      const latest = achievements.recentAchievements[achievements.recentAchievements.length - 1];
       const achievementTime = latest.unlockedAt ? new Date(latest.unlockedAt).getTime() : 0;
       const hoursSinceUnlock = (Date.now() - achievementTime) / (1000 * 60 * 60);
 
@@ -368,10 +377,10 @@ class ProactiveNudgeEngine {
    * Check for burnout patterns
    */
   checkBurnoutNudge(context) {
-    const { time, today, fitness } = context;
+    const { time, productivity } = context;
 
     // Late night + high activity
-    if (time.timeOfDay === 'night' && today.hasActiveSession) {
+    if (time.timeOfDay === 'night' && productivity?.activeSession) {
       return {
         type: 'burnout_late',
         priority: 6,
@@ -392,7 +401,8 @@ class ProactiveNudgeEngine {
    * Daily check-in reminder
    */
   checkDailyCheckIn(context) {
-    const { time, today } = context;
+    const { time, dailyTasks } = context;
+    const tasks = dailyTasks?.today || { total: 0 };
 
     const lastCheckIn = localStorage.getItem('nova_last_checkin');
     const lastCheckInDate = lastCheckIn ? new Date(parseInt(lastCheckIn)) : null;
@@ -415,7 +425,7 @@ class ProactiveNudgeEngine {
       }
 
       // Afternoon check-in if morning was missed
-      if (time.timeOfDay === 'afternoon' && today.tasks.total === 0) {
+      if (time.timeOfDay === 'afternoon' && tasks.total === 0) {
         return {
           type: 'daily_checkin_afternoon',
           priority: 3,

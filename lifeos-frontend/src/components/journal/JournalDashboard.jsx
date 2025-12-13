@@ -1,49 +1,149 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, TrendingUp, Calendar, Heart, Sparkles, Pen } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import MiniLineChart from '../shared/charts/MiniLineChart';
 import StatCard from '../shared/charts/StatCard';
+import { useJournalStore } from '../../features/journal/journal.store';
 
 export default function JournalDashboard() {
   const navigate = useNavigate();
+  const { entries, hydrate, loading } = useJournalStore();
+
+  // Load entries on mount
+  useEffect(() => {
+    hydrate();
+  }, []);
 
   const handleStartWriting = () => {
     const today = new Date();
     navigate(`/journal/${format(today, 'yyyy')}/${format(today, 'MM')}`);
   };
 
-  // Mock data for journal stats
-  const moodTrendData = [
-    { label: 'Mon', value: 7 },
-    { label: 'Tue', value: 8 },
-    { label: 'Wed', value: 6 },
-    { label: 'Thu', value: 9 },
-    { label: 'Fri', value: 8 },
-    { label: 'Sat', value: 9 },
-    { label: 'Sun', value: 7 },
-  ];
+  // Calculate all stats from real entries
+  const { moodTrendData, entryFrequencyData, topEmotions, recentThemes, stats } = useMemo(() => {
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
 
-  const entryFrequencyData = [
-    { label: 'W1', value: 5 },
-    { label: 'W2', value: 6 },
-    { label: 'W3', value: 7 },
-    { label: 'W4', value: 6 },
-  ];
+    // Build last 7 days for mood trend
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = subDays(today, i);
+      last7Days.push({
+        dateStr: format(d, 'yyyy-MM-dd'),
+        label: dayLabels[d.getDay()]
+      });
+    }
 
-  const topEmotions = [
-    { emotion: 'Grateful', count: 23, color: 'from-pink-500 to-rose-500' },
-    { emotion: 'Focused', count: 18, color: 'from-purple-500 to-indigo-500' },
-    { emotion: 'Energized', count: 15, color: 'from-orange-500 to-amber-500' },
-    { emotion: 'Calm', count: 12, color: 'from-blue-500 to-cyan-500' },
-  ];
+    // Calculate mood for each day
+    const moodData = last7Days.map(({ dateStr, label }) => {
+      const dayEntries = (entries || []).filter(e => e.date === dateStr);
+      const avgMood = dayEntries.length > 0
+        ? Math.round(dayEntries.reduce((sum, e) => sum + (e.mood || 5), 0) / dayEntries.length)
+        : 0;
+      return { label, value: avgMood };
+    });
 
-  const recentThemes = [
-    { theme: 'Personal Growth', entries: 15 },
-    { theme: 'Work Progress', entries: 12 },
-    { theme: 'Relationships', entries: 8 },
-    { theme: 'Health Journey', entries: 7 },
-  ];
+    // Calculate weekly entry frequency (last 4 weeks)
+    const weeklyData = [];
+    for (let w = 3; w >= 0; w--) {
+      const weekStart = subDays(today, (w + 1) * 7);
+      const weekEnd = subDays(today, w * 7);
+      const weekEntries = (entries || []).filter(e => {
+        const entryDate = new Date(e.date);
+        return entryDate >= weekStart && entryDate < weekEnd;
+      }).length;
+      weeklyData.push({ label: `W${4 - w}`, value: weekEntries });
+    }
+
+    // Extract emotions/moods from tags
+    const emotionCounts = {};
+    const themeCounts = {};
+    (entries || []).forEach(e => {
+      (e.tags || []).forEach(tag => {
+        const lowerTag = tag.toLowerCase();
+        // Common emotion tags
+        if (['grateful', 'focused', 'energized', 'calm', 'happy', 'motivated', 'anxious', 'tired'].includes(lowerTag)) {
+          emotionCounts[tag] = (emotionCounts[tag] || 0) + 1;
+        } else {
+          // Consider other tags as themes
+          themeCounts[tag] = (themeCounts[tag] || 0) + 1;
+        }
+      });
+    });
+
+    // Build top emotions
+    const emotionColors = {
+      grateful: 'from-pink-500 to-rose-500',
+      focused: 'from-purple-500 to-indigo-500',
+      energized: 'from-orange-500 to-amber-500',
+      calm: 'from-blue-500 to-cyan-500',
+      happy: 'from-yellow-500 to-amber-500',
+      motivated: 'from-green-500 to-emerald-500',
+      anxious: 'from-red-500 to-rose-500',
+      tired: 'from-gray-500 to-slate-500'
+    };
+    const emotions = Object.entries(emotionCounts)
+      .map(([emotion, count]) => ({
+        emotion: emotion.charAt(0).toUpperCase() + emotion.slice(1),
+        count,
+        color: emotionColors[emotion.toLowerCase()] || 'from-purple-500 to-pink-500'
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4);
+
+    // Build recent themes
+    const themes = Object.entries(themeCounts)
+      .map(([theme, entries]) => ({
+        theme: theme.charAt(0).toUpperCase() + theme.slice(1).replace(/-/g, ' '),
+        entries
+      }))
+      .sort((a, b) => b.entries - a.entries)
+      .slice(0, 4);
+
+    // Calculate overall stats
+    const totalEntries = (entries || []).length;
+    const totalWords = (entries || []).reduce((sum, e) => sum + (e.wordCount || 0), 0);
+    const avgMood = totalEntries > 0
+      ? ((entries || []).reduce((sum, e) => sum + (e.mood || 5), 0) / totalEntries).toFixed(1)
+      : '0';
+
+    // Calculate streak
+    let streak = 0;
+    const entriesByDate = new Map();
+    (entries || []).forEach(e => entriesByDate.set(e.date, true));
+    for (let i = 0; i < 365; i++) {
+      const checkDate = format(subDays(today, i), 'yyyy-MM-dd');
+      if (entriesByDate.has(checkDate)) {
+        streak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+
+    // This week entries
+    const weekAgo = subDays(today, 7);
+    const thisWeekEntries = (entries || []).filter(e => new Date(e.date) >= weekAgo).length;
+
+    return {
+      moodTrendData: moodData,
+      entryFrequencyData: weeklyData,
+      topEmotions: emotions.length > 0 ? emotions : [
+        { emotion: 'No data', count: 0, color: 'from-gray-500 to-slate-500' }
+      ],
+      recentThemes: themes.length > 0 ? themes : [
+        { theme: 'No themes yet', entries: 0 }
+      ],
+      stats: {
+        streak,
+        totalEntries,
+        avgMood,
+        totalWords,
+        thisWeekEntries,
+        avgPerWeek: totalEntries > 0 ? (weeklyData.reduce((sum, w) => sum + w.value, 0) / 4).toFixed(1) : '0'
+      }
+    };
+  }, [entries]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0614] via-[#0a0a0a] to-[#0a0a0a] pb-20">
@@ -65,37 +165,37 @@ export default function JournalDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
             title="Current Streak"
-            value="12"
+            value={stats.streak.toString()}
             subtitle="days"
-            trend="up"
-            trendValue="+3 days"
+            trend={stats.streak > 0 ? "up" : "neutral"}
+            trendValue={stats.streak > 0 ? `${stats.streak} day streak` : "Start writing!"}
             icon={Calendar}
             color="purple"
           />
           <StatCard
             title="Total Entries"
-            value="87"
-            subtitle="this year"
-            trend="up"
-            trendValue="+6 this week"
+            value={stats.totalEntries.toString()}
+            subtitle="entries"
+            trend={stats.thisWeekEntries > 0 ? "up" : "neutral"}
+            trendValue={`+${stats.thisWeekEntries} this week`}
             icon={Pen}
             color="pink"
           />
           <StatCard
             title="Avg Mood"
-            value="7.8"
+            value={stats.avgMood}
             subtitle="out of 10"
-            trend="up"
-            trendValue="+0.4"
+            trend={parseFloat(stats.avgMood) >= 5 ? "up" : "down"}
+            trendValue={`${stats.avgPerWeek} avg/week`}
             icon={Heart}
             color="rose"
           />
           <StatCard
             title="Word Count"
-            value="24.3k"
+            value={stats.totalWords >= 1000 ? `${(stats.totalWords / 1000).toFixed(1)}k` : stats.totalWords.toString()}
             subtitle="total words"
             trend="up"
-            trendValue="+2.1k"
+            trendValue={`${stats.totalEntries > 0 ? Math.round(stats.totalWords / stats.totalEntries) : 0} avg/entry`}
             icon={Sparkles}
             color="indigo"
           />
@@ -112,7 +212,7 @@ export default function JournalDashboard() {
               <p className="text-xs text-white/60 mt-1">Daily emotional patterns</p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-white">7.8</div>
+              <div className="text-2xl font-bold text-white">{stats.avgMood}</div>
               <div className="text-xs text-white/60">avg mood</div>
             </div>
           </div>
@@ -159,7 +259,7 @@ export default function JournalDashboard() {
               <p className="text-xs text-white/60 mt-1">Entries per week</p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-white">6.5</div>
+              <div className="text-2xl font-bold text-white">{stats.avgPerWeek}</div>
               <div className="text-xs text-white/60">avg/week</div>
             </div>
           </div>

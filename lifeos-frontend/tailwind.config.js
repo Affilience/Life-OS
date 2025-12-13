@@ -13,26 +13,56 @@ export default {
         mono: ['JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', 'monospace'],
       },
 
-      // Colors mapped to CSS variables
+      // Colors mapped to CSS variables - comprehensive theme support
       colors: {
+        // Background colors - these change with theme
         bg: {
           0: 'var(--bg-0)',
           1: 'var(--bg-1)',
           2: 'var(--bg-2)',
-          root: 'var(--bg-root)',
-          surface: 'var(--bg-surface)',
-          surfaceAlt: 'var(--bg-surface-alt)',
+          elevated: 'var(--bg-elevated)',
+          hover: 'var(--bg-hover)',
+          tertiary: 'var(--bg-tertiary)',
+          active: 'var(--bg-active)',
+          root: 'var(--bg-0)',
+          surface: 'var(--bg-1)',
+          surfaceAlt: 'var(--bg-2)',
+          card: 'var(--bg-1)',
+          input: 'var(--bg-0)',
         },
+
+        // Text colors
         text: {
-          high: 'var(--text-high)',
-          med: 'var(--text-med)',
-          dim: 'var(--text-dim)',
+          high: 'var(--text-primary)',
+          med: 'var(--text-secondary)',
+          dim: 'var(--text-muted)',
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
         },
+
         fg: {
-          primary: 'var(--fg-primary)',
-          secondary: 'var(--fg-secondary)',
-          muted: 'var(--fg-muted)',
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
         },
+
+        // Primary accent colors (full scale)
+        primary: {
+          50: 'var(--primary-50)',
+          100: 'var(--primary-100)',
+          200: 'var(--primary-200)',
+          300: 'var(--primary-300)',
+          400: 'var(--primary-400)',
+          500: 'var(--primary-500)',
+          600: 'var(--primary-600)',
+          700: 'var(--primary-700)',
+          800: 'var(--primary-800)',
+          900: 'var(--primary-900)',
+          DEFAULT: 'var(--primary-500)',
+        },
+
+        // Accent colors (aliases)
         accent: {
           DEFAULT: 'var(--accent)',
           2: 'var(--accent-2)',
@@ -46,15 +76,44 @@ export default {
           warning: 'var(--accent-warning)',
           danger: 'var(--accent-danger)',
         },
-        success: 'var(--success)',
-        warning: 'var(--warning)',
-        error: 'var(--error)',
+
+        // Secondary accent
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          soft: 'var(--secondary-soft)',
+        },
+
+        // Status colors
+        success: {
+          DEFAULT: 'var(--success)',
+          50: 'var(--success-50, #ecfdf5)',
+          500: 'var(--success)',
+        },
+        warning: {
+          DEFAULT: 'var(--warning)',
+          50: 'var(--warning-50, #fffbeb)',
+          500: 'var(--warning)',
+        },
+        error: {
+          DEFAULT: 'var(--error)',
+          50: 'var(--error-50, #fff1f2)',
+          500: 'var(--error)',
+        },
+
+        // Border colors
         border: {
           DEFAULT: 'var(--border)',
           subtle: 'var(--border-subtle)',
           strong: 'var(--border-strong)',
         },
-        muted: 'var(--muted)',
+
+        muted: 'var(--text-muted)',
+
+        // Glow colors
+        glow: {
+          primary: 'var(--glow-primary)',
+          secondary: 'var(--glow-secondary)',
+        },
       },
 
       // Border Radius
@@ -76,12 +135,14 @@ export default {
         'soft': 'var(--shadow-soft)',
         'glowSoft': 'var(--glow-soft)',
         'glowAux': 'var(--glow-aux)',
+        'primary': 'var(--shadow-primary)',
       },
 
       // Background Images
       backgroundImage: {
         'cosmic-root': 'var(--grad-cosmic-radial)',
         'cosmic-card': 'var(--grad-card)',
+        'grad-xp': 'var(--grad-xp)',
       },
 
       // Spacing (matches design tokens)
@@ -97,6 +158,7 @@ export default {
         'slide-up': 'slideUp var(--duration-enter) var(--ease-standard)',
         'scale-in': 'scaleIn var(--duration-enter) var(--ease-standard)',
         'pulse-subtle': 'pulse 120ms var(--ease-standard)',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
         'xp-fill': 'xpFill 1.2s var(--ease-standard) forwards',

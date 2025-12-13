@@ -1,4 +1,9 @@
 import Dexie from 'dexie';
+import { supabase } from '../lib/supabase';
+import { triggerGamification } from '../hooks/useGamification';
+
+// Dev user ID for development mode
+const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 // Initialize Dexie database
 export const db = new Dexie('QuantaJournalDB');
@@ -33,11 +38,10 @@ export const createEntry = (data) => {
 
 // CRUD Operations
 export const journalDB = {
-  // Get all entries sorted by date (newest first)
+  // Get all entries sorted by date (oldest first - like a real book)
   async getAllEntries() {
     return await db.entries
       .orderBy('date')
-      .reverse()
       .toArray();
   },
 
@@ -66,7 +70,25 @@ export const journalDB = {
   async addEntry(entry) {
     const newEntry = createEntry(entry);
     const id = await db.entries.add(newEntry);
-    return { ...newEntry, id };
+    const savedEntry = { ...newEntry, id };
+
+    // Sync to Supabase in background
+    journalSync.syncToSupabase(savedEntry).catch(err =>
+      console.error('Background sync failed:', err)
+    );
+
+    // Award XP for journal entry based on word count
+    const wordCount = newEntry.wordCount || 0;
+    let xpAmount = 15; // Base XP for any entry
+    if (wordCount >= 200) xpAmount = 25; // Detailed entry
+    if (wordCount >= 500) xpAmount = 40; // Long reflection
+
+    triggerGamification('journalEntry', {
+      xpOverride: xpAmount,
+      module: 'knowledge', // Journal relates to self-knowledge
+    });
+
+    return savedEntry;
   },
 
   // Update existing entry
@@ -84,12 +106,29 @@ export const journalDB = {
     };
 
     await db.entries.update(id, updatedEntry);
+
+    // Sync to Supabase in background
+    journalSync.syncToSupabase(updatedEntry).catch(err =>
+      console.error('Background sync failed:', err)
+    );
+
     return updatedEntry;
   },
 
   // Delete entry
   async deleteEntry(id) {
-    return await db.entries.delete(id);
+    // Get entry first to get timestamp for Supabase delete
+    const entry = await db.entries.get(id);
+    const result = await db.entries.delete(id);
+
+    // Delete from Supabase in background
+    if (entry?.timestamp) {
+      journalSync.deleteFromSupabase(entry.timestamp).catch(err =>
+        console.error('Background delete sync failed:', err)
+      );
+    }
+
+    return result;
   },
 
   // Search entries
@@ -142,6 +181,160 @@ export const settingsDB = {
 
   async set(key, value) {
     return await db.settings.put({ key, value });
+  }
+};
+
+// Supabase sync operations
+export const journalSync = {
+  // Sync entry to Supabase
+  async syncToSupabase(entry) {
+    try {
+      const supabaseEntry = {
+        user_id: DEV_USER_ID,
+        entry_date: entry.date,
+        entry_timestamp: entry.timestamp,
+        title: entry.title || null,
+        content: entry.content,
+        mood: entry.mood || null,
+        energy: entry.energy || null,
+        tags: entry.tags || [],
+        word_count: entry.wordCount || 0,
+        is_favorite: entry.isFavorite || false,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .upsert(supabaseEntry, {
+          onConflict: 'user_id,entry_timestamp',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error syncing journal entry to Supabase:', error);
+        return null;
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Journal sync error:', err);
+      return null;
+    }
+  },
+
+  // Fetch all entries from Supabase
+  async fetchFromSupabase() {
+    try {
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .eq('user_id', DEV_USER_ID)
+        .order('entry_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching journal entries from Supabase:', error);
+        return [];
+      }
+
+      return data.map(entry => ({
+        id: entry.id,
+        date: entry.entry_date,
+        timestamp: entry.entry_timestamp,
+        title: entry.title,
+        content: entry.content,
+        mood: entry.mood,
+        energy: entry.energy,
+        tags: entry.tags || [],
+        wordCount: entry.word_count,
+        isFavorite: entry.is_favorite,
+        createdAt: entry.created_at,
+        updatedAt: entry.updated_at,
+        supabaseId: entry.id
+      }));
+    } catch (err) {
+      console.error('Journal fetch error:', err);
+      return [];
+    }
+  },
+
+  // Full sync - pull from Supabase and merge with local
+  async fullSync() {
+    try {
+      // Fetch from Supabase
+      const remoteEntries = await this.fetchFromSupabase();
+
+      // Get local entries
+      const localEntries = await db.entries.toArray();
+
+      // Create maps for comparison
+      const remoteByTimestamp = new Map(remoteEntries.map(e => [e.timestamp, e]));
+      const localByTimestamp = new Map(localEntries.map(e => [e.timestamp, e]));
+
+      // Merge: remote wins for conflicts, add missing to each side
+      for (const remote of remoteEntries) {
+        const local = localByTimestamp.get(remote.timestamp);
+        if (!local) {
+          // Add remote entry to local
+          await db.entries.add({
+            date: remote.date,
+            timestamp: remote.timestamp,
+            title: remote.title,
+            content: remote.content,
+            mood: remote.mood,
+            tags: remote.tags,
+            wordCount: remote.wordCount,
+            createdAt: remote.createdAt,
+            updatedAt: remote.updatedAt
+          });
+        } else if (new Date(remote.updatedAt) > new Date(local.updatedAt)) {
+          // Remote is newer, update local
+          await db.entries.update(local.id, {
+            title: remote.title,
+            content: remote.content,
+            mood: remote.mood,
+            tags: remote.tags,
+            wordCount: remote.wordCount,
+            updatedAt: remote.updatedAt
+          });
+        }
+      }
+
+      // Push local-only entries to Supabase
+      for (const local of localEntries) {
+        if (!remoteByTimestamp.has(local.timestamp)) {
+          await this.syncToSupabase(local);
+        }
+      }
+
+      console.log('Journal sync completed');
+      return true;
+    } catch (err) {
+      console.error('Full journal sync error:', err);
+      return false;
+    }
+  },
+
+  // Delete from Supabase
+  async deleteFromSupabase(timestamp) {
+    try {
+      const { error } = await supabase
+        .from('journal_entries')
+        .delete()
+        .eq('user_id', DEV_USER_ID)
+        .eq('entry_timestamp', timestamp);
+
+      if (error) {
+        console.error('Error deleting journal entry from Supabase:', error);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Journal delete error:', err);
+      return false;
+    }
   }
 };
 

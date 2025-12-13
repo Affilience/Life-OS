@@ -6,8 +6,13 @@ import { EXERCISE_DATABASE } from '../../data/exerciseDatabase';
 import { formatDuration, formatRelativeDate } from '../../services/workoutCalculations';
 import { useWorkoutStore } from '../../stores/workoutStore';
 
+// Helper to get exercise data from built-in or custom exercises
+const getExerciseData = (exerciseId, customExercises) => {
+  return EXERCISE_DATABASE[exerciseId] || customExercises?.[exerciseId] || null;
+};
+
 export default function WorkoutCard({ workout }) {
-  const { deleteWorkout } = useWorkoutStore();
+  const { deleteWorkout, customExercises } = useWorkoutStore();
 
   const handleDelete = () => {
     if (window.confirm('Delete this workout? This action cannot be undone.')) {
@@ -168,7 +173,7 @@ export default function WorkoutCard({ workout }) {
         gap: '8px',
       }}>
         {workout.exercises.map((exercise, index) => {
-          const exerciseData = EXERCISE_DATABASE[exercise.exerciseId];
+          const exerciseData = getExerciseData(exercise.exerciseId, customExercises);
           const completedSets = exercise.sets.filter(s => s.completed);
 
           return (

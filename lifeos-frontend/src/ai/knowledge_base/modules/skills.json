@@ -1,0 +1,58 @@
+{
+  "name": "Skills Learning",
+  "route": "/skills",
+  "navigation": "Sidebar → Modules → Skills (zap icon)",
+  "purpose": "Track skill development, practice logs, progression, and mastery levels.",
+  "key_features": [
+    {
+      "name": "Skill Cards",
+      "description": "Individual cards for each skill with level and XP progress"
+    },
+    {
+      "name": "Practice Logging",
+      "description": "Log practice sessions with duration, quality, and notes"
+    },
+    {
+      "name": "Skill Categories",
+      "description": "Organize skills by category (technical, creative, physical, etc.)"
+    },
+    {
+      "name": "Progress Tracking",
+      "description": "Visual progress bars and level-up celebrations"
+    },
+    {
+      "name": "Skill Detail View",
+      "description": "Deep dive into individual skill history and milestones"
+    }
+  ],
+  "data_tracked": [
+    "Skills (name, category, current_level, total_xp, description)",
+    "Practice sessions (skill_id, duration, quality, notes, date)",
+    "Milestones (skill_id, name, achieved_date)"
+  ],
+  "skill_levels": [
+    "Novice (0-99 XP)",
+    "Beginner (100-499 XP)",
+    "Intermediate (500-1999 XP)",
+    "Advanced (2000-4999 XP)",
+    "Expert (5000-9999 XP)",
+    "Master (10000+ XP)"
+  ],
+  "common_user_actions": [
+    "Add a new skill to track",
+    "Log practice time",
+    "Check skill progress",
+    "View practice history",
+    "Set skill goals"
+  ],
+  "related_modules": [
+    "Knowledge - Reading can improve related skills",
+    "Quests - Skill milestones as achievements",
+    "Character - Skills affect character stats"
+  ],
+  "tips": [
+    "Consistent daily practice beats occasional long sessions",
+    "Track quality not just duration",
+    "Set specific sub-skill goals for faster improvement"
+  ]
+}

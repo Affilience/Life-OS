@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BookOpen, Lightbulb, Link as LinkIcon, Quote } from 'lucide-react';
+import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import './OverviewDashboard.css';
 
 // Hero Stat Component
@@ -102,21 +103,51 @@ function SkillNode({ skill, x, y }) {
 }
 
 // Interactive Skill Tree Component
-function InteractiveSkillTree() {
-  const skills = [
-    { id: 1, label: 'React', level: 5, x: 300, y: 150 },
-    { id: 2, label: 'Node.js', level: 4, x: 500, y: 150 },
-    { id: 3, label: 'PostgreSQL', level: 3, x: 400, y: 300 },
-    { id: 4, label: 'Design', level: 4, x: 200, y: 300 },
-    { id: 5, label: 'Business', level: 3, x: 600, y: 300 },
-  ];
+function InteractiveSkillTree({ tags }) {
+  // Build skills from tags data
+  const { skills, connections } = useMemo(() => {
+    const tagList = tags || [];
 
-  const connections = [
-    { from: 1, to: 3 },
-    { from: 2, to: 3 },
-    { from: 1, to: 4 },
-    { from: 2, to: 5 },
-  ];
+    // Get top 5 tags as "skills"
+    const topTags = [...tagList]
+      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .slice(0, 5);
+
+    if (topTags.length === 0) {
+      return {
+        skills: [
+          { id: 1, label: 'No skills yet', level: 1, x: 400, y: 225 }
+        ],
+        connections: []
+      };
+    }
+
+    // Position skills in a pattern
+    const positions = [
+      { x: 300, y: 150 },
+      { x: 500, y: 150 },
+      { x: 400, y: 300 },
+      { x: 200, y: 300 },
+      { x: 600, y: 300 },
+    ];
+
+    const skillsData = topTags.map((tag, index) => ({
+      id: index + 1,
+      label: tag.name || 'Unknown',
+      level: Math.min(5, Math.ceil((tag.count || 1) / 2)), // Convert count to level (1-5)
+      x: positions[index]?.x || 400,
+      y: positions[index]?.y || 225
+    }));
+
+    // Create connections between related skills (simple pattern)
+    const conns = [];
+    if (skillsData.length >= 2) conns.push({ from: 1, to: skillsData.length > 2 ? 3 : 2 });
+    if (skillsData.length >= 3) conns.push({ from: 2, to: 3 });
+    if (skillsData.length >= 4) conns.push({ from: 1, to: 4 });
+    if (skillsData.length >= 5) conns.push({ from: 2, to: 5 });
+
+    return { skills: skillsData, connections: conns };
+  }, [tags]);
 
   return (
     <div className="skill-tree-container">
@@ -165,14 +196,54 @@ function InteractiveSkillTree() {
 }
 
 // Genre Bubble Chart Component
-function GenreBubbleChart() {
-  const genres = [
-    { id: 1, name: 'Tech', count: 45, x: 150, y: 100, r: 60, color: '#8b5cf6' },
-    { id: 2, name: 'Business', count: 32, x: 320, y: 120, r: 50, color: '#6366f1' },
-    { id: 3, name: 'Philosophy', count: 28, x: 220, y: 220, r: 45, color: '#a855f7' },
-    { id: 4, name: 'Science', count: 38, x: 420, y: 180, r: 55, color: '#7c3aed' },
-    { id: 5, name: 'Fiction', count: 22, x: 520, y: 100, r: 40, color: '#9333ea' },
-  ];
+function GenreBubbleChart({ books, media }) {
+  const genres = useMemo(() => {
+    const genreCounts = {};
+
+    // Count genres from books
+    (books || []).forEach(book => {
+      const genre = book.tags?.[0] || book.metadata?.genre || 'General';
+      genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+    });
+
+    // Count genres from media
+    (media || []).forEach(item => {
+      const genre = item.tags?.[0] || 'General';
+      genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+    });
+
+    // Convert to array and sort by count
+    const sortedGenres = Object.entries(genreCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    if (sortedGenres.length === 0) {
+      return [{ id: 1, name: 'No data', count: 0, x: 325, y: 150, r: 40, color: '#8b5cf6' }];
+    }
+
+    // Position and size bubbles
+    const positions = [
+      { x: 150, y: 100 },
+      { x: 320, y: 120 },
+      { x: 220, y: 220 },
+      { x: 420, y: 180 },
+      { x: 520, y: 100 },
+    ];
+
+    const colors = ['#8b5cf6', '#6366f1', '#a855f7', '#7c3aed', '#9333ea'];
+    const maxCount = Math.max(...sortedGenres.map(g => g.count));
+
+    return sortedGenres.map((genre, index) => ({
+      id: index + 1,
+      name: genre.name.charAt(0).toUpperCase() + genre.name.slice(1),
+      count: genre.count,
+      x: positions[index]?.x || 325,
+      y: positions[index]?.y || 150,
+      r: 30 + (genre.count / maxCount) * 40, // Scale radius by count
+      color: colors[index] || '#8b5cf6'
+    }));
+  }, [books, media]);
 
   return (
     <div className="bubble-chart-container">
@@ -222,33 +293,51 @@ function GenreBubbleChart() {
 }
 
 // Current Learning Cards Component
-function CurrentLearningCards() {
-  const currentItems = [
-    {
-      id: 1,
-      type: 'Book',
-      title: 'Atomic Habits',
-      author: 'James Clear',
-      progress: 65,
-      category: 'Self-Improvement'
-    },
-    {
-      id: 2,
-      type: 'Course',
-      title: 'Advanced React Patterns',
-      author: 'Kent C. Dodds',
-      progress: 40,
-      category: 'Tech'
-    },
-    {
-      id: 3,
-      type: 'Podcast',
-      title: 'The Tim Ferriss Show',
-      author: 'Tim Ferriss',
-      progress: 100,
-      category: 'Business'
-    },
-  ];
+function CurrentLearningCards({ books, media }) {
+  const currentItems = useMemo(() => {
+    const items = [];
+
+    // Get books currently being read
+    (books || []).filter(b => b.status === 'reading').forEach(book => {
+      const progress = book.progress?.total > 0
+        ? Math.round((book.progress.current / book.progress.total) * 100)
+        : 0;
+      items.push({
+        id: book.id,
+        type: 'Book',
+        title: book.title,
+        author: book.author || 'Unknown',
+        progress,
+        category: book.tags?.[0] || 'General'
+      });
+    });
+
+    // Get media currently being consumed
+    (media || []).filter(m => m.status === 'watching' || m.status === 'listening').forEach(m => {
+      const type = m.type === 'course' ? 'Course' : m.type === 'podcast' ? 'Podcast' : 'Video';
+      items.push({
+        id: m.id,
+        type,
+        title: m.title,
+        author: m.creator || 'Unknown',
+        progress: m.progress || 50,
+        category: m.tags?.[0] || 'General'
+      });
+    });
+
+    return items.slice(0, 3);
+  }, [books, media]);
+
+  if (currentItems.length === 0) {
+    return (
+      <div className="current-learning-section">
+        <h3 className="section-subtitle">Currently Learning</h3>
+        <div className="text-white/50 text-center py-8">
+          No items in progress. Start a book, course, or podcast!
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="current-learning-section">
@@ -280,6 +369,41 @@ function CurrentLearningCards() {
 
 // Main Overview Dashboard Component
 const OverviewDashboard = () => {
+  // Get data from store
+  const { books, media, notes, tags, initializeFromSupabase } = useKnowledgeStore();
+
+  // Initialize data on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const totalBooks = (books || []).length;
+    const totalMedia = (media || []).length;
+    const totalNotes = (notes || []).length;
+
+    // Count ideas (notes with 'idea' tag)
+    const ideasCount = (notes || []).filter(n => n.tags?.includes('idea')).length;
+
+    // Count connections (links between notes)
+    const connectionCount = (notes || []).reduce((sum, n) => sum + (n.linkedTo?.length || 0), 0);
+
+    // Count favorites
+    const favoritesCount = [
+      ...(books || []).filter(b => b.isFavorite),
+      ...(media || []).filter(m => m.isFavorite),
+      ...(notes || []).filter(n => n.isFavorite)
+    ].length;
+
+    return {
+      itemsConsumed: totalBooks + totalMedia,
+      ideasCaptured: ideasCount > 0 ? ideasCount : totalNotes,
+      connectionsMade: connectionCount,
+      favorites: favoritesCount
+    };
+  }, [books, media, notes]);
+
   return (
     <div className="overview-dashboard">
       {/* Hero Stats */}
@@ -287,25 +411,25 @@ const OverviewDashboard = () => {
         <HeroStat
           icon={BookOpen}
           label="Items Consumed"
-          value="247"
+          value={stats.itemsConsumed.toString()}
           color="#8b5cf6"
         />
         <HeroStat
           icon={Lightbulb}
           label="Ideas Captured"
-          value="156"
+          value={stats.ideasCaptured.toString()}
           color="#6366f1"
         />
         <HeroStat
           icon={LinkIcon}
           label="Connections Made"
           color="#a855f7"
-          value="423"
+          value={stats.connectionsMade.toString()}
         />
         <HeroStat
           icon={Quote}
-          label="Favorite Quotes"
-          value="89"
+          label="Favorites"
+          value={stats.favorites.toString()}
           color="#7c3aed"
         />
       </div>
@@ -316,7 +440,7 @@ const OverviewDashboard = () => {
         <p className="section-description">
           Your knowledge skills visualized as an interconnected universe
         </p>
-        <InteractiveSkillTree />
+        <InteractiveSkillTree tags={tags} />
       </div>
 
       {/* Genre Distribution */}
@@ -325,11 +449,11 @@ const OverviewDashboard = () => {
         <p className="section-description">
           Distribution of your learning across different domains
         </p>
-        <GenreBubbleChart />
+        <GenreBubbleChart books={books} media={media} />
       </div>
 
       {/* Currently Learning */}
-      <CurrentLearningCards />
+      <CurrentLearningCards books={books} media={media} />
     </div>
   );
 };

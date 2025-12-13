@@ -252,21 +252,21 @@ export default function KnowledgeDashboard() {
   }, [notes, contentItems]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0614] via-[#0a0a0a] to-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-bg-0 pb-20">
       {/* Header with library theme */}
       <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-900/20 via-cyan-900/20 to-blue-900/20 backdrop-blur-md border-b border-blue-500/20 px-6 py-4">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
           <Book className="w-6 h-6 text-blue-400" />
           Knowledge Management
         </h1>
-        <p className="text-sm text-white/60 mt-1">
+        <p className="text-sm text-text-muted mt-1">
           Books, notes, ideas & learning metrics
         </p>
       </div>
 
       <div className="px-4 pt-6 pb-4 space-y-6">
         {/* Reading Progress Banner */}
-        <div className="relative bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-blue-500/10 border border-blue-500/30 rounded-2xl p-6 overflow-hidden">
+        <div className="relative bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-blue-500/10 border border-blue-500/30 rounded-2xl p-6 overflow-hidden" data-tour="books-section">
           {/* Decorative book spine pattern */}
           <div className="absolute top-0 right-0 w-32 h-full opacity-10">
             <div className="flex gap-2 h-full">
@@ -280,11 +280,11 @@ export default function KnowledgeDashboard() {
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold text-white">Current Reading</h2>
+                <h2 className="text-xl font-bold text-text-primary">Current Reading</h2>
                 <p className="text-sm text-blue-300">{booksInProgress.length} book{booksInProgress.length !== 1 ? 's' : ''} in progress</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-white/60">This month</p>
+                <p className="text-sm text-text-muted">This month</p>
                 <p className="text-2xl font-bold text-cyan-400">📚 {booksCompletedThisMonth} completed</p>
               </div>
             </div>
@@ -304,14 +304,14 @@ export default function KnowledgeDashboard() {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-white">{book.title}</p>
-                        <p className="text-xs text-white/50">{book.author || 'Unknown'} · {book.duration || '?'} pages</p>
+                        <p className="text-sm font-semibold text-text-primary">{book.title}</p>
+                        <p className="text-xs text-text-primary/50">{book.author || 'Unknown'} · {book.duration || '?'} pages</p>
                       </div>
                       <span className={`text-xs px-2 py-1 rounded bg-${color}-500/20 text-${color}-300`}>
                         {progress}%
                       </span>
                     </div>
-                    <div className="h-1.5 bg-[#1a1724] rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-bg-1 rounded-full overflow-hidden">
                       <div
                         className={`h-full bg-gradient-to-r from-${color}-500 to-${color}-400 transition-all duration-500`}
                         style={{ width: `${progress}%` }}
@@ -320,7 +320,7 @@ export default function KnowledgeDashboard() {
                   </div>
                 );
               }) : (
-                <div className="text-center py-4 text-white/50">
+                <div className="text-center py-4 text-text-primary/50">
                   <p>No books in progress</p>
                   <button
                     onClick={() => navigate('/knowledge')}
@@ -335,38 +335,38 @@ export default function KnowledgeDashboard() {
         </div>
 
         {/* Knowledge Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-[#1a1724] border border-blue-500/20 rounded-xl p-4 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-tour="knowledge-stats">
+          <div className="bg-bg-1 border border-blue-500/20 rounded-xl p-4 text-center">
             <BookOpen className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">{totalBooksRead}</p>
-            <p className="text-xs text-white/60 mt-1">Books Read</p>
+            <p className="text-2xl font-bold text-text-primary">{totalBooksRead}</p>
+            <p className="text-xs text-text-muted mt-1">Books Read</p>
           </div>
 
-          <div className="bg-[#1a1724] border border-cyan-500/20 rounded-xl p-4 text-center">
+          <div className="bg-bg-1 border border-cyan-500/20 rounded-xl p-4 text-center">
             <FileText className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">{notes.length}</p>
-            <p className="text-xs text-white/60 mt-1">Notes</p>
+            <p className="text-2xl font-bold text-text-primary">{notes.length}</p>
+            <p className="text-xs text-text-muted mt-1">Notes</p>
           </div>
 
-          <div className="bg-[#1a1724] border border-indigo-500/20 rounded-xl p-4 text-center">
+          <div className="bg-bg-1 border border-indigo-500/20 rounded-xl p-4 text-center">
             <Lightbulb className="w-6 h-6 text-indigo-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-white">{ideas.length}</p>
-            <p className="text-xs text-white/60 mt-1">Ideas</p>
+            <p className="text-2xl font-bold text-text-primary">{ideas.length}</p>
+            <p className="text-xs text-text-muted mt-1">Ideas</p>
           </div>
         </div>
 
         {/* Weekly Reading Hours */}
-        <div className="bg-[#1a1724] border border-blue-500/20 rounded-2xl p-5">
+        <div className="bg-bg-1 border border-blue-500/20 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                 <Clock className="w-5 h-5 text-blue-400" />
                 Reading Time
               </h3>
-              <p className="text-sm text-white/60 mt-1">Hours invested this week</p>
+              <p className="text-sm text-text-muted mt-1">Hours invested this week</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-white">{totalWeeklyHours}h</p>
+              <p className="text-2xl font-bold text-text-primary">{totalWeeklyHours}h</p>
               <p className="text-sm text-blue-400">this week</p>
             </div>
           </div>
@@ -376,17 +376,17 @@ export default function KnowledgeDashboard() {
         </div>
 
         {/* Knowledge Capture (Notes) */}
-        <div className="bg-[#1a1724] border border-cyan-500/20 rounded-2xl p-5">
+        <div className="bg-bg-1 border border-cyan-500/20 rounded-2xl p-5" data-tour="notes-section">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                 <FileText className="w-5 h-5 text-cyan-400" />
                 Knowledge Capture
               </h3>
-              <p className="text-sm text-white/60 mt-1">Notes created this month</p>
+              <p className="text-sm text-text-muted mt-1">Notes created this month</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-white">{monthlyNotes.reduce((sum, w) => sum + w.value, 0)}</p>
+              <p className="text-2xl font-bold text-text-primary">{monthlyNotes.reduce((sum, w) => sum + w.value, 0)}</p>
               <p className="text-sm text-cyan-400">notes this month</p>
             </div>
           </div>
@@ -399,15 +399,15 @@ export default function KnowledgeDashboard() {
         <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/20 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-green-400" />
                 Implementation Rate
               </h3>
-              <p className="text-sm text-white/60 mt-1">Ideas put into action</p>
+              <p className="text-sm text-text-muted mt-1">Ideas put into action</p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-green-400">{implementationRate}%</p>
-              <p className="text-sm text-white/60">
+              <p className="text-sm text-text-muted">
                 {contentItems.filter(i => i.implementationStatus === 'implemented').length}/
                 {contentItems.filter(i => i.status === 'completed').length} implemented
               </p>
@@ -416,14 +416,14 @@ export default function KnowledgeDashboard() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <div className="bg-[#0c0a10]/50 rounded-lg p-3">
-              <p className="text-sm text-white/60">Implementing</p>
-              <p className="text-xl font-bold text-white">
+              <p className="text-sm text-text-muted">Implementing</p>
+              <p className="text-xl font-bold text-text-primary">
                 {contentItems.filter(i => i.implementationStatus === 'implementing').length}
               </p>
             </div>
             <div className="bg-[#0c0a10]/50 rounded-lg p-3">
-              <p className="text-sm text-white/60">Pending Review</p>
-              <p className="text-xl font-bold text-white">
+              <p className="text-sm text-text-muted">Pending Review</p>
+              <p className="text-xl font-bold text-text-primary">
                 {contentItems.filter(i => i.status === 'completed' && i.implementationStatus === 'not_started').length}
               </p>
             </div>
@@ -431,9 +431,9 @@ export default function KnowledgeDashboard() {
         </div>
 
         {/* Knowledge Connections */}
-        <div className="bg-[#1a1724] border border-purple-500/20 rounded-2xl p-5">
+        <div className="bg-bg-1 border border-purple-500/20 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-400" />
               Knowledge Connections
             </h3>
@@ -443,14 +443,14 @@ export default function KnowledgeDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {knowledgeConnections.length > 0 ? knowledgeConnections.map((item, index) => (
               <div key={index} className="bg-[#0c0a10] border border-white/5 rounded-lg p-3">
-                <p className="text-sm text-white/60">{item.topic}</p>
+                <p className="text-sm text-text-muted">{item.topic}</p>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-2xl font-bold text-white">{item.connections}</p>
+                  <p className="text-2xl font-bold text-text-primary">{item.connections}</p>
                   <span className={`text-xs text-${item.color}-400`}>links</span>
                 </div>
               </div>
             )) : (
-              <div className="col-span-2 text-center py-4 text-white/50">
+              <div className="col-span-2 text-center py-4 text-text-primary/50">
                 <p>No tagged content yet</p>
                 <p className="text-sm mt-1">Add tags to notes and ideas to see connections</p>
               </div>
@@ -459,8 +459,8 @@ export default function KnowledgeDashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
+        <div className="bg-bg-1 border border-border rounded-2xl p-5">
+          <h3 className="text-lg font-semibold text-text-primary mb-4">Recent Activity</h3>
           <div className="space-y-3">
             {recentActivity.length > 0 ? recentActivity.map((activity, index) => (
               <div
@@ -470,13 +470,13 @@ export default function KnowledgeDashboard() {
               >
                 <span className="text-2xl">{activity.icon}</span>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-white">{activity.title}</p>
-                  <p className="text-xs text-white/50">{activity.type} · {activity.time}</p>
+                  <p className="text-sm font-medium text-text-primary">{activity.title}</p>
+                  <p className="text-xs text-text-primary/50">{activity.type} · {activity.time}</p>
                 </div>
                 <Bookmark className={`w-4 h-4 text-${activity.color}-400`} />
               </div>
             )) : (
-              <div className="text-center py-4 text-white/50">
+              <div className="text-center py-4 text-text-primary/50">
                 <p>No recent activity</p>
                 <button
                   onClick={() => navigate('/knowledge')}
@@ -491,8 +491,8 @@ export default function KnowledgeDashboard() {
 
         {/* Learning Streak */}
         <div className="bg-gradient-to-r from-orange-500/20 via-yellow-500/20 to-orange-500/20 border border-orange-500/30 rounded-2xl p-5 text-center">
-          <p className="text-sm text-white/60 mb-2">Learning Streak</p>
-          <p className="text-5xl font-bold text-white mb-2">{learningStreak} {learningStreak > 0 ? '🔥' : '📚'}</p>
+          <p className="text-sm text-text-muted mb-2">Learning Streak</p>
+          <p className="text-5xl font-bold text-text-primary mb-2">{learningStreak} {learningStreak > 0 ? '🔥' : '📚'}</p>
           <p className="text-sm text-orange-300">
             {learningStreak > 0 ? 'days of continuous learning!' : 'Start learning today!'}
           </p>
@@ -502,13 +502,13 @@ export default function KnowledgeDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={handleCaptureNote}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-text-primary p-4 rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150"
           >
             Capture Note
           </button>
           <button
             onClick={handleBrowseLibrary}
-            className="bg-[#1a1724] border border-purple-500/30 text-white p-4 rounded-xl font-semibold hover:bg-purple-500/10 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150"
+            className="bg-bg-1 border border-purple-500/30 text-text-primary p-4 rounded-xl font-semibold hover:bg-purple-500/10 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150"
           >
             Browse Library
           </button>

@@ -23,7 +23,7 @@ const MoodSelector = ({ selectedMood, onMoodChange, size = 'normal' }) => {
   };
 
   return (
-    <div className={`mood-selector ${sizeClasses[size]}`}>
+    <div className={`mood-selector ${sizeClasses[size]}`} data-tour="mood-tracker">
       <div className="mood-selector-header">
         <Smile size={16} />
         <span className="mood-label">How are you feeling?</span>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -8,30 +8,15 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { useFinancialStore } from '../../../stores/financialStore';
 
-// Mock net worth data over past 12 months
-const data = [
-  { month: 'Jan', netWorth: 5000 },
-  { month: 'Feb', netWorth: 5600 },
-  { month: 'Mar', netWorth: 6000 },
-  { month: 'Apr', netWorth: 6950 },
-  { month: 'May', netWorth: 7700 },
-  { month: 'Jun', netWorth: 8700 },
-  { month: 'Jul', netWorth: 9700 },
-  { month: 'Aug', netWorth: 10500 },
-  { month: 'Sep', netWorth: 11575 },
-  { month: 'Oct', netWorth: 13005 },
-  { month: 'Nov', netWorth: 13005 },
-  { month: 'Dec', netWorth: 13005 }
-];
-
-const CustomTooltip = ({ active, payload }) => {
+const CustomTooltip = ({ active, payload, data }) => {
   if (!active || !payload || !payload.length) return null;
 
   const currentValue = payload[0].value;
   const index = payload[0].payload.index;
-  const previousValue = index > 0 ? data[index - 1].netWorth : currentValue;
-  const change = currentValue - previousValue;
+  const previousValue = index > 0 && data ? data[index - 1]?.netWorth : currentValue;
+  const change = currentValue - (previousValue || currentValue);
   const changePercent = previousValue > 0 ? ((change / previousValue) * 100).toFixed(1) : 0;
 
   return (
@@ -50,6 +35,61 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function NetWorthChart() {
+  const { transactions, accounts } = useFinancialStore();
+
+  // Calculate net worth over time from transactions
+  const data = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const today = new Date();
+
+    // Get current net worth from accounts
+    const currentNetWorth = (accounts || []).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+
+    // Build monthly net worth by working backwards from transactions
+    const monthlyData = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData.push({
+        month: monthNames[d.getMonth()],
+        monthKey,
+        income: 0,
+        expenses: 0
+      });
+    }
+
+    // Sum income and expenses by month
+    (transactions || []).forEach(txn => {
+      if (!txn.date) return;
+      const txnMonthKey = txn.date.substring(0, 7);
+      const monthEntry = monthlyData.find(m => m.monthKey === txnMonthKey);
+      if (monthEntry) {
+        if (txn.type === 'income') {
+          monthEntry.income += txn.amount || 0;
+        } else if (txn.type === 'expense') {
+          monthEntry.expenses += Math.abs(txn.amount || 0);
+        }
+      }
+    });
+
+    // Calculate cumulative net worth (estimate by working backwards)
+    let runningNetWorth = currentNetWorth;
+    const result = [];
+
+    // Work backwards from current month
+    for (let i = monthlyData.length - 1; i >= 0; i--) {
+      const month = monthlyData[i];
+      result.unshift({
+        month: month.month,
+        netWorth: Math.round(runningNetWorth)
+      });
+      // Subtract net change to get previous month's value
+      runningNetWorth -= (month.income - month.expenses);
+    }
+
+    return result;
+  }, [transactions, accounts]);
+
   const dataWithIndex = data.map((item, index) => ({ ...item, index }));
 
   return (

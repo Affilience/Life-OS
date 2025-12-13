@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -22,49 +22,28 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, Activity, Target, Zap } from 'lucide-react';
+import { useHealthStore } from '../../../stores/healthStore';
 import './NutritionCharts.css';
 
-// Generate sample data for last 7 days
-const generateSampleData = () => {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  return days.map((day, index) => ({
-    day,
-    calories: 1800 + Math.floor(Math.random() * 600),
-    protein: 120 + Math.floor(Math.random() * 60),
-    carbs: 180 + Math.floor(Math.random() * 100),
-    fat: 50 + Math.floor(Math.random() * 40),
-    targetCalories: 2200,
-    targetProtein: 150,
-    targetCarbs: 250,
-    targetFat: 70,
-  }));
+// Hook to get responsive chart dimensions
+const useChartDimensions = () => {
+  const [dimensions, setDimensions] = useState({ height: 300, pieRadius: 100 });
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      const width = window.innerWidth;
+      if (width <= 480) setDimensions({ height: 220, pieRadius: 60 });
+      else if (width <= 768) setDimensions({ height: 250, pieRadius: 80 });
+      else setDimensions({ height: 300, pieRadius: 100 });
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  return dimensions;
 };
-
-const weeklyData = generateSampleData();
-
-// Macro split data
-const macroSplitData = [
-  { name: 'Protein', value: 30, color: '#8b5cf6' },
-  { name: 'Carbs', value: 50, color: '#3b82f6' },
-  { name: 'Fat', value: 20, color: '#f59e0b' },
-];
-
-// Meal breakdown data
-const mealData = [
-  { meal: 'Breakfast', calories: 450, protein: 35, carbs: 45, fat: 12 },
-  { meal: 'Lunch', calories: 650, protein: 45, carbs: 70, fat: 22 },
-  { meal: 'Dinner', calories: 700, protein: 50, carbs: 65, fat: 25 },
-  { meal: 'Snacks', calories: 300, protein: 20, carbs: 35, fat: 11 },
-];
-
-// Nutrient comparison to goals
-const nutrientGoalsData = [
-  { nutrient: 'Calories', actual: 2100, goal: 2200, fullMark: 3000 },
-  { nutrient: 'Protein', actual: 150, goal: 150, fullMark: 200 },
-  { nutrient: 'Carbs', actual: 215, goal: 250, fullMark: 350 },
-  { nutrient: 'Fat', actual: 70, goal: 70, fullMark: 100 },
-  { nutrient: 'Fiber', actual: 28, goal: 30, fullMark: 50 },
-];
 
 // Custom tooltip
 const CustomTooltip = ({ active, payload, label }) => {
@@ -85,6 +64,116 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function NutritionCharts() {
   const [activeChart, setActiveChart] = useState('weekly-calories');
+  const { height: chartHeight, pieRadius } = useChartDimensions();
+
+  // Connect to store
+  const { meals, dailyGoals } = useHealthStore();
+
+  // Calculate chart data from real meals
+  const chartData = useMemo(() => {
+    const today = new Date();
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const targetCalories = dailyGoals?.calories || 2200;
+    const targetProtein = dailyGoals?.protein || 150;
+    const targetCarbs = dailyGoals?.carbs || 250;
+    const targetFat = dailyGoals?.fat || 70;
+
+    // Get last 7 days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      last7Days.push(d.toISOString().split('T')[0]);
+    }
+
+    // Weekly data for calories trend
+    const weeklyData = last7Days.map(date => {
+      const dayMeals = (meals || []).filter(m => m.timestamp?.startsWith(date));
+      const dayOfWeek = new Date(date).getDay();
+      return {
+        day: dayLabels[dayOfWeek],
+        // Support both field naming conventions (totalCalories from store, calories from legacy)
+        calories: dayMeals.reduce((sum, m) => sum + (m.totalCalories || m.calories || 0), 0),
+        protein: dayMeals.reduce((sum, m) => sum + (m.totalProtein || m.protein || 0), 0),
+        carbs: dayMeals.reduce((sum, m) => sum + (m.totalCarbs || m.carbs || 0), 0),
+        fat: dayMeals.reduce((sum, m) => sum + (m.totalFat || m.fat || 0), 0),
+        targetCalories,
+        targetProtein,
+        targetCarbs,
+        targetFat
+      };
+    });
+
+    // Calculate totals for macro split
+    const todayStr = today.toISOString().split('T')[0];
+    const todayMeals = (meals || []).filter(m => m.timestamp?.startsWith(todayStr));
+    const totalProtein = todayMeals.reduce((sum, m) => sum + (m.totalProtein || m.protein || 0), 0);
+    const totalCarbs = todayMeals.reduce((sum, m) => sum + (m.totalCarbs || m.carbs || 0), 0);
+    const totalFat = todayMeals.reduce((sum, m) => sum + (m.totalFat || m.fat || 0), 0);
+    const totalMacros = totalProtein + totalCarbs + totalFat;
+
+    const macroSplitData = totalMacros > 0 ? [
+      { name: 'Protein', value: Math.round((totalProtein / totalMacros) * 100), color: '#8b5cf6' },
+      { name: 'Carbs', value: Math.round((totalCarbs / totalMacros) * 100), color: '#3b82f6' },
+      { name: 'Fat', value: Math.round((totalFat / totalMacros) * 100), color: '#f59e0b' }
+    ] : [
+      { name: 'Protein', value: 30, color: '#8b5cf6' },
+      { name: 'Carbs', value: 50, color: '#3b82f6' },
+      { name: 'Fat', value: 20, color: '#f59e0b' }
+    ];
+
+    // Group meals by type for meal breakdown
+    const mealTypes = { breakfast: { meal: 'Breakfast', calories: 0, protein: 0, carbs: 0, fat: 0 },
+                       lunch: { meal: 'Lunch', calories: 0, protein: 0, carbs: 0, fat: 0 },
+                       dinner: { meal: 'Dinner', calories: 0, protein: 0, carbs: 0, fat: 0 },
+                       snack: { meal: 'Snacks', calories: 0, protein: 0, carbs: 0, fat: 0 } };
+
+    todayMeals.forEach(m => {
+      const type = (m.type || m.meal_type || m.mealType || 'snack').toLowerCase();
+      const key = type === 'snacks' ? 'snack' : type;
+      if (mealTypes[key]) {
+        mealTypes[key].calories += m.totalCalories || m.calories || 0;
+        mealTypes[key].protein += m.totalProtein || m.protein || 0;
+        mealTypes[key].carbs += m.totalCarbs || m.carbs || 0;
+        mealTypes[key].fat += m.totalFat || m.fat || 0;
+      }
+    });
+
+    const mealData = Object.values(mealTypes);
+
+    // Nutrient goals comparison
+    const todayCalories = todayMeals.reduce((sum, m) => sum + (m.totalCalories || m.calories || 0), 0);
+    const nutrientGoalsData = [
+      { nutrient: 'Calories', actual: todayCalories, goal: targetCalories, fullMark: 3000 },
+      { nutrient: 'Protein', actual: totalProtein, goal: targetProtein, fullMark: 200 },
+      { nutrient: 'Carbs', actual: totalCarbs, goal: targetCarbs, fullMark: 350 },
+      { nutrient: 'Fat', actual: totalFat, goal: targetFat, fullMark: 100 },
+      { nutrient: 'Fiber', actual: todayMeals.reduce((sum, m) => sum + (m.totalFiber || m.fiber || 0), 0), goal: 30, fullMark: 50 }
+    ];
+
+    // Stats
+    const daysTracked = weeklyData.filter(d => d.calories > 0).length;
+    const avgDailyCalories = daysTracked > 0
+      ? Math.round(weeklyData.reduce((sum, d) => sum + d.calories, 0) / daysTracked)
+      : 0;
+    const goalAchievement = targetCalories > 0 && avgDailyCalories > 0
+      ? Math.round((Math.min(avgDailyCalories, targetCalories) / targetCalories) * 100)
+      : 0;
+
+    return {
+      weeklyData,
+      macroSplitData,
+      mealData,
+      nutrientGoalsData,
+      stats: {
+        avgDailyCalories,
+        goalAchievement,
+        daysTracked
+      }
+    };
+  }, [meals, dailyGoals]);
+
+  const { weeklyData, macroSplitData, mealData, nutrientGoalsData, stats } = chartData;
 
   const charts = [
     { id: 'weekly-calories', label: 'Weekly Calories', icon: TrendingUp },
@@ -121,35 +210,37 @@ export default function NutritionCharts() {
               <h3 className="chart-title">Weekly Calorie Trend</h3>
               <p className="chart-subtitle">Daily calories vs target goal</p>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={weeklyData}>
-                <defs>
-                  <linearGradient id="calorieGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="day" stroke="rgba(255,255,255,0.6)" />
-                <YAxis stroke="rgba(255,255,255,0.6)" />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="calories"
-                  stroke="#8b5cf6"
-                  strokeWidth={3}
-                  fill="url(#calorieGradient)"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="targetCalories"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={false}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper chart-wrapper-single-axis">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <AreaChart data={weeklyData}>
+                  <defs>
+                    <linearGradient id="calorieGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis stroke="rgba(255,255,255,0.6)" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="calories"
+                    stroke="#8b5cf6"
+                    strokeWidth={3}
+                    fill="url(#calorieGradient)"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="targetCalories"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -160,25 +251,27 @@ export default function NutritionCharts() {
               <h3 className="chart-title">Macronutrient Distribution</h3>
               <p className="chart-subtitle">Daily macro breakdown</p>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={macroSplitData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {macroSplitData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <PieChart>
+                  <Pie
+                    data={macroSplitData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={pieRadius >= 80 ? ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%` : false}
+                    outerRadius={pieRadius}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {macroSplitData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
             <div className="macro-legend">
               {macroSplitData.map(macro => (
                 <div key={macro.name} className="macro-legend-item">
@@ -198,18 +291,20 @@ export default function NutritionCharts() {
               <h3 className="chart-title">Meal Breakdown</h3>
               <p className="chart-subtitle">Calories and macros per meal</p>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={mealData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="meal" stroke="rgba(255,255,255,0.6)" />
-                <YAxis stroke="rgba(255,255,255,0.6)" />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
-                <Bar dataKey="protein" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="carbs" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="fat" fill="#f59e0b" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper chart-wrapper-single-axis">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <BarChart data={mealData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="meal" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis stroke="rgba(255,255,255,0.6)" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
+                  <Bar dataKey="protein" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="carbs" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="fat" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -220,32 +315,34 @@ export default function NutritionCharts() {
               <h3 className="chart-title">Progress vs Goals</h3>
               <p className="chart-subtitle">How you're tracking against targets</p>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <RadarChart data={nutrientGoalsData}>
-                <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                <PolarAngleAxis dataKey="nutrient" stroke="rgba(255,255,255,0.6)" />
-                <PolarRadiusAxis stroke="rgba(255,255,255,0.3)" />
-                <Radar
-                  name="Actual"
-                  dataKey="actual"
-                  stroke="#8b5cf6"
-                  fill="#8b5cf6"
-                  fillOpacity={0.5}
-                  strokeWidth={2}
-                />
-                <Radar
-                  name="Goal"
-                  dataKey="goal"
-                  stroke="#10b981"
-                  fill="#10b981"
-                  fillOpacity={0.3}
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
-              </RadarChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <RadarChart data={nutrientGoalsData}>
+                  <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                  <PolarAngleAxis dataKey="nutrient" stroke="rgba(255,255,255,0.6)" />
+                  <PolarRadiusAxis stroke="rgba(255,255,255,0.3)" />
+                  <Radar
+                    name="Actual"
+                    dataKey="actual"
+                    stroke="#8b5cf6"
+                    fill="#8b5cf6"
+                    fillOpacity={0.5}
+                    strokeWidth={2}
+                  />
+                  <Radar
+                    name="Goal"
+                    dataKey="goal"
+                    stroke="#10b981"
+                    fill="#10b981"
+                    fillOpacity={0.3}
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
       </div>
@@ -257,7 +354,7 @@ export default function NutritionCharts() {
             <TrendingUp className="w-5 h-5" style={{ color: '#8b5cf6' }} />
           </div>
           <div className="stat-content">
-            <div className="stat-value">2,100</div>
+            <div className="stat-value">{stats.avgDailyCalories.toLocaleString()}</div>
             <div className="stat-label">Avg Daily Calories</div>
           </div>
         </div>
@@ -267,7 +364,7 @@ export default function NutritionCharts() {
             <Target className="w-5 h-5" style={{ color: '#10b981' }} />
           </div>
           <div className="stat-content">
-            <div className="stat-value">95%</div>
+            <div className="stat-value">{stats.goalAchievement}%</div>
             <div className="stat-label">Goal Achievement</div>
           </div>
         </div>
@@ -277,7 +374,7 @@ export default function NutritionCharts() {
             <Activity className="w-5 h-5" style={{ color: '#f59e0b' }} />
           </div>
           <div className="stat-content">
-            <div className="stat-value">7/7</div>
+            <div className="stat-value">{stats.daysTracked}/7</div>
             <div className="stat-label">Days Tracked</div>
           </div>
         </div>
@@ -287,7 +384,7 @@ export default function NutritionCharts() {
             <Zap className="w-5 h-5" style={{ color: '#3b82f6' }} />
           </div>
           <div className="stat-content">
-            <div className="stat-value">14</div>
+            <div className="stat-value">{stats.daysTracked > 0 ? stats.daysTracked : '-'}</div>
             <div className="stat-label">Day Streak</div>
           </div>
         </div>

@@ -1,48 +1,114 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TrendingUp, Trophy, Dumbbell, Target } from 'lucide-react';
 import AnalyticsCard from '../shared/AnalyticsCard';
 import TrendLineChart from '../charts/TrendLineChart';
 import ComparisonBarChart from '../charts/ComparisonBarChart';
+import { useWorkoutStore } from '../../stores/workoutStore';
 import './WorkoutAnalytics.css';
 
-// Mock data - would come from API in production
-const volumeData = [
-  { date: 'Mon', volume: 12500 },
-  { date: 'Tue', volume: 8000 },
-  { date: 'Wed', volume: 15000 },
-  { date: 'Thu', volume: 0 },
-  { date: 'Fri', volume: 13500 },
-  { date: 'Sat', volume: 18000 },
-  { date: 'Sun', volume: 10000 }
-];
-
-const benchPressData = [
-  { date: 'Week 1', weight: 185 },
-  { date: 'Week 2', weight: 190 },
-  { date: 'Week 3', weight: 195 },
-  { date: 'Week 4', weight: 200 },
-  { date: 'Week 5', weight: 205 },
-  { date: 'Week 6', weight: 210 }
-];
-
-const workoutFrequencyData = [
-  { date: 'Mon', workouts: 1 },
-  { date: 'Tue', workouts: 0 },
-  { date: 'Wed', workouts: 1 },
-  { date: 'Thu', workouts: 1 },
-  { date: 'Fri', workouts: 0 },
-  { date: 'Sat', workouts: 1 },
-  { date: 'Sun', workouts: 1 }
-];
-
-const personalRecords = [
-  { exercise: 'Bench Press', weight: 225, unit: 'lbs', date: '2025-10-15', improvement: '+15' },
-  { exercise: 'Squat', weight: 315, unit: 'lbs', date: '2025-10-20', improvement: '+20' },
-  { exercise: 'Deadlift', weight: 405, unit: 'lbs', date: '2025-10-22', improvement: '+25' },
-  { exercise: 'Overhead Press', weight: 145, unit: 'lbs', date: '2025-10-18', improvement: '+10' }
-];
-
 export default function WorkoutAnalytics() {
+  const { workouts, personalRecords: storePRs } = useWorkoutStore();
+
+  // Calculate all workout analytics from store data
+  const { volumeData, exerciseProgressData, frequencyData, personalRecords, stats } = useMemo(() => {
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+
+    // Build last 7 days for volume and frequency
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      last7Days.push({
+        dateStr: d.toISOString().split('T')[0],
+        dayOfWeek: d.getDay()
+      });
+    }
+
+    // Calculate daily volume and frequency
+    const dailyData = last7Days.map(({ dateStr, dayOfWeek }) => {
+      const dayWorkouts = (workouts || []).filter(w => w.date === dateStr || w.timestamp?.startsWith(dateStr));
+      let volume = 0;
+      dayWorkouts.forEach(w => {
+        (w.exercises || []).forEach(ex => {
+          (ex.sets || []).forEach(set => {
+            volume += (set.weight || 0) * (set.reps || 0);
+          });
+        });
+      });
+
+      return {
+        date: dayLabels[dayOfWeek],
+        volume: Math.round(volume),
+        workouts: dayWorkouts.length
+      };
+    });
+
+    // Build volume data array
+    const volumeArr = dailyData.map(d => ({ date: d.date, volume: d.volume }));
+    const frequencyArr = dailyData.map(d => ({ date: d.date, workouts: d.workouts }));
+
+    // Get exercise progress (find an exercise with multiple data points over weeks)
+    const exerciseHistory = {};
+    (workouts || []).forEach(w => {
+      (w.exercises || []).forEach(ex => {
+        const name = ex.name || 'Unknown';
+        if (!exerciseHistory[name]) exerciseHistory[name] = [];
+        (ex.sets || []).forEach(set => {
+          if (set.weight) {
+            exerciseHistory[name].push({
+              date: w.date || w.timestamp?.split('T')[0],
+              weight: set.weight
+            });
+          }
+        });
+      });
+    });
+
+    // Pick exercise with most history for progression chart
+    let bestExercise = 'Bench Press';
+    let maxPoints = 0;
+    Object.entries(exerciseHistory).forEach(([name, data]) => {
+      if (data.length > maxPoints) {
+        maxPoints = data.length;
+        bestExercise = name;
+      }
+    });
+
+    // Build progression data (last 6 entries)
+    const progressArr = (exerciseHistory[bestExercise] || [])
+      .slice(-6)
+      .map((entry, idx) => ({
+        date: `Entry ${idx + 1}`,
+        weight: entry.weight
+      }));
+
+    // Get personal records from store or compute from history
+    const prs = (storePRs || []).slice(0, 4).map(pr => ({
+      exercise: pr.exercise || pr.name || 'Unknown',
+      weight: pr.weight || 0,
+      unit: pr.unit || 'lbs',
+      date: pr.date || 'N/A',
+      improvement: pr.improvement || '+0'
+    }));
+
+    // Calculate stats
+    const totalVolume = dailyData.reduce((sum, d) => sum + d.volume, 0);
+    const workoutDays = dailyData.filter(d => d.workouts > 0).length;
+
+    return {
+      volumeData: volumeArr,
+      exerciseProgressData: progressArr.length > 0 ? progressArr : [{ date: 'No data', weight: 0 }],
+      frequencyData: frequencyArr,
+      personalRecords: prs.length > 0 ? prs : [],
+      stats: {
+        totalVolume,
+        workoutDays,
+        bestExercise,
+        maxWeight: progressArr.length > 0 ? Math.max(...progressArr.map(p => p.weight)) : 0
+      }
+    };
+  }, [workouts, storePRs]);
   return (
     <div className="workout-analytics">
       {/* Overall Volume Trend */}
@@ -50,8 +116,8 @@ export default function WorkoutAnalytics() {
         title="Training Volume Progression"
         icon={Dumbbell}
         metric={{
-          value: '77,000 lbs',
-          change: 12.5
+          value: `${stats.totalVolume.toLocaleString()} lbs`,
+          change: 0
         }}
         defaultRange="7d"
       >
@@ -66,20 +132,19 @@ export default function WorkoutAnalytics() {
 
       {/* Exercise-Specific Progress */}
       <AnalyticsCard
-        title="Bench Press 1RM Progression"
+        title={`${stats.bestExercise} Progression`}
         icon={Target}
         metric={{
-          value: '210 lbs',
-          change: 8.3
+          value: `${stats.maxWeight} lbs`,
+          change: 0
         }}
         defaultRange="30d"
       >
         <TrendLineChart
-          data={benchPressData}
+          data={exerciseProgressData}
           dataKey="weight"
-          name="1RM"
+          name="Weight"
           color="#10b981"
-          goal={225}
           showArea={true}
         />
       </AnalyticsCard>
@@ -89,13 +154,13 @@ export default function WorkoutAnalytics() {
         title="Workout Frequency"
         icon={TrendingUp}
         metric={{
-          value: '5 days',
-          change: 25
+          value: `${stats.workoutDays} days`,
+          change: 0
         }}
         defaultRange="7d"
       >
         <ComparisonBarChart
-          data={workoutFrequencyData}
+          data={frequencyData}
           dataKey="workouts"
           name="Workouts"
           color="#10b981"
@@ -109,19 +174,25 @@ export default function WorkoutAnalytics() {
           <h3 className="pr-title">Personal Records</h3>
         </div>
         <div className="pr-grid">
-          {personalRecords.map((pr, index) => (
-            <div key={index} className="pr-card">
-              <div className="pr-card-header">
-                <h4 className="pr-exercise">{pr.exercise}</h4>
-                <span className="pr-improvement">{pr.improvement}</span>
+          {personalRecords.length > 0 ? (
+            personalRecords.map((pr, index) => (
+              <div key={index} className="pr-card">
+                <div className="pr-card-header">
+                  <h4 className="pr-exercise">{pr.exercise}</h4>
+                  <span className="pr-improvement">{pr.improvement}</span>
+                </div>
+                <div className="pr-weight">
+                  {pr.weight}
+                  <span className="pr-unit">{pr.unit}</span>
+                </div>
+                <div className="pr-date">{pr.date}</div>
               </div>
-              <div className="pr-weight">
-                {pr.weight}
-                <span className="pr-unit">{pr.unit}</span>
-              </div>
-              <div className="pr-date">{pr.date}</div>
+            ))
+          ) : (
+            <div className="text-white/50 text-sm py-4 col-span-full text-center">
+              No personal records yet. Complete workouts to set PRs!
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

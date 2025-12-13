@@ -65,9 +65,9 @@ export const PERK_TREES = {
         name: 'Nutrition Awareness',
         tier: 'novice',
         level: 10,
-        type: 'unlock',
-        description: 'Unlock macro tracking and meal planning',
-        effect: { unlockFeature: 'macroTracking' },
+        type: 'passive',
+        description: 'Logging meals gives +25% bonus XP. Hit macro goals for +50 bonus XP',
+        effect: { mealLogXpBonus: 0.25, macroGoalBonusXp: 50 },
         prerequisites: ['body_foundation'],
         position: { x: 400, y: 410 } // Core/torso center
       },
@@ -90,8 +90,8 @@ export const PERK_TREES = {
         tier: 'adept',
         level: 25,
         type: 'passive',
-        description: 'Cardio workouts give +40% XP total. Unlock HIIT tracking',
-        effect: { cardioXpBonus: 0.4, unlockFeature: 'hiitTracking' },
+        description: 'Cardio workouts give +40% XP total. +10 gold per cardio session',
+        effect: { cardioXpBonus: 0.4, cardioGoldBonus: 10 },
         prerequisites: ['body_endurance_1', 'body_recovery_1'],
         position: { x: 180, y: 310 } // Left arm extended
       },
@@ -101,8 +101,8 @@ export const PERK_TREES = {
         tier: 'adept',
         level: 25,
         type: 'passive',
-        description: 'Strength workouts give +40% XP total. Unlock progressive overload tracking',
-        effect: { strengthXpBonus: 0.4, unlockFeature: 'progressiveOverload' },
+        description: 'Strength workouts give +40% XP total. +10 gold per strength session',
+        effect: { strengthXpBonus: 0.4, strengthGoldBonus: 10 },
         prerequisites: ['body_strength_1', 'body_recovery_1'],
         position: { x: 620, y: 310 } // Right arm extended
       },
@@ -112,8 +112,8 @@ export const PERK_TREES = {
         tier: 'adept',
         level: 30,
         type: 'synergy',
-        description: 'Physical activities give +15% MIND XP. Unlock yoga/meditation tracking',
-        effect: { mindXpBonus: 0.15, unlockFeature: 'yogaTracking' },
+        description: 'Physical activities give +15% MIND XP. Yoga sessions give +50% XP',
+        effect: { mindXpBonus: 0.15, yogaXpBonus: 0.5 },
         prerequisites: ['body_recovery_1'],
         position: { x: 400, y: 270 } // Heart center
       },
@@ -157,9 +157,9 @@ export const PERK_TREES = {
         name: 'Nutrition Mastery',
         tier: 'expert',
         level: 55,
-        type: 'unlock',
-        description: 'Perfect macro day gives +100 bonus XP. Unlock meal prep planner',
-        effect: { perfectMacroBonusXp: 100, unlockFeature: 'mealPrepPlanner' },
+        type: 'passive',
+        description: 'Perfect macro day gives +100 bonus XP and +25 gold. Unlock title: "Nutrition Master"',
+        effect: { perfectMacroBonusXp: 100, perfectMacroGold: 25, unlockTitle: 'Nutrition Master' },
         prerequisites: ['body_peak_performance'],
         position: { x: 320, y: 100 } // Left temple
       },
@@ -183,7 +183,7 @@ export const PERK_TREES = {
         description: 'Physical challenges give +25% SPIRIT XP. Never give up',
         effect: { spiritXpBonus: 0.25 },
         prerequisites: ['body_nutrition_mastery', 'body_beast_mode'],
-        position: { x: 400, y: 70 } // Crown
+        position: { x: 400, y: 55 } // Crown
       },
 
       // === TIER 4: MASTER (Star above head) ===
@@ -196,7 +196,7 @@ export const PERK_TREES = {
         description: 'ULTIMATE: All BODY activities give triple XP. Inspire others (+10% SOCIAL XP)',
         effect: { bodyXpMultiplier: 3, socialXpBonus: 0.1 },
         prerequisites: ['body_iron_will'],
-        position: { x: 400, y: 60 } // Star above head (moved up slightly from crown)
+        position: { x: 400, y: -25 } // Star above head - higher up for better spacing
       }
     ]
   },
@@ -225,8 +225,8 @@ export const PERK_TREES = {
         tier: 'novice',
         level: 5,
         type: 'passive',
-        description: 'Reading gives +25% XP. Track books and pages',
-        effect: { readingXpBonus: 0.25, unlockFeature: 'bookTracking' },
+        description: 'Reading gives +25% XP. +5 gold per reading session',
+        effect: { readingXpBonus: 0.25, readingGoldBonus: 5 },
         prerequisites: ['mind_foundation'],
         position: { x: 280, y: 450 } // Left branch start
       },
@@ -246,9 +246,9 @@ export const PERK_TREES = {
         name: 'Note Taker',
         tier: 'novice',
         level: 10,
-        type: 'unlock',
-        description: 'Creating notes gives +20 XP. Unlock Zettelkasten system',
-        effect: { noteXp: 20, unlockFeature: 'zettelkasten' },
+        type: 'passive',
+        description: 'Creating notes gives +20 XP. Linking notes gives +10 bonus XP',
+        effect: { noteXp: 20, noteLinkBonusXp: 10 },
         prerequisites: ['mind_reader_1', 'mind_focus_1'],
         position: { x: 400, y: 390 } // Central convergence
       },
@@ -282,8 +282,8 @@ export const PERK_TREES = {
         tier: 'adept',
         level: 25,
         type: 'passive',
-        description: 'Deep work 2+ hours gives double XP. Unlock Pomodoro timer',
-        effect: { longSessionMultiplier: 2, unlockFeature: 'pomodoroTimer' },
+        description: 'Deep work 2+ hours gives double XP. +20 gold per flow session',
+        effect: { longSessionMultiplier: 2, flowSessionGold: 20 },
         prerequisites: ['mind_focus_1', 'mind_curiosity'],
         position: { x: 640, y: 340 } // Far right branch
       },
@@ -292,9 +292,9 @@ export const PERK_TREES = {
         name: 'Knowledge Synthesizer',
         tier: 'adept',
         level: 30,
-        type: 'unlock',
-        description: 'Connecting notes gives +30 XP. Unlock mind map visualization',
-        effect: { linkNotesXp: 30, unlockFeature: 'mindMaps' },
+        type: 'passive',
+        description: 'Connecting notes gives +30 XP. Knowledge graph bonuses +15% XP',
+        effect: { linkNotesXp: 30, knowledgeGraphBonus: 0.15 },
         prerequisites: ['mind_note_taker'],
         position: { x: 400, y: 270 } // Central hub
       },
@@ -360,11 +360,11 @@ export const PERK_TREES = {
         name: 'Master Learner',
         tier: 'expert',
         level: 70,
-        type: 'unlock',
-        description: 'Can learn any skill 2x faster. Unlock spaced repetition system',
-        effect: { learningSpeedMultiplier: 2, unlockFeature: 'spacedRepetition' },
+        type: 'passive',
+        description: 'Learn any skill 2x faster. +50 gold per skill milestone. Title: "Scholar"',
+        effect: { learningSpeedMultiplier: 2, skillMilestoneGold: 50, unlockTitle: 'Scholar' },
         prerequisites: ['mind_speed_reader', 'mind_hyperfocus'],
-        position: { x: 400, y: 70 } // Upper cortex
+        position: { x: 400, y: 55 } // Upper cortex
       },
 
       // === TIER 4: MASTER (Crown of consciousness) ===
@@ -377,7 +377,7 @@ export const PERK_TREES = {
         description: 'ULTIMATE: Triple XP from all learning. All other stats gain +10% XP',
         effect: { mindXpMultiplier: 3, globalXpBonus: 0.1 },
         prerequisites: ['mind_master_learner'],
-        position: { x: 400, y: 60 } // Transcendence point
+        position: { x: 400, y: -25 } // Transcendence point - higher up
       }
     ]
   },
@@ -406,8 +406,8 @@ export const PERK_TREES = {
         tier: 'novice',
         level: 5,
         type: 'passive',
-        description: 'Meditation gives +30% XP. Track sessions and duration',
-        effect: { meditationXpBonus: 0.3, unlockFeature: 'meditationTimer' },
+        description: 'Meditation gives +30% XP. +5 gold per session',
+        effect: { meditationXpBonus: 0.3, meditationGoldBonus: 5 },
         prerequisites: ['spirit_foundation'],
         position: { x: 310, y: 250 } // Inner ring - left
       },
@@ -427,9 +427,9 @@ export const PERK_TREES = {
         name: 'Journaling',
         tier: 'novice',
         level: 10,
-        type: 'unlock',
-        description: 'Journal entries give +50 XP. Unlock reflection prompts',
-        effect: { journalXp: 50, unlockFeature: 'reflectionPrompts' },
+        type: 'passive',
+        description: 'Journal entries give +50 XP. Daily journaling streak gives +10% bonus XP',
+        effect: { journalXp: 50, journalStreakBonus: 0.1 },
         prerequisites: ['spirit_meditation_1', 'spirit_gratitude_1'],
         position: { x: 400, y: 200 } // Inner ring - top
       },
@@ -439,8 +439,8 @@ export const PERK_TREES = {
         tier: 'novice',
         level: 15,
         type: 'passive',
-        description: 'Mood tracking gives +15 XP. Unlock emotion wheel',
-        effect: { moodTrackingXp: 15, unlockFeature: 'emotionWheel' },
+        description: 'Mood tracking gives +15 XP. Emotional insights give +25 bonus XP',
+        effect: { moodTrackingXp: 15, emotionalInsightXp: 25 },
         prerequisites: ['spirit_journal'],
         position: { x: 400, y: 370 } // Inner ring - bottom
       },
@@ -452,8 +452,8 @@ export const PERK_TREES = {
         tier: 'adept',
         level: 25,
         type: 'passive',
-        description: '20+ min meditation gives double XP. Unlock guided meditations',
-        effect: { longMeditationMultiplier: 2, unlockFeature: 'guidedMeditations' },
+        description: '20+ min meditation gives double XP. +15 gold per deep session',
+        effect: { longMeditationMultiplier: 2, deepMeditationGold: 15 },
         prerequisites: ['spirit_meditation_1', 'spirit_awareness'],
         position: { x: 200, y: 280 } // Second ring - far left
       },
@@ -463,8 +463,8 @@ export const PERK_TREES = {
         tier: 'adept',
         level: 25,
         type: 'passive',
-        description: '3 gratitudes per day gives +75 XP. Unlock gratitude challenges',
-        effect: { tripleGratitudeXp: 75, unlockFeature: 'gratitudeChallenges' },
+        description: '3 gratitudes per day gives +75 XP. Weekly gratitude streak gives +100 bonus XP',
+        effect: { tripleGratitudeXp: 75, gratitudeStreakBonus: 100 },
         prerequisites: ['spirit_gratitude_1', 'spirit_awareness'],
         position: { x: 600, y: 280 } // Second ring - far right
       },
@@ -473,9 +473,9 @@ export const PERK_TREES = {
         name: 'Deep Reflection',
         tier: 'adept',
         level: 30,
-        type: 'unlock',
-        description: 'Weekly reflections give +150 XP. Unlock life review system',
-        effect: { weeklyReflectionXp: 150, unlockFeature: 'lifeReview' },
+        type: 'passive',
+        description: 'Weekly reflections give +150 XP. Monthly reviews give +500 bonus XP',
+        effect: { weeklyReflectionXp: 150, monthlyReviewBonus: 500 },
         prerequisites: ['spirit_journal'],
         position: { x: 400, y: 140 } // Second ring - top
       },
@@ -499,7 +499,7 @@ export const PERK_TREES = {
         description: 'All daily activities give +15% SPIRIT XP when done mindfully',
         effect: { mindfulnessBonus: 0.15 },
         prerequisites: ['spirit_meditation_2', 'spirit_gratitude_2', 'spirit_emotional_intelligence'],
-        position: { x: 400, y: 300 } // Returns to center (convergence)
+        position: { x: 300, y: 190 } // Upper left convergence
       },
 
       // === TIER 3: EXPERT (Outer petals) ===
@@ -530,9 +530,9 @@ export const PERK_TREES = {
         name: 'Life Purpose',
         tier: 'expert',
         level: 60,
-        type: 'unlock',
-        description: 'Define life purpose. All activities aligned with purpose give +25% XP',
-        effect: { purposeBonus: 0.25, unlockFeature: 'purposeDefinition' },
+        type: 'passive',
+        description: 'Activities aligned with values give +25% XP. Title: "Purpose-Driven"',
+        effect: { purposeBonus: 0.25, unlockTitle: 'Purpose-Driven' },
         prerequisites: ['spirit_enlightenment'],
         position: { x: 550, y: 140 } // Outer right petal
       },
@@ -558,7 +558,7 @@ export const PERK_TREES = {
         description: 'ULTIMATE: Triple SPIRIT XP. All stats benefit from inner peace (+15% XP)',
         effect: { spiritXpMultiplier: 3, globalXpBonus: 0.15 },
         prerequisites: ['spirit_inner_peace'],
-        position: { x: 400, y: 60 } // Crown above lotus
+        position: { x: 400, y: 20 } // Crown above lotus
       }
     ]
   },
@@ -586,9 +586,9 @@ export const PERK_TREES = {
         name: 'Income Tracker',
         tier: 'novice',
         level: 5,
-        type: 'unlock',
-        description: 'Track all income sources. Earn 1 XP per $10 tracked',
-        effect: { incomeXpRate: 0.1, unlockFeature: 'incomeTracking' },
+        type: 'passive',
+        description: 'Track all income sources. Earn 1 XP per $10 tracked. +5 gold per log',
+        effect: { incomeXpRate: 0.1, incomeLogGold: 5 },
         prerequisites: ['wealth_foundation'],
         position: { x: 200, y: 490 } // Far left base
       },
@@ -597,9 +597,9 @@ export const PERK_TREES = {
         name: 'Budget Master',
         tier: 'novice',
         level: 5,
-        type: 'unlock',
-        description: 'Create budgets. Staying under budget gives +50 XP per week',
-        effect: { budgetBonusXp: 50, unlockFeature: 'budgetPlanning' },
+        type: 'passive',
+        description: 'Staying under budget gives +50 XP per week. +20 gold for budget adherence',
+        effect: { budgetBonusXp: 50, budgetAdherenceGold: 20 },
         prerequisites: ['wealth_foundation'],
         position: { x: 600, y: 490 } // Far right base
       },
@@ -609,8 +609,8 @@ export const PERK_TREES = {
         tier: 'novice',
         level: 10,
         type: 'passive',
-        description: 'Every $100 saved gives +10 XP. Unlock savings goals',
-        effect: { savingsXpPer100: 10, unlockFeature: 'savingsGoals' },
+        description: 'Every $100 saved gives +10 XP. Savings milestones give +50 gold',
+        effect: { savingsXpPer100: 10, savingsMilestoneGold: 50 },
         prerequisites: ['wealth_tracking', 'wealth_budgeting'],
         position: { x: 400, y: 420 } // First convergence
       },
@@ -632,9 +632,9 @@ export const PERK_TREES = {
         name: 'First Investor',
         tier: 'adept',
         level: 25,
-        type: 'unlock',
-        description: 'Start investing. Each investment gives +100 XP. Track portfolio',
-        effect: { investmentXp: 100, unlockFeature: 'portfolioTracking' },
+        type: 'passive',
+        description: 'Each investment gives +100 XP. Portfolio growth gives +25 gold monthly',
+        effect: { investmentXp: 100, portfolioGrowthGold: 25 },
         prerequisites: ['wealth_emergency_fund'],
         position: { x: 280, y: 310 } // Left slope
       },
@@ -643,9 +643,9 @@ export const PERK_TREES = {
         name: 'Entrepreneur',
         tier: 'adept',
         level: 25,
-        type: 'unlock',
-        description: 'Track business income. Business profit gives double XP',
-        effect: { businessXpMultiplier: 2, unlockFeature: 'businessTracking' },
+        type: 'passive',
+        description: 'Business profit gives double XP. Title: "Entrepreneur"',
+        effect: { businessXpMultiplier: 2, unlockTitle: 'Entrepreneur' },
         prerequisites: ['wealth_emergency_fund'],
         position: { x: 520, y: 310 } // Right slope
       },
@@ -666,8 +666,8 @@ export const PERK_TREES = {
         tier: 'adept',
         level: 35,
         type: 'passive',
-        description: 'Passive income gives +50% more XP. Unlock income stream tracker',
-        effect: { passiveIncomeBonus: 0.5, unlockFeature: 'incomeStreams' },
+        description: 'Passive income gives +50% more XP. +1 gem per passive income source',
+        effect: { passiveIncomeBonus: 0.5, passiveIncomeGems: 1 },
         prerequisites: ['wealth_debt_free'],
         position: { x: 400, y: 230 } // Rising
       },
@@ -677,8 +677,8 @@ export const PERK_TREES = {
         tier: 'adept',
         level: 40,
         type: 'synergy',
-        description: 'Reading finance books gives +30% MIND XP. Make informed decisions',
-        effect: { mindXpBonus: 0.3, unlockFeature: 'financialEducation' },
+        description: 'Reading finance books gives +30% MIND XP. Financial activities give +20% gold',
+        effect: { mindXpBonus: 0.3, financialGoldBonus: 0.2 },
         prerequisites: ['wealth_investor', 'wealth_entrepreneur', 'wealth_passive_income'],
         position: { x: 400, y: 175 } // Pre-peak
       },
@@ -701,8 +701,8 @@ export const PERK_TREES = {
         tier: 'expert',
         level: 55,
         type: 'passive',
-        description: 'Every $10k net worth gives +100 XP. Track wealth growth',
-        effect: { netWorthXpPer10k: 100, unlockFeature: 'netWorthTracking' },
+        description: 'Every $10k net worth gives +100 XP. Wealth milestones give +100 gold',
+        effect: { netWorthXpPer10k: 100, wealthMilestoneGold: 100 },
         prerequisites: ['wealth_abundance'],
         position: { x: 330, y: 100 } // Left peak edge
       },
@@ -722,11 +722,11 @@ export const PERK_TREES = {
         name: 'Millionaire Path',
         tier: 'expert',
         level: 70,
-        type: 'unlock',
-        description: 'Unlock millionaire roadmap. $100k milestones give +5000 XP',
-        effect: { milestoneBonus: 5000, unlockFeature: 'millionaireRoadmap' },
+        type: 'passive',
+        description: '$100k milestones give +5000 XP and +500 gold. Title: "Wealth Builder"',
+        effect: { milestoneBonus: 5000, milestoneGold: 500, unlockTitle: 'Wealth Builder' },
         prerequisites: ['wealth_net_worth', 'wealth_portfolio_master'],
-        position: { x: 400, y: 70 } // Near apex
+        position: { x: 400, y: 60 } // Near apex - spread from 80
       },
 
       // === TIER 4: MASTER (Pyramid capstone) ===
@@ -739,7 +739,7 @@ export const PERK_TREES = {
         description: 'ULTIMATE: Triple wealth XP. Passive income exceeds expenses. True freedom',
         effect: { wealthXpMultiplier: 3, financialFreedom: true, globalXpBonus: 0.1 },
         prerequisites: ['wealth_millionaire_path'],
-        position: { x: 400, y: 60 } // Golden capstone
+        position: { x: 400, y: -20 } // Golden capstone - higher up
       }
     ]
   },
@@ -768,8 +768,8 @@ export const PERK_TREES = {
         tier: 'novice',
         level: 5,
         type: 'passive',
-        description: 'Meaningful conversations give +25 XP. Track social interactions',
-        effect: { conversationXp: 25, unlockFeature: 'interactionTracking' },
+        description: 'Meaningful conversations give +25 XP. +5 gold per quality interaction',
+        effect: { conversationXp: 25, conversationGold: 5 },
         prerequisites: ['social_foundation'],
         position: { x: 260, y: 270 } // Spoke upper-left
       },
@@ -779,8 +779,8 @@ export const PERK_TREES = {
         tier: 'novice',
         level: 5,
         type: 'passive',
-        description: 'Meeting new people gives +50 XP. Build your network',
-        effect: { newConnectionXp: 50, unlockFeature: 'networkMap' },
+        description: 'Meeting new people gives +50 XP. +10 gold per new connection',
+        effect: { newConnectionXp: 50, newConnectionGold: 10 },
         prerequisites: ['social_foundation'],
         position: { x: 540, y: 270 } // Spoke upper-right
       },
@@ -824,9 +824,9 @@ export const PERK_TREES = {
         name: 'Public Speaker I',
         tier: 'adept',
         level: 25,
-        type: 'unlock',
-        description: 'Presentations give +150 XP. Unlock speech tracking',
-        effect: { presentationXp: 150, unlockFeature: 'speechTracking' },
+        type: 'passive',
+        description: 'Presentations give +150 XP. +30 gold per speaking event',
+        effect: { presentationXp: 150, speakingGold: 30 },
         prerequisites: ['social_event_goer'],
         position: { x: 620, y: 360 } // Far right node
       },
@@ -835,9 +835,9 @@ export const PERK_TREES = {
         name: 'Relationship Builder',
         tier: 'adept',
         level: 30,
-        type: 'unlock',
-        description: 'Nurturing relationships gives +40 XP. Track relationship health',
-        effect: { relationshipXp: 40, unlockFeature: 'relationshipCRM' },
+        type: 'passive',
+        description: 'Nurturing relationships gives +40 XP. Relationship milestones give +75 gold',
+        effect: { relationshipXp: 40, relationshipMilestoneGold: 75 },
         prerequisites: ['social_active_listener'],
         position: { x: 400, y: 150 } // Top node
       },
@@ -861,7 +861,7 @@ export const PERK_TREES = {
         description: 'Introducing people gives +60 XP. Your network becomes exponential',
         effect: { connectionXp: 60, networkEffect: 1.5 },
         prerequisites: ['social_charismatic', 'social_public_speaker', 'social_collaborator'],
-        position: { x: 400, y: 320 } // Returns to center (super hub)
+        position: { x: 400, y: 260 } // Above center hub
       },
 
       // === TIER 3: EXPERT (Outer influence nodes) ===
@@ -892,9 +892,9 @@ export const PERK_TREES = {
         name: 'Community Builder',
         tier: 'expert',
         level: 60,
-        type: 'unlock',
-        description: 'Building communities gives +300 XP. Create lasting impact',
-        effect: { communityXp: 300, unlockFeature: 'communityTracking' },
+        type: 'passive',
+        description: 'Building communities gives +300 XP and +75 gold. Create lasting impact',
+        effect: { communityXp: 300, communityGold: 75 },
         prerequisites: ['social_influencer'],
         position: { x: 560, y: 180 } // Upper-right influence
       },
@@ -920,7 +920,7 @@ export const PERK_TREES = {
         description: 'ULTIMATE: Triple social XP. Open any door. Connect with anyone. Limitless',
         effect: { socialXpMultiplier: 3, limitlessNetworking: true, globalXpBonus: 0.1 },
         prerequisites: ['social_mentor'],
-        position: { x: 400, y: 60 } // Legendary status
+        position: { x: 400, y: 20 } // Legendary status
       }
     ]
   },
@@ -949,8 +949,8 @@ export const PERK_TREES = {
         tier: 'novice',
         level: 5,
         type: 'passive',
-        description: 'Focused practice gives +25% XP. Track practice hours',
-        effect: { practiceXpBonus: 0.25, unlockFeature: 'practiceLog' },
+        description: 'Focused practice gives +25% XP and +10 gold per hour logged',
+        effect: { practiceXpBonus: 0.25, practiceGoldPerHour: 10 },
         prerequisites: ['craft_foundation'],
         position: { x: 400, y: 460 } // Handle middle
       },
@@ -981,9 +981,9 @@ export const PERK_TREES = {
         name: 'Portfolio Builder',
         tier: 'novice',
         level: 15,
-        type: 'unlock',
-        description: 'Track projects. Completed projects give +200 XP',
-        effect: { projectXp: 200, unlockFeature: 'portfolioTracking' },
+        type: 'passive',
+        description: 'Completed projects give +200 XP and +50 gold',
+        effect: { projectXp: 200, projectGold: 50 },
         prerequisites: ['craft_consistency'],
         position: { x: 400, y: 280 } // Anvil center
       },
@@ -1027,9 +1027,9 @@ export const PERK_TREES = {
         name: 'Feedback Seeker',
         tier: 'adept',
         level: 35,
-        type: 'unlock',
-        description: 'Getting feedback gives +50 XP. Improve faster through critique',
-        effect: { feedbackXp: 50, unlockFeature: 'feedbackTracking' },
+        type: 'passive',
+        description: 'Getting feedback gives +50 XP and +25 gold. Improve faster through critique',
+        effect: { feedbackXp: 50, feedbackGold: 25 },
         prerequisites: ['craft_10000_hours'],
         position: { x: 400, y: 170 } // Rising to face
       },
@@ -1042,7 +1042,7 @@ export const PERK_TREES = {
         description: '2+ hour sessions give double XP. Enter creative flow state',
         effect: { flowMultiplier: 2, flowUnlocked: true },
         prerequisites: ['craft_specialist', 'craft_polymath', 'craft_feedback'],
-        position: { x: 400, y: 130 } // Hammer face
+        position: { x: 400, y: 150 } // Hammer face - moved down
       },
 
       // === TIER 3: EXPERT (Hammer head) ===
@@ -1055,7 +1055,7 @@ export const PERK_TREES = {
         description: 'KEYSTONE: All practice gives +100% XP. Quality over quantity',
         effect: { craftXpMultiplier: 2, qualityFocus: true },
         prerequisites: ['craft_creative'],
-        position: { x: 400, y: 90 } // Hammer top
+        position: { x: 400, y: 100 } // Hammer top
       },
       {
         id: 'craft_teaching',
@@ -1066,7 +1066,7 @@ export const PERK_TREES = {
         description: 'Teaching your craft gives +30% SOCIAL XP. Best way to learn',
         effect: { socialXpBonus: 0.3, teachingMode: true },
         prerequisites: ['craft_expert'],
-        position: { x: 280, y: 80 } // Left spark
+        position: { x: 250, y: 60 } // Left spark - spread wider
       },
       {
         id: 'craft_innovation',
@@ -1077,7 +1077,7 @@ export const PERK_TREES = {
         description: 'Creating original work gives +300 XP. Push boundaries',
         effect: { innovationXp: 300, innovationMode: true },
         prerequisites: ['craft_expert'],
-        position: { x: 520, y: 80 } // Right spark
+        position: { x: 550, y: 60 } // Right spark - spread wider
       },
       {
         id: 'craft_professional',
@@ -1088,7 +1088,7 @@ export const PERK_TREES = {
         description: 'Monetizing your craft gives +25% WEALTH XP. Turn passion into profit',
         effect: { wealthXpBonus: 0.25, professionalMode: true },
         prerequisites: ['craft_teaching', 'craft_innovation'],
-        position: { x: 400, y: 120 } // Upper center convergence
+        position: { x: 400, y: 55 } // Upper center convergence - more spacing
       },
 
       // === TIER 4: MASTER (Crown/masterwork) ===
@@ -1101,7 +1101,7 @@ export const PERK_TREES = {
         description: 'ULTIMATE: Triple craft XP. World-class skill. Leave a legacy',
         effect: { craftXpMultiplier: 3, worldClass: true, globalXpBonus: 0.15 },
         prerequisites: ['craft_professional'],
-        position: { x: 400, y: 60 } // Masterwork crown
+        position: { x: 400, y: -25 } // Masterwork crown - higher up
       }
     ]
   }

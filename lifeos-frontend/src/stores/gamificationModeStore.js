@@ -2,39 +2,32 @@
  * Gamification Mode Store
  *
  * Controls the presentation layer of gamification elements without affecting
- * the underlying progression mechanics. Three modes available:
+ * the underlying progression mechanics. Two modes available:
  *
- * - COSMIC: Full RPG experience with pixel art, fantasy names, pets
- * - PROFESSIONAL: Same mechanics with neutral, business-friendly terminology
- * - MINIMAL: Data-focused view with hidden game elements (bonuses still apply)
+ * - COSMIC: Full RPG experience with pixel art, fantasy names, pets, celebrations
+ * - MINIMAL: Data-focused view with hidden game elements (bonuses still apply silently)
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// Mode definitions
+// Mode definitions (simplified to 2 modes: full RPG or minimal data view)
 export const GAMIFICATION_MODES = {
   cosmic: {
     id: 'cosmic',
-    name: 'Cosmic',
-    description: 'Full RPG experience with avatars, pets, and fantasy elements',
+    name: 'Full Experience',
+    description: 'Complete RPG experience with avatars, companions, equipment, and celebrations',
     icon: 'Sparkles',
-  },
-  professional: {
-    id: 'professional',
-    name: 'Professional',
-    description: 'Clean progress tracking with business-friendly terminology',
-    icon: 'Briefcase',
   },
   minimal: {
     id: 'minimal',
     name: 'Minimal',
-    description: 'Data-focused view with hidden game elements',
+    description: 'Clean data-focused view - gamification bonuses still apply silently',
     icon: 'BarChart2',
   },
 };
 
-// Terminology mappings for Professional mode
+// Terminology mappings for each mode
 export const TERMINOLOGY = {
   cosmic: {
     // XP & Levels
@@ -46,10 +39,12 @@ export const TERMINOLOGY = {
     // Currency
     currency: 'Cosmic Credits',
     currencyShort: 'CC',
+    credits: 'credits',
 
     // Avatar
     avatar: 'Avatar',
-    evolution: 'Evolution',
+    evolution: 'Cosmic Evolution',
+    stage: 'Stage',
     tier: 'Tier',
     prestige: 'Prestige',
     realm: 'Realm',
@@ -100,72 +95,8 @@ export const TERMINOLOGY = {
     prestigeRealm1: 'Cosmic Ascension',
     prestigeRealm2: 'Transcendent',
   },
-  professional: {
-    // XP & Levels
-    xp: 'Points',
-    level: 'Milestone',
-    levelUp: 'Milestone Reached!',
-    experience: 'Progress',
-
-    // Currency
-    currency: 'Progress Points',
-    currencyShort: 'PP',
-
-    // Avatar
-    avatar: 'Profile',
-    evolution: 'Growth Stage',
-    tier: 'Level',
-    prestige: 'Mastery',
-    realm: 'Stage',
-
-    // Equipment
-    equipment: 'Boosters',
-    inventory: 'Booster Library',
-    equip: 'Activate',
-    unequip: 'Deactivate',
-    rarity: 'Tier',
-    stats: 'Metrics',
-
-    // Rarity names
-    rarityCommon: 'Basic',
-    rarityUncommon: 'Standard',
-    rarityRare: 'Advanced',
-    rarityEpic: 'Premium',
-    rarityLegendary: 'Elite',
-
-    // Pets
-    pets: 'Focus Boosters',
-    petCodex: 'Booster Catalog',
-    companion: 'Booster',
-    activeCompanions: 'Active Boosters',
-
-    // Skills
-    skillTree: 'Growth Map',
-    perk: 'Skill',
-    perks: 'Skills',
-
-    // Progress
-    streak: 'Consistency',
-    streakShield: 'Buffer Day',
-    quest: 'Goal',
-    mission: 'Objective',
-    achievement: 'Accomplishment',
-    milestone: 'Milestone',
-
-    // Stats
-    strength: 'Physical',
-    vitality: 'Energy',
-    intelligence: 'Learning',
-    wisdom: 'Focus',
-    defense: 'Resilience',
-
-    // Prestige names
-    prestigeRealm0: 'Foundation',
-    prestigeRealm1: 'Advanced',
-    prestigeRealm2: 'Expert',
-  },
   minimal: {
-    // Same as professional but even more neutral
+    // Clean data-focused view - neutral terminology
     xp: 'Points',
     level: 'Level',
     levelUp: 'New Level',
@@ -173,9 +104,11 @@ export const TERMINOLOGY = {
 
     currency: 'Points',
     currencyShort: 'pts',
+    credits: 'points',
 
     avatar: 'Profile',
     evolution: 'Stage',
+    stage: 'Level',
     tier: 'Level',
     prestige: 'Tier',
     realm: 'Tier',
@@ -240,46 +173,34 @@ export const VISIBILITY = {
     showLevelUpAnimation: true,
     showParticleEffects: true,
     showRarityGlow: true,
-  },
-  professional: {
-    showAvatar: true,
-    showAvatarEffects: false, // No particle effects
-    showPets: true,
-    showPetSprites: false, // Show as icons instead
-    showEquipment: true,
-    showEquipmentEffects: false, // No glow effects
-    showSkillTree: true,
-    showConstellationEffects: false, // Simplified view
-    showXPBar: true,
-    showLevel: true,
-    showStreaks: true,
-    showStreakFlame: false, // Show as number only
-    showAchievementPopups: true,
-    showLevelUpAnimation: false, // Subtle notification instead
-    showParticleEffects: false,
-    showRarityGlow: false,
+    showEvolutionGallery: true, // Full RPG evolution showcase
+    showBazaar: true, // Fantasy marketplace
+    showCharacterPage: true, // Full character page with avatar
   },
   minimal: {
-    showAvatar: false,
+    showAvatar: false, // Hide avatar completely
     showAvatarEffects: false,
-    showPets: false, // Hidden but bonuses apply
+    showPets: false, // Hide pets/companions UI (bonuses still apply)
     showPetSprites: false,
-    showEquipment: false, // Hidden but bonuses apply
+    showEquipment: false, // Hide equipment UI (bonuses still apply)
     showEquipmentEffects: false,
     showSkillTree: true, // Show as simple list
     showConstellationEffects: false,
-    showXPBar: true,
-    showLevel: true,
-    showStreaks: true,
+    showXPBar: false, // Hide XP bar
+    showLevel: true, // Show level number only
+    showStreaks: true, // Show streak count
     showStreakFlame: false,
     showAchievementPopups: false, // Silent
     showLevelUpAnimation: false,
     showParticleEffects: false,
     showRarityGlow: false,
+    showEvolutionGallery: false, // Hidden
+    showBazaar: false, // Hidden
+    showCharacterPage: false, // Redirect Character to simple stats view
   },
 };
 
-// Avatar stage name mappings (Cosmic -> Professional)
+// Avatar stage name mappings (Cosmic -> Professional -> Minimal)
 export const AVATAR_STAGE_NAMES = {
   cosmic: [
     // Act I
@@ -294,20 +215,6 @@ export const AVATAR_STAGE_NAMES = {
     // Act IV
     'Sword Saint', 'Phoenix Knight', 'Void Stalker', 'Celestial Guardian', 'Titan Slayer',
     'Elemental Lord', 'Immortal Champion', 'Godslayer', 'Ascendant', 'Avatar of Mastery',
-  ],
-  professional: [
-    // Act I - Foundation
-    'Beginner', 'Explorer', 'Learner', 'Developing', 'Growing',
-    'Establishing', 'Building', 'Progressing', 'Advancing', 'Improving',
-    // Act II - Development
-    'Capable', 'Dedicated', 'Skilled', 'Versatile', 'Balanced',
-    'Focused', 'Efficient', 'Strategic', 'Accomplished', 'Experienced',
-    // Act III - Mastery
-    'Specialist', 'Leader', 'Expert', 'Refined', 'Distinguished',
-    'Innovative', 'Influential', 'High Achiever', 'Peak Performer', 'Elite',
-    // Act IV - Excellence
-    'Master', 'Virtuoso', 'Luminary', 'Visionary', 'Trailblazer',
-    'Pioneer', 'Legendary', 'Transcendent', 'Ultimate', 'Perfected',
   ],
   minimal: [
     // Simple numbered stages
@@ -347,37 +254,6 @@ export const EQUIPMENT_NAMES = {
     badge_performance: 'Peak Performance Badge',
     badge_scholar: 'Scholar Emblem',
     badge_cosmic: 'Cosmic Achievement Medal',
-  },
-  professional: {
-    // Helmets
-    helmet_basic: 'Focus Aid',
-    helmet_iron: 'Concentration Boost',
-    helmet_hud: 'Analytics Display',
-    helmet_neural: 'Cognitive Enhancer',
-    helmet_omniscient: 'Master Focus',
-    // Suits
-    suit_basic: 'Basic Wellness',
-    suit_reinforced: 'Enhanced Wellness',
-    suit_biometric: 'Health Monitor',
-    suit_adaptive: 'Adaptive Performance',
-    suit_cosmic: 'Peak Optimization',
-    // Backpacks
-    backpack_basic: 'Basic Storage',
-    backpack_endurance: 'Stamina Boost',
-    backpack_quantum: 'Capacity Expander',
-    backpack_universe: 'Full Overview',
-    // Tools
-    tool_scanner: 'Basic Tracker',
-    tool_tablet: 'Data Manager',
-    tool_planner: 'Advanced Planner',
-    tool_predictor: 'Trend Analyzer',
-    tool_dilation: 'Time Optimizer',
-    tool_analyzer: 'Complete Analytics',
-    // Badges
-    badge_productivity: 'Productivity Award',
-    badge_performance: 'Performance Award',
-    badge_scholar: 'Learning Award',
-    badge_cosmic: 'Excellence Award',
   },
   minimal: {
     // Generic names
@@ -427,23 +303,6 @@ export const PET_NAMES = {
     jormungandr: 'Jörmungandr',
     leviathan: 'Leviathan',
   },
-  professional: {
-    kitsune_pup: 'Learning Boost',
-    imp: 'Task Completion Boost',
-    scarab: 'Workout Boost',
-    griffin_chick: 'Focus Session Boost',
-    tanuki: 'Skill Practice Boost',
-    domovoi: 'Reflection Boost',
-    azure_dragon: 'Time Management Boost',
-    pegasus: 'Creative Project Boost',
-    anubis_jackal: 'Study Session Boost',
-    nine_tailed_kitsune: 'All Learning Boost',
-    phoenix: 'Universal Boost',
-    fenghuang: 'Multi-Module Boost',
-    fenrir_pup: 'Achievement Boost',
-    jormungandr: 'Weekly Completion Boost',
-    leviathan: 'Mastery Boost',
-  },
   minimal: {
     kitsune_pup: '+5% Learning',
     imp: '+5% Tasks',
@@ -474,9 +333,9 @@ export const useGamificationModeStore = create(
       visibilityOverrides: {},
 
       // Actions
-      setMode: (mode) => {
-        if (GAMIFICATION_MODES[mode]) {
-          set({ mode, visibilityOverrides: {} });
+      setMode: (newMode) => {
+        if (GAMIFICATION_MODES[newMode]) {
+          set({ mode: newMode, visibilityOverrides: {} });
         }
       },
 
@@ -513,22 +372,25 @@ export const useGamificationModeStore = create(
       // Get term based on current mode
       getTerm: (key) => {
         const mode = get().mode;
-        return TERMINOLOGY[mode][key] || TERMINOLOGY.cosmic[key] || key;
+        const modeTerms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
+        return modeTerms[key] || TERMINOLOGY.cosmic[key] || key;
       },
 
       // Get visibility setting (with override support)
       isVisible: (key) => {
         const mode = get().mode;
         const overrides = get().visibilityOverrides;
-        return overrides[key] ?? VISIBILITY[mode][key] ?? true;
+        const modeVisibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+        return overrides[key] ?? modeVisibility[key] ?? true;
       },
 
       // Get all visibility settings for current mode
       getVisibilitySettings: () => {
         const mode = get().mode;
         const overrides = get().visibilityOverrides;
+        const modeVisibility = VISIBILITY[mode] || VISIBILITY.cosmic;
         return {
-          ...VISIBILITY[mode],
+          ...modeVisibility,
           ...overrides,
         };
       },
@@ -536,27 +398,31 @@ export const useGamificationModeStore = create(
       // Get avatar stage name for current mode
       getAvatarStageName: (stageIndex) => {
         const mode = get().mode;
-        const names = AVATAR_STAGE_NAMES[mode];
-        return names[stageIndex] || names[names.length - 1];
+        const names = AVATAR_STAGE_NAMES[mode] || AVATAR_STAGE_NAMES.cosmic;
+        const index = Math.max(0, Math.min(stageIndex || 0, names.length - 1));
+        return names[index] || names[0] || 'Adventurer';
       },
 
       // Get equipment name for current mode
       getEquipmentName: (equipmentId) => {
         const mode = get().mode;
-        return EQUIPMENT_NAMES[mode][equipmentId] || EQUIPMENT_NAMES.cosmic[equipmentId] || equipmentId;
+        const modeNames = EQUIPMENT_NAMES[mode] || EQUIPMENT_NAMES.cosmic;
+        return modeNames[equipmentId] || EQUIPMENT_NAMES.cosmic[equipmentId] || equipmentId;
       },
 
       // Get pet name for current mode
       getPetName: (petId) => {
         const mode = get().mode;
-        return PET_NAMES[mode][petId] || PET_NAMES.cosmic[petId] || petId;
+        const modeNames = PET_NAMES[mode] || PET_NAMES.cosmic;
+        return modeNames[petId] || PET_NAMES.cosmic[petId] || petId;
       },
 
       // Get rarity name for current mode
       getRarityName: (rarity) => {
         const mode = get().mode;
         const key = `rarity${rarity.charAt(0).toUpperCase() + rarity.slice(1)}`;
-        return TERMINOLOGY[mode][key] || rarity;
+        const modeTerms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
+        return modeTerms[key] || rarity;
       },
 
       // Check if in a specific mode
@@ -564,9 +430,6 @@ export const useGamificationModeStore = create(
 
       // Check if cosmic mode (full gamification)
       isCosmic: () => get().mode === 'cosmic',
-
-      // Check if professional mode
-      isProfessional: () => get().mode === 'professional',
 
       // Check if minimal mode
       isMinimal: () => get().mode === 'minimal',

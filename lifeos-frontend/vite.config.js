@@ -21,13 +21,6 @@ export default defineConfig({
             return 'lucide';
           }
 
-          // Three.js and 3D - only used in demos, lazy loaded
-          if (id.includes('node_modules/three') ||
-              id.includes('node_modules/@react-three') ||
-              id.includes('node_modules/@react-spring/three')) {
-            return 'three-vendor';
-          }
-
           // D3 - charts and visualizations
           if (id.includes('node_modules/d3')) {
             return 'd3-vendor';
@@ -118,10 +111,20 @@ export default defineConfig({
       'date-fns'
     ],
     // Exclude heavy deps that are lazy loaded
-    exclude: ['three', '@react-three/fiber', '@react-three/drei', 'd3']
+    exclude: ['d3']
   },
   // Enable CSS code splitting
   css: {
     devSourcemap: true
+  },
+  // Proxy API requests to backend server in development
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   }
 })

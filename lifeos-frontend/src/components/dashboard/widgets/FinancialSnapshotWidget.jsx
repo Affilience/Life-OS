@@ -121,7 +121,7 @@ export default function FinancialSnapshotWidget() {
                   <span className={`text-xs font-medium ${
                     transaction.type === 'income' ? 'text-green-400' : 'text-red-400'
                   }`}>
-                    {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(0)}
+                    {transaction.type === 'income' ? '+' : '-'}${(transaction.amount || 0).toFixed(0)}
                   </span>
                 </div>
               ))}

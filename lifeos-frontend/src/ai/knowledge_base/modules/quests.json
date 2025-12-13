@@ -1,0 +1,60 @@
+{
+  "name": "Quests & Missions",
+  "route": "/missions",
+  "navigation": "Sidebar → Quests (flag icon)",
+  "purpose": "Track daily quests, achievements, streaks, and gamified goals.",
+  "tabs": [
+    {
+      "name": "Daily Quests",
+      "description": "Daily challenges that reset each day"
+    },
+    {
+      "name": "Achievements",
+      "description": "Unlockable badges for milestones and accomplishments"
+    },
+    {
+      "name": "Streaks",
+      "description": "Track consecutive day streaks for habits"
+    }
+  ],
+  "quest_types": [
+    {
+      "name": "Daily Quests",
+      "description": "Small daily tasks like 'Log a meal' or 'Complete 3 tasks'",
+      "rewards": "Small XP rewards, reset daily"
+    },
+    {
+      "name": "Weekly Challenges",
+      "description": "Larger weekly goals like 'Workout 5 times' or 'Read 100 pages'",
+      "rewards": "Medium XP rewards"
+    },
+    {
+      "name": "Achievements",
+      "description": "One-time unlocks for milestones like '30-day streak' or 'First workout'",
+      "rewards": "Badges, equipment, large XP"
+    }
+  ],
+  "streak_system": {
+    "description": "Track consecutive days of completing specific activities",
+    "examples": ["Workout Streak", "Journal Streak", "Reading Streak", "Task Completion Streak"],
+    "bonuses": "Longer streaks provide XP multipliers"
+  },
+  "data_tracked": [
+    "Active quests and progress",
+    "Completed quests",
+    "Achievements unlocked",
+    "Streak counts and history"
+  ],
+  "common_user_actions": [
+    "Check daily quests",
+    "View my streaks",
+    "See achievements",
+    "Check streak status",
+    "View quest rewards"
+  ],
+  "related_modules": [
+    "All modules - Activities complete quest objectives",
+    "Character - Quest rewards include equipment",
+    "Dashboard - Streaks shown in widget"
+  ]
+}

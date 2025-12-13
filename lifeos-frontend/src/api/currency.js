@@ -68,7 +68,7 @@ export function useSpendCredits() {
       // First check if user has enough credits
       const { data: currency } = await supabase
         .from('user_cosmic_currency')
-        .select('cosmic_credits')
+        .select('cosmic_credits, lifetime_credits_spent')
         .eq('user_id', user.id)
         .single();
 
@@ -81,7 +81,7 @@ export function useSpendCredits() {
         .from('user_cosmic_currency')
         .update({
           cosmic_credits: currency.cosmic_credits - amount,
-          lifetime_credits_spent: supabase.rpc('increment', { x: amount }),
+          lifetime_credits_spent: (currency.lifetime_credits_spent || 0) + amount,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', user.id)

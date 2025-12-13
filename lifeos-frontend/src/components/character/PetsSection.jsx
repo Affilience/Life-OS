@@ -544,12 +544,12 @@ function PetDetailModal({ pet, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: 'rgba(0, 0, 0, 0.9)', backdropFilter: 'blur(12px)' }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-xl overflow-hidden"
+        className="w-full sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] rounded-t-xl sm:rounded-xl overflow-hidden flex flex-col"
         style={{
           background: 'rgba(24, 24, 27, 0.98)',
           border: `2px solid ${tierColor}`,
@@ -587,12 +587,12 @@ function PetDetailModal({ pet, onClose }) {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Image */}
           <div className="flex justify-center">
             <div
-              className="w-48 h-48 rounded-xl flex items-center justify-center"
+              className="w-32 h-32 sm:w-48 sm:h-48 rounded-xl flex items-center justify-center"
               style={{
                 background: `${tierColor}10`,
                 border: `2px solid ${tierColor}40`,
@@ -605,7 +605,7 @@ function PetDetailModal({ pet, onClose }) {
                   className="w-full h-full object-contain pixelated p-4"
                 />
               ) : (
-                <Lock className="w-24 h-24" style={{ color: 'rgba(255, 255, 255, 0.2)' }} />
+                <Lock className="w-16 h-16 sm:w-24 sm:h-24" style={{ color: 'rgba(255, 255, 255, 0.2)' }} />
               )}
             </div>
           </div>
@@ -617,7 +617,7 @@ function PetDetailModal({ pet, onClose }) {
                 <h3 className="text-sm font-semibold mb-2" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
                   Description
                 </h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.87)' }}>{pet.description}</p>
+                <p className="text-sm sm:text-base" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>{pet.description}</p>
               </div>
 
               {/* Lore */}
@@ -625,14 +625,14 @@ function PetDetailModal({ pet, onClose }) {
                 <h3 className="text-sm font-semibold mb-2" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
                   Lore
                 </h3>
-                <p className="italic" style={{ color: 'rgba(255, 255, 255, 0.70)' }}>
+                <p className="italic text-sm sm:text-base" style={{ color: 'rgba(255, 255, 255, 0.70)' }}>
                   {pet.lore}
                 </p>
               </div>
 
               {/* Bonus */}
               <div
-                className="p-4 rounded-lg"
+                className="p-3 sm:p-4 rounded-lg"
                 style={{
                   background: `${tierColor}10`,
                   border: `1px solid ${tierColor}40`,
@@ -644,38 +644,43 @@ function PetDetailModal({ pet, onClose }) {
                     Companion Bonus
                   </span>
                 </div>
-                <p className="font-bold" style={{ color: tierColor }}>
+                <p className="font-bold text-sm sm:text-base" style={{ color: tierColor }}>
                   {pet.bonusDescription}
                 </p>
               </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => equipPet(pet.id)}
-                  className="flex-1 px-6 py-3 rounded-lg font-semibold"
-                  style={{
-                    background: active ? 'rgba(239, 68, 68, 0.2)' : tierColor,
-                    color: active ? '#ef4444' : '#fff',
-                    border: active ? '1px solid #ef4444' : 'none',
-                  }}
-                >
-                  {active ? 'Unequip' : 'Equip Companion'}
-                </button>
-              </div>
             </>
           ) : (
-            <div className="text-center py-8">
-              <Lock className="w-16 h-16 mx-auto mb-4" style={{ color: 'rgba(255, 255, 255, 0.2)' }} />
+            <div className="text-center py-4 sm:py-8">
+              <Lock className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" style={{ color: 'rgba(255, 255, 255, 0.2)' }} />
               <h3 className="text-lg font-bold mb-2" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
                 Locked
               </h3>
-              <p className="mb-4" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
+              <p className="text-sm sm:text-base mb-4" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
                 {pet.unlockDescription}
               </p>
             </div>
           )}
         </div>
+
+        {/* Fixed Actions Footer - Always visible */}
+        {unlocked && (
+          <div
+            className="flex-shrink-0 p-4 sm:p-6 border-t"
+            style={{ borderColor: `${tierColor}40`, background: 'rgba(24, 24, 27, 0.98)' }}
+          >
+            <button
+              onClick={() => equipPet(pet.id)}
+              className="w-full px-6 py-3 sm:py-4 rounded-lg font-semibold text-sm sm:text-base"
+              style={{
+                background: active ? 'rgba(239, 68, 68, 0.2)' : tierColor,
+                color: active ? '#ef4444' : '#fff',
+                border: active ? '1px solid #ef4444' : 'none',
+              }}
+            >
+              {active ? 'Unequip' : 'Equip Companion'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

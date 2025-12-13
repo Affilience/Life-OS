@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   PieChart,
   Pie,
@@ -7,16 +7,26 @@ import {
   Legend,
   Tooltip
 } from 'recharts';
+import { useFinancialStore, ENVELOPE_CATEGORIES } from '../../../stores/financialStore';
 
-// Mock expense data by category
-const data = [
-  { name: 'Food & Dining', value: 450, color: '#ff6b6b' },
-  { name: 'Transport', value: 200, color: '#4ecdc4' },
-  { name: 'Bills & Utilities', value: 380, color: '#45b7d1' },
-  { name: 'Health & Fitness', value: 120, color: '#96ceb4' },
-  { name: 'Learning', value: 150, color: '#ffeaa7' },
-  { name: 'Discretionary', value: 120, color: '#fd79a8' }
-];
+// Category colors mapping
+const CATEGORY_COLORS = {
+  food: '#ff6b6b',
+  transportation: '#4ecdc4',
+  utilities: '#45b7d1',
+  health: '#96ceb4',
+  education: '#ffeaa7',
+  dining: '#fd79a8',
+  entertainment: '#a29bfe',
+  shopping: '#74b9ff',
+  housing: '#81ecec',
+  insurance: '#dfe6e9',
+  subscriptions: '#b2bec3',
+  personal: '#fab1a0',
+  travel: '#00b894',
+  gifts: '#e84393',
+  other: '#636e72'
+};
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({
@@ -63,6 +73,66 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function CategoryBreakdownChart() {
+  // Connect to store
+  const { transactions, selectedPeriod } = useFinancialStore();
+
+  // Calculate category breakdown from transactions
+  const data = useMemo(() => {
+    // Get date filter based on selected period
+    const now = new Date();
+    let periodStart = new Date(0); // All time default
+
+    if (selectedPeriod === 'week') {
+      periodStart = new Date(now);
+      periodStart.setDate(now.getDate() - 7);
+    } else if (selectedPeriod === 'month') {
+      periodStart = new Date(now);
+      periodStart.setMonth(now.getMonth() - 1);
+    } else if (selectedPeriod === 'year') {
+      periodStart = new Date(now);
+      periodStart.setFullYear(now.getFullYear() - 1);
+    }
+
+    // Aggregate expenses by category
+    const categoryTotals = {};
+    (transactions || []).forEach(txn => {
+      if (txn.type === 'expense' && txn.date) {
+        const txnDate = new Date(txn.date);
+        if (txnDate >= periodStart) {
+          const category = txn.category || 'other';
+          if (!categoryTotals[category]) {
+            categoryTotals[category] = 0;
+          }
+          categoryTotals[category] += Math.abs(txn.amount || 0);
+        }
+      }
+    });
+
+    // Build chart data
+    return Object.entries(categoryTotals)
+      .filter(([_, value]) => value > 0)
+      .map(([categoryId, value]) => {
+        const categoryConfig = ENVELOPE_CATEGORIES[categoryId] || {};
+        const name = categoryConfig.name || categoryId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return {
+          name,
+          value: Math.round(value),
+          color: CATEGORY_COLORS[categoryId] || '#636e72'
+        };
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6); // Top 6 categories
+  }, [transactions, selectedPeriod]);
+
+  // If no data, show placeholder
+  if (data.length === 0) {
+    return (
+      <div className="chart-container flex items-center justify-center h-[300px]">
+        <p className="text-white/50 text-sm">No expense data to display</p>
+      </div>
+    );
+  }
+
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const dataWithTotal = data.map(item => ({ ...item, total }));
 

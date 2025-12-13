@@ -7,6 +7,10 @@
   padding-top: 2rem;
   padding-bottom: 6rem;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* Dashboard Header */
@@ -562,6 +566,10 @@
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 1rem;
   padding: 2rem;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .workout-analytics-section .section-header {

@@ -4,6 +4,13 @@
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+/* Ensure SimpleJournalBook fills available space */
+.journal-book-page > .simple-journal-container {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Top Bar */

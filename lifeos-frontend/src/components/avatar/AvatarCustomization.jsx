@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAvatarStore } from '../../stores/avatarStore';
+import { useGamificationStore } from '../../stores/gamificationStore';
 import { EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, getEquipmentBySlot, EQUIPMENT_RARITY } from '../../data/avatarData';
+import { calculateXPForLevel } from '../../data/avatarEvolution';
 import AvatarRenderer from './AvatarRenderer';
 import { X, Lock, Check, Star, TrendingUp } from 'lucide-react';
 import './AvatarCustomization.css';
@@ -21,12 +23,15 @@ export default function AvatarCustomization({ onClose }) {
     getCurrentTierData,
   } = useAvatarStore();
 
+  // Get XP info from gamification store (uses exponential scaling)
+  const { currentXP, xpToNextLevel } = useGamificationStore();
+
   const tierData = getCurrentTierData();
   const slotEquipment = getEquipmentBySlot(selectedSlot);
 
-  // Calculate XP to next level
-  const xpNeeded = level * 100;
-  const xpProgress = (xp / xpNeeded) * 100;
+  // Calculate XP to next level (exponential scaling)
+  const xpNeeded = xpToNextLevel || calculateXPForLevel(level);
+  const xpProgress = (currentXP / xpNeeded) * 100;
 
   const handleEquip = (itemId) => {
     equipItem(selectedSlot, itemId);

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { supabase } from '../../lib/supabase';
 import { EmptyState } from '../ui';
+import { useGamificationModeStore, TERMINOLOGY } from '../../stores/gamificationModeStore';
 import './EquipmentInventory.css';
 
 // Rarity definitions
@@ -19,37 +20,18 @@ const DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true';
 
 // Helper function to get sprite URL from item
 const getItemSpriteUrl = (item) => {
-  if (!item) {
-    console.warn('getItemSpriteUrl: No item provided');
-    return null;
-  }
-
-  console.log('Processing item:', {
-    name: item.name,
-    image_path: item.image_path,
-    sprite_url: item.sprite_url,
-    slot: item.slot
-  });
+  if (!item) return null;
 
   // Priority 1: Use image_path from database (preferred)
-  if (item.image_path) {
-    console.log(`✓ Using image_path for "${item.name}":`, item.image_path);
-    return item.image_path;
-  }
+  if (item.image_path) return item.image_path;
 
   // Priority 2: Use sprite_url if available
-  if (item.sprite_url) {
-    console.log(`✓ Using sprite_url for "${item.name}":`, item.sprite_url);
-    return item.sprite_url;
-  }
+  if (item.sprite_url) return item.sprite_url;
 
   // Priority 3: Fallback - construct URL from slug or name
   const slug = item.slug || item.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
   const slotFolder = item.slot === 'chest' ? 'chests' : `${item.slot}s`;
-  const url = `/assets/equipment/${slotFolder}/${slug}.png`;
-
-  console.warn(`⚠ No image_path found, generated URL for "${item.name}":`, url);
-  return url;
+  return `/assets/equipment/${slotFolder}/${slug}.png`;
 };
 
 export default function EquipmentInventory() {
@@ -61,6 +43,10 @@ export default function EquipmentInventory() {
     equipItem,
     unequipItem,
   } = useGamificationStore();
+
+  // Get gamification mode
+  const mode = useGamificationModeStore((state) => state.mode);
+  const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
 
   const [devEquipment, setDevEquipment] = useState([]);
   const [devEquippedItems, setDevEquippedItems] = useState([]);
@@ -182,15 +168,15 @@ export default function EquipmentInventory() {
         >
           ← Back
         </button>
-        <h2>⚔️ Equipment & Arsenal</h2>
-        <p className="subtitle">Equip items to boost your stats</p>
+        <h2>{mode === 'cosmic' ? '⚔️ Equipment & Arsenal' : `📊 ${terms.equipment}`}</h2>
+        <p className="subtitle">{mode === 'cosmic' ? 'Equip items to boost your stats' : `${terms.equip} items to boost your ${terms.stats.toLowerCase()}`}</p>
       </div>
 
       {/* Main Content */}
       <div className="inventory-content">
         {/* Top: Equipment Slots */}
         <div className="equipment-slots-panel">
-          <h3>Equipped Items</h3>
+          <h3>{mode === 'cosmic' ? 'Equipped Items' : `Active ${terms.equipment}`}</h3>
 
           <div className="slots-grid">
             {slots.map(slot => {
@@ -248,7 +234,7 @@ export default function EquipmentInventory() {
 
           {/* Stats Display */}
           <div className="stats-display">
-            <h4>Total Stats</h4>
+            <h4>Total {terms.stats}</h4>
             <div className="stats-grid">
               {Object.entries(stats).map(([stat, value]) => (
                 value > 0 && (
@@ -342,7 +328,7 @@ export default function EquipmentInventory() {
                       </div>
 
                       {isEquipped && (
-                        <div className="equipped-badge">✓ Equipped</div>
+                        <div className="equipped-badge">✓ {mode === 'cosmic' ? 'Equipped' : 'Active'}</div>
                       )}
                     </div>
                   );
@@ -350,8 +336,10 @@ export default function EquipmentInventory() {
               ) : (
                 <EmptyState
                   type="equipment"
-                  title="No items available for this slot"
-                  description="Complete quests, reach milestones, and unlock achievements to earn new equipment!"
+                  title={`No ${terms.equipment.toLowerCase()} available for this slot`}
+                  description={mode === 'cosmic'
+                    ? `Complete quests, reach milestones, and unlock achievements to earn new equipment!`
+                    : `Complete tasks, reach milestones, and unlock ${terms.achievement.toLowerCase()}s to earn new ${terms.equipment.toLowerCase()}!`}
                   variant="pink"
                   size="sm"
                 />
@@ -360,8 +348,10 @@ export default function EquipmentInventory() {
           ) : (
             <EmptyState
               type="equipment"
-              title="Select an equipment slot"
-              description="Choose a slot from your character to view and equip available items"
+              title={`Select ${mode === 'cosmic' ? 'an equipment slot' : 'a slot'}`}
+              description={mode === 'cosmic'
+                ? 'Choose a slot from your character to view and equip available items'
+                : `Choose a slot to view and ${terms.equip.toLowerCase()} available ${terms.equipment.toLowerCase()}`}
               variant="violet"
               size="sm"
             />

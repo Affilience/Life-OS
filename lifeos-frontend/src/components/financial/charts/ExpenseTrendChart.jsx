@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -9,20 +9,7 @@ import {
   ResponsiveContainer,
   ReferenceLine
 } from 'recharts';
-
-// Mock monthly expense data with budget
-const data = [
-  { month: 'Jan', amount: 1350, budget: 1400 },
-  { month: 'Feb', amount: 1280, budget: 1400 },
-  { month: 'Mar', amount: 1420, budget: 1400 },
-  { month: 'Apr', amount: 1310, budget: 1400 },
-  { month: 'May', amount: 1480, budget: 1400 },
-  { month: 'Jun', amount: 1390, budget: 1400 },
-  { month: 'Jul', amount: 1450, budget: 1400 },
-  { month: 'Aug', amount: 1380, budget: 1400 },
-  { month: 'Sep', amount: 1340, budget: 1400 },
-  { month: 'Oct', amount: 1420, budget: 1400 }
-];
+import { useFinancialStore } from '../../../stores/financialStore';
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null;
@@ -48,7 +35,58 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function ExpenseTrendChart() {
+  const { transactions, envelopeBudgets } = useFinancialStore();
+
+  // Calculate expense trend over time
+  const data = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const today = new Date();
+
+    // Build last 10 months
+    const monthlyData = [];
+    for (let i = 9; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+      // Get total budget for this month from envelopeBudgets
+      const monthBudgets = envelopeBudgets?.[monthKey] || {};
+      const totalBudget = Object.values(monthBudgets).reduce((sum, val) => sum + (val || 0), 0) || 1500;
+
+      monthlyData.push({
+        month: monthNames[d.getMonth()],
+        monthKey,
+        amount: 0,
+        budget: totalBudget
+      });
+    }
+
+    // Sum expenses by month
+    (transactions || []).forEach(txn => {
+      if (txn.type === 'expense' && txn.date) {
+        const txnMonthKey = txn.date.substring(0, 7);
+        const monthEntry = monthlyData.find(m => m.monthKey === txnMonthKey);
+        if (monthEntry) {
+          monthEntry.amount += Math.abs(txn.amount || 0);
+        }
+      }
+    });
+
+    return monthlyData.map(m => ({
+      month: m.month,
+      amount: Math.round(m.amount),
+      budget: m.budget
+    }));
+  }, [transactions, envelopeBudgets]);
+
   const avgBudget = data.reduce((sum, item) => sum + item.budget, 0) / data.length;
+
+  if (data.length === 0 || data.every(d => d.amount === 0)) {
+    return (
+      <div className="chart-container flex items-center justify-center h-[300px]">
+        <p className="text-white/50 text-sm">No expense data to display</p>
+      </div>
+    );
+  }
 
   return (
     <div className="chart-container">

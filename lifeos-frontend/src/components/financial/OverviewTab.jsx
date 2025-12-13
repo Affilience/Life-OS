@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense, useMemo } from 'react';
 import { Plus, TrendingUp, TrendingDown, DollarSign, PiggyBank, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
@@ -6,6 +6,7 @@ import SpendingTrendChart from './charts/SpendingTrendChart';
 import CategoryBreakdownChart from './charts/CategoryBreakdownChart';
 import BudgetVsActualChart from './charts/BudgetVsActualChart';
 import NetWorthChart from './charts/NetWorthChart';
+import { useFinancialStore } from '../../stores/financialStore';
 import './OverviewTab.css';
 
 // Lazy load modals
@@ -16,19 +17,34 @@ export default function OverviewTab() {
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
 
-  // Mock data
-  const monthlyData = {
-    income: 2850,
-    expenses: 1420,
-    net: 1430,
-    savingsRate: 50
-  };
+  // Connect to financial store
+  const {
+    getTotalIncome,
+    getTotalExpenses,
+    getNetIncome,
+    getNetWorth,
+    transactions
+  } = useFinancialStore();
 
-  const netWorth = {
-    current: 13005,
-    changeThisMonth: 1430,
-    changePercent: 12.3
-  };
+  // Calculate monthly data from store
+  const monthlyData = useMemo(() => {
+    const income = getTotalIncome();
+    const expenses = getTotalExpenses();
+    const net = income - expenses;
+    const savingsRate = income > 0 ? Math.round((net / income) * 100) : 0;
+
+    return { income, expenses, net, savingsRate };
+  }, [getTotalIncome, getTotalExpenses]);
+
+  // Calculate net worth from store
+  const netWorthData = useMemo(() => {
+    const current = getNetWorth();
+    // For change calculation, we'd need historical data - using monthly net as proxy
+    const changeThisMonth = monthlyData.net;
+    const changePercent = current > 0 ? Math.round((changeThisMonth / (current - changeThisMonth)) * 100 * 10) / 10 : 0;
+
+    return { current, changeThisMonth, changePercent: isFinite(changePercent) ? changePercent : 0 };
+  }, [getNetWorth, monthlyData.net]);
 
   return (
     <div className="overview-tab">
@@ -41,9 +57,8 @@ export default function OverviewTab() {
           <div className="summary-content">
             <div className="summary-label">Income This Month</div>
             <div className="summary-value">£{monthlyData.income.toLocaleString()}</div>
-            <div className="summary-change positive">
-              <TrendingUp size={14} />
-              <span>+12% from last month</span>
+            <div className="summary-meta">
+              {transactions.filter(t => t.type === 'income').length} transactions
             </div>
           </div>
         </Card>
@@ -55,9 +70,8 @@ export default function OverviewTab() {
           <div className="summary-content">
             <div className="summary-label">Expenses This Month</div>
             <div className="summary-value">£{monthlyData.expenses.toLocaleString()}</div>
-            <div className="summary-change negative">
-              <TrendingDown size={14} />
-              <span>+5% from last month</span>
+            <div className="summary-meta">
+              {transactions.filter(t => t.type === 'expense').length} transactions
             </div>
           </div>
         </Card>
@@ -81,11 +95,13 @@ export default function OverviewTab() {
           </div>
           <div className="summary-content">
             <div className="summary-label">Net Worth</div>
-            <div className="summary-value">£{netWorth.current.toLocaleString()}</div>
-            <div className="summary-change positive">
-              <TrendingUp size={14} />
-              <span>+£{netWorth.changeThisMonth} ({netWorth.changePercent}%)</span>
-            </div>
+            <div className="summary-value">£{netWorthData.current.toLocaleString()}</div>
+            {netWorthData.changeThisMonth !== 0 && (
+              <div className={`summary-change ${netWorthData.changeThisMonth >= 0 ? 'positive' : 'negative'}`}>
+                {netWorthData.changeThisMonth >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                <span>{netWorthData.changeThisMonth >= 0 ? '+' : ''}£{netWorthData.changeThisMonth.toLocaleString()} ({netWorthData.changePercent}%)</span>
+              </div>
+            )}
           </div>
         </Card>
       </div>
@@ -185,38 +201,28 @@ export default function OverviewTab() {
         </Card.Header>
 
         <div className="transactions-list">
-          <div className="transaction-item income">
-            <div className="transaction-icon">
-              <TrendingUp />
+          {transactions.length === 0 ? (
+            <div className="empty-state text-center py-6 text-white/50">
+              No transactions yet. Add your first income or expense above.
             </div>
-            <div className="transaction-info">
-              <div className="transaction-title">Client Payment</div>
-              <div className="transaction-meta">Oct 25 • Freelance</div>
-            </div>
-            <div className="transaction-amount positive">+£1,500</div>
-          </div>
-
-          <div className="transaction-item expense">
-            <div className="transaction-icon">
-              <TrendingDown />
-            </div>
-            <div className="transaction-info">
-              <div className="transaction-title">Gym Membership</div>
-              <div className="transaction-meta">Oct 24 • Health</div>
-            </div>
-            <div className="transaction-amount negative">-£35</div>
-          </div>
-
-          <div className="transaction-item income">
-            <div className="transaction-icon">
-              <TrendingUp />
-            </div>
-            <div className="transaction-info">
-              <div className="transaction-title">Product Sale</div>
-              <div className="transaction-meta">Oct 22 • Business</div>
-            </div>
-            <div className="transaction-amount positive">+£250</div>
-          </div>
+          ) : (
+            transactions.slice(0, 5).map((txn) => (
+              <div key={txn.id} className={`transaction-item ${txn.type}`}>
+                <div className="transaction-icon">
+                  {txn.type === 'income' ? <TrendingUp /> : <TrendingDown />}
+                </div>
+                <div className="transaction-info">
+                  <div className="transaction-title">{txn.description || txn.category}</div>
+                  <div className="transaction-meta">
+                    {new Date(txn.date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })} • {txn.category}
+                  </div>
+                </div>
+                <div className={`transaction-amount ${txn.type === 'income' ? 'positive' : 'negative'}`}>
+                  {txn.type === 'income' ? '+' : '-'}£{Math.abs(txn.amount).toLocaleString()}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </Card>
 

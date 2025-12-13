@@ -613,22 +613,24 @@
 }
 
 /* ===================================
-   ADD FAB
+   ADD FAB / BUTTON
    =================================== */
 
 .add-fab {
   position: fixed;
   bottom: 5rem;
   right: 1.5rem;
-  width: 52px;
-  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   border: none;
-  border-radius: 50%;
+  border-radius: 2rem;
   color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
   transition: all 200ms ease;
@@ -636,7 +638,16 @@
 }
 
 .add-fab:hover {
-  transform: scale(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.5);
+}
+
+.add-fab.book {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+}
+
+.add-fab.book:hover {
   box-shadow: 0 6px 24px rgba(139, 92, 246, 0.5);
 }
 
@@ -735,8 +746,8 @@
   .add-fab {
     bottom: 4.5rem;
     right: 1rem;
-    width: 48px;
-    height: 48px;
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
   }
 }
 

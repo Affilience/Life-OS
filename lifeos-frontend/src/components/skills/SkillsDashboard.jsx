@@ -1,63 +1,139 @@
-import React from 'react';
-import { TrendingUp, Target, Award, Zap, BookOpen, Code, Palette } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { TrendingUp, Target, Award, Zap, BookOpen, Code, Palette, Music, Brush, Wrench } from 'lucide-react';
 import MiniBarChart from '../shared/charts/MiniBarChart';
 import MiniLineChart from '../shared/charts/MiniLineChart';
 import StatCard from '../shared/charts/StatCard';
+import useSkillsStore from '../../stores/skillsStore';
+import { useGamificationStore } from '../../stores/gamificationStore';
+
+// Category to icon mapping
+const CATEGORY_ICONS = {
+  programming: Code,
+  design: Palette,
+  writing: BookOpen,
+  music: Music,
+  art: Brush,
+  default: Wrench
+};
+
+const CATEGORY_COLORS = {
+  programming: 'from-blue-500 to-cyan-500',
+  design: 'from-purple-500 to-pink-500',
+  writing: 'from-green-500 to-emerald-500',
+  music: 'from-orange-500 to-red-500',
+  art: 'from-pink-500 to-rose-500',
+  default: 'from-gray-500 to-gray-600'
+};
 
 export default function SkillsDashboard() {
-  // Mock data
-  const practiceHoursData = [
-    { label: 'Mon', value: 2 },
-    { label: 'Tue', value: 3 },
-    { label: 'Wed', value: 1.5 },
-    { label: 'Thu', value: 4 },
-    { label: 'Fri', value: 2.5 },
-    { label: 'Sat', value: 5 },
-    { label: 'Sun', value: 3 },
-  ];
+  // Connect to stores
+  const { skills } = useSkillsStore();
+  const { recentEvents } = useGamificationStore();
 
-  const progressTrendData = [
-    { label: 'W1', value: 65 },
-    { label: 'W2', value: 68 },
-    { label: 'W3', value: 72 },
-    { label: 'W4', value: 75 },
-  ];
+  // Calculate real stats from store data
+  const stats = useMemo(() => {
+    const today = new Date();
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const activeSkills = [
-    {
-      name: 'React Development',
-      category: 'Programming',
-      level: 7,
-      progress: 75,
-      hours: 156,
-      icon: Code,
-      color: 'from-blue-500 to-cyan-500'
-    },
-    {
-      name: 'UI/UX Design',
-      category: 'Design',
-      level: 5,
-      progress: 58,
-      hours: 89,
-      icon: Palette,
-      color: 'from-purple-500 to-pink-500'
-    },
-    {
-      name: 'Technical Writing',
-      category: 'Writing',
-      level: 6,
-      progress: 67,
-      hours: 102,
-      icon: BookOpen,
-      color: 'from-green-500 to-emerald-500'
-    },
-  ];
+    // Get last 7 days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      last7Days.push(d.toISOString().split('T')[0]);
+    }
 
-  const recentAchievements = [
-    { title: 'Built First Full-Stack App', date: '2 days ago', xp: 500 },
-    { title: 'Completed Advanced Hooks Course', date: '5 days ago', xp: 300 },
-    { title: '30-Day Practice Streak', date: '1 week ago', xp: 250 },
-  ];
+    // Calculate practice hours per day from skill sessions
+    const practiceHoursData = last7Days.map(date => {
+      let totalMinutes = 0;
+      (skills || []).forEach(skill => {
+        const daySessions = (skill.sessions || []).filter(s => s.date?.startsWith(date));
+        totalMinutes += daySessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+      });
+      const dayOfWeek = new Date(date).getDay();
+      return { label: dayLabels[dayOfWeek], value: Math.round((totalMinutes / 60) * 10) / 10 };
+    });
+
+    // Total weekly practice hours
+    const weeklyHours = practiceHoursData.reduce((sum, d) => sum + d.value, 0);
+
+    // Calculate total all-time hours
+    const totalHours = (skills || []).reduce((sum, skill) => {
+      const skillHours = (skill.sessions || []).reduce((s, session) => s + (session.duration || 0), 0);
+      return sum + skillHours;
+    }, 0) / 60;
+
+    // Calculate progress trend (last 4 weeks)
+    const progressTrendData = [];
+    for (let w = 3; w >= 0; w--) {
+      const weekStart = new Date(today);
+      weekStart.setDate(weekStart.getDate() - (w * 7 + 7));
+      const weekEnd = new Date(today);
+      weekEnd.setDate(weekEnd.getDate() - (w * 7));
+
+      const avgProgress = (skills || []).length > 0
+        ? Math.round((skills || []).reduce((sum, s) => sum + (s.progress || 0), 0) / skills.length)
+        : 0;
+      progressTrendData.push({ label: `W${4 - w}`, value: avgProgress });
+    }
+
+    // Build active skills list
+    const activeSkills = (skills || []).slice(0, 5).map(skill => {
+      const category = (skill.category || 'default').toLowerCase();
+      const Icon = CATEGORY_ICONS[category] || CATEGORY_ICONS.default;
+      const color = CATEGORY_COLORS[category] || CATEGORY_COLORS.default;
+      const hours = (skill.sessions || []).reduce((sum, s) => sum + (s.duration || 0), 0) / 60;
+
+      return {
+        name: skill.name || 'Skill',
+        category: skill.category || 'General',
+        level: skill.level || 1,
+        progress: skill.progress || 0,
+        hours: Math.round(hours),
+        icon: Icon,
+        color
+      };
+    });
+
+    // Calculate mastered skills (level >= 10)
+    const masteredCount = (skills || []).filter(s => (s.level || 0) >= 10).length;
+
+    // Average progress across all skills
+    const avgProgress = (skills || []).length > 0
+      ? Math.round((skills || []).reduce((sum, s) => sum + (s.progress || 0), 0) / skills.length)
+      : 0;
+
+    // Recent achievements from gamification events
+    const achievementEvents = (recentEvents || [])
+      .filter(e => e.eventType === 'achievement_unlocked' || e.eventType === 'xp_gained')
+      .slice(0, 3)
+      .map(e => {
+        const eventDate = new Date(e.timestamp);
+        const diffDays = Math.floor((today - eventDate) / (1000 * 60 * 60 * 24));
+        const dateStr = diffDays === 0 ? 'Today' : diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
+        return {
+          title: e.eventData?.title || e.eventData?.reason || 'Achievement',
+          date: dateStr,
+          xp: e.eventData?.amount || e.eventData?.xp || 100
+        };
+      });
+
+    return {
+      practiceHoursData,
+      weeklyHours: Math.round(weeklyHours * 10) / 10,
+      totalHours: Math.round(totalHours),
+      progressTrendData,
+      activeSkills: activeSkills.length > 0 ? activeSkills : [
+        { name: 'Add your first skill', category: 'Get Started', level: 1, progress: 0, hours: 0, icon: Target, color: 'from-gray-500 to-gray-600' }
+      ],
+      skillCount: (skills || []).length,
+      masteredCount,
+      avgProgress,
+      recentAchievements: achievementEvents.length > 0 ? achievementEvents : [
+        { title: 'Start practicing to earn achievements!', date: 'Get started', xp: 0 }
+      ]
+    };
+  }, [skills, recentEvents]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0614] via-[#0a0a0a] to-[#0a0a0a] pb-20">
@@ -79,34 +155,34 @@ export default function SkillsDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
             title="Active Skills"
-            value="5"
+            value={String(stats.skillCount)}
             subtitle="in progress"
-            trend="up"
-            trendValue="+2 new"
+            trend={stats.skillCount > 0 ? "up" : "neutral"}
+            trendValue={stats.skillCount > 0 ? "tracking" : ""}
             icon={Target}
             color="cyan"
           />
           <StatCard
             title="Total Hours"
-            value="347h"
+            value={`${stats.totalHours}h`}
             subtitle="all time"
-            trend="up"
-            trendValue="+21h"
+            trend={stats.totalHours > 0 ? "up" : "neutral"}
+            trendValue={stats.weeklyHours > 0 ? `+${stats.weeklyHours}h this week` : ""}
             icon={Zap}
             color="blue"
           />
           <StatCard
             title="Avg Progress"
-            value="68%"
+            value={`${stats.avgProgress}%`}
             subtitle="across skills"
-            trend="up"
-            trendValue="+5%"
+            trend={stats.avgProgress > 50 ? "up" : "neutral"}
+            trendValue=""
             icon={TrendingUp}
             color="green"
           />
           <StatCard
             title="Mastered"
-            value="2"
+            value={String(stats.masteredCount)}
             subtitle="skills"
             icon={Award}
             color="yellow"
@@ -124,12 +200,12 @@ export default function SkillsDashboard() {
               <p className="text-xs text-white/60 mt-1">Daily deliberate practice</p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-white">21h</div>
+              <div className="text-2xl font-bold text-white">{stats.weeklyHours}h</div>
               <div className="text-xs text-white/60">total</div>
             </div>
           </div>
           <div className="h-32">
-            <MiniBarChart data={practiceHoursData} color="cyan" showValues maxHeight={120} />
+            <MiniBarChart data={stats.practiceHoursData} color="cyan" showValues maxHeight={120} />
           </div>
         </div>
 
@@ -144,12 +220,12 @@ export default function SkillsDashboard() {
               <p className="text-xs text-white/60 mt-1">Average skill progression</p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-white">75%</div>
+              <div className="text-2xl font-bold text-white">{stats.avgProgress}%</div>
               <div className="text-xs text-white/60">current avg</div>
             </div>
           </div>
           <div className="h-32">
-            <MiniLineChart data={progressTrendData} color="cyan" filled={true} showDots={true} />
+            <MiniLineChart data={stats.progressTrendData} color="cyan" filled={true} showDots={true} />
           </div>
         </div>
 
@@ -160,7 +236,7 @@ export default function SkillsDashboard() {
             Active Skills
           </h3>
           <div className="space-y-4">
-            {activeSkills.map((skill, index) => {
+            {stats.activeSkills.map((skill, index) => {
               const Icon = skill.icon;
               return (
                 <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-cyan-500/30 transition-all">
@@ -208,7 +284,7 @@ export default function SkillsDashboard() {
             Recent Achievements
           </h3>
           <div className="space-y-3">
-            {recentAchievements.map((achievement, index) => (
+            {stats.recentAchievements.map((achievement, index) => (
               <div key={index} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                 <div>
                   <p className="text-white font-medium">{achievement.title}</p>

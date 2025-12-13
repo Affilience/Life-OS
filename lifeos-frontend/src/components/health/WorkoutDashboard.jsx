@@ -49,7 +49,7 @@ export default function WorkoutDashboard() {
           </div>
         </div>
 
-        <button onClick={() => startWorkout()} className="start-workout-btn">
+        <button onClick={() => startWorkout()} className="start-workout-btn" data-tour="start-workout-btn">
           <Play className="w-5 h-5" fill="currentColor" />
           Start Workout
         </button>
@@ -139,7 +139,9 @@ export default function WorkoutDashboard() {
       </div>
 
       {/* Workout Templates - Create, Manage & Quick Start */}
-      <WorkoutTemplates />
+      <div data-tour="workout-templates">
+        <WorkoutTemplates />
+      </div>
 
       {/* Recent Workouts */}
       <div className="recent-workouts-section">

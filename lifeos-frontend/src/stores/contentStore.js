@@ -6,6 +6,45 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+
+// Supabase sync helpers
+const syncContentToSupabase = async (content, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      await supabase.from('content_items').delete().eq('id', content.id);
+      return;
+    }
+
+    const dbContent = {
+      id: content.id,
+      user_id: DEV_USER_ID,
+      title: content.title,
+      content_type: content.type,
+      status: content.status || 'planned',
+      url: content.url || null,
+      author: content.author || null,
+      duration: content.duration || null,
+      date_started: content.dateStarted || null,
+      date_completed: content.dateCompleted || null,
+      rating: content.rating || null,
+      quality_score: content.qualityScore || null,
+      tags: content.tags || [],
+      category: content.category || null,
+      key_takeaways: content.keyTakeaways || [],
+      notes_url: content.notesUrl || null,
+      implementation_status: content.implementationStatus || 'not_started',
+      implementation_notes: content.implementationNotes || null,
+      time_spent: content.timeSpent || 0,
+      consumption_date: content.consumptionDate || new Date().toISOString(),
+    };
+
+    await supabase.from('content_items').upsert(dbContent, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Error syncing content to Supabase:', error);
+  }
+};
 
 export const useContentStore = create(
   persist(
@@ -19,10 +58,54 @@ export const useContentStore = create(
         qualityAverage: 0,
       },
 
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          const { data, error } = await supabase
+            .from('content_items')
+            .select('*')
+            .eq('user_id', DEV_USER_ID)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            const contentItems = data.map(item => ({
+              id: item.id,
+              title: item.title,
+              type: item.content_type,
+              status: item.status,
+              url: item.url || '',
+              author: item.author || '',
+              duration: item.duration || 0,
+              dateStarted: item.date_started,
+              dateCompleted: item.date_completed,
+              rating: item.rating || 0,
+              qualityScore: item.quality_score || 0,
+              tags: item.tags || [],
+              category: item.category || '',
+              keyTakeaways: item.key_takeaways || [],
+              notesUrl: item.notes_url || '',
+              implementationStatus: item.implementation_status || 'not_started',
+              implementationNotes: item.implementation_notes || '',
+              timeSpent: item.time_spent || 0,
+              consumptionDate: item.consumption_date,
+              createdAt: item.created_at,
+              updatedAt: item.updated_at,
+            }));
+
+            set({ contentItems });
+            get().updateStats();
+          }
+        } catch (error) {
+          console.error('Error initializing content from Supabase:', error);
+        }
+      },
+
       // Create new content item
       addContent: (contentData) => {
         const newContent = {
-          id: `content-${Date.now()}`,
+          id: crypto.randomUUID(),
           title: contentData.title,
           type: contentData.type, // book, podcast, video, article, course
           status: contentData.status || 'planned', // planned, in_progress, completed, abandoned
@@ -54,6 +137,9 @@ export const useContentStore = create(
           contentItems: [...state.contentItems, newContent],
         }));
 
+        // Sync to Supabase
+        syncContentToSupabase(newContent);
+
         get().updateStats();
         return newContent;
       },
@@ -67,14 +153,29 @@ export const useContentStore = create(
               : item
           ),
         }));
+
+        // Sync to Supabase
+        const updatedContent = get().contentItems.find(item => item.id === contentId);
+        if (updatedContent) {
+          syncContentToSupabase(updatedContent);
+        }
+
         get().updateStats();
       },
 
       // Delete content item
       deleteContent: (contentId) => {
+        const contentToDelete = get().contentItems.find(item => item.id === contentId);
+
         set((state) => ({
           contentItems: state.contentItems.filter((item) => item.id !== contentId),
         }));
+
+        // Sync to Supabase
+        if (contentToDelete) {
+          syncContentToSupabase(contentToDelete, 'delete');
+        }
+
         get().updateStats();
       },
 
@@ -97,6 +198,13 @@ export const useContentStore = create(
               : item
           ),
         }));
+
+        // Sync to Supabase
+        const updatedContent = get().contentItems.find(item => item.id === contentId);
+        if (updatedContent) {
+          syncContentToSupabase(updatedContent);
+        }
+
         get().updateStats();
       },
 
@@ -113,6 +221,12 @@ export const useContentStore = create(
               : item
           ),
         }));
+
+        // Sync to Supabase
+        const updatedContent = get().contentItems.find(item => item.id === contentId);
+        if (updatedContent) {
+          syncContentToSupabase(updatedContent);
+        }
       },
 
       // Update implementation status
@@ -129,6 +243,13 @@ export const useContentStore = create(
               : item
           ),
         }));
+
+        // Sync to Supabase
+        const updatedContent = get().contentItems.find(item => item.id === contentId);
+        if (updatedContent) {
+          syncContentToSupabase(updatedContent);
+        }
+
         get().updateStats();
       },
 
@@ -249,3 +370,9 @@ export const useContentStore = create(
     }
   )
 );
+
+// Initialize content store from Supabase
+export const initializeContentStore = async () => {
+  const store = useContentStore.getState();
+  await store.initializeFromSupabase();
+};

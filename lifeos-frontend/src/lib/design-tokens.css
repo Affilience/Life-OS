@@ -123,6 +123,165 @@
   --credit-800: #854d0e;
   --credit-900: #713f12;
 
+  /* ============================================================================
+     1.1.1 ACHIEVEMENT TIER COLORS
+     ============================================================================ */
+
+  /* Achievement Tiers (Bronze to Diamond progression) */
+  --achievement-bronze: #cd7f32;
+  --achievement-bronze-glow: rgba(205, 127, 50, 0.4);
+  --achievement-silver: #c0c0c0;
+  --achievement-silver-glow: rgba(192, 192, 192, 0.4);
+  --achievement-gold: #ffd700;
+  --achievement-gold-glow: rgba(255, 215, 0, 0.5);
+  --achievement-platinum: #e5e4e2;
+  --achievement-platinum-glow: rgba(229, 228, 226, 0.5);
+  --achievement-diamond: #b9f2ff;
+  --achievement-diamond-glow: rgba(185, 242, 255, 0.6);
+
+  /* Level Up Celebration */
+  --level-up-primary: #ffd700;
+  --level-up-secondary: #8b5cf6;
+  --level-up-glow: 0 0 40px rgba(255, 215, 0, 0.6), 0 0 80px rgba(139, 92, 246, 0.4);
+
+  /* ============================================================================
+     1.1.2 STREAK MILESTONE COLORS
+     ============================================================================ */
+
+  /* Streak Milestones */
+  --streak-3: #fb923c;        /* 3 days - Orange */
+  --streak-7: #f97316;        /* Week - Deep Orange */
+  --streak-14: #f59e0b;       /* 2 weeks - Amber */
+  --streak-30: #8b5cf6;       /* Month - Purple */
+  --streak-60: #a855f7;       /* 2 months - Light Purple */
+  --streak-100: #ec4899;      /* 100 days - Pink */
+  --streak-365: #ffd700;      /* Year - Gold */
+
+  /* Streak Fire Gradient (for flame effects) */
+  --streak-fire-start: #ff4500;
+  --streak-fire-mid1: #ff6347;
+  --streak-fire-mid2: #ffa500;
+  --streak-fire-mid3: #ffd700;
+  --streak-fire-end: #ffff00;
+
+  /* ============================================================================
+     1.1.3 PROGRESS BAR COLORS
+     ============================================================================ */
+
+  /* Progress Proximity Colors */
+  --progress-far: var(--primary-700);           /* < 25% */
+  --progress-starting: var(--primary-600);      /* 25-50% */
+  --progress-approaching: var(--primary-500);   /* 50-75% */
+  --progress-close: var(--primary-400);         /* 75-90% */
+  --progress-almost: #a78bfa;                   /* 90-99% */
+  --progress-complete: var(--success-500);      /* 100% */
+
+  /* Progress Glow Effects */
+  --progress-glow-default: rgba(139, 92, 246, 0.3);
+  --progress-glow-complete: rgba(16, 185, 129, 0.4);
+
+  /* ============================================================================
+     1.1.4 QUEST DIFFICULTY COLORS
+     ============================================================================ */
+
+  /* Quest/Task Difficulty */
+  --quest-trivial: #6b7280;     /* Gray - Trivial */
+  --quest-easy: #22c55e;        /* Green - Easy */
+  --quest-medium: #f59e0b;      /* Amber - Medium */
+  --quest-hard: #ef4444;        /* Red - Hard */
+  --quest-epic: #8b5cf6;        /* Purple - Epic */
+  --quest-legendary: #ffd700;   /* Gold - Legendary */
+
+  /* Quest Glow Effects */
+  --quest-glow-epic: rgba(139, 92, 246, 0.4);
+  --quest-glow-legendary: rgba(255, 215, 0, 0.5);
+
+  /* ============================================================================
+     1.1.5 MICRO-INTERACTION COLORS
+     ============================================================================ */
+
+  /* Hover Enhancement */
+  --hover-glow-subtle: rgba(139, 92, 246, 0.1);
+  --hover-glow-medium: rgba(139, 92, 246, 0.15);
+  --hover-glow-strong: rgba(139, 92, 246, 0.25);
+
+  /* Active/Pressed States */
+  --active-glow: rgba(139, 92, 246, 0.3);
+  --active-bg: rgba(139, 92, 246, 0.15);
+
+  /* Success Flash (for completed actions) */
+  --success-flash: rgba(16, 185, 129, 0.3);
+  --success-flash-strong: rgba(16, 185, 129, 0.5);
+
+  /* XP Gain Animation */
+  --xp-gain-color: #a78bfa;
+  --xp-gain-glow: rgba(167, 139, 250, 0.5);
+
+  /* Celebration Colors */
+  --celebration-primary: #ffd700;
+  --celebration-secondary: #ec4899;
+  --celebration-tertiary: #8b5cf6;
+  --celebration-flash: rgba(255, 215, 0, 0.4);
+
+  /* ============================================================================
+     1.1.6 HEALTH MODULE COLORS
+     ============================================================================ */
+
+  /* Heart Rate Zones */
+  --zone-rest: #6ee7b7;         /* Green - Rest/Recovery */
+  --zone-warmup: #a7f3d0;       /* Light Green - Warm Up */
+  --zone-fat-burn: #fcd34d;     /* Yellow - Fat Burn */
+  --zone-cardio: #fb923c;       /* Orange - Cardio */
+  --zone-peak: #ef4444;         /* Red - Peak/Anaerobic */
+
+  /* Nutrition Traffic Light */
+  --nutrition-under: #10b981;      /* Green - Under goal (good) */
+  --nutrition-on-target: #22c55e;  /* Bright Green - On target */
+  --nutrition-slightly-over: #f59e0b; /* Amber - Slightly over */
+  --nutrition-over: #ef4444;       /* Red - Significantly over */
+
+  /* Macro Colors */
+  --macro-protein: #3b82f6;     /* Blue - Protein */
+  --macro-carbs: #f59e0b;       /* Amber - Carbohydrates */
+  --macro-fat: #ec4899;         /* Pink - Fat */
+  --macro-fiber: #22c55e;       /* Green - Fiber */
+
+  /* Hydration */
+  --hydration-low: #fcd34d;     /* Yellow - Need more water */
+  --hydration-good: #22d3ee;    /* Cyan - Good hydration */
+  --hydration-optimal: #3b82f6; /* Blue - Optimal */
+
+  /* Sleep Quality */
+  --sleep-poor: #ef4444;        /* Red - Poor */
+  --sleep-fair: #f59e0b;        /* Amber - Fair */
+  --sleep-good: #22c55e;        /* Green - Good */
+  --sleep-excellent: #8b5cf6;   /* Purple - Excellent */
+
+  /* ============================================================================
+     1.1.7 FINANCIAL MODULE COLORS
+     ============================================================================ */
+
+  /* Money Flow */
+  --money-income: #10b981;      /* Green - Income */
+  --money-expense: #f59e0b;     /* Amber - Expenses */
+  --money-savings: #3b82f6;     /* Blue - Savings */
+  --money-investment: #8b5cf6;  /* Purple - Investments */
+  --money-debt: #ef4444;        /* Red - Debt */
+
+  /* Budget Status */
+  --budget-healthy: #22c55e;    /* Green - Under budget */
+  --budget-on-track: #10b981;   /* Emerald - On track */
+  --budget-caution: #f59e0b;    /* Amber - Approaching limit */
+  --budget-warning: #fb923c;    /* Orange - Near limit */
+  --budget-danger: #ef4444;     /* Red - Over budget */
+
+  /* Financial Goals */
+  --goal-not-started: #6b7280;  /* Gray */
+  --goal-in-progress: #3b82f6;  /* Blue */
+  --goal-on-track: #22c55e;     /* Green */
+  --goal-behind: #f59e0b;       /* Amber */
+  --goal-achieved: #ffd700;     /* Gold */
+
   /* Structural (Refined borders and dividers) */
   --border: rgba(255, 255, 255, 0.10);        /* Default border */
   --border-subtle: rgba(255, 255, 255, 0.05); /* Very subtle dividers */
@@ -689,6 +848,150 @@ p {
   }
 }
 
+/* Streak Fire Animation */
+@keyframes streak-fire {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px var(--streak-fire-start));
+    transform: scale(1);
+  }
+  25% {
+    filter: drop-shadow(0 0 12px var(--streak-fire-mid1));
+    transform: scale(1.05);
+  }
+  50% {
+    filter: drop-shadow(0 0 16px var(--streak-fire-mid2));
+    transform: scale(1.1);
+  }
+  75% {
+    filter: drop-shadow(0 0 12px var(--streak-fire-mid3));
+    transform: scale(1.05);
+  }
+}
+
+/* Achievement Tier Glow Animation */
+@keyframes achievement-glow-bronze {
+  0%, 100% { box-shadow: 0 0 20px var(--achievement-bronze-glow); }
+  50% { box-shadow: 0 0 35px var(--achievement-bronze-glow); }
+}
+
+@keyframes achievement-glow-silver {
+  0%, 100% { box-shadow: 0 0 20px var(--achievement-silver-glow); }
+  50% { box-shadow: 0 0 35px var(--achievement-silver-glow); }
+}
+
+@keyframes achievement-glow-gold {
+  0%, 100% { box-shadow: 0 0 25px var(--achievement-gold-glow); }
+  50% { box-shadow: 0 0 45px var(--achievement-gold-glow); }
+}
+
+@keyframes achievement-glow-platinum {
+  0%, 100% { box-shadow: 0 0 25px var(--achievement-platinum-glow); }
+  50% { box-shadow: 0 0 45px var(--achievement-platinum-glow); }
+}
+
+@keyframes achievement-glow-diamond {
+  0%, 100% {
+    box-shadow: 0 0 30px var(--achievement-diamond-glow);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 50px var(--achievement-diamond-glow);
+    filter: brightness(1.2);
+  }
+}
+
+/* XP Gain Float Animation */
+@keyframes xp-float {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-20px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.9);
+  }
+}
+
+/* Level Up Burst Animation */
+@keyframes level-up-burst {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Progress Bar Shimmer */
+@keyframes progress-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Progress Complete Pulse */
+@keyframes progress-complete-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--progress-glow-complete);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--progress-glow-complete), 0 0 30px var(--progress-glow-complete);
+  }
+}
+
+/* Success Flash Animation */
+@keyframes success-flash {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--success-flash);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Quest Legendary Shimmer */
+@keyframes quest-legendary-shimmer {
+  0% {
+    background-position: -100% 0;
+    box-shadow: 0 0 20px var(--quest-glow-legendary);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--quest-glow-legendary);
+  }
+  100% {
+    background-position: 100% 0;
+    box-shadow: 0 0 20px var(--quest-glow-legendary);
+  }
+}
+
+/* Celebration Sparkle */
+@keyframes celebration-sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
 .animate-confetti {
   animation: confetti var(--duration, 3s) ease-out forwards;
 }
@@ -715,6 +1018,73 @@ p {
 
 .animate-bounce-slow {
   animation: bounce-slow 2s ease-in-out infinite;
+}
+
+/* Achievement Tier Animations */
+.animate-achievement-bronze {
+  animation: achievement-glow-bronze 2s ease-in-out infinite;
+}
+.animate-achievement-silver {
+  animation: achievement-glow-silver 2s ease-in-out infinite;
+}
+.animate-achievement-gold {
+  animation: achievement-glow-gold 2s ease-in-out infinite;
+}
+.animate-achievement-platinum {
+  animation: achievement-glow-platinum 2s ease-in-out infinite;
+}
+.animate-achievement-diamond {
+  animation: achievement-glow-diamond 2s ease-in-out infinite;
+}
+
+/* Streak Fire Animation */
+.animate-streak-fire {
+  animation: streak-fire 1.5s ease-in-out infinite;
+}
+
+/* XP and Level Animations */
+.animate-xp-float {
+  animation: xp-float 1s ease-out forwards;
+}
+.animate-level-up-burst {
+  animation: level-up-burst 0.8s ease-out forwards;
+}
+
+/* Progress Animations */
+.animate-progress-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: progress-shimmer 2s ease-in-out infinite;
+}
+.animate-progress-complete {
+  animation: progress-complete-pulse 2s ease-in-out infinite;
+}
+
+/* Success Flash */
+.animate-success-flash {
+  animation: success-flash 0.5s ease-out;
+}
+
+/* Quest Animations */
+.animate-quest-legendary {
+  background: linear-gradient(
+    90deg,
+    var(--quest-legendary) 0%,
+    #fff7b0 50%,
+    var(--quest-legendary) 100%
+  );
+  background-size: 200% 100%;
+  animation: quest-legendary-shimmer 3s ease-in-out infinite;
+}
+
+/* Celebration */
+.animate-celebration-sparkle {
+  animation: celebration-sparkle 1s ease-in-out infinite;
 }
 
 /* ============================================================================
@@ -976,4 +1346,104 @@ p {
   .hover-lift-glow:active {
     transform: scale(0.98);
   }
+}
+
+/* ============================================================================
+   THEME ATMOSPHERE & GLASS EFFECTS
+   ============================================================================ */
+
+/* Glass card effect - uses theme's atmosphere card glass color */
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    var(--atmosphere-card-glass, transparent) 0%,
+    transparent 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.glass-card:hover {
+  background: linear-gradient(
+    135deg,
+    var(--atmosphere-card-glass-hover, transparent) 0%,
+    transparent 100%
+  );
+}
+
+/* Enhanced card with theme glow on hover */
+.card-glow {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    ellipse at center,
+    var(--glow-primary) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.card-glow:hover::before {
+  opacity: 0.5;
+}
+
+/* Depth card - uses layered backgrounds for depth */
+.depth-card {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 50%),
+    var(--bg-1);
+  border: 1px solid var(--border);
+}
+
+.depth-card:hover {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%),
+    var(--bg-1);
+  border-color: var(--card-hover-border, var(--border-strong));
+}
+
+/* Theme-aware section backgrounds with subtle gradient overlays */
+.section-depth {
+  position: relative;
+}
+
+.section-depth::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--atmosphere-gradient, none);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Ambient glow background effect */
+.ambient-glow {
+  position: relative;
+}
+
+.ambient-glow::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    ellipse at center,
+    var(--glow-primary) 0%,
+    transparent 50%
+  );
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: -1;
 }

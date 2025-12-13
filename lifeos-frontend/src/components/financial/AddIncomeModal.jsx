@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, DollarSign, Calendar, Briefcase, FileText, Clock } from 'lucide-react';
 import Button from '../shared/Button';
 import { useFinancialStore } from '../../stores/financialStore';
+import { triggerGamification } from '../../hooks/useGamification';
 import './AddIncomeModal.css';
 
 const AddIncomeModal = ({ onClose }) => {
@@ -51,6 +52,7 @@ const AddIncomeModal = ({ onClose }) => {
     };
 
     addTransaction(incomeData);
+    triggerGamification('incomeLogged', { xpOverride: 25, module: 'financial' });
     onClose();
   };
 

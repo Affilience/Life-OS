@@ -1,5 +1,6 @@
 /**
  * Journal Store (Zustand)
+ * Now using real Supabase data instead of mock adapter
  */
 
 import { create } from 'zustand';
@@ -9,7 +10,7 @@ import {
   DayISO,
   RangeWeeks,
 } from './journal.types';
-import { listEntriesMeta } from './journal.adapter.mock';
+import { journalDB, journalSync } from '../../db/journalDB';
 import { format, subDays } from 'date-fns';
 
 interface JournalState {
@@ -21,6 +22,7 @@ interface JournalState {
     tags: string[];
     search: string;
   };
+  initialized: boolean;
 }
 
 interface JournalActions {
@@ -29,6 +31,7 @@ interface JournalActions {
   setRange: (weeks: RangeWeeks) => void;
   setFilters: (filters: Partial<JournalState['filters']>) => void;
   refresh: () => Promise<void>;
+  initialize: () => Promise<void>;
 }
 
 type JournalStore = JournalState & JournalActions;
@@ -43,6 +46,27 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
     tags: [],
     search: '',
   },
+  initialized: false,
+
+  // Initialize - sync with Supabase and load data
+  initialize: async () => {
+    if (get().initialized) return;
+
+    set({ loading: true });
+
+    try {
+      // First sync with Supabase to get latest data
+      await journalSync.fullSync();
+
+      // Then hydrate from local DB
+      await get().hydrate();
+
+      set({ initialized: true });
+    } catch (error) {
+      console.error('Failed to initialize journal store:', error);
+      set({ loading: false });
+    }
+  },
 
   // Actions
   hydrate: async (queryOverride) => {
@@ -51,20 +75,48 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
     try {
       const state = get();
       const today = new Date();
-      const fromISO = format(subDays(today, state.rangeWeeks * 7), 'yyyy-MM-dd');
-      const toISO = format(today, 'yyyy-MM-dd');
+      const fromDate = format(subDays(today, state.rangeWeeks * 7), 'yyyy-MM-dd');
+      const toDate = format(today, 'yyyy-MM-dd');
 
-      const query: JournalQuery = {
-        fromISO,
-        toISO,
-        tags: state.filters.tags.length > 0 ? state.filters.tags : undefined,
-        search: state.filters.search || undefined,
-        ...queryOverride,
-      };
+      // Get entries from local IndexedDB (which syncs with Supabase)
+      let entries = await journalDB.getEntriesByDateRange(fromDate, toDate);
 
-      const entries = await listEntriesMeta(query);
+      // Apply tag filter
+      if (state.filters.tags.length > 0) {
+        entries = entries.filter(entry =>
+          entry.tags?.some(tag => state.filters.tags.includes(tag))
+        );
+      }
 
-      set({ entries, loading: false });
+      // Apply search filter
+      if (state.filters.search) {
+        const search = state.filters.search.toLowerCase();
+        entries = entries.filter(entry =>
+          entry.title?.toLowerCase().includes(search) ||
+          entry.content?.toLowerCase().includes(search) ||
+          entry.tags?.some(tag => tag.toLowerCase().includes(search))
+        );
+      }
+
+      // Apply query overrides if provided
+      if (queryOverride?.fromISO || queryOverride?.toISO) {
+        const qFrom = queryOverride.fromISO || fromDate;
+        const qTo = queryOverride.toISO || toDate;
+        entries = entries.filter(e => e.date >= qFrom && e.date <= qTo);
+      }
+
+      // Transform to JournalEntryMeta format
+      const entryMetas: JournalEntryMeta[] = entries.map(entry => ({
+        date: entry.date as DayISO,
+        mood: entry.mood ?? undefined,
+        tags: entry.tags || [],
+        wordCount: entry.wordCount || 0,
+      }));
+
+      // Sort by date descending
+      entryMetas.sort((a, b) => b.date.localeCompare(a.date));
+
+      set({ entries: entryMetas, loading: false });
     } catch (error) {
       console.error('Failed to hydrate journal:', error);
       set({ loading: false });
@@ -90,6 +142,13 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
   },
 
   refresh: async () => {
+    // Re-sync with Supabase and refresh
+    await journalSync.fullSync();
     await get().hydrate();
   },
 }));
+
+// Export initialization function for App.jsx
+export const initializeJournalStore = async () => {
+  await useJournalStore.getState().initialize();
+};

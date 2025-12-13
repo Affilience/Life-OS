@@ -1,52 +1,88 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Moon, TrendingUp, Clock, Activity } from 'lucide-react';
 import AnalyticsCard from '../shared/AnalyticsCard';
 import TrendLineChart from '../charts/TrendLineChart';
 import ComparisonBarChart from '../charts/ComparisonBarChart';
+import { useHealthStore } from '../../stores/healthStore';
 import './SleepAnalytics.css';
 
-// Mock data - would come from API in production
-const qualityScoreData = [
-  { date: 'Mon', score: 78 },
-  { date: 'Tue', score: 85 },
-  { date: 'Wed', score: 72 },
-  { date: 'Thu', score: 88 },
-  { date: 'Fri', score: 90 },
-  { date: 'Sat', score: 82 },
-  { date: 'Sun', score: 87 }
-];
-
-const durationData = [
-  { date: 'Mon', hours: 7.2 },
-  { date: 'Tue', hours: 8.1 },
-  { date: 'Wed', hours: 6.5 },
-  { date: 'Thu', hours: 7.8 },
-  { date: 'Fri', hours: 8.5 },
-  { date: 'Sat', hours: 9.0 },
-  { date: 'Sun', hours: 8.2 }
-];
-
-const deepSleepData = [
-  { date: 'Mon', hours: 1.8 },
-  { date: 'Tue', hours: 2.1 },
-  { date: 'Wed', hours: 1.5 },
-  { date: 'Thu', hours: 2.3 },
-  { date: 'Fri', hours: 2.5 },
-  { date: 'Sat', hours: 2.2 },
-  { date: 'Sun', hours: 2.4 }
-];
-
-const consistencyData = [
-  { date: 'Mon', consistency: 85 },
-  { date: 'Tue', consistency: 90 },
-  { date: 'Wed', consistency: 70 },
-  { date: 'Thu', consistency: 88 },
-  { date: 'Fri', consistency: 82 },
-  { date: 'Sat', consistency: 75 },
-  { date: 'Sun', consistency: 92 }
-];
-
 export default function SleepAnalytics() {
+  const { sleepLogs } = useHealthStore();
+
+  // Calculate all sleep analytics from store data
+  const { qualityScoreData, durationData, deepSleepData, consistencyData, insights } = useMemo(() => {
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+
+    // Build last 7 days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      last7Days.push({
+        dateStr: d.toISOString().split('T')[0],
+        dayOfWeek: d.getDay()
+      });
+    }
+
+    // Match sleep logs to days
+    const dailyData = last7Days.map(({ dateStr, dayOfWeek }) => {
+      const dayLogs = (sleepLogs || []).filter(log => log.date === dateStr || log.timestamp?.startsWith(dateStr));
+      const log = dayLogs[0];
+
+      return {
+        date: dayLabels[dayOfWeek],
+        quality: log?.quality || 0,
+        duration: log?.duration || log?.hours || 0,
+        deepSleep: log?.deepSleep || (log?.duration ? log.duration * 0.2 : 0), // Estimate 20% deep sleep
+        bedtime: log?.bedtime || null,
+        wakeTime: log?.wakeTime || null
+      };
+    });
+
+    // Calculate consistency based on sleep timing variance
+    const avgDuration = dailyData.reduce((sum, d) => sum + d.duration, 0) / 7;
+    const consistencyArr = dailyData.map(d => ({
+      date: d.date,
+      consistency: d.duration > 0
+        ? Math.round(Math.max(0, 100 - Math.abs(d.duration - avgDuration) * 15))
+        : 0
+    }));
+
+    // Build chart data arrays
+    const qualityArr = dailyData.map(d => ({ date: d.date, score: d.quality || 0 }));
+    const durationArr = dailyData.map(d => ({ date: d.date, hours: parseFloat((d.duration || 0).toFixed(1)) }));
+    const deepSleepArr = dailyData.map(d => ({ date: d.date, hours: parseFloat((d.deepSleep || 0).toFixed(1)) }));
+
+    // Calculate averages for metrics
+    const daysWithData = dailyData.filter(d => d.duration > 0).length;
+    const avgQuality = daysWithData > 0
+      ? Math.round(dailyData.reduce((sum, d) => sum + d.quality, 0) / daysWithData)
+      : 0;
+    const avgDur = daysWithData > 0
+      ? (dailyData.reduce((sum, d) => sum + d.duration, 0) / daysWithData).toFixed(1)
+      : '0';
+    const avgDeep = daysWithData > 0
+      ? (dailyData.reduce((sum, d) => sum + d.deepSleep, 0) / daysWithData).toFixed(1)
+      : '0';
+    const avgConsistency = daysWithData > 0
+      ? Math.round(consistencyArr.reduce((sum, d) => sum + d.consistency, 0) / daysWithData)
+      : 0;
+
+    return {
+      qualityScoreData: qualityArr,
+      durationData: durationArr,
+      deepSleepData: deepSleepArr,
+      consistencyData: consistencyArr,
+      insights: {
+        avgQuality,
+        avgDuration: avgDur,
+        avgDeepSleep: avgDeep,
+        avgConsistency,
+        daysTracked: daysWithData
+      }
+    };
+  }, [sleepLogs]);
   return (
     <div className="sleep-analytics">
       {/* Sleep Quality Score Trend */}
@@ -54,8 +90,8 @@ export default function SleepAnalytics() {
         title="Sleep Quality Score"
         icon={Moon}
         metric={{
-          value: '87/100',
-          change: 8.5
+          value: `${insights.avgQuality}/100`,
+          change: 0
         }}
         defaultRange="7d"
       >
@@ -74,8 +110,8 @@ export default function SleepAnalytics() {
         title="Sleep Duration"
         icon={Clock}
         metric={{
-          value: '7.9 hrs',
-          change: 12.3
+          value: `${insights.avgDuration} hrs`,
+          change: 0
         }}
         defaultRange="7d"
       >
@@ -94,8 +130,8 @@ export default function SleepAnalytics() {
         title="Deep Sleep Duration"
         icon={Activity}
         metric={{
-          value: '2.3 hrs',
-          change: 15.0
+          value: `${insights.avgDeepSleep} hrs`,
+          change: 0
         }}
         defaultRange="7d"
       >
@@ -114,8 +150,8 @@ export default function SleepAnalytics() {
         title="Sleep Consistency"
         icon={TrendingUp}
         metric={{
-          value: '83%',
-          change: 5.2
+          value: `${insights.avgConsistency}%`,
+          change: 0
         }}
         defaultRange="7d"
       >
@@ -135,24 +171,24 @@ export default function SleepAnalytics() {
         </div>
         <div className="insights-grid">
           <div className="insight-card">
-            <div className="insight-label">Average Bedtime</div>
-            <div className="insight-value">10:45 PM</div>
-            <div className="insight-trend positive">+15 min earlier</div>
+            <div className="insight-label">Avg Duration</div>
+            <div className="insight-value">{insights.avgDuration} hrs</div>
+            <div className="insight-trend positive">Target: 8 hrs</div>
           </div>
           <div className="insight-card">
-            <div className="insight-label">Average Wake Time</div>
-            <div className="insight-value">6:30 AM</div>
-            <div className="insight-trend positive">Consistent</div>
+            <div className="insight-label">Days Tracked</div>
+            <div className="insight-value">{insights.daysTracked}/7</div>
+            <div className="insight-trend positive">This week</div>
           </div>
           <div className="insight-card">
-            <div className="insight-label">REM Sleep</div>
-            <div className="insight-value">25%</div>
-            <div className="insight-trend positive">+3% from avg</div>
+            <div className="insight-label">Deep Sleep</div>
+            <div className="insight-value">{insights.avgDeepSleep} hrs</div>
+            <div className="insight-trend positive">~{insights.avgDuration > 0 ? Math.round((parseFloat(insights.avgDeepSleep) / parseFloat(insights.avgDuration)) * 100) : 0}% of total</div>
           </div>
           <div className="insight-card">
-            <div className="insight-label">Sleep Efficiency</div>
-            <div className="insight-value">92%</div>
-            <div className="insight-trend positive">+5% this week</div>
+            <div className="insight-label">Sleep Quality</div>
+            <div className="insight-value">{insights.avgQuality}%</div>
+            <div className="insight-trend positive">Weekly avg</div>
           </div>
         </div>
       </div>

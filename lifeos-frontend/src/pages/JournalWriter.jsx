@@ -1,20 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Save, X, Calendar, Tag, Smile } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Save, X, Calendar, Tag, Smile, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { journalDB } from '../db/journalDB';
+import { triggerGamification } from '../hooks/useGamification';
 import './JournalWriter.css';
 
 export default function JournalWriter() {
   const navigate = useNavigate();
+  const location = useLocation();
   const contentRef = useRef(null);
 
+  // Check if we're editing an existing entry
+  const editingEntry = location.state?.entry || null;
+  const isEditing = !!editingEntry;
+
   const [entry, setEntry] = useState({
-    date: format(new Date(), 'yyyy-MM-dd'),
-    title: '',
-    content: '',
-    mood: null,
-    tags: []
+    id: editingEntry?.id || null,
+    date: editingEntry?.date || format(new Date(), 'yyyy-MM-dd'),
+    title: editingEntry?.title || '',
+    content: editingEntry?.content || '',
+    mood: editingEntry?.mood || null,
+    tags: editingEntry?.tags || []
   });
 
   const [wordCount, setWordCount] = useState(0);
@@ -42,10 +49,28 @@ export default function JournalWriter() {
     setSaving(true);
 
     try {
-      await journalDB.addEntry({
-        ...entry,
-        wordCount
-      });
+      if (isEditing && entry.id) {
+        // Update existing entry
+        await journalDB.updateEntry(entry.id, {
+          date: entry.date,
+          title: entry.title,
+          content: entry.content,
+          mood: entry.mood,
+          tags: entry.tags,
+          wordCount
+        });
+      } else {
+        // Create new entry
+        await journalDB.addEntry({
+          ...entry,
+          wordCount
+        });
+
+        // Award XP based on word count - only for new entries
+        const baseXP = 20;
+        const bonusXP = Math.min(Math.floor(wordCount / 50) * 5, 30);
+        triggerGamification('journalEntry', { xpOverride: baseXP + bonusXP, module: 'journal' });
+      }
 
       navigate('/journal');
     } catch (error) {
@@ -53,6 +78,20 @@ export default function JournalWriter() {
       alert('Failed to save entry. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isEditing || !entry.id) return;
+
+    if (window.confirm('Are you sure you want to delete this entry? This cannot be undone.')) {
+      try {
+        await journalDB.deleteEntry(entry.id);
+        navigate('/journal');
+      } catch (error) {
+        console.error('Failed to delete entry:', error);
+        alert('Failed to delete entry. Please try again.');
+      }
     }
   };
 
@@ -69,7 +108,7 @@ export default function JournalWriter() {
       <div className="writer-paper">
         {/* Header */}
         <div className="writer-header">
-          <div className="writer-date">
+          <div className="writer-date" data-tour="writer-date">
             <Calendar size={16} />
             <input
               type="date"
@@ -80,6 +119,12 @@ export default function JournalWriter() {
           </div>
 
           <div className="writer-actions">
+            {isEditing && (
+              <button onClick={handleDelete} className="delete-btn">
+                <Trash2 size={20} />
+                Delete
+              </button>
+            )}
             <button onClick={handleCancel} className="cancel-btn">
               <X size={20} />
               Cancel
@@ -88,9 +133,10 @@ export default function JournalWriter() {
               onClick={handleSave}
               disabled={saving || !entry.content.trim()}
               className="save-btn"
+              data-tour="save-entry-btn"
             >
               <Save size={20} />
-              {saving ? 'Saving...' : 'Save Entry'}
+              {saving ? 'Saving...' : isEditing ? 'Update Entry' : 'Save Entry'}
             </button>
           </div>
         </div>
@@ -111,6 +157,7 @@ export default function JournalWriter() {
           value={entry.content}
           onChange={(e) => setEntry({ ...entry, content: e.target.value })}
           className="content-textarea"
+          data-tour="writer-content"
         />
 
         {/* Footer */}
@@ -119,7 +166,7 @@ export default function JournalWriter() {
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
           </div>
 
-          <div className="mood-selector">
+          <div className="mood-selector" data-tour="mood-tracker">
             <Smile size={16} />
             <span>Mood:</span>
             <div className="mood-options">

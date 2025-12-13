@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Pen, Plus } from 'lucide-react';
+import { Pen, Plus, Edit3 } from 'lucide-react';
 import './JournalPage.css';
 
 function JournalPage({
@@ -8,7 +8,8 @@ function JournalPage({
   pageNumber,
   side = 'right',
   isEmpty = false,
-  onStartWriting
+  onStartWriting,
+  onEdit
 }) {
   const formattedDate = entry.date
     ? format(new Date(entry.date), 'EEEE, MMMM d, yyyy')
@@ -17,6 +18,13 @@ function JournalPage({
   const handleClick = () => {
     if (isEmpty && onStartWriting) {
       onStartWriting();
+    }
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    if (onEdit && entry.id) {
+      onEdit(entry);
     }
   };
 
@@ -31,7 +39,18 @@ function JournalPage({
         <div className="page-date">
           {formattedDate}
         </div>
-        <div className="page-number">{pageNumber}</div>
+        <div className="page-header-right">
+          {!isEmpty && onEdit && (
+            <button
+              className="edit-entry-btn"
+              onClick={handleEdit}
+              title="Edit entry"
+            >
+              <Edit3 size={14} />
+            </button>
+          )}
+          <div className="page-number">{pageNumber}</div>
+        </div>
       </div>
 
       {/* Page content */}

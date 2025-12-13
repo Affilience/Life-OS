@@ -1,14 +1,28 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Gift, TrendingUp, Filter, Coins } from 'lucide-react';
+import { Plus, Gift, TrendingUp, Filter, Coins, X } from 'lucide-react';
 import { RewardCard } from '../../features/rewards/components/RewardCard';
 import { useRewards, useCreateReward, useRedeemReward } from '../../api/rewards';
 import { useCosmicCurrency } from '../../api/currency';
 import { EmptyState } from '../ui';
 
+const CATEGORY_OPTIONS = [
+  { value: 'entertainment', label: 'Entertainment', icon: '🎮' },
+  { value: 'food', label: 'Food & Treats', icon: '🍕' },
+  { value: 'activity', label: 'Activities', icon: '🎯' },
+  { value: 'rest', label: 'Rest & Relax', icon: '🛋️' },
+  { value: 'custom', label: 'Custom', icon: '✨' },
+];
+
 export default function RewardMarketplace() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [newReward, setNewReward] = useState({
+    title: '',
+    description: '',
+    cost: 100,
+    category: 'custom',
+  });
 
   const { data: rewards, isLoading: rewardsLoading } = useRewards();
   const { data: currency } = useCosmicCurrency();
@@ -35,6 +49,25 @@ export default function RewardMarketplace() {
       await redeemReward.mutateAsync(rewardId);
     } catch (error) {
       console.error('Failed to redeem reward:', error);
+    }
+  };
+
+  const handleCreateReward = async (e) => {
+    e.preventDefault();
+    if (!newReward.title.trim() || newReward.cost < 1) return;
+
+    try {
+      await createReward.mutateAsync({
+        title: newReward.title.trim(),
+        description: newReward.description.trim(),
+        cost: newReward.cost,
+        category: newReward.category,
+        is_available: true,
+      });
+      setShowAddModal(false);
+      setNewReward({ title: '', description: '', cost: 100, category: 'custom' });
+    } catch (error) {
+      console.error('Failed to create reward:', error);
     }
   };
 
@@ -182,7 +215,7 @@ export default function RewardMarketplace() {
         </div>
       </div>
 
-      {/* Add Reward Modal - Placeholder */}
+      {/* Add Reward Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <motion.div
@@ -190,16 +223,85 @@ export default function RewardMarketplace() {
             animate={{ opacity: 1, scale: 1 }}
             className="cosmic-panel cosmic-border rounded-2xl p-6 max-w-md w-full mx-4"
           >
-            <h3 className="text-2xl font-bold cosmic-title mb-4">Add Custom Reward</h3>
-            <p className="text-white/60 mb-4">
-              Custom reward creation coming soon! Define your own rewards and set their credit cost.
-            </p>
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="w-full px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold"
-            >
-              Close
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold cosmic-title">Add Custom Reward</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5 text-white/60" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateReward} className="space-y-4">
+              <div>
+                <label className="block text-sm text-white/60 mb-1">Reward Name</label>
+                <input
+                  type="text"
+                  value={newReward.title}
+                  onChange={(e) => setNewReward({ ...newReward, title: e.target.value })}
+                  placeholder="e.g., Watch a movie, Order takeout"
+                  className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:border-purple-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-white/60 mb-1">Description (optional)</label>
+                <textarea
+                  value={newReward.description}
+                  onChange={(e) => setNewReward({ ...newReward, description: e.target.value })}
+                  placeholder="What makes this reward special?"
+                  rows={2}
+                  className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:border-purple-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-white/60 mb-1">Category</label>
+                <select
+                  value={newReward.category}
+                  onChange={(e) => setNewReward({ ...newReward, category: e.target.value })}
+                  className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:border-purple-500 focus:outline-none"
+                >
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <option key={cat.value} value={cat.value} className="bg-[#1a1724]">
+                      {cat.icon} {cat.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-white/60 mb-1">Cost (Cosmic Credits)</label>
+                <input
+                  type="number"
+                  value={newReward.cost}
+                  onChange={(e) => setNewReward({ ...newReward, cost: Math.max(1, parseInt(e.target.value) || 0) })}
+                  min="1"
+                  className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:border-purple-500 focus:outline-none"
+                  required
+                />
+                <p className="text-xs text-white/40 mt-1">Higher cost = bigger reward. Make it worth earning!</p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createReward.isPending || !newReward.title.trim()}
+                  className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {createReward.isPending ? 'Creating...' : 'Create Reward'}
+                </button>
+              </div>
+            </form>
           </motion.div>
         </div>
       )}

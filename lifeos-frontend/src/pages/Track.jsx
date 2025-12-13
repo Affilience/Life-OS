@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { Activity, Briefcase, CheckSquare, FileText } from 'lucide-react';
-import ProductivityNew from './ProductivityNew';
-import HealthNew from './HealthNew';
-import HabitsNew from './HabitsNew';
-import JournalNew from './JournalNew';
+import Productivity from './Productivity';
+import Health from './Health';
+import Missions from './Missions';
+import JournalWriter from './JournalWriter';
 
 export default function Track() {
   const [activeTab, setActiveTab] = useState('productivity');
 
   const tabs = [
-    { id: 'productivity', name: 'Supernova', icon: Briefcase, component: ProductivityNew },
-    { id: 'health', name: 'Gravity', icon: Activity, component: HealthNew },
-    { id: 'habits', name: 'Orbit', icon: CheckSquare, component: HabitsNew },
-    { id: 'journal', name: 'Starlog', icon: FileText, component: JournalNew },
+    { id: 'productivity', name: 'Supernova', icon: Briefcase, component: Productivity },
+    { id: 'health', name: 'Gravity', icon: Activity, component: Health },
+    { id: 'habits', name: 'Orbit', icon: CheckSquare, component: Missions },
+    { id: 'journal', name: 'Starlog', icon: FileText, component: JournalWriter },
   ];
 
   const ActiveComponent = tabs.find(t => t.id === activeTab)?.component;

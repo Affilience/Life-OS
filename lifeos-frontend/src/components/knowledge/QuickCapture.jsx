@@ -110,6 +110,7 @@ export default function QuickCapture() {
       {/* Main Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        data-tour="quick-capture-btn"
         className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all duration-200 shadow-lg shadow-purple-500/20"
       >
         <svg

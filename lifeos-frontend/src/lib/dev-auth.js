@@ -1,19 +1,22 @@
 /**
  * Development Authentication Helper
- * Creates a test user ID for development
- * TODO: Replace with real Supabase auth in production
+ * Creates a test user ID for development that bypasses auth
+ * In production, this is replaced with real Supabase auth
  */
 
-// Generate a consistent test user ID for development
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+// Consistent dev user ID - used across all stores and database operations
+export const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
 
-export async function getDevUser() {
-  // Return a mock user object for development
-  return {
-    id: DEV_USER_ID,
-    email: 'dev@lifeos.local',
-    created_at: new Date().toISOString()
-  };
+// Dev user profile
+export const DEV_USER = {
+  id: DEV_USER_ID,
+  email: 'dev@lifeos.local',
+  username: 'Developer',
+  created_at: '2024-01-01T00:00:00.000Z',
+};
+
+export function getDevUser() {
+  return DEV_USER;
 }
 
 export function isDevMode() {

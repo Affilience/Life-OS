@@ -2,81 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Heart, ChevronLeft, ChevronRight, Play, Pause, Plus, X } from 'lucide-react';
 import './QuotesGallery.css';
 
-// Mock quotes data
-const quotesData = [
-  {
-    id: 1,
-    quote: "The impediment to action advances action. What stands in the way becomes the way.",
-    author: "Marcus Aurelius",
-    source: "Meditations",
-    category: "Philosophy",
-    mood: "Inspirational",
-    isFavorite: true
-  },
-  {
-    id: 2,
-    quote: "Make each day your masterpiece.",
-    author: "John Wooden",
-    source: "Wooden: A Lifetime of Observations",
-    category: "Life",
-    mood: "Motivational",
-    isFavorite: false
-  },
-  {
-    id: 3,
-    quote: "You only have to do a very few things right in your life so long as you don't do too many things wrong.",
-    author: "Warren Buffett",
-    source: "Interview",
-    category: "Business",
-    mood: "Wisdom",
-    isFavorite: true
-  },
-  {
-    id: 4,
-    quote: "The best time to plant a tree was 20 years ago. The second best time is now.",
-    author: "Chinese Proverb",
-    source: "Ancient Wisdom",
-    category: "Life",
-    mood: "Inspirational",
-    isFavorite: false
-  },
-  {
-    id: 5,
-    quote: "It is not the critic who counts; not the man who points out how the strong man stumbles. The credit belongs to the man who is actually in the arena.",
-    author: "Theodore Roosevelt",
-    source: "Citizenship in a Republic",
-    category: "Life",
-    mood: "Motivational",
-    isFavorite: true
-  },
-  {
-    id: 6,
-    quote: "The question isn't who is going to let me; it's who is going to stop me.",
-    author: "Ayn Rand",
-    source: "The Fountainhead",
-    category: "Philosophy",
-    mood: "Empowering",
-    isFavorite: false
-  },
-  {
-    id: 7,
-    quote: "First principles thinking is about breaking down problems into their fundamental truths and reasoning up from there.",
-    author: "Elon Musk",
-    source: "Interview",
-    category: "Business",
-    mood: "Wisdom",
-    isFavorite: true
-  },
-  {
-    id: 8,
-    quote: "We suffer more often in imagination than in reality.",
-    author: "Seneca",
-    source: "Letters from a Stoic",
-    category: "Philosophy",
-    mood: "Reflective",
-    isFavorite: false
-  },
-];
+// Large prebuilt quotes database - curated collection
+import { QUOTES_DATABASE } from '../../data/quotesDatabase';
 
 // Quote Card Component
 function QuoteCard({ quote, onFavoriteToggle, isActive }) {
@@ -116,7 +43,7 @@ function QuoteCard({ quote, onFavoriteToggle, isActive }) {
 
 // Main QuotesGallery Component
 const QuotesGallery = () => {
-  const [quotes, setQuotes] = useState(quotesData);
+  const [quotes, setQuotes] = useState(QUOTES_DATABASE);
   const [currentQuote, setCurrentQuote] = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);

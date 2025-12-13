@@ -7,11 +7,18 @@
  * - Achievement unlocked
  * - Milestone celebrations
  * - Streak celebrations
+ *
+ * Mode-aware:
+ * - Cosmic: Full celebrations with particles, confetti, dramatic effects
+ * - Professional: Subtle celebrations, no confetti, clean animations
+ * - Minimal: No celebrations, silent notifications only
  */
 
-import React, { useEffect, useState, useCallback, createContext, useContext } from 'react';
+import React, { useEffect, useState, useCallback, createContext, useContext, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Star, Trophy, Zap, Flame, Target, Crown, Sparkles } from 'lucide-react';
+import { Star, Trophy, Zap, Flame, Target, Crown, Sparkles, TrendingUp, CheckCircle } from 'lucide-react';
+import { setCelebrationTrigger } from '../../hooks/useGamification';
+import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 
 // Context for celebration triggers
 const CelebrationContext = createContext(null);
@@ -31,16 +38,28 @@ function ConfettiParticle({ style }) {
 /**
  * Confetti - Burst of colorful particles
  */
+const DEFAULT_COLORS = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'];
+const DEFAULT_ORIGIN = { x: 0.5, y: 0.5 };
+
 export function Confetti({
   active,
   particleCount = 50,
   duration = 3000,
-  colors = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'],
+  colors = DEFAULT_COLORS,
   spread = 180,
-  origin = { x: 0.5, y: 0.5 },
+  origin = DEFAULT_ORIGIN,
   onComplete,
 }) {
   const [particles, setParticles] = useState([]);
+  const onCompleteRef = React.useRef(onComplete);
+
+  // Memoize values to prevent infinite loops
+  const originX = origin?.x ?? 0.5;
+  const originY = origin?.y ?? 0.5;
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (!active) {
@@ -48,15 +67,16 @@ export function Confetti({
       return;
     }
 
+    const colorArray = colors || DEFAULT_COLORS;
     const newParticles = Array.from({ length: particleCount }, (_, i) => {
       const angle = (Math.random() * spread - spread / 2) * (Math.PI / 180);
       const velocity = 300 + Math.random() * 400;
-      const color = colors[Math.floor(Math.random() * colors.length)];
+      const color = colorArray[Math.floor(Math.random() * colorArray.length)];
 
       return {
         id: i,
-        x: origin.x * 100,
-        y: origin.y * 100,
+        x: originX * 100,
+        y: originY * 100,
         vx: Math.sin(angle) * velocity,
         vy: -Math.cos(angle) * velocity - 200,
         color,
@@ -71,11 +91,11 @@ export function Confetti({
 
     const timer = setTimeout(() => {
       setParticles([]);
-      onComplete?.();
+      onCompleteRef.current?.();
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [active, particleCount, duration, colors, spread, origin, onComplete]);
+  }, [active, particleCount, duration, spread, originX, originY]);
 
   if (particles.length === 0) return null;
 
@@ -111,17 +131,23 @@ export function LevelUpOverlay({
   duration = 3000,
 }) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const onCompleteRef = React.useRef(onComplete);
+
+  // Keep ref updated
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (show) {
       setIsAnimating(true);
       const timer = setTimeout(() => {
         setIsAnimating(false);
-        onComplete?.();
+        onCompleteRef.current?.();
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [show, duration, onComplete]);
+  }, [show, duration]);
 
   if (!show && !isAnimating) return null;
 
@@ -187,17 +213,22 @@ export function AchievementToast({
   duration = 4000,
 }) {
   const [isVisible, setIsVisible] = useState(false);
+  const onCompleteRef = React.useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (show) {
       setIsVisible(true);
       const timer = setTimeout(() => {
         setIsVisible(false);
-        setTimeout(onComplete, 300);
+        setTimeout(() => onCompleteRef.current?.(), 300);
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [show, duration, onComplete]);
+  }, [show, duration]);
 
   if (!show && !isVisible) return null;
 
@@ -279,17 +310,22 @@ export function StreakCelebration({
   duration = 2500,
 }) {
   const [isVisible, setIsVisible] = useState(false);
+  const onCompleteRef = React.useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (show) {
       setIsVisible(true);
       const timer = setTimeout(() => {
         setIsVisible(false);
-        setTimeout(onComplete, 300);
+        setTimeout(() => onCompleteRef.current?.(), 300);
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [show, duration, onComplete]);
+  }, [show, duration]);
 
   if (!show && !isVisible) return null;
 
@@ -350,6 +386,7 @@ export function MilestoneCelebration({
 
 /**
  * CelebrationProvider - Context provider for triggering celebrations
+ * Mode-aware: respects visibility settings for each celebration type
  */
 export function CelebrationProvider({ children }) {
   const [confetti, setConfetti] = useState(false);
@@ -357,41 +394,76 @@ export function CelebrationProvider({ children }) {
   const [achievement, setAchievement] = useState(null);
   const [streak, setStreak] = useState(null);
 
-  const celebrate = useCallback({
+  // Get mode visibility settings
+  const mode = useGamificationModeStore((state) => state.mode);
+  const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+
+  const celebrate = useMemo(() => ({
     confetti: (options = {}) => {
-      setConfetti(true);
-      setTimeout(() => setConfetti(false), options.duration || 3000);
+      // Only show confetti if particle effects are enabled
+      if (visibility.showParticleEffects) {
+        setConfetti(true);
+        setTimeout(() => setConfetti(false), options.duration || 3000);
+      }
     },
     levelUp: (level) => {
-      setLevelUp(level);
+      // Only show level up animation if enabled
+      if (visibility.showLevelUpAnimation) {
+        setLevelUp(level);
+      }
     },
     achievement: (options) => {
-      setAchievement(options);
+      // Only show achievement popup if enabled
+      if (visibility.showAchievementPopups) {
+        setAchievement(options);
+      }
     },
     streak: (days) => {
-      setStreak(days);
+      // Only show streak celebration if streak flame is enabled
+      if (visibility.showStreakFlame) {
+        setStreak(days);
+      }
     },
-  }, []);
+  }), [visibility]);
+
+  // Register celebration trigger with gamification system
+  useEffect(() => {
+    setCelebrationTrigger(celebrate);
+    return () => setCelebrationTrigger(null);
+  }, [celebrate]);
 
   return (
     <CelebrationContext.Provider value={celebrate}>
       {children}
-      <Confetti active={confetti} />
-      <LevelUpOverlay
-        show={levelUp !== null}
-        level={levelUp}
-        onComplete={() => setLevelUp(null)}
-      />
-      <AchievementToast
-        show={achievement !== null}
-        {...achievement}
-        onComplete={() => setAchievement(null)}
-      />
-      <StreakCelebration
-        show={streak !== null}
-        streak={streak}
-        onComplete={() => setStreak(null)}
-      />
+      {/* Confetti - only if particle effects enabled */}
+      {visibility.showParticleEffects && <Confetti active={confetti} />}
+
+      {/* Level Up - only if level up animation enabled */}
+      {visibility.showLevelUpAnimation && (
+        <LevelUpOverlay
+          show={levelUp !== null}
+          level={levelUp}
+          onComplete={() => setLevelUp(null)}
+        />
+      )}
+
+      {/* Achievement Toast - only if achievement popups enabled */}
+      {visibility.showAchievementPopups && (
+        <AchievementToast
+          show={achievement !== null}
+          {...achievement}
+          onComplete={() => setAchievement(null)}
+        />
+      )}
+
+      {/* Streak Celebration - only if streak flame enabled */}
+      {visibility.showStreakFlame && (
+        <StreakCelebration
+          show={streak !== null}
+          streak={streak}
+          onComplete={() => setStreak(null)}
+        />
+      )}
     </CelebrationContext.Provider>
   );
 }

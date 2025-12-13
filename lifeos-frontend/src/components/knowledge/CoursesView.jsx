@@ -8,6 +8,7 @@ import {
   GraduationCap, Star, Search, Grid3x3, List, Plus, Check, Play,
   Clock, ExternalLink, BookOpen, Target
 } from 'lucide-react';
+import AddMediaModal from './AddMediaModal';
 import './MediaViews.css';
 
 const STATUS_TABS = [
@@ -22,6 +23,7 @@ export default function CoursesView() {
   const [activeTab, setActiveTab] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Filter only courses
   const courses = useMemo(() =>
@@ -240,10 +242,18 @@ export default function CoursesView() {
         )}
       </div>
 
-      {/* Add FAB */}
-      <button className="add-fab course">
-        <Plus size={24} />
+      {/* Add Course Button */}
+      <button className="add-fab course" onClick={() => setShowAddModal(true)}>
+        <Plus size={20} />
+        <span>Add Course</span>
       </button>
+
+      {/* Add Media Modal */}
+      <AddMediaModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        defaultType="course"
+      />
     </div>
   );
 }

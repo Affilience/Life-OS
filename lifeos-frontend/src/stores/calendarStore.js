@@ -1,10 +1,225 @@
 /**
  * Calendar & Time Blocking Store - Zustand
  * Manages time blocks, events, energy tracking, and planned vs actual time
+ * Hybrid pattern: optimistic local updates + async Supabase sync
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase, getCurrentUserId } from '../lib/supabase';
+
+// ============================================
+// SUPABASE SYNC HELPERS
+// ============================================
+
+// Initialize store from Supabase
+const initializeFromSupabase = async (set, get) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    // Load time blocks (limit to last 90 days worth, ~300 blocks)
+    const { data: timeBlocks, error: blocksError } = await supabase
+      .from('calendar_time_blocks')
+      .select('*')
+      .eq('user_id', userId)
+      .order('block_date', { ascending: false })
+      .limit(300);
+
+    if (blocksError) throw blocksError;
+
+    // Load events (limit to 500 most recent)
+    const { data: events, error: eventsError } = await supabase
+      .from('calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .order('start_time', { ascending: false })
+      .limit(500);
+
+    if (eventsError) throw eventsError;
+
+    // Load templates
+    const { data: templates, error: templatesError } = await supabase
+      .from('calendar_templates')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('active', true);
+
+    if (templatesError) throw templatesError;
+
+    // Load calendar settings from user_profiles
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('calendar_settings')
+      .eq('id', userId)
+      .maybeSingle();
+
+    // Transform data to match store format
+    const transformedBlocks = timeBlocks?.map(b => ({
+      id: b.id,
+      title: b.title || 'Untitled Block',
+      date: b.block_date,
+      startTime: b.planned_start,
+      endTime: b.planned_end,
+      plannedDuration: b.planned_duration || 60,
+      actualDuration: b.actual_duration,
+      module: b.module || 'productivity',
+      type: b.block_type || 'deep_work',
+      status: b.status || 'planned',
+      priority: b.priority || 'medium',
+      energyLevel: b.energy_level || 'medium',
+      actualEnergyLevel: b.actual_energy_level,
+      notes: b.notes || '',
+      taskId: b.task_id,
+      projectId: b.project_id,
+      tags: b.tags || [],
+      interruptions: b.interruptions || [],
+      actualStartTime: b.actual_start_time,
+      actualEndTime: b.actual_end_time,
+      completedAt: b.completed_at,
+      createdAt: b.created_at,
+      updatedAt: b.updated_at,
+    })) || [];
+
+    const transformedEvents = events?.map(e => ({
+      id: e.id,
+      title: e.title,
+      description: e.description,
+      type: e.event_type,
+      startTime: e.start_time,
+      endTime: e.end_time,
+      allDay: e.all_day,
+      recurrenceRule: e.recurrence_rule,
+      location: e.location,
+      attendees: e.attendees || [],
+      color: e.color,
+      tags: e.tags || [],
+      createdAt: e.created_at,
+    })) || [];
+
+    const transformedTemplates = templates?.map(t => ({
+      id: t.id,
+      name: t.name,
+      blocks: t.blocks || [],
+      recurrence: t.recurrence || 'none',
+      active: t.active,
+      createdAt: t.created_at,
+    })) || [];
+
+    const settings = profile?.calendar_settings || {};
+
+    // Update store with data from Supabase (only if we have data)
+    const updates = {};
+    if (transformedBlocks.length > 0) updates.timeBlocks = transformedBlocks;
+    if (transformedEvents.length > 0) updates.events = transformedEvents;
+    if (transformedTemplates.length > 0) updates.templates = transformedTemplates;
+    if (settings.workHoursStart) updates.workHoursStart = settings.workHoursStart;
+    if (settings.workHoursEnd) updates.workHoursEnd = settings.workHoursEnd;
+    if (settings.bufferPercentage) updates.bufferPercentage = settings.bufferPercentage;
+
+    if (Object.keys(updates).length > 0) {
+      set(updates);
+    }
+
+    console.log('Calendar store initialized from Supabase');
+  } catch (error) {
+    console.error('Error initializing calendar store from Supabase:', error);
+  }
+};
+
+// Sync time block to Supabase
+const syncTimeBlockToSupabase = async (block, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase
+        .from('calendar_time_blocks')
+        .delete()
+        .eq('id', block.id)
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('calendar_time_blocks')
+        .upsert({
+          id: block.id,
+          user_id: userId,
+          title: block.title,
+          block_date: block.date,
+          planned_start: block.startTime,
+          planned_end: block.endTime,
+          planned_duration: block.plannedDuration,
+          actual_duration: block.actualDuration,
+          module: block.module,
+          block_type: block.type,
+          status: block.status,
+          priority: block.priority,
+          energy_level: block.energyLevel,
+          actual_energy_level: block.actualEnergyLevel,
+          notes: block.notes,
+          task_id: block.taskId,
+          project_id: block.projectId,
+          tags: block.tags || [],
+          interruptions: block.interruptions || [],
+          actual_start_time: block.actualStartTime,
+          actual_end_time: block.actualEndTime,
+          completed_at: block.completedAt,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing time block to Supabase:', error);
+  }
+};
+
+// Sync template to Supabase
+const syncTemplateToSupabase = async (template, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase
+        .from('calendar_templates')
+        .update({ active: false, updated_at: new Date().toISOString() })
+        .eq('id', template.id)
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('calendar_templates')
+        .upsert({
+          id: template.id,
+          user_id: userId,
+          name: template.name,
+          blocks: template.blocks || [],
+          recurrence: template.recurrence || 'none',
+          active: template.active !== false,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing template to Supabase:', error);
+  }
+};
+
+// Sync calendar settings to user_profiles
+const syncSettingsToSupabase = async (settings) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    await supabase
+      .from('user_profiles')
+      .update({
+        calendar_settings: settings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+  } catch (error) {
+    console.error('Error syncing calendar settings to Supabase:', error);
+  }
+};
 
 export const useCalendarStore = create(
   persist(
@@ -21,6 +236,9 @@ export const useCalendarStore = create(
       workHoursStart: 6,   // 6am
       workHoursEnd: 23,    // 11pm
       bufferPercentage: 20, // 20% buffer time recommended
+
+      // Initialize from Supabase
+      initializeFromSupabase: () => initializeFromSupabase(set, get),
 
       // ============================================
       // TIME BLOCK ACTIONS
@@ -56,6 +274,8 @@ export const useCalendarStore = create(
         set((state) => ({
           timeBlocks: [...state.timeBlocks, newBlock],
         }));
+        // Sync to Supabase
+        syncTimeBlockToSupabase(newBlock);
 
         return newBlock.id;
       },
@@ -75,15 +295,21 @@ export const useCalendarStore = create(
               : block
           ),
         }));
+        // Sync to Supabase
+        const block = get().timeBlocks.find(b => b.id === blockId);
+        if (block) syncTimeBlockToSupabase(block);
       },
 
       /**
        * Delete a time block
        */
       deleteTimeBlock: (blockId) => {
+        const block = get().timeBlocks.find(b => b.id === blockId);
         set((state) => ({
           timeBlocks: state.timeBlocks.filter((block) => block.id !== blockId),
         }));
+        // Sync to Supabase
+        if (block) syncTimeBlockToSupabase(block, 'delete');
       },
 
       /**
@@ -101,6 +327,9 @@ export const useCalendarStore = create(
               : block
           ),
         }));
+        // Sync to Supabase
+        const block = get().timeBlocks.find(b => b.id === blockId);
+        if (block) syncTimeBlockToSupabase(block);
       },
 
       /**
@@ -129,6 +358,9 @@ export const useCalendarStore = create(
             return block;
           }),
         }));
+        // Sync to Supabase
+        const block = get().timeBlocks.find(b => b.id === blockId);
+        if (block) syncTimeBlockToSupabase(block);
       },
 
       /**
@@ -154,6 +386,9 @@ export const useCalendarStore = create(
             return block;
           }),
         }));
+        // Sync to Supabase
+        const block = get().timeBlocks.find(b => b.id === blockId);
+        if (block) syncTimeBlockToSupabase(block);
       },
 
       /**
@@ -173,6 +408,9 @@ export const useCalendarStore = create(
               : block
           ),
         }));
+        // Sync to Supabase
+        const block = get().timeBlocks.find(b => b.id === blockId);
+        if (block) syncTimeBlockToSupabase(block);
       },
 
       // ============================================
@@ -195,8 +433,22 @@ export const useCalendarStore = create(
         set((state) => ({
           templates: [...state.templates, newTemplate],
         }));
+        // Sync to Supabase
+        syncTemplateToSupabase(newTemplate);
 
         return newTemplate.id;
+      },
+
+      /**
+       * Delete a template
+       */
+      deleteTemplate: (templateId) => {
+        const template = get().templates.find(t => t.id === templateId);
+        set((state) => ({
+          templates: state.templates.filter((t) => t.id !== templateId),
+        }));
+        // Sync to Supabase
+        if (template) syncTemplateToSupabase(template, 'delete');
       },
 
       /**
@@ -360,3 +612,9 @@ export const useCalendarStore = create(
     }
   )
 );
+
+// Initialize calendar store from Supabase
+export const initializeCalendarStore = async () => {
+  const store = useCalendarStore.getState();
+  await store.initializeFromSupabase();
+};

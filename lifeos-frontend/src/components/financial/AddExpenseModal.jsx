@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, DollarSign, Calendar, Tag, FileText, AlertCircle, Wallet, TrendingDown, CheckCircle2 } from 'lucide-react';
 import Button from '../shared/Button';
 import { useFinancialStore, ENVELOPE_CATEGORIES, getMonthKey } from '../../stores/financialStore';
+import { triggerGamification } from '../../hooks/useGamification';
 import './AddExpenseModal.css';
 
 const AddExpenseModal = ({ onClose }) => {
@@ -54,6 +55,7 @@ const AddExpenseModal = ({ onClose }) => {
       merchant: formData.description,
     });
 
+    triggerGamification('expenseLogged', { xpOverride: 10, module: 'financial' });
     onClose();
   };
 

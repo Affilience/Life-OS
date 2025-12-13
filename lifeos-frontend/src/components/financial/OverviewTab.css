@@ -28,23 +28,23 @@
 }
 
 .income-card .summary-icon {
-  background: rgba(34, 197, 94, 0.1);
-  color: var(--color-success-500);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--money-income, #10b981);
 }
 
 .expense-card .summary-icon {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--color-error-500);
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--money-expense, #f59e0b);
 }
 
 .net-card .summary-icon {
-  background: rgba(234, 179, 8, 0.1);
-  color: var(--color-financial-500);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--money-savings, #3b82f6);
 }
 
 .networth-card .summary-icon {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--color-primary-500);
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--money-investment, #8b5cf6);
 }
 
 .summary-content {

@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
-import {
-  Calendar as CalendarIcon,
-  List,
-  Grid
-} from 'lucide-react';
+import { List, Grid } from 'lucide-react';
 import CosmicWeekView from '../components/calendar/CosmicWeekView';
 import CosmicDayView from '../components/calendar/CosmicDayView';
-import MonthView from '../components/calendar/MonthView';
-import AnalyticsView from '../components/calendar/AnalyticsView';
+import { CalendarSetup } from '../components/onboarding/setup';
+import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
 
 /**
  * Astral Map - Calendar & Time
@@ -17,13 +13,14 @@ import AnalyticsView from '../components/calendar/AnalyticsView';
 
 const CalendarNew = () => {
   const [activeView, setActiveView] = useState('week');
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
+
+  // Show setup wizard if calendar module not configured during onboarding
+  const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('calendar');
 
   const tabs = [
     { id: 'week', name: 'Week', icon: Grid },
     { id: 'day', name: 'Day', icon: List },
-    // TODO: Implement Month and Analytics views
-    // { id: 'month', name: 'Month', icon: CalendarIcon },
   ];
 
   const renderView = () => {
@@ -32,19 +29,15 @@ const CalendarNew = () => {
         return <CosmicWeekView />;
       case 'day':
         return <CosmicDayView />;
-      case 'month':
-        return <MonthView selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
-      case 'analytics':
-        return <AnalyticsView />;
       default:
         return <CosmicWeekView />;
     }
   };
 
   return (
-    <div className="calendar-page min-h-screen bg-[#0c0a10]">
+    <div className="calendar-page min-h-screen bg-bg-0">
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+      <div className="sticky top-0 z-40 bg-bg-0 border-b border-border" data-tour="calendar-views">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -54,8 +47,8 @@ const CalendarNew = () => {
                 onClick={() => setActiveView(tab.id)}
                 className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
                   activeView === tab.id
-                    ? 'bg-rose-500/20 text-rose-400 border-b-2 border-rose-500'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
+                    ? 'bg-primary-500/20 text-primary-400 border-b-2 border-primary-500'
+                    : 'text-text-muted hover:text-text-primary hover:bg-bg-1/50'
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -66,9 +59,23 @@ const CalendarNew = () => {
         </div>
       </div>
 
+      {/* Setup Wizard (if needed) */}
+      {showSetup && (
+        <div className="p-4">
+          <CalendarSetup
+            onComplete={() => {
+              useIntegratedOnboardingStore.getState().markModuleComplete('calendar');
+            }}
+            onSkip={() => {
+              useIntegratedOnboardingStore.getState().markModuleComplete('calendar');
+            }}
+          />
+        </div>
+      )}
+
       {/* Active Tab Content */}
       <div className="tab-content">
-        {renderView()}
+        {!showSetup && renderView()}
       </div>
 
       <style>{`

@@ -50,7 +50,7 @@ const TabNavigation = ({
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`
-              flex items-center gap-2 px-6 py-4 text-sm font-medium
+              flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium
               border-b-2 -mb-px transition-all duration-fast whitespace-nowrap
               ${isActive
                 ? `${accentColor} text-text-high bg-muted`
@@ -58,11 +58,11 @@ const TabNavigation = ({
               }
             `}
           >
-            {Icon && <Icon size={18} />}
+            {Icon && <Icon size={16} className="sm:w-[18px] sm:h-[18px]" />}
             <span>{tab.label}</span>
             {tab.badge !== undefined && tab.badge > 0 && (
               <span className={`
-                ml-1.5 px-2 py-0.5 text-xs rounded-full
+                ml-1 sm:ml-1.5 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs rounded-full
                 ${isActive
                   ? 'bg-white/20 text-white'
                   : 'bg-white/10 text-white/60'

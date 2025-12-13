@@ -1,20 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { SAMPLE_MEALS, DEFAULT_DAILY_GOALS } from '../data/nutritionData';
+import { supabase, getCurrentUserId } from '../lib/supabase';
+import { DEFAULT_DAILY_GOALS } from '../data/nutritionData';
 import { useAvatarStore } from './avatarStore';
+import { triggerGamification } from '../hooks/useGamification';
 
 // Supplement interaction warnings
 const SUPPLEMENT_INTERACTIONS = {
-  'calcium': ['iron', 'zinc', 'magnesium'], // Calcium blocks absorption of these
-  'iron': ['calcium', 'zinc'], // Iron competes with these
-  'zinc': ['copper', 'iron', 'calcium'], // Zinc blocks copper absorption
-  'magnesium': ['calcium'], // Best taken separately from calcium
-  'vitamin-d': [], // Generally safe, enhances calcium absorption
-  'vitamin-c': [], // Generally safe, enhances iron absorption
-  'vitamin-k': ['blood-thinners'], // Interacts with blood thinners
-  'fish-oil': ['blood-thinners'], // May increase bleeding risk
-  'vitamin-b12': [], // Generally safe
-  'folate': [], // Generally safe
+  'calcium': ['iron', 'zinc', 'magnesium'],
+  'iron': ['calcium', 'zinc'],
+  'zinc': ['copper', 'iron', 'calcium'],
+  'magnesium': ['calcium'],
+  'vitamin-d': [],
+  'vitamin-c': [],
+  'vitamin-k': ['blood-thinners'],
+  'fish-oil': ['blood-thinners'],
+  'vitamin-b12': [],
+  'folate': [],
 };
 
 // Optimal timing recommendations
@@ -33,92 +35,304 @@ const SUPPLEMENT_TIMING = {
   'protein': { optimal: 'any', withFood: false, reason: 'Post-workout or as needed' },
 };
 
+// Default state
+const DEFAULT_STATE = {
+  dailyGoals: DEFAULT_DAILY_GOALS,
+  micronutrientGoals: null,
+  meals: [],
+  recipes: [],
+  mealPlans: {},
+  currentMealPlanWeek: null,
+  supplements: [],
+  supplementStacks: [],
+  supplementLog: {},
+  waterIntake: {},
+  waterGoalMl: 2000,
+  waterUnit: 'ml',
+  waterContainerMl: 500,
+  selectedDate: new Date().toISOString().split('T')[0],
+  isAddingMeal: false,
+};
+
 export const useHealthStore = create(
   persist(
     (set, get) => ({
-      // User settings
-      dailyGoals: DEFAULT_DAILY_GOALS,
+      ...DEFAULT_STATE,
 
-      // Custom micronutrient goals (null means use FDA defaults)
-      micronutrientGoals: null, // { sodium: 2300, potassium: 4700, ... }
+      // Sync status
+      _isSyncing: false,
+      _lastSyncedAt: null,
+      _syncError: null,
 
-      // Meals data
-      meals: SAMPLE_MEALS,
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
-      // ============ RECIPE LIBRARY ============
-      recipes: [],
+        set({ _isSyncing: true, _syncError: null });
 
-      // ============ MEAL PLANNING ============
-      mealPlans: {}, // { [weekKey]: { monday: { breakfast: recipeId, ... }, ... } }
-      currentMealPlanWeek: null,
+        try {
+          // Fetch user health settings
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('health_settings')
+            .eq('id', userId)
+            .maybeSingle();
 
-      // ============ GROCERY LIST ============
-      groceryItems: [], // { id, name, quantity, unit, category, checked, fromRecipeId? }
+          if (profile?.health_settings) {
+            const settings = profile.health_settings;
+            set({
+              dailyGoals: settings.dailyGoals || DEFAULT_DAILY_GOALS,
+              micronutrientGoals: settings.micronutrientGoals,
+              waterUnit: settings.waterUnit || 'ml',
+              waterContainerMl: settings.waterContainerMl || 500,
+              waterGoalMl: settings.dailyGoals?.water || 2000,
+            });
+          }
 
-      // ============ SUPPLEMENTS ============
-      supplements: [], // User's supplement library
-      supplementStacks: [], // Predefined stacks (morning, evening, workout, etc.)
-      supplementLog: {}, // { [date]: { [supplementId]: { taken: boolean, time: string } } }
+          // Fetch meals (nutrition logs)
+          const { data: nutritionLogs } = await supabase
+            .from('health_nutrition_logs')
+            .select('*')
+            .eq('user_id', userId)
+            .order('meal_timestamp', { ascending: false })
+            .limit(100);
 
-      // Water intake - stored in ml for flexibility
-      // User can track in any unit (ml, oz, glasses, bottles) - all converted to ml
-      waterIntake: {}, // { [date]: { amount: number (ml), goal: number (ml) } }
-      waterGoalMl: 2000, // Default: 2000ml (~8 glasses / ~68oz)
-      waterUnit: 'ml', // 'ml', 'oz', 'glasses', 'bottles'
-      waterContainerMl: 500, // Size of user's container in ml (for bottle tracking)
+          if (nutritionLogs) {
+            const meals = nutritionLogs.map(log => ({
+              id: log.id,
+              timestamp: log.meal_timestamp,
+              type: log.meal_type,
+              items: log.food_items || [],
+              totalCalories: log.total_calories,
+              totalProtein: log.total_protein,
+              totalCarbs: log.total_carbs,
+              totalFat: log.total_fat,
+              notes: log.notes,
+            }));
+            set({ meals });
+          }
 
-      // UI state
-      selectedDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-      isAddingMeal: false,
+          // Fetch recipes (limit to 100 most recent)
+          const { data: recipes } = await supabase
+            .from('health_recipes')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(100);
 
-      // Actions
+          if (recipes) {
+            const formattedRecipes = recipes.map(r => ({
+              id: r.id,
+              name: r.name,
+              description: r.description,
+              servings: r.servings,
+              prepTime: r.prep_time_minutes,
+              cookTime: r.cook_time_minutes,
+              ingredients: r.ingredients || [],
+              instructions: r.instructions || [],
+              nutritionPerServing: r.nutrition_per_serving || {},
+              tags: r.tags || [],
+              imageUrl: r.image_url,
+              isFavorite: r.is_favorite,
+              timesMade: r.times_made,
+              lastMadeAt: r.last_made_at,
+              sourceUrl: r.source_url,
+              createdAt: r.created_at,
+            }));
+            set({ recipes: formattedRecipes });
+          }
+
+          // Fetch supplements
+          const { data: supplements } = await supabase
+            .from('health_supplements')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_active', true);
+
+          if (supplements) {
+            const formattedSupplements = supplements.map(s => ({
+              id: s.id,
+              name: s.name,
+              brand: s.brand,
+              dosage: s.dosage,
+              unit: s.unit,
+              form: s.form,
+              type: s.category,
+              benefits: s.benefits || [],
+              bestTime: s.best_time,
+              interactions: s.interactions || [],
+              notes: s.notes,
+              imageUrl: s.image_url,
+              isActive: s.is_active,
+              createdAt: s.created_at,
+            }));
+            set({ supplements: formattedSupplements });
+          }
+
+          // Fetch today's water intake
+          const today = new Date().toISOString().split('T')[0];
+          const { data: waterLog } = await supabase
+            .from('health_water_logs')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('log_date', today)
+            .maybeSingle();
+
+          if (waterLog) {
+            set(state => ({
+              waterIntake: {
+                ...state.waterIntake,
+                [today]: { amount: waterLog.amount_ml, goal: waterLog.goal_ml },
+              },
+            }));
+          }
+
+          set({ _lastSyncedAt: new Date().toISOString(), _isSyncing: false });
+        } catch (error) {
+          console.error('Failed to initialize health from Supabase:', error);
+          set({ _syncError: error.message, _isSyncing: false });
+        }
+      },
+
+      // Sync settings to Supabase
+      syncSettingsToSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        const { dailyGoals, micronutrientGoals, waterUnit, waterContainerMl, waterGoalMl } = get();
+
+        try {
+          await supabase
+            .from('user_profiles')
+            .update({
+              health_settings: {
+                dailyGoals: { ...dailyGoals, water: waterGoalMl },
+                micronutrientGoals,
+                waterUnit,
+                waterContainerMl,
+              },
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+        } catch (error) {
+          console.error('Failed to sync health settings:', error);
+        }
+      },
 
       // Add a new meal
-      addMeal: (mealData) => {
+      addMeal: async (mealData) => {
+        const userId = await getCurrentUserId();
         const newMeal = {
           id: `meal-${Date.now()}`,
           timestamp: new Date().toISOString(),
           ...mealData,
         };
 
+        // Optimistic update
         set((state) => ({
           meals: [newMeal, ...state.meals],
           isAddingMeal: false,
         }));
 
-        // Award XP for logging a meal
-        // Base XP: 5 for tracking nutrition
-        // Bonus: 5 XP if protein goal is met
-        // Bonus: 5 XP if within calorie goals (±10%)
-        const { dailyGoals } = get();
-        let xpEarned = 5; // Base tracking XP
+        // Sync to Supabase
+        if (userId) {
+          try {
+            const { data, error } = await supabase
+              .from('health_nutrition_logs')
+              .insert({
+                user_id: userId,
+                meal_type: mealData.type,
+                food_items: mealData.items || [],
+                total_calories: mealData.totalCalories || 0,
+                total_protein: mealData.totalProtein || 0,
+                total_carbs: mealData.totalCarbs || 0,
+                total_fat: mealData.totalFat || 0,
+                meal_timestamp: newMeal.timestamp,
+                notes: mealData.notes,
+              })
+              .select()
+              .single();
 
-        if (mealData.protein && mealData.protein >= dailyGoals.protein * 0.25) {
-          xpEarned += 3; // Good protein per meal
+            if (data) {
+              // Update with server-generated ID
+              set(state => ({
+                meals: state.meals.map(m =>
+                  m.id === newMeal.id ? { ...m, id: data.id } : m
+                ),
+              }));
+            }
+          } catch (error) {
+            console.error('Failed to sync meal to Supabase:', error);
+          }
         }
 
-        // Add XP to avatar
-        const avatarStore = useAvatarStore.getState();
-        avatarStore.addXP(xpEarned);
-        avatarStore.updateModuleProgress('nutrition', { mealsLogged: 1 });
+        // Award XP through unified gamification
+        const { dailyGoals } = get();
+        let xpEarned = 15;
+        if (mealData.protein && mealData.protein >= dailyGoals.protein * 0.25) {
+          xpEarned += 5; // Protein bonus
+          triggerGamification('proteinGoalHit', { xpOverride: 0 }); // Just track stat
+        }
+
+        triggerGamification('mealLogged', {
+          xpOverride: xpEarned,
+          module: 'health'
+        });
 
         return newMeal.id;
       },
 
       // Update existing meal
-      updateMeal: (id, updates) => {
+      updateMeal: async (id, updates) => {
+        const userId = await getCurrentUserId();
+
         set((state) => ({
           meals: state.meals.map((meal) =>
             meal.id === id ? { ...meal, ...updates } : meal
           ),
         }));
+
+        if (userId) {
+          try {
+            await supabase
+              .from('health_nutrition_logs')
+              .update({
+                meal_type: updates.type,
+                food_items: updates.items,
+                total_calories: updates.totalCalories,
+                total_protein: updates.totalProtein,
+                total_carbs: updates.totalCarbs,
+                total_fat: updates.totalFat,
+                notes: updates.notes,
+              })
+              .eq('id', id)
+              .eq('user_id', userId);
+          } catch (error) {
+            console.error('Failed to update meal in Supabase:', error);
+          }
+        }
       },
 
       // Delete meal
-      deleteMeal: (id) => {
+      deleteMeal: async (id) => {
+        const userId = await getCurrentUserId();
+
         set((state) => ({
           meals: state.meals.filter((meal) => meal.id !== id),
         }));
+
+        if (userId) {
+          try {
+            await supabase
+              .from('health_nutrition_logs')
+              .delete()
+              .eq('id', id)
+              .eq('user_id', userId);
+          } catch (error) {
+            console.error('Failed to delete meal from Supabase:', error);
+          }
+        }
       },
 
       // Get meals for specific date
@@ -129,32 +343,25 @@ export const useHealthStore = create(
         );
       },
 
-      // Calculate daily totals (includes all micronutrients)
+      // Calculate daily totals
       getDailyTotals: (date) => {
         const meals = get().getMealsForDate(date);
 
         const initialTotals = {
-          // Macros
           calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0,
-          // Fat breakdown
           saturatedFat: 0, transFat: 0, cholesterol: 0,
-          // Minerals
           sodium: 0, potassium: 0, calcium: 0, iron: 0, magnesium: 0, phosphorus: 0, zinc: 0,
-          // Vitamins
           vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0, vitaminK: 0,
           vitaminB6: 0, vitaminB12: 0, folate: 0,
         };
 
         return meals.reduce((totals, meal) => {
-          // Sum macros (always present)
           totals.calories += meal.totalCalories || 0;
           totals.protein += meal.totalProtein || 0;
           totals.carbs += meal.totalCarbs || 0;
           totals.fat += meal.totalFat || 0;
           totals.fiber += meal.totalFiber || 0;
           totals.sugar += meal.totalSugar || 0;
-
-          // Sum micronutrients if available
           totals.saturatedFat += meal.totalSaturatedFat || 0;
           totals.transFat += meal.totalTransFat || 0;
           totals.cholesterol += meal.totalCholesterol || 0;
@@ -173,47 +380,83 @@ export const useHealthStore = create(
           totals.vitaminB6 += meal.totalVitaminB6 || 0;
           totals.vitaminB12 += meal.totalVitaminB12 || 0;
           totals.folate += meal.totalFolate || 0;
-
           return totals;
         }, initialTotals);
       },
 
-      // Water intake actions - all stored in ml internally
-      // Adds water in ml (or converts from user's preferred unit)
-      addWater: (amount = null) => {
+      // Water intake actions
+      addWater: async (amount = null) => {
+        const userId = await getCurrentUserId();
         const { selectedDate, waterIntake, waterGoalMl, waterContainerMl } = get();
         const current = waterIntake[selectedDate]?.amount || 0;
-        // Default to adding one container's worth
         const mlToAdd = amount !== null ? amount : waterContainerMl;
+        const newAmount = current + mlToAdd;
 
+        // Optimistic update
         set((state) => ({
           waterIntake: {
             ...state.waterIntake,
-            [selectedDate]: { amount: current + mlToAdd, goal: waterGoalMl }
+            [selectedDate]: { amount: newAmount, goal: waterGoalMl }
           }
         }));
 
+        // Sync to Supabase
+        if (userId) {
+          try {
+            await supabase
+              .from('health_water_logs')
+              .upsert({
+                user_id: userId,
+                log_date: selectedDate,
+                amount_ml: newAmount,
+                goal_ml: waterGoalMl,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,log_date' });
+          } catch (error) {
+            console.error('Failed to sync water intake:', error);
+          }
+        }
+
         // Award XP for hitting water goal
-        if (current < waterGoalMl && current + mlToAdd >= waterGoalMl) {
-          const avatarStore = useAvatarStore.getState();
-          avatarStore.addXP(5);
+        if (current < waterGoalMl && newAmount >= waterGoalMl) {
+          triggerGamification('waterLogged', {
+            xpOverride: 10,
+            module: 'health'
+          });
         }
       },
 
-      removeWater: (amount = null) => {
+      removeWater: async (amount = null) => {
+        const userId = await getCurrentUserId();
         const { selectedDate, waterIntake, waterGoalMl, waterContainerMl } = get();
         const current = waterIntake[selectedDate]?.amount || 0;
         const mlToRemove = amount !== null ? amount : waterContainerMl;
+        const newAmount = Math.max(0, current - mlToRemove);
 
         set((state) => ({
           waterIntake: {
             ...state.waterIntake,
-            [selectedDate]: { amount: Math.max(0, current - mlToRemove), goal: waterGoalMl }
+            [selectedDate]: { amount: newAmount, goal: waterGoalMl }
           }
         }));
+
+        if (userId) {
+          try {
+            await supabase
+              .from('health_water_logs')
+              .upsert({
+                user_id: userId,
+                log_date: selectedDate,
+                amount_ml: newAmount,
+                goal_ml: waterGoalMl,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,log_date' });
+          } catch (error) {
+            console.error('Failed to sync water removal:', error);
+          }
+        }
       },
 
-      // Add a specific amount with quick presets
       addWaterAmount: (ml) => {
         get().addWater(ml);
       },
@@ -225,7 +468,6 @@ export const useHealthStore = create(
           amount: data.amount,
           goal: state.waterGoalMl,
           percentage: Math.round((data.amount / state.waterGoalMl) * 100),
-          // Convert to display units
           displayAmount: state.convertMlToUnit(data.amount),
           displayGoal: state.convertMlToUnit(state.waterGoalMl),
           unit: state.waterUnit,
@@ -233,18 +475,16 @@ export const useHealthStore = create(
         };
       },
 
-      // Convert ml to user's preferred unit
       convertMlToUnit: (ml) => {
         const { waterUnit, waterContainerMl } = get();
         switch (waterUnit) {
-          case 'oz': return Math.round(ml / 29.574); // 1 oz = 29.574 ml
-          case 'glasses': return Math.round(ml / 240); // 1 glass = 240ml (8oz)
-          case 'bottles': return Math.round((ml / waterContainerMl) * 10) / 10; // Based on container size
-          default: return ml; // ml
+          case 'oz': return Math.round(ml / 29.574);
+          case 'glasses': return Math.round(ml / 240);
+          case 'bottles': return Math.round((ml / waterContainerMl) * 10) / 10;
+          default: return ml;
         }
       },
 
-      // Convert user's unit to ml
       convertUnitToMl: (value, unit = null) => {
         const { waterUnit, waterContainerMl } = get();
         const targetUnit = unit || waterUnit;
@@ -252,7 +492,7 @@ export const useHealthStore = create(
           case 'oz': return Math.round(value * 29.574);
           case 'glasses': return Math.round(value * 240);
           case 'bottles': return Math.round(value * waterContainerMl);
-          default: return value; // ml
+          default: return value;
         }
       },
 
@@ -262,10 +502,13 @@ export const useHealthStore = create(
         if (unit !== undefined) updates.waterUnit = unit;
         if (containerMl !== undefined) updates.waterContainerMl = containerMl;
         set(updates);
+        get().syncSettingsToSupabase();
       },
 
-      // Legacy compatibility
-      setWaterGoal: (goal) => set({ waterGoalMl: goal }),
+      setWaterGoal: (goal) => {
+        set({ waterGoalMl: goal });
+        get().syncSettingsToSupabase();
+      },
 
       // UI actions
       setSelectedDate: (date) => set({ selectedDate: date }),
@@ -274,19 +517,20 @@ export const useHealthStore = create(
       // Update daily goals
       updateDailyGoals: (goals) => {
         set({ dailyGoals: { ...get().dailyGoals, ...goals } });
+        get().syncSettingsToSupabase();
       },
 
       // Update micronutrient goals
       updateMicronutrientGoals: (goals) => {
         set({ micronutrientGoals: { ...get().micronutrientGoals, ...goals } });
+        get().syncSettingsToSupabase();
       },
 
-      // Reset micronutrient goals to FDA defaults
       resetMicronutrientGoals: () => {
         set({ micronutrientGoals: null });
+        get().syncSettingsToSupabase();
       },
 
-      // Get effective micronutrient goal (custom or FDA default)
       getMicronutrientGoal: (key, fdaDefault) => {
         const { micronutrientGoals } = get();
         return micronutrientGoals?.[key] ?? fdaDefault;
@@ -294,7 +538,8 @@ export const useHealthStore = create(
 
       // ============ RECIPE ACTIONS ============
 
-      addRecipe: (recipeData) => {
+      addRecipe: async (recipeData) => {
+        const userId = await getCurrentUserId();
         const newRecipe = {
           id: `recipe-${Date.now()}`,
           createdAt: new Date().toISOString(),
@@ -305,25 +550,99 @@ export const useHealthStore = create(
           recipes: [newRecipe, ...state.recipes],
         }));
 
-        // Award XP for creating a recipe
-        const avatarStore = useAvatarStore.getState();
-        avatarStore.addXP(10);
+        if (userId) {
+          try {
+            const { data } = await supabase
+              .from('health_recipes')
+              .insert({
+                user_id: userId,
+                name: recipeData.name,
+                description: recipeData.description,
+                servings: recipeData.servings,
+                prep_time_minutes: recipeData.prepTime,
+                cook_time_minutes: recipeData.cookTime,
+                ingredients: recipeData.ingredients || [],
+                instructions: recipeData.instructions || [],
+                nutrition_per_serving: recipeData.nutritionPerServing || {},
+                tags: recipeData.tags || [],
+                image_url: recipeData.imageUrl,
+                is_favorite: recipeData.isFavorite || false,
+                source_url: recipeData.sourceUrl,
+              })
+              .select()
+              .single();
+
+            if (data) {
+              set(state => ({
+                recipes: state.recipes.map(r =>
+                  r.id === newRecipe.id ? { ...r, id: data.id } : r
+                ),
+              }));
+            }
+          } catch (error) {
+            console.error('Failed to sync recipe:', error);
+          }
+        }
+
+        triggerGamification('noteCreated', { xpOverride: 10, module: 'health' }); // Recipe created
 
         return newRecipe.id;
       },
 
-      updateRecipe: (id, updates) => {
+      updateRecipe: async (id, updates) => {
+        const userId = await getCurrentUserId();
+
         set((state) => ({
           recipes: state.recipes.map((recipe) =>
             recipe.id === id ? { ...recipe, ...updates, updatedAt: new Date().toISOString() } : recipe
           ),
         }));
+
+        if (userId) {
+          try {
+            await supabase
+              .from('health_recipes')
+              .update({
+                name: updates.name,
+                description: updates.description,
+                servings: updates.servings,
+                prep_time_minutes: updates.prepTime,
+                cook_time_minutes: updates.cookTime,
+                ingredients: updates.ingredients,
+                instructions: updates.instructions,
+                nutrition_per_serving: updates.nutritionPerServing,
+                tags: updates.tags,
+                image_url: updates.imageUrl,
+                is_favorite: updates.isFavorite,
+                source_url: updates.sourceUrl,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', id)
+              .eq('user_id', userId);
+          } catch (error) {
+            console.error('Failed to update recipe:', error);
+          }
+        }
       },
 
-      deleteRecipe: (id) => {
+      deleteRecipe: async (id) => {
+        const userId = await getCurrentUserId();
+
         set((state) => ({
           recipes: state.recipes.filter((recipe) => recipe.id !== id),
         }));
+
+        if (userId) {
+          try {
+            await supabase
+              .from('health_recipes')
+              .delete()
+              .eq('id', id)
+              .eq('user_id', userId);
+          } catch (error) {
+            console.error('Failed to delete recipe:', error);
+          }
+        }
       },
 
       getRecipeById: (id) => {
@@ -398,100 +717,13 @@ export const useHealthStore = create(
           },
         }));
 
-        // Award XP for planning ahead
-        const avatarStore = useAvatarStore.getState();
-        avatarStore.addXP(5);
-      },
-
-      // ============ GROCERY LIST ACTIONS ============
-
-      generateGroceryList: (weekKey) => {
-        const mealPlan = get().mealPlans[weekKey];
-        if (!mealPlan) return;
-
-        const ingredientMap = new Map();
-
-        // Iterate through all days and meals
-        Object.values(mealPlan).forEach((dayPlan) => {
-          Object.values(dayPlan).forEach((recipeId) => {
-            const recipe = get().getRecipeById(recipeId);
-            if (recipe && recipe.ingredients) {
-              recipe.ingredients.forEach((ingredient) => {
-                const key = `${ingredient.name.toLowerCase()}-${ingredient.unit || 'unit'}`;
-                const existing = ingredientMap.get(key);
-                if (existing) {
-                  existing.quantity += ingredient.quantity || 1;
-                } else {
-                  ingredientMap.set(key, {
-                    id: `grocery-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    name: ingredient.name,
-                    quantity: ingredient.quantity || 1,
-                    unit: ingredient.unit || 'unit',
-                    category: ingredient.category || 'other',
-                    checked: false,
-                    fromRecipeIds: [recipeId],
-                  });
-                }
-              });
-            }
-          });
-        });
-
-        const groceryItems = Array.from(ingredientMap.values());
-        set({ groceryItems });
-
-        return groceryItems;
-      },
-
-      addGroceryItem: (item) => {
-        const newItem = {
-          id: `grocery-${Date.now()}`,
-          checked: false,
-          ...item,
-        };
-
-        set((state) => ({
-          groceryItems: [...state.groceryItems, newItem],
-        }));
-
-        return newItem.id;
-      },
-
-      updateGroceryItem: (id, updates) => {
-        set((state) => ({
-          groceryItems: state.groceryItems.map((item) =>
-            item.id === id ? { ...item, ...updates } : item
-          ),
-        }));
-      },
-
-      toggleGroceryItem: (id) => {
-        set((state) => ({
-          groceryItems: state.groceryItems.map((item) =>
-            item.id === id ? { ...item, checked: !item.checked } : item
-          ),
-        }));
-      },
-
-      deleteGroceryItem: (id) => {
-        set((state) => ({
-          groceryItems: state.groceryItems.filter((item) => item.id !== id),
-        }));
-      },
-
-      clearCheckedGroceryItems: () => {
-        set((state) => ({
-          groceryItems: state.groceryItems.filter((item) => !item.checked),
-        }));
-      },
-
-      clearAllGroceryItems: () => {
-        set({ groceryItems: [] });
+        triggerGamification('eventCreated', { xpOverride: 5, module: 'health' }); // Meal plan copied
       },
 
       // ============ SUPPLEMENT ACTIONS ============
 
-      addSupplement: (supplementData) => {
+      addSupplement: async (supplementData) => {
+        const userId = await getCurrentUserId();
         const newSupplement = {
           id: `supplement-${Date.now()}`,
           createdAt: new Date().toISOString(),
@@ -502,33 +734,105 @@ export const useHealthStore = create(
           supplements: [...state.supplements, newSupplement],
         }));
 
-        // Award XP for tracking supplements
-        const avatarStore = useAvatarStore.getState();
-        avatarStore.addXP(5);
+        if (userId) {
+          try {
+            const { data } = await supabase
+              .from('health_supplements')
+              .insert({
+                user_id: userId,
+                name: supplementData.name,
+                brand: supplementData.brand,
+                dosage: supplementData.dosage,
+                unit: supplementData.unit,
+                form: supplementData.form,
+                category: supplementData.type,
+                benefits: supplementData.benefits || [],
+                best_time: supplementData.bestTime,
+                interactions: supplementData.interactions || [],
+                notes: supplementData.notes,
+                image_url: supplementData.imageUrl,
+                is_active: true,
+              })
+              .select()
+              .single();
+
+            if (data) {
+              set(state => ({
+                supplements: state.supplements.map(s =>
+                  s.id === newSupplement.id ? { ...s, id: data.id } : s
+                ),
+              }));
+            }
+          } catch (error) {
+            console.error('Failed to sync supplement:', error);
+          }
+        }
+
+        triggerGamification('expenseLogged', { xpOverride: 5, module: 'health' }); // Generic action for supplement added
 
         return newSupplement.id;
       },
 
-      updateSupplement: (id, updates) => {
+      updateSupplement: async (id, updates) => {
+        const userId = await getCurrentUserId();
+
         set((state) => ({
           supplements: state.supplements.map((supplement) =>
             supplement.id === id ? { ...supplement, ...updates } : supplement
           ),
         }));
+
+        if (userId) {
+          try {
+            await supabase
+              .from('health_supplements')
+              .update({
+                name: updates.name,
+                brand: updates.brand,
+                dosage: updates.dosage,
+                unit: updates.unit,
+                form: updates.form,
+                category: updates.type,
+                benefits: updates.benefits,
+                best_time: updates.bestTime,
+                interactions: updates.interactions,
+                notes: updates.notes,
+                image_url: updates.imageUrl,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', id)
+              .eq('user_id', userId);
+          } catch (error) {
+            console.error('Failed to update supplement:', error);
+          }
+        }
       },
 
-      deleteSupplement: (id) => {
+      deleteSupplement: async (id) => {
+        const userId = await getCurrentUserId();
+
         set((state) => ({
           supplements: state.supplements.filter((supplement) => supplement.id !== id),
-          // Also remove from all stacks
           supplementStacks: state.supplementStacks.map((stack) => ({
             ...stack,
             supplementIds: stack.supplementIds.filter((sid) => sid !== id),
           })),
         }));
+
+        if (userId) {
+          try {
+            await supabase
+              .from('health_supplements')
+              .update({ is_active: false, updated_at: new Date().toISOString() })
+              .eq('id', id)
+              .eq('user_id', userId);
+          } catch (error) {
+            console.error('Failed to delete supplement:', error);
+          }
+        }
       },
 
-      // Supplement stacks
+      // Supplement stacks (local only for now)
       addSupplementStack: (stackData) => {
         const newStack = {
           id: `stack-${Date.now()}`,
@@ -577,7 +881,8 @@ export const useHealthStore = create(
       },
 
       // Supplement logging
-      logSupplementTaken: (supplementId, date = null) => {
+      logSupplementTaken: async (supplementId, date = null) => {
+        const userId = await getCurrentUserId();
         const logDate = date || get().selectedDate;
         const now = new Date();
 
@@ -594,9 +899,21 @@ export const useHealthStore = create(
           },
         }));
 
-        // Award XP for consistency
-        const avatarStore = useAvatarStore.getState();
-        avatarStore.addXP(2);
+        if (userId) {
+          try {
+            await supabase
+              .from('health_supplement_logs')
+              .insert({
+                user_id: userId,
+                supplement_id: supplementId,
+                taken_at: now.toISOString(),
+              });
+          } catch (error) {
+            console.error('Failed to log supplement:', error);
+          }
+        }
+
+        triggerGamification('sleepLogged', { xpOverride: 2, module: 'health' }); // Generic daily action
       },
 
       unlogSupplementTaken: (supplementId, date = null) => {
@@ -633,7 +950,6 @@ export const useHealthStore = create(
         const totalSupplements = supplements.length;
         const takenToday = Object.values(todayLog).filter((log) => log.taken).length;
 
-        // Calculate streak
         let streak = 0;
         const checkDate = new Date();
         while (true) {
@@ -658,7 +974,6 @@ export const useHealthStore = create(
         };
       },
 
-      // Get interaction warnings for supplements taken together
       getSupplementInteractions: (supplementIds) => {
         const supplements = get().supplements.filter((s) => supplementIds.includes(s.id));
         const warnings = [];
@@ -681,7 +996,6 @@ export const useHealthStore = create(
           });
         });
 
-        // Remove duplicates
         const uniqueWarnings = warnings.filter(
           (w, i, arr) =>
             arr.findIndex(
@@ -694,7 +1008,6 @@ export const useHealthStore = create(
         return uniqueWarnings;
       },
 
-      // Get timing recommendation for a supplement
       getSupplementTiming: (supplementType) => {
         const type = supplementType?.toLowerCase().replace(/\s+/g, '-');
         return SUPPLEMENT_TIMING[type] || { optimal: 'any', withFood: true, reason: 'No specific timing required' };
@@ -702,9 +1015,28 @@ export const useHealthStore = create(
     }),
     {
       name: 'lifeos-health',
+      partialize: (state) => ({
+        dailyGoals: state.dailyGoals,
+        micronutrientGoals: state.micronutrientGoals,
+        meals: state.meals,
+        recipes: state.recipes,
+        mealPlans: state.mealPlans,
+        supplements: state.supplements,
+        supplementStacks: state.supplementStacks,
+        supplementLog: state.supplementLog,
+        waterIntake: state.waterIntake,
+        waterGoalMl: state.waterGoalMl,
+        waterUnit: state.waterUnit,
+        waterContainerMl: state.waterContainerMl,
+      }),
     }
   )
 );
 
 // Export constants for use in components
 export { SUPPLEMENT_INTERACTIONS, SUPPLEMENT_TIMING };
+
+// Initialize function
+export const initializeHealthStore = async () => {
+  await useHealthStore.getState().initializeFromSupabase();
+};

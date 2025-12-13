@@ -1,43 +1,154 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Calendar, Clock, Zap, TrendingUp, Sun, Moon, Brain } from 'lucide-react';
 import MiniBarChart from '../shared/charts/MiniBarChart';
 import MiniLineChart from '../shared/charts/MiniLineChart';
 import StatCard from '../shared/charts/StatCard';
+import { useCalendarStore } from '../../stores/calendarStore';
 
 export default function CalendarDashboard() {
-  // Mock data
-  const timeBlockedData = [
-    { label: 'Mon', value: 8 },
-    { label: 'Tue', value: 9 },
-    { label: 'Wed', value: 7 },
-    { label: 'Thu', value: 10 },
-    { label: 'Fri', value: 8 },
-    { label: 'Sat', value: 4 },
-    { label: 'Sun', value: 3 },
-  ];
+  // Connect to store
+  const { timeBlocks } = useCalendarStore();
 
-  const energyLevelsData = [
-    { label: '6am', value: 3 },
-    { label: '9am', value: 8 },
-    { label: '12pm', value: 9 },
-    { label: '3pm', value: 6 },
-    { label: '6pm', value: 7 },
-    { label: '9pm', value: 4 },
-  ];
+  // Calculate real stats from store data
+  const stats = useMemo(() => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const plannedVsActual = [
-    { category: 'Deep Work', planned: 25, actual: 22 },
-    { category: 'Meetings', planned: 10, actual: 12 },
-    { category: 'Learning', planned: 8, actual: 6 },
-    { category: 'Exercise', planned: 5, actual: 5 },
-  ];
+    // Get last 7 days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      last7Days.push(d.toISOString().split('T')[0]);
+    }
 
-  const upcomingBlocks = [
-    { time: '09:00 - 11:00', activity: 'Deep Work - Code Review', type: 'focus', energy: 'high' },
-    { time: '11:00 - 12:00', activity: 'Team Sync Meeting', type: 'meeting', energy: 'medium' },
-    { time: '14:00 - 16:00', activity: 'Learning - React Advanced Patterns', type: 'learning', energy: 'medium' },
-    { time: '17:00 - 18:00', activity: 'Workout Session', type: 'health', energy: 'low' },
-  ];
+    // Calculate time blocked per day
+    const timeBlockedData = last7Days.map(date => {
+      const dayBlocks = (timeBlocks || []).filter(b => b.date === date);
+      const totalHours = dayBlocks.reduce((sum, b) => {
+        const duration = b.duration || 60;
+        return sum + (duration / 60);
+      }, 0);
+      const dayOfWeek = new Date(date).getDay();
+      return { label: dayLabels[dayOfWeek], value: Math.round(totalHours * 10) / 10 };
+    });
+
+    // Calculate total weekly hours
+    const totalWeeklyHours = timeBlockedData.reduce((sum, d) => sum + d.value, 0);
+    const avgHoursPerDay = totalWeeklyHours / 7;
+
+    // Calculate efficiency (completed vs total blocks)
+    const weekBlocks = (timeBlocks || []).filter(b => last7Days.includes(b.date));
+    const completedBlocks = weekBlocks.filter(b => b.status === 'completed');
+    const efficiency = weekBlocks.length > 0
+      ? Math.round((completedBlocks.length / weekBlocks.length) * 100)
+      : 0;
+
+    // Calculate deep work hours
+    const deepWorkBlocks = weekBlocks.filter(b =>
+      b.type === 'focus' || b.category === 'deep_work' || b.title?.toLowerCase().includes('deep work')
+    );
+    const deepWorkHours = deepWorkBlocks.reduce((sum, b) => sum + ((b.duration || 60) / 60), 0);
+
+    // Build planned vs actual
+    const categories = ['focus', 'meeting', 'learning', 'health'];
+    const categoryLabels = { focus: 'Deep Work', meeting: 'Meetings', learning: 'Learning', health: 'Exercise' };
+    const plannedVsActual = categories.map(cat => {
+      const catBlocks = weekBlocks.filter(b => b.type === cat || b.category === cat);
+      const plannedHours = catBlocks.reduce((sum, b) => sum + ((b.duration || 60) / 60), 0);
+      const actualHours = catBlocks.filter(b => b.status === 'completed')
+        .reduce((sum, b) => sum + ((b.duration || 60) / 60), 0);
+      return {
+        category: categoryLabels[cat] || cat,
+        planned: Math.round(plannedHours),
+        actual: Math.round(actualHours)
+      };
+    }).filter(item => item.planned > 0 || item.actual > 0);
+
+    // Today's blocks
+    const todayBlocks = (timeBlocks || []).filter(b => b.date === todayStr)
+      .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+      .map(b => ({
+        time: `${b.startTime || '00:00'} - ${b.endTime || '01:00'}`,
+        activity: b.title || 'Time Block',
+        type: b.type || b.category || 'focus',
+        energy: b.energy || 'medium'
+      }));
+
+    // Energy levels (calculated from time block completion rates by time slot)
+    const energyLevels = [
+      { hour: 6, label: '6am' },
+      { hour: 9, label: '9am' },
+      { hour: 12, label: '12pm' },
+      { hour: 15, label: '3pm' },
+      { hour: 18, label: '6pm' },
+      { hour: 21, label: '9pm' },
+    ];
+
+    const energyLevelsData = energyLevels.map(({ hour, label }) => {
+      // Find blocks that start around this hour
+      const hourBlocks = weekBlocks.filter(b => {
+        const startHour = parseInt((b.startTime || '00:00').split(':')[0]);
+        return startHour >= hour && startHour < hour + 3;
+      });
+
+      // Calculate completion rate as energy proxy
+      if (hourBlocks.length === 0) {
+        return { label, value: hour >= 9 && hour <= 15 ? 5 : 3 }; // Default curve
+      }
+
+      const completed = hourBlocks.filter(b => b.status === 'completed').length;
+      const completionRate = completed / hourBlocks.length;
+      // Scale to 1-10, with higher completion = higher energy
+      const energyValue = Math.round(completionRate * 7 + 3);
+
+      return { label, value: Math.min(10, Math.max(1, energyValue)) };
+    });
+
+    // Find peak energy time
+    const peakEnergy = energyLevelsData.reduce((peak, current) =>
+      current.value > peak.value ? current : peak
+    , energyLevelsData[0]);
+    const peakTime = peakEnergy.label;
+
+    // Calculate morning vs afternoon completion rate for insights
+    const morningBlocks = weekBlocks.filter(b => {
+      const hour = parseInt((b.startTime || '00:00').split(':')[0]);
+      return hour >= 6 && hour < 14;
+    });
+    const afternoonBlocks = weekBlocks.filter(b => {
+      const hour = parseInt((b.startTime || '00:00').split(':')[0]);
+      return hour >= 14;
+    });
+    const morningCompletionRate = morningBlocks.length > 0
+      ? Math.round((morningBlocks.filter(b => b.status === 'completed').length / morningBlocks.length) * 100)
+      : 0;
+    const afternoonCompletionRate = afternoonBlocks.length > 0
+      ? Math.round((afternoonBlocks.filter(b => b.status === 'completed').length / afternoonBlocks.length) * 100)
+      : 0;
+
+    return {
+      timeBlockedData,
+      totalWeeklyHours: Math.round(totalWeeklyHours),
+      avgHoursPerDay: Math.round(avgHoursPerDay * 10) / 10,
+      efficiency,
+      deepWorkHours: Math.round(deepWorkHours),
+      plannedVsActual: plannedVsActual.length > 0 ? plannedVsActual : [
+        { category: 'Deep Work', planned: 0, actual: 0 },
+        { category: 'Meetings', planned: 0, actual: 0 },
+        { category: 'Learning', planned: 0, actual: 0 },
+        { category: 'Exercise', planned: 0, actual: 0 },
+      ],
+      upcomingBlocks: todayBlocks.length > 0 ? todayBlocks : [
+        { time: '09:00 - 11:00', activity: 'No blocks scheduled', type: 'focus', energy: 'medium' }
+      ],
+      energyLevelsData,
+      peakTime,
+      morningCompletionRate,
+      afternoonCompletionRate
+    };
+  }, [timeBlocks]);
 
   const getTypeColor = (type) => {
     switch (type) {
@@ -69,34 +180,34 @@ export default function CalendarDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
             title="This Week"
-            value="49h"
+            value={`${stats.totalWeeklyHours}h`}
             subtitle="time blocked"
-            trend="up"
-            trendValue="+5h"
+            trend={stats.totalWeeklyHours > 30 ? "up" : "neutral"}
+            trendValue={stats.avgHoursPerDay > 0 ? `${stats.avgHoursPerDay}h/day` : ""}
             icon={Clock}
             color="indigo"
           />
           <StatCard
             title="Efficiency"
-            value="87%"
+            value={`${stats.efficiency}%`}
             subtitle="planned vs actual"
-            trend="up"
-            trendValue="+3%"
+            trend={stats.efficiency > 70 ? "up" : "neutral"}
+            trendValue={stats.efficiency > 0 ? "completion" : ""}
             icon={Zap}
             color="purple"
           />
           <StatCard
             title="Deep Work"
-            value="22h"
+            value={`${stats.deepWorkHours}h`}
             subtitle="this week"
-            trend="up"
-            trendValue="+2h"
+            trend={stats.deepWorkHours > 15 ? "up" : "neutral"}
+            trendValue=""
             icon={Brain}
             color="blue"
           />
           <StatCard
             title="Peak Energy"
-            value="10am"
+            value={stats.peakTime || '12pm'}
             subtitle="optimal focus"
             icon={Sun}
             color="orange"
@@ -114,12 +225,12 @@ export default function CalendarDashboard() {
               <p className="text-xs text-white/60 mt-1">Hours scheduled this week</p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-white">7.0h</div>
+              <div className="text-2xl font-bold text-white">{stats.avgHoursPerDay}h</div>
               <div className="text-xs text-white/60">avg/day</div>
             </div>
           </div>
           <div className="h-32">
-            <MiniBarChart data={timeBlockedData} color="indigo" showValues maxHeight={120} />
+            <MiniBarChart data={stats.timeBlockedData} color="indigo" showValues maxHeight={120} />
           </div>
         </div>
 
@@ -135,11 +246,11 @@ export default function CalendarDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <Sun className="w-4 h-4 text-orange-400" />
-              <span className="text-xs text-white/60">Peak: 12pm</span>
+              <span className="text-xs text-white/60">Peak: {stats.peakTime || '12pm'}</span>
             </div>
           </div>
           <div className="h-32">
-            <MiniLineChart data={energyLevelsData} color="purple" filled={true} showDots={true} />
+            <MiniLineChart data={stats.energyLevelsData} color="purple" filled={true} showDots={true} />
           </div>
         </div>
 
@@ -150,7 +261,7 @@ export default function CalendarDashboard() {
             Planned vs Actual (This Week)
           </h3>
           <div className="space-y-4">
-            {plannedVsActual.map((item, index) => {
+            {stats.plannedVsActual.map((item, index) => {
               const plannedPercent = (item.planned / 50) * 100;
               const actualPercent = (item.actual / 50) * 100;
               const efficiency = Math.round((item.actual / item.planned) * 100);
@@ -184,13 +295,13 @@ export default function CalendarDashboard() {
         </div>
 
         {/* Today's Schedule */}
-        <div className="bg-gradient-to-br from-indigo-500/5 to-purple-500/5 border border-indigo-500/20 rounded-2xl p-5">
+        <div className="bg-gradient-to-br from-indigo-500/5 to-purple-500/5 border border-indigo-500/20 rounded-2xl p-5" data-tour="time-blocks">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-indigo-400" />
             Today's Time Blocks
           </h3>
           <div className="space-y-3">
-            {upcomingBlocks.map((block, index) => (
+            {stats.upcomingBlocks.map((block, index) => (
               <div
                 key={index}
                 className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-indigo-500/30 transition-all"
@@ -220,17 +331,31 @@ export default function CalendarDashboard() {
           </div>
           <ul className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start gap-2">
-              <span className="text-green-400">•</span>
-              <span>Your most productive hours are 9am-12pm (87% task completion)</span>
+              <span className={stats.morningCompletionRate >= 70 ? "text-green-400" : "text-yellow-400"}>•</span>
+              <span>
+                Morning blocks (before 2pm): {stats.morningCompletionRate}% completion rate
+              </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-yellow-400">•</span>
-              <span>Meetings tend to run 20% longer than planned - add buffer time</span>
+              <span className={stats.afternoonCompletionRate >= 70 ? "text-green-400" : "text-yellow-400"}>•</span>
+              <span>
+                Afternoon blocks: {stats.afternoonCompletionRate}% completion rate
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-400">•</span>
-              <span>You complete 95% of time blocks scheduled before 2pm</span>
+              <span>
+                Peak focus time is around {stats.peakTime || '12pm'} based on your completion patterns
+              </span>
             </li>
+            {stats.efficiency > 0 && (
+              <li className="flex items-start gap-2">
+                <span className={stats.efficiency >= 70 ? "text-green-400" : "text-orange-400"}>•</span>
+                <span>
+                  Overall week efficiency: {stats.efficiency}% of planned blocks completed
+                </span>
+              </li>
+            )}
           </ul>
         </div>
       </div>

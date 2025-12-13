@@ -1,0 +1,328 @@
+/**
+ * Welcome Modal Styles
+ * Brief intro modal before guided onboarding
+ */
+
+.welcome-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+.welcome-modal {
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  background: var(--color-surface);
+  border-radius: 24px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.welcome-step {
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Intro Step */
+.intro-step {
+  text-align: center;
+}
+
+.nova-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nova-avatar-glow {
+  position: relative;
+  padding: 1rem;
+}
+
+.nova-avatar-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(20px);
+}
+
+.nova-avatar-large {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+}
+
+.nova-intro h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nova-tagline {
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.intro-content {
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.intro-content p {
+  color: var(--color-text);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.time-estimate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-surface-elevated);
+  border-radius: 100px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.time-estimate svg {
+  color: var(--color-primary);
+}
+
+/* Goals Step */
+.goals-step {
+  padding: 2rem;
+}
+
+.goals-header {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.goals-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.goals-header p {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.goals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.goal-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: var(--color-surface-elevated);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.goal-option:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.goal-option.selected {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--color-primary);
+}
+
+.goal-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.goal-option.selected .goal-icon {
+  background: rgba(139, 92, 246, 0.3);
+}
+
+.goal-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.goal-label {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.goal-desc {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.goal-check {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Selection Indicator */
+.selection-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.selection-dots {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.selection-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-surface-elevated);
+  border: 2px solid var(--color-border);
+  transition: all 0.2s ease;
+}
+
+.selection-dots .dot.filled {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Actions */
+.welcome-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.welcome-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.welcome-btn.primary {
+  background: var(--color-primary);
+  color: white;
+  width: 100%;
+}
+
+.welcome-btn.primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.welcome-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.welcome-btn.text {
+  background: transparent;
+  color: var(--color-text-secondary);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.welcome-btn.text:hover {
+  color: var(--color-text);
+}
+
+/* Scrollbar for goals */
+.goals-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.goals-grid::-webkit-scrollbar-track {
+  background: var(--color-surface);
+  border-radius: 2px;
+}
+
+.goals-grid::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+/* Responsive */
+@media (max-width: 540px) {
+  .welcome-modal {
+    margin: 1rem;
+    max-width: calc(100% - 2rem);
+  }
+
+  .welcome-step {
+    padding: 1.5rem;
+  }
+
+  .nova-avatar-large {
+    width: 100px;
+    height: 100px;
+  }
+
+  .nova-intro h1 {
+    font-size: 1.75rem;
+  }
+
+  .goals-grid {
+    max-height: 280px;
+  }
+}

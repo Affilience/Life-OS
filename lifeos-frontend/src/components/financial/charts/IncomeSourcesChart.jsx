@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   PieChart,
   Pie,
@@ -7,15 +7,20 @@ import {
   Legend,
   Tooltip
 } from 'recharts';
+import { useFinancialStore } from '../../../stores/financialStore';
 
-// Mock income by source data
-const data = [
-  { name: 'Freelance', value: 2300, color: '#288cfa' },
-  { name: 'Business', value: 550, color: '#00c853' },
-  { name: 'Consulting', value: 800, color: '#fbbf24' },
-  { name: 'Product Sales', value: 450, color: '#7c3aed' },
-  { name: 'Investment', value: 200, color: '#ec4899' }
-];
+// Colors for income sources
+const SOURCE_COLORS = {
+  salary: '#288cfa',
+  freelance: '#00c853',
+  business: '#fbbf24',
+  consulting: '#7c3aed',
+  investment: '#ec4899',
+  rental: '#14b8a6',
+  dividend: '#f97316',
+  bonus: '#06b6d4',
+  other: '#95afc0'
+};
 
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({
@@ -62,8 +67,56 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function IncomeSourcesChart() {
+  const { transactions, selectedPeriod } = useFinancialStore();
+
+  // Calculate income by source from real data
+  const data = useMemo(() => {
+    const now = new Date();
+    let periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    if (selectedPeriod === 'week') {
+      periodStart = new Date(now);
+      periodStart.setDate(now.getDate() - 7);
+    } else if (selectedPeriod === 'year') {
+      periodStart = new Date(now.getFullYear(), 0, 1);
+    }
+
+    // Aggregate income by source/category
+    const sourceAmounts = {};
+    (transactions || []).forEach(txn => {
+      if (txn.type === 'income' && txn.date) {
+        const txnDate = new Date(txn.date);
+        if (txnDate >= periodStart) {
+          const source = txn.source || txn.category || 'other';
+          sourceAmounts[source] = (sourceAmounts[source] || 0) + (txn.amount || 0);
+        }
+      }
+    });
+
+    // Convert to chart data format
+    const chartData = Object.entries(sourceAmounts)
+      .map(([source, value]) => ({
+        name: source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        value: Math.round(value),
+        color: SOURCE_COLORS[source.toLowerCase()] || SOURCE_COLORS.other
+      }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+
+    return chartData;
+  }, [transactions, selectedPeriod]);
+
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const dataWithTotal = data.map(item => ({ ...item, total }));
+
+  if (data.length === 0) {
+    return (
+      <div className="chart-container flex items-center justify-center h-[300px]">
+        <p className="text-white/50 text-sm">No income data to display</p>
+      </div>
+    );
+  }
 
   return (
     <div className="chart-container">

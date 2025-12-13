@@ -6,11 +6,11 @@ import {
   Plus,
   X,
   Copy,
-  ShoppingCart,
   Flame,
 } from 'lucide-react';
 import { useHealthStore } from '../../../stores/healthStore';
 import RecipeLibrary from './RecipeLibrary';
+import './WeeklyMealPlanner.css';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -22,7 +22,7 @@ const MEAL_EMOJIS = {
   snack: '🍎',
 };
 
-export default function WeeklyMealPlanner({ onGenerateGroceryList }) {
+export default function WeeklyMealPlanner() {
   const {
     recipes,
     mealPlans,
@@ -32,7 +32,6 @@ export default function WeeklyMealPlanner({ onGenerateGroceryList }) {
     removeMealFromPlan,
     copyMealPlanToWeek,
     getRecipeById,
-    generateGroceryList,
   } = useHealthStore();
 
   const [weekOffset, setWeekOffset] = useState(0);
@@ -104,11 +103,6 @@ export default function WeeklyMealPlanner({ onGenerateGroceryList }) {
     copyMealPlanToWeek(currentWeekKey, nextWeekKey);
   };
 
-  const handleGenerateGroceryList = () => {
-    const items = generateGroceryList(currentWeekKey);
-    onGenerateGroceryList?.(items);
-  };
-
   // Recipe selector modal
   if (selectingSlot) {
     return (
@@ -146,22 +140,13 @@ export default function WeeklyMealPlanner({ onGenerateGroceryList }) {
           <Calendar className="w-5 h-5 text-emerald-400" />
           <h3 className="text-lg font-semibold text-white">Weekly Meal Plan</h3>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopyToNextWeek}
-            className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/70 rounded-lg text-sm flex items-center gap-2 transition-colors"
-            title="Copy to next week"
-          >
-            <Copy className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleGenerateGroceryList}
-            className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Grocery List
-          </button>
-        </div>
+        <button
+          onClick={handleCopyToNextWeek}
+          className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/70 rounded-lg text-sm flex items-center gap-2 transition-colors"
+          title="Copy to next week"
+        >
+          <Copy className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Week Navigation */}
@@ -190,7 +175,7 @@ export default function WeeklyMealPlanner({ onGenerateGroceryList }) {
 
       {/* Weekly Stats */}
       {weeklyTotals.mealCount > 0 && (
-        <div className="grid grid-cols-4 gap-2 mb-4">
+        <div className="weekly-stats-grid">
           <div className="bg-orange-500/10 rounded-lg p-2 text-center">
             <div className="text-orange-400 font-semibold">{weeklyTotals.calories}</div>
             <div className="text-xs text-white/50">kcal/wk</div>
@@ -211,10 +196,10 @@ export default function WeeklyMealPlanner({ onGenerateGroceryList }) {
       )}
 
       {/* Meal Grid */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[600px]">
+      <div className="meal-grid-container">
+        <div className="meal-grid-inner">
           {/* Day Headers */}
-          <div className="grid grid-cols-8 gap-1 mb-2">
+          <div className="day-headers">
             <div className="text-xs text-white/40 font-medium p-2"></div>
             {DAY_LABELS.map((day, i) => (
               <div key={day} className="text-xs text-white/60 font-medium text-center p-2">
@@ -225,9 +210,9 @@ export default function WeeklyMealPlanner({ onGenerateGroceryList }) {
 
           {/* Meal Rows */}
           {MEAL_TYPES.map((mealType) => (
-            <div key={mealType} className="grid grid-cols-8 gap-1 mb-1">
+            <div key={mealType} className="meal-row">
               {/* Meal Type Label */}
-              <div className="flex items-center gap-1 text-xs text-white/60 p-2">
+              <div className="meal-type-label">
                 <span>{MEAL_EMOJIS[mealType]}</span>
                 <span className="capitalize">{mealType}</span>
               </div>
@@ -240,11 +225,7 @@ export default function WeeklyMealPlanner({ onGenerateGroceryList }) {
                 return (
                   <div
                     key={`${day}-${mealType}`}
-                    className={`relative min-h-[60px] rounded-lg border transition-all ${
-                      recipe
-                        ? 'bg-emerald-500/10 border-emerald-500/30'
-                        : 'bg-white/5 border-white/10 hover:border-white/20'
-                    }`}
+                    className={`meal-slot ${recipe ? 'filled' : 'empty'}`}
                   >
                     {recipe ? (
                       <div className="p-2 h-full">

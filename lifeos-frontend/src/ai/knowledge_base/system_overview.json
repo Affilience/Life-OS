@@ -1,0 +1,36 @@
+{
+  "name": "LifeOS",
+  "description": "LifeOS is an integrated personal operating system for tracking productivity, fitness, learning, finances, journaling, calendar, and skills. All modules feed into a central timeline and analytics dashboard that reveals patterns and optimizes life.",
+  "core_modules": [
+    "Dashboard",
+    "Productivity",
+    "Health",
+    "Knowledge",
+    "Journal",
+    "Calendar",
+    "Skills",
+    "Financial",
+    "Character",
+    "Quests & Missions",
+    "Social",
+    "Settings"
+  ],
+  "gamification": {
+    "xp_system": "Users earn XP for completing tasks, logging activities, and maintaining streaks",
+    "levels": "40 evolution stages from Dreamer to Avatar of Mastery",
+    "streaks": "Consecutive day tracking for habits and activities",
+    "achievements": "Unlockable badges for milestones",
+    "equipment": "Virtual items that provide stat bonuses"
+  },
+  "ai_companion": {
+    "name": "Nova",
+    "description": "AI life coach that evolves with the user",
+    "evolution_stages": ["Spark (Lv 0-9)", "Nova (Lv 10-24)", "Stellar (Lv 25-49)", "Cosmos (Lv 50+)"]
+  },
+  "key_principles": [
+    "Interconnected - All modules write to central timeline, data flows between modules",
+    "Actionable - Every feature answers 'what should I do with this?'",
+    "Fast Entry - Optimize for quick data logging",
+    "Privacy First - User owns all their data"
+  ]
+}

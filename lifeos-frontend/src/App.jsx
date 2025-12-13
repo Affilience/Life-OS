@@ -1,10 +1,6 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// DevTools only in development - lazy load to reduce bundle
-const ReactQueryDevtools = import.meta.env.DEV
-  ? React.lazy(() => import('@tanstack/react-query-devtools').then(mod => ({ default: mod.ReactQueryDevtools })))
-  : () => null;
 // DEVELOPMENT: Auth disabled
 // import { useAuth } from './hooks/useAuth';
 import MainLayout from './components/layout/MainLayout';
@@ -12,6 +8,41 @@ import LoadingScreen from './components/shared/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/Toast';
 import { CommandPalette } from './components/ui/CommandPalette';
+import { CelebrationProvider } from './components/ui/Celebration';
+import RealtimeProvider from './components/RealtimeProvider';
+import { ModeAwareRoute } from './components/layout/ModeAwareRoute';
+
+// Integrated Onboarding (Nova-guided setup within actual pages)
+import useIntegratedOnboardingStore from './stores/integratedOnboardingStore';
+import EnhancedOnboarding from './components/onboarding/EnhancedOnboarding';
+
+// Full Onboarding Flow (9-step experience with Nova guide and premium animations)
+import NovaGuidedOnboarding from './components/onboarding/NovaGuidedOnboarding';
+import { useNewOnboardingStore } from './stores/newOnboardingStore';
+
+// Supabase store initialization
+import { initializeAvatarStore } from './stores/avatarStore';
+import { initializeHealthStore } from './stores/healthStore';
+import { initializeFinancialStore } from './stores/financialStore';
+import { initializeCalendarStore } from './stores/calendarStore';
+import { initializeKnowledgeStore } from './stores/knowledgeStore';
+import { initializeSkillsStore } from './stores/skillsStore';
+import { initializeResolutionStore } from './stores/resolutionStore';
+import { initializeProductivityStore } from './stores/productivityStore';
+import { initializeWorkoutStore } from './stores/workoutStore';
+import { initializeQuestsStore } from './stores/questsStore';
+import { initializeAchievementsStore } from './stores/achievementsStore';
+import { initializePetStore } from './stores/petStore';
+import { initializeGamificationStore } from './stores/gamificationStore';
+import { initializeContentStore } from './stores/contentStore';
+import { initializePurposeStore } from './stores/purposeStore';
+import { initializeQuotesStore } from './stores/quotesStore';
+import { initializeDailyTasksStore } from './stores/dailyTasksStore';
+import { initializeDashboardStore } from './stores/dashboardStore';
+import { initializeThemeStore } from './stores/themeStore';
+import { initializeBadHabitsStore } from './stores/badHabitsStore';
+import { initializePerkStore } from './stores/perkStore';
+import { initializeSocialStore } from './stores/socialStore';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -25,8 +56,8 @@ const queryClient = new QueryClient({
   },
 });
 
-// Lazy load IntroScreen (heavy Three.js dependency, only shown on first visit)
-const IntroScreen = lazy(() => import('./components/intro/IntroScreen'));
+// Legacy Onboarding (kept for reference, but using integrated approach now)
+// const NovaOnboarding = lazy(() => import('./components/onboarding/NovaOnboarding'));
 
 // DEVELOPMENT: Auth page disabled
 // const Auth = lazy(() => import('./pages/Auth'));
@@ -59,9 +90,7 @@ const Rewards = lazy(() => import('./pages/Rewards'));
 const Discoveries = lazy(() => import('./pages/Discoveries'));
 const Resolutions = lazy(() => import('./pages/Resolutions'));
 
-// Gamification and demo pages
-const Gamification = lazy(() => import('./pages/AtomCosmosDemo'));
-const CosmicEvolution = lazy(() => import('./pages/CosmicEvolutionDemo'));
+// Demo pages
 const ConstellationsTest = lazy(() => import('./features/constellations/demo/ConstellationsTestPage'));
 const ConstellationsDemo = lazy(() => import('./pages/ConstellationsDemo'));
 const EvolutionShowcase = lazy(() => import('./components/avatar/EvolutionShowcase'));
@@ -85,46 +114,91 @@ const AICompanion = lazy(() => import('./pages/AICompanion'));
 // }
 
 function App() {
-  const [showIntro, setShowIntro] = useState(true);
-  const [hasSeenIntro, setHasSeenIntro] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
-  // Check if user has seen intro before
+  // Get integrated onboarding state (legacy)
+  const { hasSeenWelcome } = useIntegratedOnboardingStore();
+
+  // Get new onboarding state
+  const { isOnboardingComplete: newOnboardingComplete, isOnboardingActive } = useNewOnboardingStore();
+
+  // Check localStorage directly for initial state to avoid hydration race condition
+  const [showNewOnboarding, setShowNewOnboarding] = useState(() => {
+    try {
+      const stored = localStorage.getItem('lifeos-new-onboarding');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Check if onboarding is complete in persisted state
+        return !parsed?.state?.isOnboardingComplete;
+      }
+      return true; // No stored state, show onboarding
+    } catch {
+      return true; // Error reading, show onboarding
+    }
+  });
+
+  // Sync with store state after hydration
   useEffect(() => {
-    // TEMPORARILY SKIP INTRO - for faster testing
-    setShowIntro(false);
-    setHasSeenIntro(true);
+    // Only update if store says complete but we're still showing
+    if (newOnboardingComplete && showNewOnboarding) {
+      setShowNewOnboarding(false);
+    }
+  }, [newOnboardingComplete, showNewOnboarding]);
 
-    // Uncomment below to enable intro on first visit:
-    // const introSeen = localStorage.getItem('xcalibur-intro-seen');
-    // if (introSeen === 'true') {
-    //   setShowIntro(false);
-    //   setHasSeenIntro(true);
-    // }
-  }, []);
+  // Legacy: Show welcome modal if user hasn't seen it (fallback)
+  // DISABLED: New onboarding system replaces the old EnhancedOnboarding
+  // useEffect(() => {
+  //   if (!hasSeenWelcome && hasSeenIntro && newOnboardingComplete) {
+  //     setShowWelcomeModal(true);
+  //   }
+  // }, [hasSeenWelcome, hasSeenIntro, newOnboardingComplete]);
 
   // Enable dark mode on app load
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
 
-  const handleIntroComplete = () => {
-    setShowIntro(false);
-    setHasSeenIntro(true);
-    localStorage.setItem('quanta-intro-seen', 'true');
-  };
-
-  // Show intro on first visit (wrapped in Suspense for lazy loading)
-  if (showIntro && !hasSeenIntro) {
-    return (
-      <Suspense fallback={<LoadingScreen message="Preparing your journey" />}>
-        <IntroScreen onComplete={handleIntroComplete} />
-      </Suspense>
-    );
-  }
+  // Initialize Supabase stores on app load
+  useEffect(() => {
+    const initStores = async () => {
+      try {
+        await Promise.all([
+          initializeAvatarStore(),
+          initializeHealthStore(),
+          initializeFinancialStore(),
+          initializeCalendarStore(),
+          initializeKnowledgeStore(),
+          initializeSkillsStore(),
+          initializeResolutionStore(),
+          initializeProductivityStore(),
+          initializeWorkoutStore(),
+          initializeQuestsStore(),
+          initializeAchievementsStore(),
+          initializePetStore(),
+          initializeGamificationStore(),
+          initializeContentStore(),
+          initializePurposeStore(),
+          initializeQuotesStore(),
+          initializeDailyTasksStore(),
+          initializeDashboardStore(),
+          initializeThemeStore(),
+          initializeBadHabitsStore(),
+          initializeSocialStore(),
+        ]);
+        // Initialize perk store after other stores (needs stats data)
+        initializePerkStore();
+      } catch (error) {
+        console.error('Failed to initialize stores from Supabase:', error);
+      }
+    };
+    initStores();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider position="bottom-right" maxToasts={5}>
+        <CelebrationProvider>
+        <RealtimeProvider>
         <Router>
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
@@ -138,7 +212,12 @@ function App() {
                   {/* Main mobile navigation - 5 tabs: Home, Modules, Character, Social, Quests, Settings */}
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/modules" element={<Modules />} />
-                  <Route path="/character" element={<Character />} />
+                  {/* Character page - hidden in minimal mode */}
+                  <Route path="/character" element={
+                    <ModeAwareRoute requiredVisibility="showCharacterPage" redirectTo="/modules">
+                      <Character />
+                    </ModeAwareRoute>
+                  } />
                   <Route path="/social" element={<Social />} />
                   <Route path="/quests" element={<Missions />} />
                   <Route path="/settings" element={<Settings />} />
@@ -161,27 +240,46 @@ function App() {
                   <Route path="/calendar" element={<Calendar />} />
                   <Route path="/purpose" element={<PurposeValues />} />
                   <Route path="/financial" element={<Financial />} />
-                  <Route path="/rewards" element={<Rewards />} />
+                  {/* Rewards - hidden in minimal mode */}
+                  <Route path="/rewards" element={
+                    <ModeAwareRoute requiredVisibility="showBazaar" redirectTo="/quests">
+                      <Rewards />
+                    </ModeAwareRoute>
+                  } />
                   <Route path="/streaks" element={<Streaks />} />
                   <Route path="/discoveries" element={<Discoveries />} />
                   <Route path="/resolutions" element={<Resolutions />} />
                   <Route path="/learn" element={<Learn />} />
                   <Route path="/skills" element={<Skills />} />
+
+                  {/* Equipment/Avatar - requires showEquipment */}
                   <Route path="/avatar" element={
-                    <ErrorBoundary>
-                      <EquipmentInventory />
-                    </ErrorBoundary>
+                    <ModeAwareRoute requiredVisibility="showEquipment" redirectTo="/character">
+                      <ErrorBoundary>
+                        <EquipmentInventory />
+                      </ErrorBoundary>
+                    </ModeAwareRoute>
                   } />
 
                   {/* AI Companion */}
                   <Route path="/ai" element={<AICompanion />} />
 
-                  {/* Gamification & Evolution (demo/test pages) */}
-                  <Route path="/gamification" element={<Gamification />} />
-                  <Route path="/cosmic-evolution" element={<CosmicEvolution />} />
-                  <Route path="/constellations-test" element={<ConstellationsTest />} />
-                  <Route path="/constellations-demo" element={<ConstellationsDemo />} />
-                  <Route path="/evolution" element={<EvolutionShowcase />} />
+                  {/* Demo pages - cosmic mode only */}
+                  <Route path="/constellations-test" element={
+                    <ModeAwareRoute requiredVisibility="showConstellationEffects" redirectTo="/skills">
+                      <ConstellationsTest />
+                    </ModeAwareRoute>
+                  } />
+                  <Route path="/constellations-demo" element={
+                    <ModeAwareRoute requiredVisibility="showConstellationEffects" redirectTo="/skills">
+                      <ConstellationsDemo />
+                    </ModeAwareRoute>
+                  } />
+                  <Route path="/evolution" element={
+                    <ModeAwareRoute requiredVisibility="showEvolutionGallery" redirectTo="/character">
+                      <EvolutionShowcase />
+                    </ModeAwareRoute>
+                  } />
                 </Routes>
               </MainLayout>
             } />
@@ -189,13 +287,19 @@ function App() {
           </Suspense>
           {/* Command Palette - Cmd+K (must be inside Router) */}
           <CommandPalette />
+
+          {/* Full Onboarding Flow - shown on first visit */}
+          {showNewOnboarding && (
+            <NovaGuidedOnboarding onComplete={() => setShowNewOnboarding(false)} />
+          )}
+
+          {/* Enhanced Onboarding - legacy fallback if new onboarding was completed */}
+          {showWelcomeModal && !showNewOnboarding && (
+            <EnhancedOnboarding onComplete={() => setShowWelcomeModal(false)} />
+          )}
         </Router>
-        {/* React Query DevTools - only in development */}
-        {import.meta.env.DEV && (
-          <Suspense fallback={null}>
-            <ReactQueryDevtools initialIsOpen={false} />
-          </Suspense>
-        )}
+        </RealtimeProvider>
+        </CelebrationProvider>
       </ToastProvider>
     </QueryClientProvider>
   );

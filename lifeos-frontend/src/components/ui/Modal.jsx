@@ -191,8 +191,8 @@ export function Modal({
         onKeyDown={handleKeyDown}
         className={`
           relative w-full ${sizeClasses[size]}
-          bg-[var(--bg-elevated,#221e2e)] border border-white/10
-          rounded-2xl shadow-xl shadow-black/30
+          bg-bg-elevated border border-border
+          rounded-2xl shadow-xl shadow-soft
           ${isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
           transition-all duration-200
           ${className}
@@ -200,12 +200,12 @@ export function Modal({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <div>
               {title && (
                 <h2
                   id="modal-title"
-                  className="text-lg font-semibold text-white"
+                  className="text-lg font-semibold text-text-primary"
                 >
                   {title}
                 </h2>
@@ -213,7 +213,7 @@ export function Modal({
               {description && (
                 <p
                   id="modal-description"
-                  className="text-sm text-white/60 mt-0.5"
+                  className="text-sm text-text-secondary mt-0.5"
                 >
                   {description}
                 </p>
@@ -222,7 +222,7 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                className="p-2 -mr-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -249,7 +249,7 @@ export function ModalFooter({ children, className = '' }) {
     <div
       className={`
         flex items-center justify-end gap-3 px-6 py-4
-        border-t border-white/10 -mx-6 -mb-4 mt-4
+        border-t border-border -mx-6 -mb-4 mt-4
         ${className}
       `}
     >
@@ -273,9 +273,9 @@ export function ConfirmDialog({
   loading = false,
 }) {
   const variantClasses = {
-    danger: 'bg-rose-500 hover:bg-rose-600 text-white',
-    warning: 'bg-amber-500 hover:bg-amber-600 text-white',
-    primary: 'bg-violet-500 hover:bg-violet-600 text-white',
+    danger: 'bg-error hover:bg-error/90 text-text-primary',
+    warning: 'bg-warning hover:bg-warning/90 text-text-primary',
+    primary: 'bg-primary-500 hover:bg-primary-600 text-text-primary',
   };
 
   return (
@@ -286,13 +286,13 @@ export function ConfirmDialog({
       size="sm"
     >
       {message && (
-        <p className="text-white/70 text-sm">{message}</p>
+        <p className="text-text-secondary text-sm">{message}</p>
       )}
       <ModalFooter>
         <button
           onClick={onClose}
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+          className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors disabled:opacity-50"
         >
           {cancelText}
         </button>

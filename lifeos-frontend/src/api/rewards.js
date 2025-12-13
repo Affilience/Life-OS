@@ -108,7 +108,7 @@ export function useRedeemReward() {
       // Check if user has enough credits
       const { data: currency } = await supabase
         .from('user_cosmic_currency')
-        .select('cosmic_credits')
+        .select('cosmic_credits, lifetime_credits_spent')
         .eq('user_id', user.id)
         .single();
 
@@ -121,7 +121,7 @@ export function useRedeemReward() {
         .from('user_cosmic_currency')
         .update({
           cosmic_credits: currency.cosmic_credits - reward.cost,
-          lifetime_credits_spent: supabase.rpc('increment', { x: reward.cost }),
+          lifetime_credits_spent: (currency.lifetime_credits_spent || 0) + reward.cost,
         })
         .eq('user_id', user.id);
 

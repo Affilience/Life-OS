@@ -1,0 +1,52 @@
+{
+  "name": "Productivity & Business",
+  "route": "/productivity",
+  "navigation": "Sidebar → Modules → Productivity (clipboard icon)",
+  "purpose": "Track deep work, projects, tasks, and business income. Optimize work patterns.",
+  "key_features": [
+    {
+      "name": "Tasks Tab",
+      "description": "Create, manage, and complete tasks with priorities and due dates"
+    },
+    {
+      "name": "Projects Tab",
+      "description": "Organize tasks into projects with progress tracking"
+    },
+    {
+      "name": "Deep Work Sessions",
+      "description": "Pomodoro-style focus sessions with duration and quality tracking"
+    },
+    {
+      "name": "Plan Tomorrow Tab",
+      "description": "Plan next day's tasks and time blocks the night before"
+    },
+    {
+      "name": "Analytics",
+      "description": "Charts showing productivity trends, completion rates, focus hours"
+    }
+  ],
+  "data_tracked": [
+    "Tasks (title, description, priority, due_date, status, project_id)",
+    "Projects (name, description, status, progress)",
+    "Deep work sessions (duration, quality_rating, task_id, notes)",
+    "Daily productivity score"
+  ],
+  "common_user_actions": [
+    "Add a new task",
+    "Complete a task",
+    "Start a focus session",
+    "Check today's tasks",
+    "Plan tomorrow",
+    "View productivity analytics"
+  ],
+  "related_modules": [
+    "Calendar - Tasks appear as events when scheduled",
+    "Dashboard - Productivity score and task count shown",
+    "Quests - Completing tasks earns XP"
+  ],
+  "tips": [
+    "Use 'Plan Tomorrow' the night before for better focus",
+    "Deep work sessions earn bonus XP",
+    "High priority tasks should be done during peak energy hours"
+  ]
+}

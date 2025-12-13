@@ -21,11 +21,17 @@ import useSkillsStore, {
  * - Complete practice session history
  * - Goals and milestones tracking
  */
-export default function SkillDetailView({ skill, onClose, onLogPractice }) {
-  const { getSkillStats, toggleGoal, addGoal, addMilestone } = useSkillsStore();
+export default function SkillDetailView({ skill: initialSkill, onClose, onLogPractice }) {
+  const { skills, getSkillStats, toggleGoal, addGoal, addMilestone } = useSkillsStore();
   const [activeTab, setActiveTab] = useState('overview');
   const [newGoal, setNewGoal] = useState('');
   const [showAddGoal, setShowAddGoal] = useState(false);
+
+  // Get fresh skill data from the store to ensure we have the latest goals
+  const skill = useMemo(() =>
+    skills.find(s => s.id === initialSkill.id) || initialSkill,
+    [skills, initialSkill.id]
+  );
 
   const stats = useMemo(() => getSkillStats(skill.id), [skill.id, getSkillStats]);
   const category = SKILL_CATEGORIES.find(c => c.id === skill.category);

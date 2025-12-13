@@ -1,146 +1,130 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, ChevronRight, Circle, Clock, Moon, Plus } from 'lucide-react';
-import useDailyTasksStore, { TASK_CATEGORIES, PRIORITY_LEVELS } from '../../../stores/dailyTasksStore';
+import { ChevronRight, Plus, Target } from 'lucide-react';
+import useDailyTasksStore from '../../../stores/dailyTasksStore';
+import SmartTaskItem from '../../tasks/SmartTaskItem';
+import { suggestTaskCategory } from '../../../services/taskSemanticService';
 
 function TodaysPlanWidget() {
   const navigate = useNavigate();
-  const { getTodayTasks, getTodayStats, toggleTask } = useDailyTasksStore();
+  const { getTodayTasks, getTodayStats, toggleTask, addTask } = useDailyTasksStore();
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
 
   const todaysTasks = getTodayTasks();
   const todayStats = getTodayStats();
   const completedTasks = todayStats.completed;
   const totalTasks = todayStats.total;
-  const taskCompletionPercentage = todayStats.percentage;
+
+  // Get today's date string
+  const today = new Date().toISOString().split('T')[0];
+
+  // Quick add task handler
+  const handleQuickAdd = (e) => {
+    e.preventDefault();
+    if (newTaskTitle.trim()) {
+      // Use semantic service to suggest category
+      const suggestedCategory = suggestTaskCategory(newTaskTitle.trim());
+      addTask({
+        title: newTaskTitle.trim(),
+        category: suggestedCategory,
+        priority: 'medium',
+        estimatedMinutes: 30,
+      }, today); // Add to today instead of tomorrow
+      setNewTaskTitle('');
+      setIsAddingTask(false);
+    }
+  };
+
+  // Handle task toggle
+  const handleToggle = (taskId) => {
+    toggleTask(taskId, today);
+  };
 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 flex-shrink-0">
-        <h3 className="text-sm font-semibold text-white/60 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4" />
+      <div className="flex items-center justify-between mb-2 flex-shrink-0">
+        <h3 className="text-sm font-semibold text-text-secondary flex items-center gap-2">
+          <Target className="w-4 h-4 text-primary-400" />
           Today's Plan
         </h3>
         <button
           onClick={() => navigate('/quests')}
-          className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+          className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1 transition-colors"
         >
-          {totalTasks > 0 ? `${completedTasks}/${totalTasks}` : 'Plan Day'}
+          {totalTasks > 0 ? `${completedTasks}/${totalTasks}` : 'View All'}
           <ChevronRight className="w-3 h-3" />
         </button>
       </div>
 
-      {totalTasks > 0 ? (
-        <div className="flex-1 flex flex-col gap-3 overflow-hidden">
-          {/* Progress Ring */}
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="relative w-14 h-14 flex-shrink-0">
-                <svg className="transform -rotate-90 w-14 h-14">
-                  <circle
-                    cx="28"
-                    cy="28"
-                    r="24"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                    className="text-gray-700"
-                  />
-                  <circle
-                    cx="28"
-                    cy="28"
-                    r="24"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 24}`}
-                    strokeDashoffset={`${2 * Math.PI * 24 * (1 - taskCompletionPercentage / 100)}`}
-                    className="text-purple-500 transition-all duration-500"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-bold text-white">{taskCompletionPercentage}%</span>
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-white font-medium">Daily Progress</p>
-                <p className="text-xs text-white/60 truncate">
-                  {completedTasks === totalTasks && totalTasks > 0
-                    ? "All tasks completed!"
-                    : `${totalTasks - completedTasks} task${totalTasks - completedTasks !== 1 ? 's' : ''} remaining`}
-                </p>
-                {todayStats.totalXP > 0 && (
-                  <p className="text-xs text-yellow-400 mt-0.5">
-                    +{todayStats.totalXP} XP earned
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+      {/* Task List */}
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-1">
+        {todaysTasks.slice(0, 5).map((task) => (
+          <SmartTaskItem
+            key={task.id}
+            task={task}
+            onToggle={handleToggle}
+            compact={true}
+            showCategory={false}
+            showActionButton={true}
+          />
+        ))}
 
-          {/* Task List */}
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 flex-1 overflow-y-auto">
-            <div className="space-y-2">
-              {todaysTasks.slice(0, 5).map((task) => {
-                const category = TASK_CATEGORIES[task.category] || TASK_CATEGORIES.productivity;
-                const priority = PRIORITY_LEVELS[task.priority] || PRIORITY_LEVELS.medium;
-
-                return (
-                  <div key={task.id} className="flex items-center gap-2 group">
-                    <button
-                      onClick={() => toggleTask(task.id)}
-                      className="flex-shrink-0"
-                    >
-                      {task.completed ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-400" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-white/40 hover:text-purple-400 transition-colors" />
-                      )}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs truncate ${task.completed ? 'line-through text-white/50' : 'text-white'}`}>
-                        {task.title}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`text-[10px] px-1 py-0.5 rounded bg-gradient-to-r ${category.color} text-white`}>
-                          {category.label}
-                        </span>
-                        <span className="text-[10px] text-yellow-400">+{priority.xp}</span>
-                        <span className="text-[10px] text-white/40 flex items-center gap-0.5">
-                          <Clock className="w-2.5 h-2.5" />
-                          {task.estimatedMinutes}m
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {todaysTasks.length > 5 && (
-                <button
-                  onClick={() => navigate('/quests')}
-                  className="w-full text-center text-xs text-purple-400 hover:text-purple-300 py-1"
-                >
-                  +{todaysTasks.length - 5} more
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex-1 bg-[#1a1724] border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <Moon className="w-8 h-8 text-white/20 mb-2" />
-          <p className="text-white/60 text-sm mb-1">No tasks planned</p>
-          <p className="text-white/40 text-xs mb-3">Plan your day for better productivity</p>
+        {/* Show more link if there are additional tasks */}
+        {todaysTasks.length > 5 && (
           <button
             onClick={() => navigate('/quests')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-500 hover:bg-violet-600 text-white text-xs rounded-lg transition-colors"
+            className="text-xs text-primary-400 hover:text-primary-300 py-1 transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Plan Today
+            +{todaysTasks.length - 5} more
           </button>
-        </div>
-      )}
+        )}
+
+        {/* Empty state */}
+        {totalTasks === 0 && !isAddingTask && (
+          <div className="text-center py-4">
+            <p className="text-text-muted text-sm mb-2">No tasks yet</p>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Add Task */}
+      <div className="flex-shrink-0 pt-2 border-t border-border/50 mt-auto">
+        {isAddingTask ? (
+          <form onSubmit={handleQuickAdd} className="flex gap-2">
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder="Task name..."
+              autoFocus
+              className="flex-1 px-2 py-1.5 bg-bg-1 border border-primary-500/30 rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-500 transition-colors"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setIsAddingTask(false);
+                  setNewTaskTitle('');
+                }
+              }}
+            />
+            <button
+              type="submit"
+              disabled={!newTaskTitle.trim()}
+              className="px-2 py-1.5 bg-primary-500 text-text-primary text-sm rounded-lg hover:bg-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Add
+            </button>
+          </form>
+        ) : (
+          <button
+            onClick={() => setIsAddingTask(true)}
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 text-sm text-primary-400 hover:text-primary-300 hover:bg-primary-500/10 rounded-lg transition-all group"
+          >
+            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+            Add Task
+          </button>
+        )}
+      </div>
     </div>
   );
 }

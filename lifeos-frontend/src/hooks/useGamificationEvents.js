@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { supabase } from '../api/supabase';
+import { calculateXPForLevel, calculateTotalXPForLevel } from '../data/avatarEvolution';
 
 /**
  * Hook for triggering and handling gamification events
@@ -383,9 +384,9 @@ export function useXPCalculations() {
   const xpMultiplier = useGamificationStore(state => state.xpMultiplier);
 
   /**
-   * Calculate XP needed for next level
+   * Calculate XP needed for next level (exponential scaling)
    */
-  const xpToNextLevel = level * 100;
+  const xpToNextLevel = calculateXPForLevel(level);
 
   /**
    * Calculate progress percentage to next level
@@ -413,7 +414,7 @@ export function useXPCalculations() {
    */
   const predictTimeToLevel = useCallback((targetLevel, xpPerDay) => {
     const currentTotalXP = totalXP;
-    const targetTotalXP = (targetLevel * (targetLevel - 1) * 100) / 2;
+    const targetTotalXP = calculateTotalXPForLevel(targetLevel);
     const xpNeeded = targetTotalXP - currentTotalXP;
     const days = Math.ceil(xpNeeded / xpPerDay);
     return {

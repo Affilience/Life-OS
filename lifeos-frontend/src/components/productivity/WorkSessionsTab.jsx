@@ -75,11 +75,8 @@ export default function WorkSessionsTab() {
   };
 
   const handleStartSession = () => {
-    if (!selectedProject) {
-      alert('Please select a project');
-      return;
-    }
-    startSession(selectedProject, selectedType);
+    // Project is now optional - can start work without one
+    startSession(selectedProject || null, selectedType);
     setSessionNotes('');
     setSessionTags('');
   };
@@ -183,20 +180,20 @@ export default function WorkSessionsTab() {
       </div>
 
       {/* Timer Section */}
-      <div className="timer-section">
+      <div className="timer-section" data-tour="pomodoro-timer">
         {!activeSession ? (
           /* Start Session Form */
           <div className="start-session-form">
             <h3 className="section-title">Start a Work Session</h3>
 
             <div className="form-group">
-              <label>Project</label>
+              <label>Project (optional)</label>
               <select
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
                 className="project-select"
               >
-                <option value="">Select a project...</option>
+                <option value="">No Project - General Work</option>
                 {projects
                   .filter((p) => p.status === 'active')
                   .map((project) => (
@@ -229,7 +226,7 @@ export default function WorkSessionsTab() {
               </div>
             </div>
 
-            <button onClick={handleStartSession} className="start-btn">
+            <button onClick={handleStartSession} className="start-btn" data-tour="start-session-btn">
               <Play className="w-5 h-5" />
               Start Session
             </button>

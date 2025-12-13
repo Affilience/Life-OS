@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, FileText, Tag, Folder } from 'lucide-react';
 import Modal from '../shared/Modal';
 import Button from '../shared/Button';
+import { triggerGamification } from '../../hooks/useGamification';
 import './AddNoteModal.css';
 
 const AddNoteModal = ({ isOpen, onClose, onSubmit }) => {
@@ -71,6 +72,7 @@ const AddNoteModal = ({ isOpen, onClose, onSubmit }) => {
     };
 
     onSubmit(noteData);
+    triggerGamification('noteCreated', { xpOverride: 15, module: 'knowledge' });
     handleClose();
   };
 

@@ -5,6 +5,9 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+import { triggerGamification } from '../hooks/useGamification';
 
 // Resolution categories with colors and icons
 export const RESOLUTION_CATEGORIES = {
@@ -30,6 +33,69 @@ export const ACHIEVEMENT_BADGES = {
   perfect_month: { name: 'Perfect Month', description: '100% check-ins for a month', icon: '💎', xp: 300 },
 };
 
+// Supabase sync helpers
+const syncResolutionToSupabase = async (resolution, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      await supabase.from('resolutions').delete().eq('id', resolution.id);
+      return;
+    }
+
+    const dbResolution = {
+      id: resolution.id,
+      user_id: DEV_USER_ID,
+      title: resolution.title,
+      description: resolution.description || '',
+      category: resolution.category,
+      year: resolution.year || 2026,
+      status: resolution.status || 'active',
+      milestones: resolution.milestones || [],
+      current_streak: resolution.currentStreak || 0,
+      longest_streak: resolution.longestStreak || 0,
+      total_check_ins: resolution.totalCheckIns || 0,
+      last_check_in: resolution.lastCheckIn,
+      check_in_notes: resolution.checkInNotes || [],
+      completed_at: resolution.completedAt,
+    };
+
+    await supabase.from('resolutions').upsert(dbResolution, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Error syncing resolution to Supabase:', error);
+  }
+};
+
+const syncCheckInToSupabase = async (resolutionId, checkInDate, note = '') => {
+  try {
+    const dbCheckIn = {
+      id: crypto.randomUUID(),
+      user_id: DEV_USER_ID,
+      resolution_id: resolutionId,
+      check_in_date: checkInDate,
+      note: note,
+    };
+
+    await supabase.from('resolution_check_ins').upsert(dbCheckIn);
+  } catch (error) {
+    console.error('Error syncing check-in to Supabase:', error);
+  }
+};
+
+const syncAchievementToSupabase = async (achievementKey, resolutionId = null, xpAwarded = 0) => {
+  try {
+    const dbAchievement = {
+      id: crypto.randomUUID(),
+      user_id: DEV_USER_ID,
+      achievement_key: achievementKey,
+      resolution_id: resolutionId,
+      xp_awarded: xpAwarded,
+    };
+
+    await supabase.from('resolution_achievements').upsert(dbAchievement);
+  } catch (error) {
+    console.error('Error syncing achievement to Supabase:', error);
+  }
+};
+
 export const useResolutionStore = create(
   persist(
     (set, get) => ({
@@ -48,11 +114,86 @@ export const useResolutionStore = create(
       // Active year (allows viewing past years) - Target 2026 for app release
       activeYear: 2026,
 
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          // Load resolutions
+          const { data: resolutionsData, error: resError } = await supabase
+            .from('resolutions')
+            .select('*')
+            .eq('user_id', DEV_USER_ID);
+
+          if (resError) throw resError;
+
+          // Load check-ins
+          const { data: checkInsData, error: checkInError } = await supabase
+            .from('resolution_check_ins')
+            .select('*')
+            .eq('user_id', DEV_USER_ID);
+
+          if (checkInError) throw checkInError;
+
+          // Load achievements
+          const { data: achievementsData, error: achError } = await supabase
+            .from('resolution_achievements')
+            .select('*')
+            .eq('user_id', DEV_USER_ID);
+
+          if (achError) throw achError;
+
+          if (resolutionsData) {
+            // Transform resolutions from DB format
+            const resolutions = resolutionsData.map(r => ({
+              id: r.id,
+              title: r.title,
+              description: r.description || '',
+              category: r.category,
+              year: r.year,
+              status: r.status || 'active',
+              createdAt: r.created_at,
+              currentStreak: r.current_streak || 0,
+              longestStreak: r.longest_streak || 0,
+              totalCheckIns: r.total_check_ins || 0,
+              lastCheckIn: r.last_check_in,
+              milestones: r.milestones || [],
+              checkInNotes: r.check_in_notes || [],
+              completedAt: r.completed_at,
+            }));
+
+            // Build check-ins map from check-in data
+            const checkIns = {};
+            if (checkInsData) {
+              checkInsData.forEach(ci => {
+                const date = ci.check_in_date;
+                if (!checkIns[date]) {
+                  checkIns[date] = [];
+                }
+                checkIns[date].push(ci.resolution_id);
+              });
+            }
+
+            // Get achievement keys
+            const achievements = achievementsData
+              ? achievementsData.map(a => a.achievement_key)
+              : [];
+
+            // Calculate total XP
+            const resolutionXP = achievementsData
+              ? achievementsData.reduce((sum, a) => sum + (a.xp_awarded || 0), 0)
+              : 0;
+
+            set({ resolutions, checkIns, achievements, resolutionXP });
+          }
+        } catch (error) {
+          console.error('Error initializing resolutions from Supabase:', error);
+        }
+      },
+
       // Add a new resolution
       addResolution: (resolution) => {
         const { resolutions, achievements, resolutionXP } = get();
         const newResolution = {
-          id: `res_${Date.now()}`,
+          id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           year: 2026, // Target year for resolutions
           status: 'active', // active, completed, abandoned
@@ -71,12 +212,23 @@ export const useResolutionStore = create(
         if (resolutions.length === 0 && !achievements.includes('first_resolution')) {
           newAchievements.push('first_resolution');
           xpGain += ACHIEVEMENT_BADGES.first_resolution.xp;
+          // Sync achievement
+          syncAchievementToSupabase('first_resolution', newResolution.id, ACHIEVEMENT_BADGES.first_resolution.xp);
         }
 
         set({
           resolutions: [...resolutions, newResolution],
           achievements: newAchievements,
           resolutionXP: resolutionXP + xpGain,
+        });
+
+        // Sync to Supabase
+        syncResolutionToSupabase(newResolution);
+
+        // Trigger unified gamification system
+        triggerGamification('resolutionCreated', {
+          xpOverride: xpGain,
+          module: 'productivity',
         });
 
         return newResolution;
@@ -90,14 +242,27 @@ export const useResolutionStore = create(
             r.id === id ? { ...r, ...updates } : r
           ),
         });
+
+        // Sync to Supabase
+        const updatedResolution = get().resolutions.find(r => r.id === id);
+        if (updatedResolution) {
+          syncResolutionToSupabase(updatedResolution);
+        }
       },
 
       // Delete a resolution
       deleteResolution: (id) => {
         const { resolutions } = get();
+        const resolutionToDelete = resolutions.find(r => r.id === id);
+
         set({
           resolutions: resolutions.filter(r => r.id !== id),
         });
+
+        // Sync to Supabase
+        if (resolutionToDelete) {
+          syncResolutionToSupabase(resolutionToDelete, 'delete');
+        }
       },
 
       // Check in for a resolution
@@ -173,6 +338,30 @@ export const useResolutionStore = create(
           achievements: newAchievements,
           resolutionXP: resolutionXP + xpGain,
         });
+
+        // Trigger unified gamification system
+        triggerGamification('resolutionCheckIn', {
+          xpOverride: xpGain,
+          module: 'productivity',
+        });
+
+        // Sync check-in to Supabase
+        syncCheckInToSupabase(resolutionId, today, note);
+
+        // Sync updated resolution
+        const updatedResolution = updatedResolutions.find(r => r.id === resolutionId);
+        if (updatedResolution) {
+          syncResolutionToSupabase(updatedResolution);
+        }
+
+        // Sync any new achievements
+        const newlyEarned = newAchievements.filter(a => !achievements.includes(a));
+        newlyEarned.forEach(achievementKey => {
+          const badge = ACHIEVEMENT_BADGES[achievementKey];
+          if (badge) {
+            syncAchievementToSupabase(achievementKey, resolutionId, badge.xp);
+          }
+        });
       },
 
       // Complete a milestone
@@ -204,6 +393,27 @@ export const useResolutionStore = create(
           achievements: newAchievements,
           resolutionXP: resolutionXP + xpGain,
         });
+
+        // Trigger unified gamification system
+        triggerGamification('resolutionMilestone', {
+          xpOverride: xpGain,
+          module: 'productivity',
+        });
+
+        // Sync updated resolution with milestones
+        const updatedResolution = updatedResolutions.find(r => r.id === resolutionId);
+        if (updatedResolution) {
+          syncResolutionToSupabase(updatedResolution);
+        }
+
+        // Sync any new achievements
+        const newlyEarned = newAchievements.filter(a => !achievements.includes(a));
+        newlyEarned.forEach(achievementKey => {
+          const badge = ACHIEVEMENT_BADGES[achievementKey];
+          if (badge) {
+            syncAchievementToSupabase(achievementKey, resolutionId, badge.xp);
+          }
+        });
       },
 
       // Mark resolution as completed (full year success!)
@@ -217,15 +427,34 @@ export const useResolutionStore = create(
           xpGain += ACHIEVEMENT_BADGES.year_complete.xp;
         }
 
+        const updatedResolutions = resolutions.map(r =>
+          r.id === resolutionId
+            ? { ...r, status: 'completed', completedAt: new Date().toISOString() }
+            : r
+        );
+
         set({
-          resolutions: resolutions.map(r =>
-            r.id === resolutionId
-              ? { ...r, status: 'completed', completedAt: new Date().toISOString() }
-              : r
-          ),
+          resolutions: updatedResolutions,
           achievements: newAchievements,
           resolutionXP: resolutionXP + xpGain,
         });
+
+        // Trigger unified gamification system for the big completion!
+        triggerGamification('resolutionCompleted', {
+          xpOverride: xpGain,
+          module: 'productivity',
+        });
+
+        // Sync updated resolution
+        const updatedResolution = updatedResolutions.find(r => r.id === resolutionId);
+        if (updatedResolution) {
+          syncResolutionToSupabase(updatedResolution);
+        }
+
+        // Sync year_complete achievement if earned
+        if (!achievements.includes('year_complete')) {
+          syncAchievementToSupabase('year_complete', resolutionId, ACHIEVEMENT_BADGES.year_complete.xp);
+        }
       },
 
       // Get resolution progress (0-100)
@@ -346,9 +575,22 @@ export const useResolutionStore = create(
     }),
     {
       name: 'resolution-storage',
+      partialize: (state) => ({
+        resolutions: state.resolutions,
+        checkIns: state.checkIns,
+        achievements: state.achievements,
+        resolutionXP: state.resolutionXP,
+        activeYear: state.activeYear,
+      }),
     }
   )
 );
+
+// Initialize resolution store from Supabase
+export const initializeResolutionStore = async () => {
+  const store = useResolutionStore.getState();
+  await store.initializeFromSupabase();
+};
 
 // Helper function to generate quarterly milestones
 function generateMilestones(resolution) {

@@ -1,0 +1,42 @@
+{
+  "name": "Social & Community",
+  "route": "/social",
+  "navigation": "Sidebar → Social (users icon)",
+  "purpose": "Connect with friends, join guilds, compete on leaderboards, and share progress.",
+  "key_features": [
+    {
+      "name": "Friends",
+      "description": "Add friends, see their progress, send encouragement"
+    },
+    {
+      "name": "Guilds",
+      "description": "Join communities with shared goals and challenges"
+    },
+    {
+      "name": "Leaderboards",
+      "description": "Compete on XP, streaks, and activity rankings"
+    },
+    {
+      "name": "Challenges",
+      "description": "Join group challenges and competitions"
+    }
+  ],
+  "data_tracked": [
+    "Friends list",
+    "Guild membership",
+    "Leaderboard rankings",
+    "Shared achievements"
+  ],
+  "common_user_actions": [
+    "View leaderboard",
+    "Check friend activity",
+    "Join a guild",
+    "Start a challenge",
+    "Send encouragement"
+  ],
+  "privacy_note": "Users control what data is visible to friends and guilds",
+  "related_modules": [
+    "Character - Public profile shows level and achievements",
+    "Quests - Guild challenges as group quests"
+  ]
+}

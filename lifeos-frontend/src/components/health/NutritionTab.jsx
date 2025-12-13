@@ -25,10 +25,9 @@ import {
 } from 'lucide-react';
 import NutritionCharts from './charts/NutritionCharts';
 import SmartMealLogger from './SmartMealLogger';
-import MicronutrientBreakdown from './MicronutrientBreakdown';
 import MacroGoalsModal from './MacroGoalsModal';
 import BarcodeScanner from './BarcodeScanner';
-import { WeeklyMealPlanner, RecipeLibrary, GroceryList } from './meal-planning';
+import { WeeklyMealPlanner, RecipeLibrary } from './meal-planning';
 import { SupplementSchedule } from './supplements';
 import { useHealthStore } from '../../stores/healthStore';
 import { EmptyState } from '../ui';
@@ -43,7 +42,6 @@ const SUB_TABS = [
 export default function NutritionTab() {
   const [activeSubTab, setActiveSubTab] = useState('tracking');
   const [mealPlanSubTab, setMealPlanSubTab] = useState('planner');
-  const [showMicronutrients, setShowMicronutrients] = useState(false);
   const [showMacroGoals, setShowMacroGoals] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [scannedProduct, setScannedProduct] = useState(null);
@@ -158,10 +156,6 @@ export default function NutritionTab() {
 
   const caloriesPercentage = (todayStats.calories.current / todayStats.calories.goal) * 100;
   const proteinPercentage = (todayStats.protein.current / todayStats.protein.goal) * 100;
-
-  const handleGenerateGroceryList = () => {
-    setMealPlanSubTab('grocery');
-  };
 
   return (
     <div className="nutrition-tab">
@@ -355,14 +349,6 @@ export default function NutritionTab() {
             </div>
           </div>
         </div>
-
-        <button
-          className="view-micronutrients-btn"
-          onClick={() => setShowMicronutrients(true)}
-        >
-          View Micronutrients
-          <ChevronRight className="w-4 h-4" />
-        </button>
       </div>
 
       {/* Water Intake Tracker - Flexible Units */}
@@ -574,14 +560,6 @@ export default function NutritionTab() {
         )}
       </div>
 
-      {/* Micronutrient Breakdown Modal */}
-      {showMicronutrients && (
-        <MicronutrientBreakdown
-          totals={dailyTotals}
-          onClose={() => setShowMicronutrients(false)}
-        />
-      )}
-
       {showMacroGoals && (
         <MacroGoalsModal onClose={() => setShowMacroGoals(false)} />
       )}
@@ -615,22 +593,12 @@ export default function NutritionTab() {
               <BookOpen className="w-4 h-4" />
               Recipes
             </button>
-            <button
-              onClick={() => setMealPlanSubTab('grocery')}
-              className={`meal-plans-sub-tab ${mealPlanSubTab === 'grocery' ? 'active' : ''}`}
-            >
-              <Target className="w-4 h-4" />
-              Grocery List
-            </button>
           </div>
 
           {/* Meal Plans Sub-tab Content */}
           <div className="meal-plans-sub-content">
-            {mealPlanSubTab === 'planner' && (
-              <WeeklyMealPlanner onGenerateGroceryList={handleGenerateGroceryList} />
-            )}
+            {mealPlanSubTab === 'planner' && <WeeklyMealPlanner />}
             {mealPlanSubTab === 'recipes' && <RecipeLibrary />}
-            {mealPlanSubTab === 'grocery' && <GroceryList />}
           </div>
         </div>
       )}

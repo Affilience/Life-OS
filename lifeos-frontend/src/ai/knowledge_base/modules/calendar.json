@@ -1,0 +1,65 @@
+{
+  "name": "Calendar & Time",
+  "route": "/calendar",
+  "navigation": "Sidebar → Modules → Calendar (calendar icon)",
+  "purpose": "Time blocking, scheduling, planned vs actual tracking, and energy mapping.",
+  "views": [
+    {
+      "name": "Day View",
+      "description": "Detailed hour-by-hour view of a single day with time blocks"
+    },
+    {
+      "name": "Week View",
+      "description": "7-day overview showing all scheduled blocks"
+    },
+    {
+      "name": "Month View",
+      "description": "Monthly calendar with event indicators"
+    }
+  ],
+  "key_features": [
+    {
+      "name": "Time Blocks",
+      "description": "Schedule focused work periods with categories (deep work, meetings, breaks)"
+    },
+    {
+      "name": "Cosmic Theme",
+      "description": "Beautiful space-themed visual design"
+    },
+    {
+      "name": "Drag & Drop",
+      "description": "Easily reschedule blocks by dragging"
+    },
+    {
+      "name": "Category Colors",
+      "description": "Color-coded blocks by type (work, health, personal, etc.)"
+    },
+    {
+      "name": "Planned vs Actual",
+      "description": "Compare what you planned vs what actually happened"
+    }
+  ],
+  "data_tracked": [
+    "Time blocks (title, start_time, end_time, category, description)",
+    "Events (title, date, time, location, notes)",
+    "Recurring schedules"
+  ],
+  "common_user_actions": [
+    "Create a time block",
+    "View today's schedule",
+    "Check this week",
+    "Schedule a workout",
+    "Block time for deep work",
+    "Move a time block"
+  ],
+  "related_modules": [
+    "Productivity - Tasks can be scheduled as time blocks",
+    "Health - Workouts appear on calendar",
+    "Dashboard - Today's schedule shown"
+  ],
+  "tips": [
+    "Block your most important work during peak energy hours",
+    "Include buffer time between blocks",
+    "Review and plan tomorrow's blocks each evening"
+  ]
+}

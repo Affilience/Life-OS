@@ -1,0 +1,62 @@
+{
+  "name": "Knowledge Management",
+  "route": "/knowledge",
+  "navigation": "Sidebar → Modules → Knowledge (book icon)",
+  "purpose": "Track books, podcasts, notes, ideas, and learning. Build a personal knowledge base.",
+  "tabs": [
+    {
+      "name": "Overview",
+      "description": "Dashboard with reading stats, recent notes, learning streaks"
+    },
+    {
+      "name": "Library",
+      "description": "Manage books - currently reading, want to read, completed"
+    },
+    {
+      "name": "Notes",
+      "description": "Create and organize notes with tags and connections"
+    },
+    {
+      "name": "Ideas",
+      "description": "Capture ideas and insights for later development"
+    },
+    {
+      "name": "Quotes",
+      "description": "Save memorable quotes from books and other sources"
+    },
+    {
+      "name": "Learning Log",
+      "description": "Track learning sessions and what you learned"
+    },
+    {
+      "name": "Depositories",
+      "description": "Curated collections of resources by topic"
+    }
+  ],
+  "data_tracked": [
+    "Books (title, author, pages_read, total_pages, status, rating, notes)",
+    "Notes (title, content, tags, connections)",
+    "Ideas (title, description, status, category)",
+    "Quotes (text, source, author, tags)",
+    "Learning sessions (topic, duration, notes, resources)"
+  ],
+  "common_user_actions": [
+    "Add a book I'm reading",
+    "Update reading progress",
+    "Create a note",
+    "Save a quote",
+    "Log a learning session",
+    "Check books I've read this year",
+    "Find notes about a topic"
+  ],
+  "related_modules": [
+    "Skills - Reading can level up Knowledge skill",
+    "Journal - Reflect on what you learned",
+    "Quests - Reading goals as quests"
+  ],
+  "tips": [
+    "Link notes together to build a knowledge graph",
+    "Use tags consistently for better searchability",
+    "Set a yearly reading goal in Quests"
+  ]
+}

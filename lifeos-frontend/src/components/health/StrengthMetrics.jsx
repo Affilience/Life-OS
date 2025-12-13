@@ -6,8 +6,13 @@ import { useWorkoutStore } from '../../stores/workoutStore';
 import { EXERCISE_DATABASE } from '../../data/exerciseDatabase';
 import { calculate1RM } from '../../services/workoutCalculations';
 
+// Helper to get exercise data from built-in or custom exercises
+const getExerciseData = (exerciseId, customExercises) => {
+  return EXERCISE_DATABASE[exerciseId] || customExercises?.[exerciseId] || null;
+};
+
 export default function StrengthMetrics() {
-  const { workouts, personalRecords } = useWorkoutStore();
+  const { workouts, personalRecords, customExercises } = useWorkoutStore();
 
   // Get top exercises by PR
   const topExercises = Object.entries(personalRecords)
@@ -40,7 +45,7 @@ export default function StrengthMetrics() {
         gap: '16px',
       }}>
         {topExercises.map((exercise) => {
-          const exerciseData = EXERCISE_DATABASE[exercise.exerciseId];
+          const exerciseData = getExerciseData(exercise.exerciseId, customExercises);
 
           return (
             <div

@@ -5,6 +5,31 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+
+// Supabase sync helpers
+const syncQuoteToSupabase = async (quote, action = 'upsert') => {
+  try {
+    if (action === 'delete') {
+      await supabase.from('user_quotes').delete().eq('id', quote.id);
+      return;
+    }
+
+    const dbQuote = {
+      id: quote.id,
+      user_id: DEV_USER_ID,
+      text: quote.text,
+      author: quote.author || 'Unknown',
+      category: quote.category || 'custom',
+      is_favorite: quote.isFavorite || false,
+    };
+
+    await supabase.from('user_quotes').upsert(dbQuote, { onConflict: 'id' });
+  } catch (error) {
+    console.error('Error syncing quote to Supabase:', error);
+  }
+};
 
 // Default quotes collection
 const DEFAULT_QUOTES = [
@@ -87,6 +112,39 @@ export const useQuotesStore = create(
       favoriteIds: [],
       lastShownId: null,
 
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          const { data, error } = await supabase
+            .from('user_quotes')
+            .select('*')
+            .eq('user_id', DEV_USER_ID)
+            .order('created_at', { ascending: false })
+            .limit(200);
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            const customQuotes = data.map(q => ({
+              id: q.id,
+              text: q.text,
+              author: q.author || 'Unknown',
+              category: q.category || 'custom',
+              isCustom: true,
+              isFavorite: q.is_favorite,
+              createdAt: q.created_at,
+            }));
+
+            // Extract favorite IDs
+            const favoriteIds = data.filter(q => q.is_favorite).map(q => q.id);
+
+            set({ customQuotes, favoriteIds });
+          }
+        } catch (error) {
+          console.error('Error initializing quotes from Supabase:', error);
+        }
+      },
+
       // Get a random quote
       getRandomQuote: () => {
         const { quotes, customQuotes, lastShownId } = get();
@@ -121,11 +179,12 @@ export const useQuotesStore = create(
       // Add a custom quote
       addQuote: (quote) => {
         const newQuote = {
-          id: `custom-${Date.now()}`,
+          id: crypto.randomUUID(),
           text: quote.text,
           author: quote.author || 'Unknown',
           category: quote.category || 'custom',
           isCustom: true,
+          isFavorite: false,
           createdAt: new Date().toISOString(),
         };
 
@@ -133,24 +192,48 @@ export const useQuotesStore = create(
           customQuotes: [...state.customQuotes, newQuote],
         }));
 
+        // Sync to Supabase
+        syncQuoteToSupabase(newQuote);
+
         return newQuote.id;
       },
 
       // Remove a custom quote
       removeQuote: (quoteId) => {
+        const quoteToDelete = get().customQuotes.find(q => q.id === quoteId);
+
         set((state) => ({
           customQuotes: state.customQuotes.filter(q => q.id !== quoteId),
           favoriteIds: state.favoriteIds.filter(id => id !== quoteId),
         }));
+
+        // Sync to Supabase
+        if (quoteToDelete) {
+          syncQuoteToSupabase(quoteToDelete, 'delete');
+        }
       },
 
       // Toggle favorite
       toggleFavorite: (quoteId) => {
+        const isFavorite = get().favoriteIds.includes(quoteId);
+
         set((state) => ({
-          favoriteIds: state.favoriteIds.includes(quoteId)
+          favoriteIds: isFavorite
             ? state.favoriteIds.filter(id => id !== quoteId)
             : [...state.favoriteIds, quoteId],
         }));
+
+        // Update custom quote's favorite status and sync
+        const customQuote = get().customQuotes.find(q => q.id === quoteId);
+        if (customQuote) {
+          const updatedQuote = { ...customQuote, isFavorite: !isFavorite };
+          set((state) => ({
+            customQuotes: state.customQuotes.map(q =>
+              q.id === quoteId ? updatedQuote : q
+            ),
+          }));
+          syncQuoteToSupabase(updatedQuote);
+        }
       },
 
       // Get all favorites
@@ -184,3 +267,9 @@ export const useQuotesStore = create(
     }
   )
 );
+
+// Initialize quotes store from Supabase
+export const initializeQuotesStore = async () => {
+  const store = useQuotesStore.getState();
+  await store.initializeFromSupabase();
+};

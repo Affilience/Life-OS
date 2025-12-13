@@ -1,8 +1,64 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Crown, Zap, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Crown, Zap, User, TrendingUp, BarChart2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAvatarStore } from '../../stores/avatarStore';
+import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 import './EvolutionShowcase.css';
+
+// Mode-specific styling
+const MODE_STYLES = {
+  cosmic: {
+    headerIcon: Crown,
+    headerIconColor: 'text-purple-400',
+    headerTitle: 'Evolution Gallery',
+    progressBg: 'bg-purple-500/30',
+    progressBorder: 'border-purple-500/30',
+    progressFill: 'from-purple-500 to-pink-500',
+    stageLabel: 'text-purple-400',
+    selectedBorder: 'border-purple-500',
+    selectedShadow: 'shadow-purple-500/20',
+    hoverBorder: 'hover:border-purple-500/50',
+    genderActiveM: 'bg-purple-500',
+    genderActiveF: 'bg-pink-500',
+    unlockedBg: 'bg-green-500/20',
+    unlockedText: 'text-green-400',
+    unlockedBorder: 'border-green-500/30',
+  },
+  professional: {
+    headerIcon: TrendingUp,
+    headerIconColor: 'text-blue-400',
+    headerTitle: 'Progress Gallery',
+    progressBg: 'bg-blue-500/20',
+    progressBorder: 'border-blue-500/30',
+    progressFill: 'from-blue-500 to-cyan-500',
+    stageLabel: 'text-blue-400',
+    selectedBorder: 'border-blue-500',
+    selectedShadow: 'shadow-blue-500/20',
+    hoverBorder: 'hover:border-blue-500/50',
+    genderActiveM: 'bg-blue-500',
+    genderActiveF: 'bg-cyan-500',
+    unlockedBg: 'bg-green-500/20',
+    unlockedText: 'text-green-400',
+    unlockedBorder: 'border-green-500/30',
+  },
+  minimal: {
+    headerIcon: BarChart2,
+    headerIconColor: 'text-gray-400',
+    headerTitle: 'Progress Levels',
+    progressBg: 'bg-gray-500/20',
+    progressBorder: 'border-gray-500/30',
+    progressFill: 'from-gray-400 to-gray-500',
+    stageLabel: 'text-gray-400',
+    selectedBorder: 'border-gray-400',
+    selectedShadow: 'shadow-gray-500/20',
+    hoverBorder: 'hover:border-gray-400/50',
+    genderActiveM: 'bg-gray-500',
+    genderActiveF: 'bg-gray-400',
+    unlockedBg: 'bg-gray-500/20',
+    unlockedText: 'text-gray-300',
+    unlockedBorder: 'border-gray-500/30',
+  },
+};
 
 // V3 Evolution stages data
 const V3_STAGES = [
@@ -51,13 +107,37 @@ const V3_STAGES = [
 export default function EvolutionShowcase() {
   const navigate = useNavigate();
   const [selectedStage, setSelectedStage] = useState(null);
-  const currentLevel = 12; // Mock current level
 
-  // Get gender and sprite path function from store
-  const { characterGender, getHeroSpritePath, setCharacterGender } = useAvatarStore();
+  // Get real level and gender from store
+  const { level, characterGender, getHeroSpritePath, setCharacterGender, initializeFromSupabase } = useAvatarStore();
+  const currentLevel = level || 1;
+
+  // Get gamification mode
+  const mode = useGamificationModeStore((state) => state.mode);
+  const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
+  const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+  const styles = MODE_STYLES[mode] || MODE_STYLES.cosmic;
+  const HeaderIcon = styles.headerIcon;
+
+  // Redirect if evolution gallery is hidden for this mode
+  useEffect(() => {
+    if (!visibility.showEvolutionGallery) {
+      navigate('/character');
+    }
+  }, [visibility.showEvolutionGallery, navigate]);
+
+  // Initialize from Supabase on mount
+  React.useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
+
+  // Don't render if redirecting
+  if (!visibility.showEvolutionGallery) {
+    return null;
+  }
 
   const getSpritePath = (stage) => {
-    return getHeroSpritePath(stage.stage, stage.name);
+    return getHeroSpritePath(stage.levelRequired, stage.name);
   };
 
   const isUnlocked = (requiredLevel) => currentLevel >= requiredLevel;
@@ -77,8 +157,8 @@ export default function EvolutionShowcase() {
 
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Crown className="w-6 h-6 text-purple-400" />
-              Evolution Gallery
+              <HeaderIcon className={`w-6 h-6 ${styles.headerIconColor}`} />
+              {styles.headerTitle}
             </h1>
 
             {/* Gender Toggle */}
@@ -87,44 +167,44 @@ export default function EvolutionShowcase() {
                 onClick={() => setCharacterGender('male')}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                   characterGender === 'male'
-                    ? 'bg-purple-500 text-white'
+                    ? `${styles.genderActiveM} text-white`
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
-                Hero
+                {mode === 'cosmic' ? 'Hero' : 'Male'}
               </button>
               <button
                 onClick={() => setCharacterGender('female')}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                   characterGender === 'female'
-                    ? 'bg-pink-500 text-white'
+                    ? `${styles.genderActiveF} text-white`
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
-                Heroine
+                {mode === 'cosmic' ? 'Heroine' : 'Female'}
               </button>
             </div>
           </div>
           <p className="text-sm text-white/60 mt-1">
-            All 40 evolution stages • Current: Stage 10 ({characterGender === 'female' ? 'Swordswoman' : 'Swordsman'})
+            All 40 {mode === 'cosmic' ? 'evolution stages' : 'progress levels'} • Current: {terms.level} 10
           </p>
         </div>
 
         {/* Level Progress */}
         <div className="px-6 pb-4">
-          <div className="bg-[#1a1724] border border-purple-500/30 rounded-xl p-4">
+          <div className={`bg-[#1a1724] border ${styles.progressBorder} rounded-xl p-4`}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-white/60">Your Progress</span>
-              <span className="text-sm font-semibold text-white">Level {currentLevel}</span>
+              <span className="text-sm font-semibold text-white">{terms.level} {currentLevel}</span>
             </div>
             <div className="h-2 bg-[#0c0a10] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                className={`h-full bg-gradient-to-r ${styles.progressFill}`}
                 style={{ width: `${(currentLevel / 80) * 100}%` }}
               />
             </div>
             <div className="mt-2 text-xs text-white/50">
-              {V3_STAGES.filter(s => isUnlocked(s.level)).length} / {V3_STAGES.length} stages unlocked
+              {V3_STAGES.filter(s => isUnlocked(s.level)).length} / {V3_STAGES.length} {mode === 'cosmic' ? 'stages' : 'levels'} unlocked
             </div>
           </div>
         </div>
@@ -145,22 +225,22 @@ export default function EvolutionShowcase() {
                   bg-[#1a1724] border rounded-2xl p-4 cursor-pointer transition-all
                   hover:transform hover:-translate-y-1
                   ${isSelected
-                    ? 'border-purple-500 shadow-lg shadow-purple-500/20'
-                    : 'border-white/20 hover:border-purple-500/50'
+                    ? `${styles.selectedBorder} shadow-lg ${styles.selectedShadow}`
+                    : `border-white/20 ${styles.hoverBorder}`
                   }
                 `}
               >
                 {/* Stage Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-purple-400">
-                    Stage {stage.stage}
+                  <span className={`text-xs font-bold ${styles.stageLabel}`}>
+                    {mode === 'cosmic' ? 'Stage' : 'Level'} {stage.stage}
                   </span>
                   {stage.stage === 10 && (
-                    <div className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full border border-green-500/30">
+                    <div className={`${styles.unlockedBg} ${styles.unlockedText} text-xs px-2 py-0.5 rounded-full border ${styles.unlockedBorder}`}>
                       Current
                     </div>
                   )}
-                  {stage.stage === 40 && (
+                  {stage.stage === 40 && mode === 'cosmic' && (
                     <Crown className="w-4 h-4 text-yellow-400" />
                   )}
                 </div>
@@ -207,7 +287,7 @@ export default function EvolutionShowcase() {
           onClick={() => setSelectedStage(null)}
         >
           <div
-            className="bg-[#1a1724] border border-purple-500/30 rounded-2xl p-6 max-w-md w-full"
+            className={`bg-[#1a1724] border ${styles.progressBorder} rounded-2xl p-6 max-w-md w-full`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Large Avatar */}
@@ -222,15 +302,15 @@ export default function EvolutionShowcase() {
 
             {/* Stage Info */}
             <div className="text-center">
-              <div className="text-sm text-purple-400 font-semibold mb-1">
-                Stage {selectedStage.stage} of 40
+              <div className={`text-sm font-semibold mb-1 ${styles.stageLabel}`}>
+                {mode === 'cosmic' ? 'Stage' : 'Level'} {selectedStage.stage} of 40
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">
                 {selectedStage.name}
               </h2>
               <div className="flex items-center justify-center gap-2 text-sm text-white/60 mb-4">
-                <Zap className="w-4 h-4 text-purple-400" />
-                <span>Unlocks at Level {selectedStage.level}</span>
+                <Zap className={`w-4 h-4 ${styles.stageLabel}`} />
+                <span>Unlocks at {terms.level} {selectedStage.level}</span>
               </div>
 
               {/* Status */}

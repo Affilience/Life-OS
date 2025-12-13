@@ -5,6 +5,7 @@ import {
   X,
   Menu
 } from 'lucide-react';
+import { useGamificationModeStore, VISIBILITY } from '../../stores/gamificationModeStore';
 
 // Pixel art nav icons
 const NAV_ICONS = {
@@ -14,6 +15,25 @@ const NAV_ICONS = {
   social: '/assets/icons/nav/nav_social.png',
   quests: '/assets/icons/nav/nav_quests.png',
   settings: '/assets/icons/nav/nav_settings.png',
+};
+
+// Mode-specific labels
+const MODE_LABELS = {
+  cosmic: {
+    character: 'Character',
+    quests: 'Quests',
+    social: 'Social',
+  },
+  professional: {
+    character: 'Profile',
+    quests: 'Goals',
+    social: 'Network',
+  },
+  minimal: {
+    character: 'Profile',
+    quests: 'Tasks',
+    social: 'Network',
+  },
 };
 
 /**
@@ -27,14 +47,26 @@ const NAV_ICONS = {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const mode = useGamificationModeStore((state) => state.mode);
+  const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+  const labels = MODE_LABELS[mode] || MODE_LABELS.cosmic;
 
+  // Build navigation items based on mode visibility
   const navigationItems = [
     { path: '/', label: 'Home', iconKey: 'home', color: 'accent-2' },
     { path: '/modules', label: 'Modules', iconKey: 'modules', color: 'accent' },
-    { path: '/character', label: 'Character', iconKey: 'character', color: 'accent-3' },
-    { path: '/social', label: 'Social', iconKey: 'social', color: 'primary-500' },
-    { path: '/quests', label: 'Quests', iconKey: 'quests', color: 'warning' },
   ];
+
+  // Character/Profile - hide in minimal mode
+  if (visibility.showCharacterPage) {
+    navigationItems.push({ path: '/character', label: labels.character, iconKey: 'character', color: 'accent-3' });
+  }
+
+  // Social - always visible
+  navigationItems.push({ path: '/social', label: labels.social, iconKey: 'social', color: 'primary-500' });
+
+  // Quests - always visible with mode-appropriate label
+  navigationItems.push({ path: '/quests', label: labels.quests, iconKey: 'quests', color: 'warning' });
 
   const isActive = (path) => {
     if (path === '/') {

@@ -442,7 +442,7 @@ export default function FinancialGoalsTab() {
       )}
 
       {/* Header Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" data-tour="savings-goals">
         <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Target className="w-4 h-4 text-purple-400" />

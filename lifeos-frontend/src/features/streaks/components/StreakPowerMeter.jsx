@@ -1,10 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Zap, TrendingUp } from 'lucide-react';
+import { Zap, TrendingUp, BarChart2, Target } from 'lucide-react';
+import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../../stores/gamificationModeStore';
 
 /**
  * StreakPowerMeter - Circular power meter showing streak energy
  * Energy builds up with longer streaks, showing XP multiplier bonus
+ *
+ * Mode-aware:
+ * - Cosmic: Full animated circular meter with gradients and glow
+ * - Professional: Simple horizontal progress bar
+ * - Minimal: Text-only display
  */
 export function StreakPowerMeter({
   currentStreak = 0,
@@ -13,6 +19,10 @@ export function StreakPowerMeter({
   size = 180,
   className = ''
 }) {
+  // Get mode settings
+  const mode = useGamificationModeStore((state) => state.mode);
+  const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
+  const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
   const percentage = Math.min((currentStreak / maxStreak) * 100, 100);
   const radius = (size - 20) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -54,6 +64,47 @@ export function StreakPowerMeter({
 
   const tierStyle = getTierStyle(currentStreak);
 
+  // Professional mode: Simple horizontal progress bar
+  if (mode === 'professional') {
+    return (
+      <div className={`w-full max-w-xs ${className}`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-blue-400" />
+            <span className="text-sm font-medium text-white">Consistency</span>
+          </div>
+          <span className="text-sm font-semibold text-white">{currentStreak} days</span>
+        </div>
+        <div className="h-3 bg-[#0c0a10] rounded-full overflow-hidden border border-blue-500/20">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <span className={`text-xs font-medium ${tierStyle.tierColor}`}>{tierStyle.tier}</span>
+          {xpMultiplier > 1 && (
+            <span className="text-xs text-blue-400">+{Math.round((xpMultiplier - 1) * 100)}% bonus</span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Minimal mode: Text-only display
+  if (mode === 'minimal') {
+    return (
+      <div className={`text-center ${className}`}>
+        <div className="text-3xl font-bold text-white mb-1">{currentStreak}</div>
+        <div className="text-sm text-white/60">day streak</div>
+        {xpMultiplier > 1 && (
+          <div className="text-xs text-white/50 mt-1">+{Math.round((xpMultiplier - 1) * 100)}% bonus</div>
+        )}
+      </div>
+    );
+  }
+
+  // Cosmic mode: Full animated circular meter
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
       {/* SVG Ring */}

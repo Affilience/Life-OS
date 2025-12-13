@@ -89,61 +89,63 @@ export function YearlyHeatmap({
   };
 
   return (
-    <div className={className}>
-      {/* Month Labels - positioned with proper spacing */}
-      <div className="flex text-xs text-white/40 mb-1" style={{ paddingLeft: '2px' }}>
-        {months.map((m, i) => {
-          // Only show every other month to avoid crowding
-          const nextMonth = months[i + 1];
-          const span = nextMonth ? nextMonth.weekIndex - m.weekIndex : 4;
-          if (span < 3) return null; // Skip if too narrow
+    <div className={`${className} overflow-x-auto`}>
+      <div className="min-w-[690px]">
+        {/* Month Labels - positioned with proper spacing */}
+        <div className="flex text-xs text-white/40 mb-1" style={{ paddingLeft: '2px' }}>
+          {months.map((m, i) => {
+            // Only show every other month to avoid crowding
+            const nextMonth = months[i + 1];
+            const span = nextMonth ? nextMonth.weekIndex - m.weekIndex : 4;
+            if (span < 3) return null; // Skip if too narrow
 
-          return (
-            <div
-              key={i}
-              style={{
-                width: `${span * 13}px`,
-                minWidth: '26px'
-              }}
-            >
-              {m.month}
+            return (
+              <div
+                key={i}
+                style={{
+                  width: `${span * 13}px`,
+                  minWidth: '26px'
+                }}
+              >
+                {m.month}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Heatmap Grid */}
+        <div className="flex gap-[3px]">
+          {weeks.map((week, weekIndex) => (
+            <div key={weekIndex} className="flex flex-col gap-[3px]">
+              {week.map((day, dayIndex) => {
+                const intensity = day.isFuture ? -1 : getIntensityLevel(day.value);
+
+                return (
+                  <motion.div
+                    key={`${weekIndex}-${dayIndex}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: weekIndex * 0.005 }}
+                    className={`
+                      w-[10px] h-[10px] rounded-[2px]
+                      ${day.isFuture ? 'bg-white/5' : colors[intensity]}
+                    `}
+                    title={day.isFuture ? '' : `${day.date}: ${day.value} activities`}
+                  />
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
 
-      {/* Heatmap Grid */}
-      <div className="flex gap-[3px]">
-        {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} className="flex flex-col gap-[3px]">
-            {week.map((day, dayIndex) => {
-              const intensity = day.isFuture ? -1 : getIntensityLevel(day.value);
-
-              return (
-                <motion.div
-                  key={`${weekIndex}-${dayIndex}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: weekIndex * 0.005 }}
-                  className={`
-                    w-[10px] h-[10px] rounded-[2px]
-                    ${day.isFuture ? 'bg-white/5' : colors[intensity]}
-                  `}
-                  title={day.isFuture ? '' : `${day.date}: ${day.value} activities`}
-                />
-              );
-            })}
-          </div>
-        ))}
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center justify-end gap-1.5 mt-2 text-xs text-white/40">
-        <span>Less</span>
-        {colors.map((color, i) => (
-          <div key={i} className={`w-[10px] h-[10px] rounded-[2px] ${color}`} />
-        ))}
-        <span>More</span>
+        {/* Legend */}
+        <div className="flex items-center justify-end gap-1.5 mt-2 text-xs text-white/40">
+          <span>Less</span>
+          {colors.map((color, i) => (
+            <div key={i} className={`w-[10px] h-[10px] rounded-[2px] ${color}`} />
+          ))}
+          <span>More</span>
+        </div>
       </div>
     </div>
   );

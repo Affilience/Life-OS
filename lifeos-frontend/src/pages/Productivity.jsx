@@ -3,9 +3,15 @@ import { Clock, BarChart3, FolderKanban } from 'lucide-react';
 import ProductivityDashboard from '../components/productivity/ProductivityDashboard';
 import WorkSessionsTab from '../components/productivity/WorkSessionsTab';
 import ProjectsTab from '../components/productivity/ProjectsTab';
+import { ProductivitySetup } from '../components/onboarding/setup';
+import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
 
 export default function Productivity() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
+
+  // Show setup wizard if productivity module not configured during onboarding
+  const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('productivity');
 
   const tabs = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
@@ -14,9 +20,9 @@ export default function Productivity() {
   ];
 
   return (
-    <div className="productivity-page min-h-screen bg-[#0c0a10]">
-      {/* Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800">
+    <div className="productivity-page min-h-screen bg-bg-0">
+      {/* Tab Navigation - Productivity uses indigo accent */}
+      <div className="sticky top-0 z-40 bg-bg-0 border-b border-indigo-500/20" data-tour="productivity-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -26,8 +32,8 @@ export default function Productivity() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
                   activeTab === tab.id
-                    ? 'bg-purple-500/20 text-purple-400 border-b-2 border-purple-500'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a1724]/50'
+                    ? 'bg-indigo-500/20 text-indigo-400 border-b-2 border-indigo-500'
+                    : 'text-text-muted hover:text-text-primary hover:bg-bg-1/50'
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -38,11 +44,25 @@ export default function Productivity() {
         </div>
       </div>
 
+      {/* Setup Wizard (if needed) */}
+      {showSetup && (
+        <div className="p-4">
+          <ProductivitySetup
+            onComplete={() => {
+              useIntegratedOnboardingStore.getState().markModuleComplete('productivity');
+            }}
+            onSkip={() => {
+              useIntegratedOnboardingStore.getState().markModuleComplete('productivity');
+            }}
+          />
+        </div>
+      )}
+
       {/* Active Tab Content */}
       <div className="tab-content">
-        {activeTab === 'dashboard' && <ProductivityDashboard />}
-        {activeTab === 'sessions' && <WorkSessionsTab />}
-        {activeTab === 'projects' && <ProjectsTab />}
+        {!showSetup && activeTab === 'dashboard' && <ProductivityDashboard />}
+        {!showSetup && activeTab === 'sessions' && <WorkSessionsTab />}
+        {!showSetup && activeTab === 'projects' && <ProjectsTab />}
       </div>
 
       <style>{`

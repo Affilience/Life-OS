@@ -31,7 +31,7 @@ const NotesTab = () => {
   };
 
   return (
-    <div className="notes-writer">
+    <div className="notes-writer" data-tour="notes-writer">
       <div className="notes-writer-header">
         <div className="header-left">
           <FileText className="header-icon" size={24} />

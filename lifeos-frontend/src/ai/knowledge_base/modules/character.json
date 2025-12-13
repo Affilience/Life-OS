@@ -1,0 +1,62 @@
+{
+  "name": "Character & Avatar",
+  "route": "/character",
+  "navigation": "Sidebar → Character (user icon)",
+  "purpose": "View and customize your avatar, track evolution stages, manage equipment and companions.",
+  "tabs": [
+    {
+      "name": "Avatar",
+      "description": "View your character with current evolution stage and equipment"
+    },
+    {
+      "name": "Evolution",
+      "description": "See all 40 evolution stages and your progress through them"
+    },
+    {
+      "name": "Equipment",
+      "description": "View and equip items that provide stat bonuses"
+    },
+    {
+      "name": "Companions",
+      "description": "Manage pet companions that accompany your avatar"
+    },
+    {
+      "name": "Stats",
+      "description": "Detailed breakdown of all character statistics"
+    }
+  ],
+  "evolution_system": {
+    "total_stages": 40,
+    "stage_examples": [
+      "Stage 1: Dreamer",
+      "Stage 10: Swordsman",
+      "Stage 20: Veteran",
+      "Stage 30: Warlord",
+      "Stage 40: Avatar of Mastery"
+    ],
+    "progression": "Level up by earning XP from activities across all modules"
+  },
+  "equipment_slots": [
+    "Weapon", "Armor", "Helmet", "Accessory"
+  ],
+  "data_tracked": [
+    "Current level and XP",
+    "Evolution stage",
+    "Equipped items",
+    "Unlocked companions",
+    "Character stats"
+  ],
+  "common_user_actions": [
+    "View my character",
+    "Check my level",
+    "See evolution progress",
+    "Equip an item",
+    "View my companions",
+    "Check character stats"
+  ],
+  "related_modules": [
+    "All modules - Activities earn XP for leveling",
+    "Quests - Completing quests unlocks equipment",
+    "Dashboard - Level shown in hero section"
+  ]
+}

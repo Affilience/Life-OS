@@ -1,72 +1,128 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Book, Headphones, FileText, Video, GraduationCap, Star } from 'lucide-react';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
 import StatCard from '../shared/StatCard';
 import AddLearningModal from './AddLearningModal';
+import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import './LearningLogTab.css';
 
 const LearningLogTab = () => {
   const [contentType, setContentType] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Mock data
-  const stats = {
-    itemsThisMonth: 12,
-    hoursLearning: 24,
-    favoriteTopics: ['Business', 'Psychology', 'Health']
-  };
+  // Get data from store
+  const { books, media, initializeFromSupabase, addBook, addMedia } = useKnowledgeStore();
 
-  const [learningItems, setLearningItems] = useState([
-    {
-      id: 1,
-      type: 'book',
-      title: 'Atomic Habits',
-      author: 'James Clear',
-      dateCompleted: '2025-10-20',
-      rating: 5,
-      keyInsights: [
-        'Focus on systems, not goals',
-        'Make habits obvious, attractive, easy, satisfying',
-        'Identity-based habits are most powerful'
-      ],
-      tags: ['Habits', 'Self-Improvement', 'Productivity'],
-      status: 'completed'
-    },
-    {
-      id: 2,
-      type: 'podcast',
-      title: 'Andrew Huberman: Sleep Optimization',
-      show: 'Huberman Lab',
-      dateListened: '2025-10-18',
-      rating: 5,
-      keyInsights: [
-        'Morning sunlight crucial for circadian rhythm',
-        'Avoid caffeine 10 hours before sleep',
-        'Cool room temperature aids sleep quality'
-      ],
-      tags: ['Sleep', 'Health', 'Science'],
-      status: 'completed'
-    },
-    {
-      id: 3,
-      type: 'book',
-      title: 'The Lean Startup',
-      author: 'Eric Ries',
-      dateStarted: '2025-10-15',
-      progress: 45,
-      tags: ['Business', 'Startups', 'Innovation'],
-      status: 'in-progress'
-    }
-  ]);
+  // Initialize data on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
+
+  // Transform store data to learning items format
+  const { learningItems, stats } = useMemo(() => {
+    const items = [];
+    const today = new Date();
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    // Transform books
+    (books || []).forEach(book => {
+      items.push({
+        id: book.id,
+        type: 'book',
+        title: book.title,
+        author: book.author || 'Unknown',
+        dateCompleted: book.completedAt,
+        dateStarted: book.startedAt,
+        rating: book.rating,
+        keyInsights: book.notes || [],
+        tags: book.tags || [],
+        status: book.status === 'completed' ? 'completed' : book.status === 'reading' ? 'in-progress' : 'wishlist',
+        progress: book.progress?.total > 0 ? Math.round((book.progress.current / book.progress.total) * 100) : 0
+      });
+    });
+
+    // Transform media
+    (media || []).forEach(m => {
+      const mediaType = m.type === 'podcast' ? 'podcast' : m.type === 'course' ? 'course' : m.type === 'youtube' ? 'video' : m.type;
+      items.push({
+        id: m.id,
+        type: mediaType,
+        title: m.title,
+        author: m.creator || 'Unknown',
+        show: m.show || m.creator,
+        dateCompleted: m.watchedAt,
+        dateStarted: m.createdAt,
+        dateListened: m.watchedAt,
+        rating: m.rating,
+        keyInsights: m.notes || [],
+        tags: m.tags || [],
+        status: m.status === 'completed' || m.status === 'watched' ? 'completed' : m.status === 'watching' || m.status === 'listening' ? 'in-progress' : 'wishlist',
+        progress: m.progress || 0
+      });
+    });
+
+    // Calculate stats
+    const itemsThisMonth = items.filter(item => {
+      const completedDate = item.dateCompleted ? new Date(item.dateCompleted) : null;
+      return completedDate && completedDate >= monthAgo;
+    }).length;
+
+    // Estimate learning hours (rough estimate based on content types)
+    const hoursLearning = items.filter(i => i.status === 'completed').reduce((sum, item) => {
+      if (item.type === 'book') return sum + 6; // avg book hours
+      if (item.type === 'course') return sum + 10; // avg course hours
+      if (item.type === 'podcast') return sum + 1; // avg podcast hours
+      if (item.type === 'video') return sum + 0.5; // avg video hours
+      return sum + 1;
+    }, 0);
+
+    // Get favorite topics from tags
+    const tagCounts = {};
+    items.forEach(item => {
+      (item.tags || []).forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+    const favoriteTopics = Object.entries(tagCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([tag]) => tag);
+
+    return {
+      learningItems: items.sort((a, b) => {
+        const dateA = new Date(a.dateCompleted || a.dateStarted || 0);
+        const dateB = new Date(b.dateCompleted || b.dateStarted || 0);
+        return dateB - dateA;
+      }),
+      stats: {
+        itemsThisMonth,
+        hoursLearning: Math.round(hoursLearning),
+        favoriteTopics: favoriteTopics.length > 0 ? favoriteTopics : ['No topics yet']
+      }
+    };
+  }, [books, media]);
 
   const handleLearningSubmit = (learningData) => {
-    const newLearningItem = {
-      ...learningData,
-      id: learningItems.length + 1
-    };
-    setLearningItems(prev => [newLearningItem, ...prev]);
-    console.log('Learning content added:', newLearningItem);
+    if (learningData.type === 'book') {
+      addBook({
+        title: learningData.title,
+        author: learningData.author,
+        status: learningData.status === 'completed' ? 'completed' : learningData.status === 'in-progress' ? 'reading' : 'want-to-read',
+        tags: learningData.tags || [],
+        rating: learningData.rating,
+      });
+    } else {
+      addMedia({
+        type: learningData.type,
+        title: learningData.title,
+        creator: learningData.author || learningData.show,
+        status: learningData.status === 'completed' ? 'completed' : learningData.status === 'in-progress' ? 'watching' : 'want-to-watch',
+        tags: learningData.tags || [],
+      });
+    }
+    console.log('Learning content added:', learningData);
   };
 
   const getTypeIcon = (type) => {

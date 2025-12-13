@@ -3,138 +3,14 @@
  * Inspired by modern book tracking apps and Notion templates
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Star, Check, Clock, Book, Headphones, Video, GraduationCap,
   Search, Grid3x3, List, TrendingUp, BookOpen, Plus, Filter,
   ChevronRight, BarChart3, Target, Calendar
 } from 'lucide-react';
+import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import './LibraryView.css';
-
-// Mock data - Currently Reading (featured)
-const currentlyReading = [
-  {
-    id: 11,
-    type: 'book',
-    title: 'The Almanack of Naval Ravikant',
-    author: 'Eric Jorgenson',
-    genre: 'Philosophy',
-    coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1598011736i/54898389.jpg',
-    progress: 65,
-    currentPage: 156,
-    totalPages: 240,
-    status: 'reading',
-    dateStarted: '2025-10-22',
-  },
-  {
-    id: 12,
-    type: 'course',
-    title: 'System Design Interview',
-    author: 'Alex Xu',
-    genre: 'Technology',
-    progress: 40,
-    status: 'reading',
-    dateStarted: '2025-10-20',
-  },
-];
-
-// Mock data - Completed
-const completedItems = [
-  {
-    id: 1,
-    type: 'book',
-    title: 'Atomic Habits',
-    author: 'James Clear',
-    genre: 'Self-Improvement',
-    rating: 5,
-    dateCompleted: '2025-10-15',
-    coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1655988385i/40121378.jpg',
-    status: 'completed'
-  },
-  {
-    id: 2,
-    type: 'book',
-    title: 'Zero to One',
-    author: 'Peter Thiel',
-    genre: 'Business',
-    rating: 5,
-    dateCompleted: '2025-08-10',
-    coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1414347376i/18050143.jpg',
-    status: 'completed'
-  },
-  {
-    id: 3,
-    type: 'course',
-    title: 'Advanced React Patterns',
-    author: 'Kent C. Dodds',
-    genre: 'Technology',
-    rating: 5,
-    dateCompleted: '2025-09-20',
-    status: 'completed'
-  },
-  {
-    id: 4,
-    type: 'podcast',
-    title: 'The Tim Ferriss Show #542',
-    author: 'Tim Ferriss',
-    genre: 'Business',
-    rating: 4,
-    dateCompleted: '2025-10-10',
-    status: 'completed'
-  },
-  {
-    id: 5,
-    type: 'video',
-    title: 'The Future of Web Development',
-    author: 'Fireship',
-    genre: 'Technology',
-    rating: 4,
-    dateCompleted: '2025-09-28',
-    status: 'completed'
-  },
-];
-
-// Mock data - Want to Read
-const wantToRead = [
-  {
-    id: 6,
-    type: 'book',
-    title: 'The Sovereign Individual',
-    author: 'James Dale Davidson',
-    genre: 'Philosophy',
-    coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1388177630i/82256.jpg',
-    status: 'wishlist',
-    addedDate: '2025-10-20',
-  },
-  {
-    id: 7,
-    type: 'book',
-    title: 'Meditations',
-    author: 'Marcus Aurelius',
-    genre: 'Philosophy',
-    coverUrl: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1421618636i/30659.jpg',
-    status: 'wishlist',
-    addedDate: '2025-10-15',
-  },
-  {
-    id: 8,
-    type: 'course',
-    title: 'PostgreSQL Deep Dive',
-    author: 'Hussein Nasser',
-    genre: 'Technology',
-    status: 'wishlist',
-    addedDate: '2025-10-18',
-  },
-  {
-    id: 9,
-    type: 'video',
-    title: 'How to Learn Anything Fast',
-    author: 'Ali Abdaal',
-    genre: 'Learning',
-    status: 'wishlist',
-    addedDate: '2025-10-12',
-  },
-];
 
 // Type icons mapping
 const TYPE_ICONS = {
@@ -314,12 +190,75 @@ export default function LibraryView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
 
-  // Combine all items
-  const allItems = useMemo(() => [
-    ...currentlyReading,
-    ...completedItems,
-    ...wantToRead
-  ], []);
+  // Get data from store
+  const { books, media, initializeFromSupabase } = useKnowledgeStore();
+
+  // Initialize data on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
+
+  // Transform store data to library items format
+  const { currentlyReading, completedItems, wantToRead, allItems } = useMemo(() => {
+    const items = [];
+
+    // Transform books
+    (books || []).forEach(book => {
+      items.push({
+        id: book.id,
+        type: 'book',
+        title: book.title,
+        author: book.author || 'Unknown',
+        genre: book.tags?.[0] || book.metadata?.genre || 'General',
+        coverUrl: book.coverImage,
+        progress: book.progress?.total > 0
+          ? Math.round((book.progress.current / book.progress.total) * 100)
+          : 0,
+        currentPage: book.progress?.current,
+        totalPages: book.progress?.total,
+        status: book.status === 'completed' ? 'completed'
+          : book.status === 'reading' ? 'reading'
+          : 'wishlist',
+        rating: book.rating,
+        dateStarted: book.startedAt,
+        dateCompleted: book.completedAt,
+        addedDate: book.createdAt,
+      });
+    });
+
+    // Transform media (courses, videos, podcasts)
+    (media || []).forEach(m => {
+      items.push({
+        id: m.id,
+        type: m.type || 'video',
+        title: m.title,
+        author: m.author || m.creator || 'Unknown',
+        genre: m.tags?.[0] || m.category || 'General',
+        coverUrl: m.thumbnail || m.coverImage,
+        progress: m.progress?.total > 0
+          ? Math.round((m.progress.current / m.progress.total) * 100)
+          : 0,
+        status: m.status === 'completed' ? 'completed'
+          : m.status === 'watching' || m.status === 'listening' ? 'reading'
+          : 'wishlist',
+        rating: m.rating,
+        dateCompleted: m.completedAt,
+        addedDate: m.createdAt,
+      });
+    });
+
+    // Split by status
+    const reading = items.filter(i => i.status === 'reading');
+    const completed = items.filter(i => i.status === 'completed');
+    const wishlist = items.filter(i => i.status === 'wishlist');
+
+    return {
+      currentlyReading: reading,
+      completedItems: completed,
+      wantToRead: wishlist,
+      allItems: items
+    };
+  }, [books, media]);
 
   // Filter items based on tab, search, and type filter
   const filteredItems = useMemo(() => {
@@ -350,7 +289,7 @@ export default function LibraryView() {
     }
 
     return items;
-  }, [allItems, activeTab, filterType, searchQuery]);
+  }, [allItems, currentlyReading, completedItems, wantToRead, activeTab, filterType, searchQuery]);
 
   // Calculate stats
   const stats = useMemo(() => ({
@@ -358,8 +297,8 @@ export default function LibraryView() {
     completed: completedItems.length,
     reading: currentlyReading.length,
     avgRating: completedItems.filter(i => i.rating).reduce((acc, i) => acc + i.rating, 0) /
-               completedItems.filter(i => i.rating).length || 0,
-  }), [allItems]);
+               (completedItems.filter(i => i.rating).length || 1),
+  }), [allItems, completedItems, currentlyReading]);
 
   const tabs = [
     { id: 'all', label: 'All', count: allItems.length },
@@ -480,10 +419,6 @@ export default function LibraryView() {
         </div>
       </section>
 
-      {/* Add Book FAB */}
-      <button className="add-book-fab">
-        <Plus size={24} />
-      </button>
     </div>
   );
 }

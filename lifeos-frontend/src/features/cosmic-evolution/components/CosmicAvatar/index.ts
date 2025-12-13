@@ -1,1 +1,0 @@
-export { CosmicAvatar } from './CosmicAvatar';

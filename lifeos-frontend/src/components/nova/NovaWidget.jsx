@@ -11,11 +11,15 @@ import {
   BookOpen,
   Wallet,
   Calendar,
-  Target
+  Target,
+  RotateCcw
 } from 'lucide-react';
 import { claudeService } from '../../services/ai/claudeService';
 import { proactiveNudges } from '../../services/ai/proactiveNudges';
 import { getCrossModuleContext, generateContextSummary } from '../../services/ai/crossModuleData';
+import { novaConversationService } from '../../services/ai/novaConversationService';
+// New Nova AI Core - State of the art implementation
+import novaCore from '../../services/ai/nova';
 import useGamificationStore from '../../stores/gamificationStore';
 import './NovaWidget.css';
 
@@ -67,25 +71,55 @@ export default function NovaWidget() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   // Initial position: account for bottom nav on mobile (64px + padding)
-  const isMobile = window.innerWidth <= 768;
-  const bottomOffset = isMobile ? 100 : 20; // Higher on mobile to avoid bottom nav
-  const [position, setPosition] = useState({
-    x: window.innerWidth - 100,
-    y: window.innerHeight - bottomOffset - 80
+  // Use a function to calculate initial position only once
+  const [position, setPosition] = useState(() => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    const bottomOffset = isMobile ? 100 : 20;
+    return {
+      x: typeof window !== 'undefined' ? window.innerWidth - 100 : 100,
+      y: typeof window !== 'undefined' ? window.innerHeight - bottomOffset - 80 : 100
+    };
   });
   const [isDragging, setIsDragging] = useState(false);
   const [wasDragged, setWasDragged] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [expandedPosition, setExpandedPosition] = useState(null); // Position when dragged while expanded
   const [emotionalState, setEmotionalState] = useState('happy');
   const [hasNotification, setHasNotification] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [currentNudge, setCurrentNudge] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
 
   const widgetRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  // Track if we've started a new conversation (to prevent re-loading old messages)
+  const [isNewConversation, setIsNewConversation] = useState(false);
+
+  // Load conversation history on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      // Don't load history if user explicitly started a new conversation
+      if (isNewConversation) {
+        setIsLoadingHistory(false);
+        return;
+      }
+      try {
+        const previousMessages = await novaConversationService.loadRecentMessages(10);
+        if (previousMessages.length > 0) {
+          setMessages(previousMessages);
+        }
+      } catch (error) {
+        console.warn('Failed to load conversation history:', error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    loadHistory();
+  }, [isNewConversation]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -107,8 +141,18 @@ export default function NovaWidget() {
   const evolutionStage = getEvolutionStage();
   const spritePath = `/assets/nova/nova_${evolutionStage}.png`;
 
-  // Calculate expanded view position based on avatar position
+  // Calculate expanded view position based on avatar position or dragged position
   const getExpandedPosition = () => {
+    // If user has dragged the expanded chat, use that position
+    if (expandedPosition) {
+      return {
+        left: `${expandedPosition.x}px`,
+        top: `${expandedPosition.y}px`,
+        bottom: 'auto',
+        right: 'auto',
+      };
+    }
+
     const chatHeight = 480; // Approximate height of expanded chat
     const chatWidth = 320;
     const avatarSize = 72;
@@ -152,7 +196,7 @@ export default function NovaWidget() {
     }
   };
 
-  // Handle dragging - use standard mousedown/mousemove/mouseup pattern
+  // Handle dragging for minimized avatar
   const handleMouseDown = (e) => {
     if (isExpanded || isFullscreen) return;
     e.preventDefault(); // Prevent text selection during drag
@@ -171,22 +215,38 @@ export default function NovaWidget() {
       const newX = e.clientX - dragOffset.x;
       const newY = e.clientY - dragOffset.y;
 
-      const maxX = window.innerWidth - 100;
-      // Keep above bottom nav on mobile (64px nav + 16px padding + widget height)
-      const bottomNavHeight = window.innerWidth <= 768 ? 80 : 0;
-      const maxY = window.innerHeight - 100 - bottomNavHeight;
+      // Different constraints for expanded vs minimized
+      if (isExpanded) {
+        // Dragging the expanded chatbox
+        const chatWidth = 400;
+        const chatHeight = 480;
+        const padding = 16;
 
-      // Check if we've moved enough to consider it a drag (5px threshold)
-      const deltaX = Math.abs(newX - position.x);
-      const deltaY = Math.abs(newY - position.y);
-      if (deltaX > 5 || deltaY > 5) {
-        setWasDragged(true);
+        const constrainedX = Math.max(padding, Math.min(newX, window.innerWidth - chatWidth - padding));
+        const constrainedY = Math.max(padding, Math.min(newY, window.innerHeight - chatHeight - padding));
+
+        setExpandedPosition({
+          x: constrainedX,
+          y: constrainedY
+        });
+      } else {
+        // Dragging the minimized avatar
+        const maxX = window.innerWidth - 100;
+        const bottomNavHeight = window.innerWidth <= 768 ? 80 : 0;
+        const maxY = window.innerHeight - 100 - bottomNavHeight;
+
+        // Check if we've moved enough to consider it a drag (5px threshold)
+        const deltaX = Math.abs(newX - position.x);
+        const deltaY = Math.abs(newY - position.y);
+        if (deltaX > 5 || deltaY > 5) {
+          setWasDragged(true);
+        }
+
+        setPosition({
+          x: Math.max(0, Math.min(newX, maxX)),
+          y: Math.max(0, Math.min(newY, maxY))
+        });
       }
-
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
-      });
     };
 
     const handleMouseUp = () => {
@@ -205,19 +265,88 @@ export default function NovaWidget() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, position]);
+  }, [isDragging, dragOffset, position, isExpanded]);
 
-  // Build system prompt with real user context
-  const buildSystemPrompt = () => {
-    const context = getCrossModuleContext();
-    const contextSummary = generateContextSummary(context);
-    const level = userLevel || 1;
-    const stageName = EVOLUTION_STAGES[evolutionStage]?.name || 'Spark';
+  // Initialize Nova AI Core on mount
+  useEffect(() => {
+    // Initialize the new Nova AI system
+    novaCore.initialize().then(result => {
+      if (result.success) {
+        console.log('Nova AI Core initialized');
+      } else {
+        console.warn('Nova AI Core initialization failed:', result.error);
+      }
+    });
 
-    return `You are Nova, a mystical AI companion for LifeOS - a personal operating system for life optimization. You're currently in ${stageName} form (evolution stage based on user level ${level}).
+    // Run maintenance daily
+    const maintenanceInterval = setInterval(() => {
+      novaCore.performMaintenance().catch(console.warn);
+    }, 24 * 60 * 60 * 1000);
 
-CURRENT USER CONTEXT:
-${contextSummary}
+    // Run pattern analysis every 30 minutes
+    const analysisInterval = setInterval(() => {
+      novaCore.analyzeAndStorePatterns().catch(console.warn);
+    }, 30 * 60 * 1000);
+
+    return () => {
+      clearInterval(maintenanceInterval);
+      clearInterval(analysisInterval);
+    };
+  }, []);
+
+  // Ref for streaming message
+  const streamingMessageRef = useRef('');
+
+  // Handle send message with streaming for faster perceived response
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+
+    // Check if service is configured
+    if (!claudeService.isConfigured()) {
+      setMessages(prev => [...prev,
+        { role: 'user', content: input.trim() },
+        { role: 'assistant', content: "I'm not fully connected yet. The Nova chat service needs to be deployed. Check that your Supabase Edge Function is set up!" }
+      ]);
+      setInput('');
+      setEmotionalState('concerned');
+      return;
+    }
+
+    const userMessage = { role: 'user', content: input.trim() };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    setEmotionalState('thoughtful');
+
+    // Save user message to database (async)
+    novaConversationService.saveMessage('user', userMessage.content).catch(err =>
+      console.warn('Failed to save user message:', err)
+    );
+
+    try {
+      // Build context in parallel with message preparation
+      const contextPromise = novaCore.buildContext(
+        userMessage.content,
+        {
+          conversationId: novaConversationService.currentConversationId,
+          includeConversationHistory: true
+        }
+      );
+
+      // Record the interaction for learning (don't await)
+      novaCore.recordInteraction('message_sent', { content: userMessage.content }).catch(console.warn);
+
+      // Build the system prompt with Nova's personality
+      const level = userLevel || 1;
+      const stageName = EVOLUTION_STAGES[evolutionStage]?.name || 'Spark';
+
+      // Wait for context
+      const { context: comprehensiveContext, metadata } = await contextPromise;
+      console.log(`Context built in ${metadata?.buildTimeMs}ms (${metadata?.mode || 'unknown'} mode)`);
+
+      const systemPrompt = `You are Nova, a mystical AI companion for LifeOS - a personal operating system for life optimization. You're currently in ${stageName} form (evolution stage based on user level ${level}).
+
+${comprehensiveContext}
 
 YOUR PERSONALITY:
 - You are wise, encouraging, and genuinely invested in the user's growth
@@ -225,11 +354,18 @@ YOUR PERSONALITY:
 - You're direct and give actionable advice
 - You celebrate wins enthusiastically but don't overdo it
 - When concerned (low progress, broken streaks), you're supportive not judgmental
-- You have knowledge of all their data across productivity, health, finances, and learning
+- You have deep knowledge of LifeOS - you know where everything is and how it works
+
+MEMORY & CONTEXT:
+- You HAVE memory of past conversations! The "PREVIOUS MESSAGES" section above shows your conversation history with this user.
+- When asked about previous conversations, ALWAYS reference the actual messages shown in your context above.
+- You can recall what the user said and what you discussed - use that information!
+- If asked "what did we talk about" or "what was my last message", look at the PREVIOUS MESSAGES section and quote from it.
 
 GUIDELINES:
 - Keep responses SHORT (2-3 sentences max) in widget mode
 - Reference their actual data when relevant (tasks done, streak status, budget, etc.)
+- When asked "where" questions, provide the specific route (e.g., /health, /productivity)
 - Provide specific, actionable suggestions based on their current situation
 - Use a warm, supportive, PROFESSIONAL tone
 - NEVER use asterisks (*), excessive emojis, or roleplay actions
@@ -243,38 +379,102 @@ CONTEXT-AWARE RESPONSES:
 - If they haven't logged nutrition, you could ask about meals
 - If they're over budget, be understanding but helpful
 - If they've achieved something recently, celebrate it!`;
-  };
 
-  // Handle send message
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+      // Add placeholder for streaming message
+      streamingMessageRef.current = '';
+      setMessages(prev => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
 
-    const userMessage = { role: 'user', content: input.trim() };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
-    setEmotionalState('thoughtful');
+      // Clean messages before sending - remove metadata flags and only keep role/content
+      const cleanMessages = [...messages, userMessage].map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
-    try {
-      const systemPrompt = buildSystemPrompt();
-
-      const response = await claudeService.chat(
-        [...messages, userMessage],
-        { system: systemPrompt }
+      // Use streaming for faster perceived response
+      const fullResponse = await claudeService.streamChat(
+        cleanMessages,
+        (chunk) => {
+          // Update the streaming message as chunks arrive
+          streamingMessageRef.current += chunk;
+          setMessages(prev => {
+            const updated = [...prev];
+            const lastIdx = updated.length - 1;
+            if (updated[lastIdx]?.isStreaming) {
+              updated[lastIdx] = { role: 'assistant', content: streamingMessageRef.current, isStreaming: true };
+            }
+            return updated;
+          });
+        },
+        {
+          system: systemPrompt,
+          userContext: '' // Context is already in system prompt
+        }
       );
 
-      setMessages(prev => [...prev, { role: 'assistant', content: response.content }]);
+      // Finalize the message (remove streaming flag)
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastIdx = updated.length - 1;
+        if (updated[lastIdx]?.isStreaming) {
+          updated[lastIdx] = { role: 'assistant', content: fullResponse };
+        }
+        return updated;
+      });
       setEmotionalState('happy');
+
+      // Save assistant message to database (async)
+      novaConversationService.saveMessage('assistant', fullResponse).catch(err =>
+        console.warn('Failed to save assistant message:', err)
+      );
+
+      // Learn from the successful interaction (background)
+      novaCore.recordInteraction('significant_event', {
+        eventType: 'conversation_turn',
+        description: `User asked about: ${userMessage.content.substring(0, 100)}`,
+        importance: 1
+      }).catch(console.warn);
+
     } catch (error) {
       console.error('Nova chat error:', error);
+
+      // Remove streaming message if there was an error
+      setMessages(prev => prev.filter(m => !m.isStreaming));
+
+      // Provide more helpful error messages
+      let errorMessage = "Sorry, I encountered an error. ";
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        errorMessage += "The Nova chat service isn't deployed yet. Run: supabase functions deploy nova-chat";
+      } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+        errorMessage += "There's an authentication issue. Check your Supabase keys.";
+      } else if (error.message.includes('500')) {
+        errorMessage += "The server encountered an error. Check if ANTHROPIC_API_KEY is set in Supabase.";
+      } else {
+        errorMessage += "Please try again in a moment.";
+      }
+
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.'
+        content: errorMessage
       }]);
       setEmotionalState('concerned');
     } finally {
       setIsLoading(false);
+      streamingMessageRef.current = '';
     }
+  };
+
+  // Start a new conversation
+  const handleNewConversation = () => {
+    novaConversationService.startNewConversation();
+    setMessages([]);
+    setEmotionalState('happy');
+    setIsNewConversation(true);
+  };
+
+  // Close the expanded chat and reset position
+  const closeExpandedChat = () => {
+    setIsExpanded(false);
+    setExpandedPosition(null); // Reset so it opens near avatar next time
   };
 
   // Check for proactive nudges periodically
@@ -306,46 +506,56 @@ CONTEXT-AWARE RESPONSES:
     }
     setCurrentNudge(null);
     setHasNotification(false);
-    setIsExpanded(false);
+    closeExpandedChat();
   };
 
   // Handle quick action click
   const handleQuickAction = (action) => {
     navigate(action.route);
-    setIsExpanded(false);
+    closeExpandedChat();
   };
 
   // Fullscreen mode
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 bg-[#0c0a10] z-[9999] flex flex-col">
+      <div className="fixed inset-0 bg-bg-0 z-[9999] flex flex-col">
         {/* Header */}
-        <div className="bg-[#12101a] border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
+        <div className="bg-bg-elevated border-b border-border px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={spritePath} alt="Nova" className="w-12 h-12 pixelated" />
             <div>
               <h2 className="text-lg font-bold">Nova - {EVOLUTION_STAGES[evolutionStage]?.name || 'Spark'}</h2>
-              <p className="text-sm text-white/60">Your AI Life Coach • Level {userLevel || 1}</p>
+              <p className="text-sm text-text-muted">Your AI Life Coach • Level {userLevel || 1}</p>
             </div>
           </div>
-          <button
-            onClick={() => setIsFullscreen(false)}
-            className="p-2 hover:bg-[#2a2538] rounded-lg transition-colors"
-          >
-            <Minimize2 size={20} />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleNewConversation}
+              className="p-2 hover:bg-bg-hover rounded-lg transition-colors text-text-secondary hover:text-white"
+              title="New conversation"
+            >
+              <RotateCcw size={20} />
+            </button>
+            <button
+              onClick={() => setIsFullscreen(false)}
+              className="p-2 hover:bg-bg-hover rounded-lg transition-colors text-text-secondary hover:text-white"
+              title="Close fullscreen"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {messages.length === 0 ? (
-            <div className="text-center text-white/60 mt-20">
+            <div className="text-center text-text-muted mt-20">
               <Sparkles size={48} className="mx-auto mb-4 text-blue-400" />
               <p className="text-lg mb-2">Hi! I'm Nova, your AI companion.</p>
               <p className="text-sm mb-6">I can see your progress across all modules. Ask me anything!</p>
 
               {/* Quick Context Display */}
-              <div className="max-w-md mx-auto text-left bg-[#1a1724] rounded-xl p-4 border border-[#2a2a2a]">
+              <div className="max-w-md mx-auto text-left bg-bg-1 rounded-xl p-4 border border-border">
                 <p className="text-xs text-white/40 mb-2">What I know about you today:</p>
                 <ContextPreview />
               </div>
@@ -363,8 +573,8 @@ CONTEXT-AWARE RESPONSES:
                   <div
                     className={`max-w-[70%] rounded-lg px-4 py-2 ${
                       msg.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-[#1a1724] text-gray-100 border border-[#2a2a2a]'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-bg-1 text-gray-100 border border-border'
                     }`}
                   >
                     {msg.content}
@@ -374,10 +584,10 @@ CONTEXT-AWARE RESPONSES:
               <div ref={messagesEndRef} />
             </>
           )}
-          {isLoading && (
+          {isLoading && !messages.some(m => m.isStreaming) && (
             <div className="flex gap-3 justify-start">
               <img src={spritePath} alt="Nova" className="w-8 h-8 pixelated" />
-              <div className="bg-[#1a1724] text-gray-100 border border-[#2a2a2a] rounded-lg px-4 py-2">
+              <div className="bg-bg-1 text-gray-100 border border-border rounded-lg px-4 py-2">
                 <span className="animate-pulse">Thinking...</span>
               </div>
             </div>
@@ -385,23 +595,23 @@ CONTEXT-AWARE RESPONSES:
         </div>
 
         {/* Quick Actions Bar */}
-        <div className="bg-[#12101a] border-t border-[#2a2a2a] px-6 py-3">
+        <div className="bg-bg-elevated border-t border-border px-6 py-3">
           <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
             {QUICK_ACTIONS.map((action) => (
               <button
                 key={action.id}
                 onClick={() => handleQuickAction(action)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1724] hover:bg-[#2a2538] border border-[#2a2a2a] rounded-lg transition-colors whitespace-nowrap"
+                className="flex items-center gap-2 px-3 py-1.5 bg-bg-1 hover:bg-bg-hover border border-border rounded-lg transition-colors whitespace-nowrap"
               >
                 <action.icon size={14} className={action.color} />
-                <span className="text-xs text-white/80">{action.label}</span>
+                <span className="text-xs text-text-secondary">{action.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Input Area */}
-        <div className="bg-[#12101a] border-t border-[#2a2a2a] px-6 py-4">
+        <div className="bg-bg-elevated border-t border-border px-6 py-4">
           <div className="flex gap-2">
             <input
               type="text"
@@ -410,12 +620,12 @@ CONTEXT-AWARE RESPONSES:
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask Nova anything..."
               disabled={isLoading}
-              className="flex-1 bg-[#1a1724] border border-[#2a2a2a] rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+              className="flex-1 bg-bg-1 border border-border rounded-lg px-4 py-2 focus:outline-none focus:border-primary-500 disabled:opacity-50"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-[#221e2e] disabled:cursor-not-allowed px-6 py-2 rounded-lg font-medium transition-colors"
+              className="bg-primary-500 hover:bg-primary-600 disabled:bg-bg-2 disabled:cursor-not-allowed px-6 py-2 rounded-lg font-medium transition-colors"
             >
               {isLoading ? '...' : 'Send'}
             </button>
@@ -466,32 +676,60 @@ CONTEXT-AWARE RESPONSES:
         </div>
       )}
 
+      {/* Backdrop overlay - click to close */}
+      {isExpanded && (
+        <div
+          className="fixed inset-0 z-[9998]"
+          onClick={closeExpandedChat}
+        />
+      )}
+
       {/* Expanded Chat - Rendered separately with fixed positioning */}
       {isExpanded && (
         <div
           className="nova-expanded"
           style={getExpandedPosition()}
         >
-          {/* Header */}
-          <div className="nova-header">
+          {/* Header - Draggable */}
+          <div
+            className="nova-header cursor-grab active:cursor-grabbing"
+            onMouseDown={(e) => {
+              // Don't drag if clicking on buttons
+              if (e.target.closest('button')) return;
+              e.preventDefault();
+              setIsDragging(true);
+              const rect = e.currentTarget.closest('.nova-expanded').getBoundingClientRect();
+              setDragOffset({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+              });
+            }}
+          >
             <div className="flex items-center gap-2">
               <img src={spritePath} alt="Nova" className="w-8 h-8 pixelated" />
               <div>
                 <div className="font-bold text-sm">Nova</div>
-                <div className="text-xs text-white/60">Lv. {userLevel || 1} • {EVOLUTION_STAGES[evolutionStage]?.name || 'Spark'}</div>
+                <div className="text-xs text-text-muted">Lv. {userLevel || 1} • {EVOLUTION_STAGES[evolutionStage]?.name || 'Spark'}</div>
               </div>
             </div>
             <div className="flex gap-1">
               <button
+                onClick={handleNewConversation}
+                className="p-1 hover:bg-bg-hover rounded transition-colors text-text-secondary hover:text-white"
+                title="New conversation"
+              >
+                <RotateCcw size={14} />
+              </button>
+              <button
                 onClick={() => setIsFullscreen(true)}
-                className="p-1 hover:bg-[#2a2538] rounded transition-colors"
+                className="p-1 hover:bg-bg-hover rounded transition-colors text-text-secondary hover:text-white"
                 title="Fullscreen"
               >
                 <Maximize2 size={16} />
               </button>
               <button
-                onClick={() => setIsExpanded(false)}
-                className="p-1 hover:bg-[#2a2538] rounded transition-colors"
+                onClick={closeExpandedChat}
+                className="p-1 hover:bg-bg-hover rounded transition-colors text-text-secondary hover:text-white"
                 title="Minimize"
               >
                 <X size={16} />
@@ -501,8 +739,8 @@ CONTEXT-AWARE RESPONSES:
 
           {/* Nudge Actions */}
           {currentNudge && currentNudge.actions && (
-            <div className="px-3 py-2 bg-[#1a1724] border-b border-[#2a2a2a]">
-              <p className="text-xs text-white/80 mb-2">{currentNudge.message}</p>
+            <div className="px-3 py-2 bg-bg-1 border-b border-border">
+              <p className="text-xs text-text-secondary mb-2">{currentNudge.message}</p>
               <div className="flex flex-wrap gap-1">
                 {currentNudge.actions.map((action, idx) => (
                   <button
@@ -510,8 +748,8 @@ CONTEXT-AWARE RESPONSES:
                     onClick={() => handleNudgeAction(action)}
                     className={`px-2 py-1 text-xs rounded transition-colors ${
                       action.action === 'dismiss'
-                        ? 'bg-white/5 text-white/60 hover:bg-white/10'
-                        : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                        ? 'bg-white/5 text-text-muted hover:bg-white/10'
+                        : 'bg-primary-500/20 text-blue-400 hover:bg-primary-500/30'
                     }`}
                   >
                     {action.label}
@@ -522,17 +760,17 @@ CONTEXT-AWARE RESPONSES:
           )}
 
           {/* Quick Actions */}
-          <div className="px-3 py-2 border-b border-[#2a2a2a] bg-[#12101a]">
+          <div className="px-3 py-2 border-b border-border bg-bg-elevated">
             <div className="flex gap-1 overflow-x-auto">
               {QUICK_ACTIONS.slice(0, 4).map((action) => (
                 <button
                   key={action.id}
                   onClick={() => handleQuickAction(action)}
-                  className="flex flex-col items-center gap-0.5 p-1.5 hover:bg-[#2a2538] rounded transition-colors min-w-[48px]"
+                  className="flex flex-col items-center gap-0.5 p-1.5 hover:bg-bg-hover rounded transition-colors min-w-[48px]"
                   title={action.label}
                 >
                   <action.icon size={14} className={action.color} />
-                  <span className="text-[9px] text-white/60">{action.label}</span>
+                  <span className="text-[9px] text-text-muted">{action.label}</span>
                 </button>
               ))}
             </div>
@@ -541,7 +779,7 @@ CONTEXT-AWARE RESPONSES:
           {/* Quick Chat */}
           <div className="nova-chat">
             {messages.length === 0 ? (
-              <div className="text-center text-white/60 text-sm py-4">
+              <div className="text-center text-text-muted text-sm py-4">
                 <MessageCircle size={24} className="mx-auto mb-2 opacity-50" />
                 <p>Ask me anything!</p>
               </div>
@@ -557,8 +795,8 @@ CONTEXT-AWARE RESPONSES:
                     <div
                       className={`inline-block px-3 py-1.5 rounded-lg max-w-[90%] ${
                         msg.role === 'user'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-[#1a1724] text-gray-100'
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-bg-1 text-gray-100'
                       }`}
                     >
                       {msg.content}
@@ -578,12 +816,12 @@ CONTEXT-AWARE RESPONSES:
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type a message..."
               disabled={isLoading}
-              className="flex-1 bg-[#1a1724] border border-[#2a2a2a] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50"
+              className="flex-1 bg-bg-1 border border-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-primary-500 disabled:opacity-50"
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-[#221e2e] disabled:cursor-not-allowed px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              className="bg-primary-500 hover:bg-primary-600 disabled:bg-bg-2 disabled:cursor-not-allowed px-3 py-1.5 rounded text-sm font-medium transition-colors"
             >
               →
             </button>
@@ -601,7 +839,7 @@ function ContextPreview() {
   const context = getCrossModuleContext();
 
   return (
-    <div className="space-y-1 text-xs text-white/70">
+    <div className="space-y-1 text-xs text-text-secondary">
       <p>• Tasks: {context.today.tasks.completed}/{context.today.tasks.total} completed</p>
       <p>• Level: {context.progress.level} ({context.progress.stage})</p>
       {context.streaks.active.length > 0 && (

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { User, Target, Trophy, TrendingUp, Sparkles } from 'lucide-react';
+import { User, Target, TrendingUp, Sparkles } from 'lucide-react';
 import PageHeader from '../components/shared/PageHeader';
 import Card from '../components/ui/Card';
 import Skills from './Skills';
-import SkillTreeNew from './SkillTreeNew';
 import Streaks from './Streaks';
 import { useAvatarStore } from '../stores/avatarStore';
 import { getStageByLevel } from '../data/avatarEvolution';
@@ -18,7 +17,6 @@ export default function Progress() {
   const tabs = [
     { id: 'avatar', label: 'Avatar', icon: User },
     { id: 'skills', label: 'Skills', icon: Target },
-    { id: 'tree', label: 'Skill Tree', icon: Trophy },
     { id: 'stats', label: 'Stats', icon: TrendingUp },
   ];
 
@@ -131,7 +129,6 @@ export default function Progress() {
         )}
 
         {activeTab === 'skills' && <Skills />}
-        {activeTab === 'tree' && <SkillTreeNew />}
         {activeTab === 'stats' && <Streaks />}
         </div>
       </Card>

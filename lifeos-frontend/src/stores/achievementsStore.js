@@ -6,6 +6,9 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import { DEV_USER_ID } from '../lib/dev-auth';
+import { triggerGamification } from '../hooks/useGamification';
 
 // Achievement Categories
 export const ACHIEVEMENT_CATEGORIES = {
@@ -1505,6 +1508,56 @@ export const ACHIEVEMENT_TEMPLATES = [
 const useAchievementsStore = create(
   persist(
     (set, get) => ({
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        try {
+          // Load user discoveries (achievements)
+          const { data: userDiscoveries, error: discoveriesError } = await supabase
+            .from('user_discoveries')
+            .select(`
+              *,
+              discovery:discoveries (*)
+            `)
+            .eq('user_id', DEV_USER_ID);
+
+          if (discoveriesError) throw discoveriesError;
+
+          // Load achievement progress
+          const { data: progressData, error: progressError } = await supabase
+            .from('achievement_progress')
+            .select('*')
+            .eq('user_id', DEV_USER_ID);
+
+          if (progressError) throw progressError;
+
+          // Convert to local format
+          const unlockedAchievements = (userDiscoveries || []).map(ud => ({
+            achievementId: ud.discovery?.id || ud.discovery_id,
+            unlockedAt: ud.earned_at,
+            xpEarned: ud.discovery?.xp_reward || 0,
+            creditsEarned: ud.discovery?.credits_reward || 0,
+          }));
+
+          const achievementProgress = {};
+          (progressData || []).forEach(p => {
+            achievementProgress[p.discovery_id] = p.current_progress;
+          });
+
+          // Calculate totals
+          const totalXP = unlockedAchievements.reduce((sum, a) => sum + (a.xpEarned || 0), 0);
+          const totalCredits = unlockedAchievements.reduce((sum, a) => sum + (a.creditsEarned || 0), 0);
+
+          set({
+            unlockedAchievements,
+            achievementProgress,
+            totalXPFromAchievements: totalXP,
+            totalCreditsFromAchievements: totalCredits,
+          });
+        } catch (error) {
+          console.error('Error initializing achievements from Supabase:', error);
+        }
+      },
+
       // State
       unlockedAchievements: [], // Array of { achievementId, unlockedAt, xpEarned, creditsEarned }
       achievementProgress: {}, // { achievementId: currentProgress }
@@ -1513,28 +1566,69 @@ const useAchievementsStore = create(
 
       // Stats tracking (updated by other modules)
       stats: {
+        // Quest stats
         questsCompleted: 0,
         weeklyPerfect: 0,
         monthlyPerfect: 0,
         chainsCompleted: 0,
         bossesDefeated: 0,
+
+        // Streak stats
         streakDays: 0,
+        streaksMaintained: 0,
+        longestStreak: 0,
+        consecutiveDays: 0,
+
+        // Productivity stats
         deepWorkHours: 0,
         tasksCompleted: 0,
+        projectsCompleted: 0,
+        taskStreakDays: 0,
+        tasksSingleDay: 0,
+        longestWorkSession: 0,
+        pomodorosCompleted: 0,
+        timeBlocksCompleted: 0,
+        eventsCreated: 0,
+        schedulesFollowed: 0,
+
+        // Health & Fitness stats
         workouts: 0,
+        workoutStreakDays: 0,
+        prsAchieved: 0,
+        caloriesBurned: 0,
+        totalVolume: 0,
+        cardioMiles: 0,
+        cardioSessions: 0,
+        mealsLogged: 0,
+        mealLogStreak: 0,
+        proteinGoalStreak: 0,
+        proteinGoalsHit: 0,
+        calorieGoalStreak: 0,
+        caloriesTracked: 0,
+        waterIntakeDays: 0,
+        sleepLogged: 0,
+        weightLogged: 0,
+
+        // Knowledge stats
         booksCompleted: 0,
         readingHours: 0,
+        notesCreated: 0,
+        ideasCaptured: 0,
+        articlesRead: 0,
+        podcastsCompleted: 0,
+        coursesCompleted: 0,
+
+        // Skills stats
+        practiceSessionsCompleted: 0,
+        skillsLeveledUp: 0,
+        skillsMastered: 0,
+
+        // Financial stats
         underBudgetMonths: 0,
         expensesLogged: 0,
+        incomeLogged: 0,
+        budgetsCreated: 0,
         sinkingFundsCreated: 0,
-        journalEntries: 0,
-        level: 1,
-        totalXP: 0,
-        perfectDays: 0,
-        allModulesDay: 0,
-        specialNightOwl: 0,
-        specialEarlyBird: 0,
-        // Financial goal stats
         savingsGoalsCreated: 0,
         savingsContributions: 0,
         savingsMilestone25: 0,
@@ -1543,35 +1637,38 @@ const useAchievementsStore = create(
         savingsGoalsCompleted: 0,
         savingsStreakWeeks: 0,
         totalSaved: 0,
-        // Health & Fitness stats
-        workoutStreakDays: 0,
-        prsAchieved: 0,
-        caloriesBurned: 0,
-        totalVolume: 0,
-        cardioMiles: 0,
-        cardioSessions: 0,
-        mealLogStreak: 0,
-        proteinGoalStreak: 0,
-        calorieGoalStreak: 0,
-        // Productivity stats
-        taskStreakDays: 0,
-        tasksSingleDay: 0,
-        projectsCompleted: 0,
-        longestWorkSession: 0,
-        // Journal/Knowledge stats
+
+        // Journal stats
+        journalEntries: 0,
         journalStreak: 0,
-        notesCreated: 0,
-        ideasCaptured: 0,
-        coursesCompleted: 0,
+        gratitudeEntriesCreated: 0,
+        reflectionsCompleted: 0,
+        moodEntriesLogged: 0,
+
+        // Social stats
+        friendsAdded: 0,
+        challengesCompleted: 0,
+        challengesCreated: 0,
+
+        // Milestone stats
+        level: 1,
+        totalXP: 0,
+        daysActive: 0,
+        totalActivities: 0,
+        loginDays: 0,
+        modulesVisited: 0,
+
         // Special/Time-based stats
+        perfectDays: 0,
+        allModulesDay: 0,
+        specialNightOwl: 0,
+        specialEarlyBird: 0,
         weekendComplete: 0,
         mondayEarly: 0,
         earlyStreak: 0,
         nightStreak: 0,
         newYearQuest: 0,
-        // Milestone stats
-        daysActive: 0,
-        totalActivities: 0,
+
         // Hidden achievement stats
         prsSingleWorkout: 0,
         comeback: 0,
@@ -1596,28 +1693,69 @@ const useAchievementsStore = create(
 
           // Map requirement type to stat
           switch (type) {
+            // Quest stats
             case 'quests_completed': currentProgress = stats.questsCompleted; break;
             case 'weekly_perfect': currentProgress = stats.weeklyPerfect; break;
             case 'monthly_perfect': currentProgress = stats.monthlyPerfect; break;
             case 'chains_completed': currentProgress = stats.chainsCompleted; break;
             case 'bosses_defeated': currentProgress = stats.bossesDefeated; break;
+
+            // Streak stats
             case 'streak_days': currentProgress = stats.streakDays; break;
+            case 'streaks_maintained': currentProgress = stats.streaksMaintained; break;
+            case 'longest_streak': currentProgress = stats.longestStreak; break;
+            case 'consecutive_days': currentProgress = stats.consecutiveDays; break;
+
+            // Productivity stats
             case 'deep_work_hours': currentProgress = stats.deepWorkHours; break;
             case 'tasks_completed': currentProgress = stats.tasksCompleted; break;
+            case 'projects_completed': currentProgress = stats.projectsCompleted; break;
+            case 'task_streak_days': currentProgress = stats.taskStreakDays; break;
+            case 'tasks_single_day': currentProgress = stats.tasksSingleDay; break;
+            case 'longest_work_session': currentProgress = stats.longestWorkSession; break;
+            case 'pomodoros_completed': currentProgress = stats.pomodorosCompleted; break;
+            case 'time_blocks_completed': currentProgress = stats.timeBlocksCompleted; break;
+            case 'events_created': currentProgress = stats.eventsCreated; break;
+            case 'schedules_followed': currentProgress = stats.schedulesFollowed; break;
+
+            // Health & Fitness stats
             case 'workouts': currentProgress = stats.workouts; break;
+            case 'workout_streak_days': currentProgress = stats.workoutStreakDays; break;
+            case 'prs_achieved': currentProgress = stats.prsAchieved; break;
+            case 'calories_burned': currentProgress = stats.caloriesBurned; break;
+            case 'total_volume': currentProgress = stats.totalVolume; break;
+            case 'cardio_miles': currentProgress = stats.cardioMiles; break;
+            case 'cardio_sessions': currentProgress = stats.cardioSessions; break;
+            case 'meals_logged': currentProgress = stats.mealsLogged; break;
+            case 'meal_log_streak': currentProgress = stats.mealLogStreak; break;
+            case 'protein_goal_streak': currentProgress = stats.proteinGoalStreak; break;
+            case 'protein_goals_hit': currentProgress = stats.proteinGoalsHit; break;
+            case 'calorie_goal_streak': currentProgress = stats.calorieGoalStreak; break;
+            case 'calories_tracked': currentProgress = stats.caloriesTracked; break;
+            case 'water_intake_days': currentProgress = stats.waterIntakeDays; break;
+            case 'sleep_logged': currentProgress = stats.sleepLogged; break;
+            case 'weight_logged': currentProgress = stats.weightLogged; break;
+
+            // Knowledge stats
             case 'books_completed': currentProgress = stats.booksCompleted; break;
             case 'reading_hours': currentProgress = stats.readingHours; break;
+            case 'notes_created': currentProgress = stats.notesCreated; break;
+            case 'ideas_captured': currentProgress = stats.ideasCaptured; break;
+            case 'articles_read': currentProgress = stats.articlesRead; break;
+            case 'podcasts_completed': currentProgress = stats.podcastsCompleted; break;
+            case 'courses_completed': currentProgress = stats.coursesCompleted; break;
+
+            // Skills stats
+            case 'practice_sessions_completed': currentProgress = stats.practiceSessionsCompleted; break;
+            case 'skills_leveled_up': currentProgress = stats.skillsLeveledUp; break;
+            case 'skills_mastered': currentProgress = stats.skillsMastered; break;
+
+            // Financial stats
             case 'under_budget_months': currentProgress = stats.underBudgetMonths; break;
             case 'expenses_logged': currentProgress = stats.expensesLogged; break;
+            case 'income_logged': currentProgress = stats.incomeLogged; break;
+            case 'budgets_created': currentProgress = stats.budgetsCreated; break;
             case 'sinking_funds_created': currentProgress = stats.sinkingFundsCreated; break;
-            case 'journal_entries': currentProgress = stats.journalEntries; break;
-            case 'level': currentProgress = stats.level; break;
-            case 'total_xp': currentProgress = stats.totalXP; break;
-            case 'perfect_days': currentProgress = stats.perfectDays; break;
-            case 'all_modules_day': currentProgress = stats.allModulesDay; break;
-            case 'special_night_owl': currentProgress = stats.specialNightOwl; break;
-            case 'special_early_bird': currentProgress = stats.specialEarlyBird; break;
-            // Financial goals stats
             case 'savings_goals_created': currentProgress = stats.savingsGoalsCreated; break;
             case 'savings_contributions': currentProgress = stats.savingsContributions; break;
             case 'savings_milestone_25': currentProgress = stats.savingsMilestone25; break;
@@ -1626,39 +1764,43 @@ const useAchievementsStore = create(
             case 'savings_goals_completed': currentProgress = stats.savingsGoalsCompleted; break;
             case 'savings_streak_weeks': currentProgress = stats.savingsStreakWeeks; break;
             case 'total_saved': currentProgress = stats.totalSaved; break;
-            // Health & Fitness stats
-            case 'workout_streak_days': currentProgress = stats.workoutStreakDays; break;
-            case 'prs_achieved': currentProgress = stats.prsAchieved; break;
-            case 'calories_burned': currentProgress = stats.caloriesBurned; break;
-            case 'total_volume': currentProgress = stats.totalVolume; break;
-            case 'cardio_miles': currentProgress = stats.cardioMiles; break;
-            case 'cardio_sessions': currentProgress = stats.cardioSessions; break;
-            case 'meal_log_streak': currentProgress = stats.mealLogStreak; break;
-            case 'protein_goal_streak': currentProgress = stats.proteinGoalStreak; break;
-            case 'calorie_goal_streak': currentProgress = stats.calorieGoalStreak; break;
-            // Productivity stats
-            case 'task_streak_days': currentProgress = stats.taskStreakDays; break;
-            case 'tasks_single_day': currentProgress = stats.tasksSingleDay; break;
-            case 'projects_completed': currentProgress = stats.projectsCompleted; break;
-            case 'longest_work_session': currentProgress = stats.longestWorkSession; break;
-            // Journal/Knowledge stats
+
+            // Journal stats
+            case 'journal_entries': currentProgress = stats.journalEntries; break;
             case 'journal_streak': currentProgress = stats.journalStreak; break;
-            case 'notes_created': currentProgress = stats.notesCreated; break;
-            case 'ideas_captured': currentProgress = stats.ideasCaptured; break;
-            case 'courses_completed': currentProgress = stats.coursesCompleted; break;
+            case 'gratitude_entries_created': currentProgress = stats.gratitudeEntriesCreated; break;
+            case 'reflections_completed': currentProgress = stats.reflectionsCompleted; break;
+            case 'mood_entries_logged': currentProgress = stats.moodEntriesLogged; break;
+
+            // Social stats
+            case 'friends_added': currentProgress = stats.friendsAdded; break;
+            case 'challenges_completed': currentProgress = stats.challengesCompleted; break;
+            case 'challenges_created': currentProgress = stats.challengesCreated; break;
+
+            // Milestone stats
+            case 'level': currentProgress = stats.level; break;
+            case 'total_xp': currentProgress = stats.totalXP; break;
+            case 'days_active': currentProgress = stats.daysActive; break;
+            case 'total_activities': currentProgress = stats.totalActivities; break;
+            case 'login_days': currentProgress = stats.loginDays; break;
+            case 'modules_visited': currentProgress = stats.modulesVisited; break;
+
             // Special/Time-based stats
+            case 'perfect_days': currentProgress = stats.perfectDays; break;
+            case 'all_modules_day': currentProgress = stats.allModulesDay; break;
+            case 'special_night_owl': currentProgress = stats.specialNightOwl; break;
+            case 'special_early_bird': currentProgress = stats.specialEarlyBird; break;
             case 'weekend_complete': currentProgress = stats.weekendComplete; break;
             case 'monday_early': currentProgress = stats.mondayEarly; break;
             case 'early_streak': currentProgress = stats.earlyStreak; break;
             case 'night_streak': currentProgress = stats.nightStreak; break;
             case 'new_year_quest': currentProgress = stats.newYearQuest; break;
-            // Milestone stats
-            case 'days_active': currentProgress = stats.daysActive; break;
-            case 'total_activities': currentProgress = stats.totalActivities; break;
+
             // Hidden achievement stats
             case 'prs_single_workout': currentProgress = stats.prsSingleWorkout; break;
             case 'comeback': currentProgress = stats.comeback; break;
             case 'all_modules_week': currentProgress = stats.allModulesWeek; break;
+
             default: currentProgress = 0;
           }
 
@@ -1678,24 +1820,99 @@ const useAchievementsStore = create(
 
         // Process new unlocks
         if (newUnlocks.length > 0) {
+          const now = new Date().toISOString();
+          const newUnlockRecords = newUnlocks.map(a => ({
+            achievementId: a.id,
+            unlockedAt: now,
+            xpEarned: a.xpReward,
+            creditsEarned: a.creditsReward,
+          }));
+
           set(state => ({
             unlockedAchievements: [
               ...state.unlockedAchievements,
-              ...newUnlocks.map(a => ({
-                achievementId: a.id,
-                unlockedAt: new Date().toISOString(),
-                xpEarned: a.xpReward,
-                creditsEarned: a.creditsReward,
-              })),
+              ...newUnlockRecords,
             ],
             totalXPFromAchievements: state.totalXPFromAchievements +
               newUnlocks.reduce((sum, a) => sum + a.xpReward, 0),
             totalCreditsFromAchievements: state.totalCreditsFromAchievements +
               newUnlocks.reduce((sum, a) => sum + a.creditsReward, 0),
           }));
+
+          // Trigger unified gamification system for achievement XP
+          const totalXP = newUnlocks.reduce((sum, a) => sum + a.xpReward, 0);
+          if (totalXP > 0) {
+            triggerGamification('achievementUnlocked', {
+              xpOverride: totalXP,
+              module: 'productivity', // Achievements are general progress
+            });
+          }
+
+          // Sync achievement unlocks to database
+          get().syncAchievementUnlocks(newUnlocks, now);
         }
 
         return newUnlocks;
+      },
+
+      // Sync achievement unlocks to Supabase
+      syncAchievementUnlocks: async (achievements, unlockedAt) => {
+        try {
+          // Insert into user_discoveries (achievements table)
+          const discoveryRecords = achievements.map(a => ({
+            user_id: DEV_USER_ID,
+            discovery_id: a.id,
+            earned_at: unlockedAt,
+          }));
+
+          const { error: discoveryError } = await supabase
+            .from('user_discoveries')
+            .upsert(discoveryRecords, { onConflict: 'user_id,discovery_id' });
+
+          if (discoveryError) {
+            console.error('Error syncing achievement unlocks:', discoveryError);
+          }
+
+          // Award XP and credits via gamification store if available
+          const totalXP = achievements.reduce((sum, a) => sum + a.xpReward, 0);
+          const totalCredits = achievements.reduce((sum, a) => sum + a.creditsReward, 0);
+
+          if (totalXP > 0 || totalCredits > 0) {
+            // Update cosmic currency
+            const { data: currentCurrency } = await supabase
+              .from('user_cosmic_currency')
+              .select('balance')
+              .eq('user_id', DEV_USER_ID)
+              .maybeSingle();
+
+            if (currentCurrency) {
+              await supabase
+                .from('user_cosmic_currency')
+                .update({ balance: currentCurrency.balance + totalCredits })
+                .eq('user_id', DEV_USER_ID);
+            }
+
+            // Log the achievement rewards in timeline
+            for (const achievement of achievements) {
+              await supabase.from('timeline').insert({
+                user_id: DEV_USER_ID,
+                module: 'achievements',
+                entry_type: 'achievement_unlocked',
+                title: `Achievement Unlocked: ${achievement.title}`,
+                description: achievement.description,
+                xp_earned: achievement.xpReward,
+                credits_earned: achievement.creditsReward,
+                metadata: {
+                  achievement_id: achievement.id,
+                  rarity: achievement.rarity,
+                  category: achievement.category,
+                },
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error syncing achievements to database:', error);
+        }
       },
 
       // Update a specific stat and check achievements
@@ -1819,5 +2036,10 @@ const useAchievementsStore = create(
     }
   )
 );
+
+// Initialize function for App.jsx
+export const initializeAchievementsStore = async () => {
+  return useAchievementsStore.getState().initializeFromSupabase();
+};
 
 export default useAchievementsStore;

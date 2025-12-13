@@ -6,11 +6,12 @@ import JournalPage from './JournalPage';
 import JournalCoverPage from './JournalCoverPage';
 import './SimpleJournalBook.css';
 
-function SimpleJournalBook({ entries, onNewEntry }) {
+function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) {
   const [currentSpread, setCurrentSpread] = useState(0);
   const [direction, setDirection] = useState(0);
 
-  // Create pages array with cover + entries + empty page
+  // Create pages array with cover + entries (oldest first) + empty page at end
+  // This mimics a real book where you start from the beginning and write forward
   const pages = [
     { type: 'cover', data: null },
     ...entries.map(entry => ({ type: 'entry', data: entry })),
@@ -63,11 +64,12 @@ function SimpleJournalBook({ entries, onNewEntry }) {
     if (pageData.type === 'cover') {
       return (
         <JournalCoverPage
-          title="My Journal"
+          title={coverSettings?.title || "My Journal"}
           subtitle={entries.length > 0
             ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`
             : 'Begin your journey'
           }
+          coverSettings={coverSettings}
         />
       );
     }
@@ -78,6 +80,7 @@ function SimpleJournalBook({ entries, onNewEntry }) {
           entry={pageData.data}
           pageNumber={pageIndex + 1}
           side={pageIndex % 2 === 0 ? 'left' : 'right'}
+          onEdit={onEditEntry}
         />
       );
     }

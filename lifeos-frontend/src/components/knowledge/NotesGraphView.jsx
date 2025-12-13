@@ -1,55 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ZoomIn, ZoomOut, Search, Filter, Plus, X } from 'lucide-react';
+import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import './NotesGraphView.css';
-
-// Mock data for nodes
-const initialNodes = [
-  {
-    id: 1,
-    type: 'note',
-    title: 'React Performance',
-    content: 'Key techniques for optimizing React applications including memoization, lazy loading, and code splitting.',
-    tags: ['react', 'performance', 'web'],
-    connections: [2, 3],
-    position: { x: 300, y: 200 }
-  },
-  {
-    id: 2,
-    type: 'idea',
-    title: 'Personal Dashboard',
-    content: 'Create a unified dashboard showing all life metrics in one place.',
-    tags: ['product', 'idea', 'dashboard'],
-    connections: [1, 4],
-    position: { x: 500, y: 250 }
-  },
-  {
-    id: 3,
-    type: 'note',
-    title: 'PostgreSQL Indexing',
-    content: 'Understanding B-tree indexes and when to use GIN vs GiST indexes.',
-    tags: ['database', 'postgresql', 'performance'],
-    connections: [1],
-    position: { x: 250, y: 400 }
-  },
-  {
-    id: 4,
-    type: 'idea',
-    title: 'Learning Tracker',
-    content: 'Track skills and learning progress with visual skill trees.',
-    tags: ['product', 'learning', 'visualization'],
-    connections: [2, 5],
-    position: { x: 700, y: 300 }
-  },
-  {
-    id: 5,
-    type: 'note',
-    title: 'SVG Animations',
-    content: 'Using CSS and JS to create smooth, performant SVG animations.',
-    tags: ['svg', 'animation', 'web'],
-    connections: [4],
-    position: { x: 800, y: 450 }
-  },
-];
 
 // Node Component
 function GraphNode({ node, isSelected, onClick }) {
@@ -193,11 +145,50 @@ function NodeDetailPanel({ node, onClose }) {
 
 // Main NotesGraphView Component
 const NotesGraphView = () => {
-  const [nodes, setNodes] = useState(initialNodes);
   const [selectedNode, setSelectedNode] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all'); // 'all', 'note', 'idea'
+
+  // Get data from store
+  const { notes, initializeFromSupabase } = useKnowledgeStore();
+
+  // Initialize data on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
+
+  // Transform store notes into graph nodes
+  const nodes = useMemo(() => {
+    const storeNotes = notes || [];
+    const nodeCount = storeNotes.length;
+
+    // Calculate grid positions for nodes in a force-directed-like layout
+    const getPosition = (index, total) => {
+      if (total === 0) return { x: 600, y: 400 };
+
+      // Arrange in a circular/spiral pattern
+      const radius = 150 + (index % 3) * 80;
+      const angle = (index / Math.max(1, total - 1)) * 2 * Math.PI;
+      const offsetX = Math.cos(angle) * radius;
+      const offsetY = Math.sin(angle) * radius;
+
+      return {
+        x: 600 + offsetX + (Math.random() - 0.5) * 50,
+        y: 400 + offsetY + (Math.random() - 0.5) * 50
+      };
+    };
+
+    return storeNotes.map((note, index) => ({
+      id: note.id,
+      type: note.tags?.includes('idea') ? 'idea' : 'note',
+      title: note.title || 'Untitled',
+      content: note.content || '',
+      tags: note.tags || [],
+      connections: note.linkedTo || [],
+      position: getPosition(index, nodeCount)
+    }));
+  }, [notes]);
 
   const handleNodeClick = (node) => {
     setSelectedNode(node);

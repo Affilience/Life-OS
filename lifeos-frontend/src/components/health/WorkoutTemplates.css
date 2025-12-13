@@ -168,6 +168,7 @@
 .template-info {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .template-name {
@@ -175,6 +176,9 @@
   font-weight: 600;
   color: #ffffff;
   margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .template-description {
@@ -182,6 +186,10 @@
   color: #94a3b8;
   margin: 0;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .card-menu {
@@ -256,20 +264,22 @@
 
 .card-stats {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .card-stats .stat {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 0.25rem;
   font-size: 0.75rem;
   color: #94a3b8;
+  white-space: nowrap;
 }
 
 .card-stats .stat svg {
   color: #64748b;
+  flex-shrink: 0;
 }
 
 /* Weight Suggestions */
@@ -309,9 +319,8 @@
 }
 
 .usage-badge {
-  position: absolute;
-  top: 0.75rem;
-  right: 2.5rem;
+  display: inline-flex;
+  align-self: flex-start;
   font-size: 0.6875rem;
   padding: 0.25rem 0.5rem;
   background: rgba(168, 85, 247, 0.2);
@@ -991,6 +1000,11 @@
     grid-template-columns: 1fr;
   }
 
+  /* Shift template cards left to center them visually */
+  .template-card {
+    transform: translateX(-12px);
+  }
+
   .form-row {
     flex-direction: column;
     gap: 1rem;
@@ -1004,5 +1018,321 @@
     width: 100%;
     justify-content: center;
     margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .workout-templates {
+    gap: 1.25rem;
+  }
+
+  .templates-header {
+    gap: 1rem;
+  }
+
+  .header-content .templates-title {
+    font-size: 1.25rem;
+  }
+
+  .header-content .templates-subtitle {
+    font-size: 0.8125rem;
+  }
+
+  .header-actions {
+    gap: 0.75rem;
+  }
+
+  .search-input {
+    padding: 0.5rem 0.5rem 0.5rem 2.25rem;
+    font-size: 0.8125rem;
+  }
+
+  .search-icon {
+    left: 0.625rem;
+    width: 16px;
+    height: 16px;
+  }
+
+  .create-btn {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .create-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .section-header {
+    gap: 0.5rem;
+  }
+
+  .section-icon {
+    padding: 0.25rem;
+  }
+
+  .section-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .section-title {
+    font-size: 0.875rem;
+  }
+
+  .section-count {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.375rem;
+  }
+
+  /* Template Card Mobile */
+  .template-card {
+    padding: 1rem;
+    gap: 0.75rem;
+    border-radius: 0.75rem;
+  }
+
+  .card-header {
+    gap: 0.625rem;
+  }
+
+  .template-icon {
+    font-size: 1.5rem;
+  }
+
+  .template-name {
+    font-size: 0.9375rem;
+  }
+
+  .template-description {
+    font-size: 0.75rem;
+    -webkit-line-clamp: 1;
+  }
+
+  .menu-btn {
+    padding: 0.125rem;
+  }
+
+  .menu-dots {
+    font-size: 1rem;
+  }
+
+  .card-stats {
+    gap: 0.5rem;
+  }
+
+  .card-stats .stat {
+    font-size: 0.6875rem;
+    gap: 0.125rem;
+  }
+
+  .card-stats .stat svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Weight Suggestions Mobile */
+  .weight-suggestions {
+    padding: 0.625rem;
+    border-radius: 0.375rem;
+  }
+
+  .suggestions-label {
+    font-size: 0.625rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .weight-item {
+    padding: 0.125rem 0;
+  }
+
+  .weight-item .exercise-name {
+    font-size: 0.6875rem;
+    max-width: 60%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .weight-item .weight-value {
+    font-size: 0.6875rem;
+  }
+
+  .usage-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+  }
+
+  .start-btn {
+    padding: 0.625rem;
+    font-size: 0.8125rem;
+    border-radius: 0.375rem;
+  }
+
+  .start-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Menu Dropdown Mobile */
+  .menu-dropdown {
+    min-width: 120px;
+    padding: 0.25rem;
+  }
+
+  .menu-dropdown button {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    gap: 0.375rem;
+  }
+
+  .menu-dropdown button svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Modal Mobile */
+  .template-modal {
+    max-height: 95vh;
+    border-radius: 0.75rem;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .modal-content {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .icon-option {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+
+  .color-option {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .form-input {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .exercises-header h3 {
+    font-size: 0.875rem;
+  }
+
+  .add-exercise-btn {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  .add-exercise-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .exercise-item {
+    padding: 0.625rem;
+    gap: 0.5rem;
+  }
+
+  .exercise-item .exercise-icon {
+    font-size: 1rem;
+  }
+
+  .exercise-details .exercise-name {
+    font-size: 0.8125rem;
+  }
+
+  .exercise-details .exercise-muscle {
+    font-size: 0.6875rem;
+  }
+
+  .config-field label {
+    font-size: 0.5625rem;
+  }
+
+  .number-input {
+    padding: 0.125rem;
+  }
+
+  .number-input button {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .number-input span {
+    font-size: 0.8125rem;
+    min-width: 1.25rem;
+  }
+
+  .modal-footer {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .cancel-btn,
+  .save-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Exercise Picker Mobile */
+  .exercise-picker {
+    max-height: 85vh;
+    border-radius: 0.75rem;
+  }
+
+  .picker-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .picker-header h3 {
+    font-size: 1rem;
+  }
+
+  .picker-search {
+    padding: 0.625rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .picker-search input {
+    font-size: 0.875rem;
+  }
+
+  .category-filters {
+    padding: 0.625rem 1rem;
+    gap: 0.375rem;
+  }
+
+  .category-filters button {
+    padding: 0.25rem 0.625rem;
+    font-size: 0.6875rem;
+  }
+
+  .exercise-option {
+    padding: 0.625rem;
+    gap: 0.5rem;
+  }
+
+  .exercise-option .exercise-icon {
+    font-size: 1rem;
+  }
+
+  .exercise-option .name {
+    font-size: 0.8125rem;
+  }
+
+  .exercise-option .muscles {
+    font-size: 0.6875rem;
   }
 }

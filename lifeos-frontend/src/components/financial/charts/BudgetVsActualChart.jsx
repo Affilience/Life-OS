@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -10,16 +10,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-
-// Mock budget vs actual data
-const data = [
-  { category: 'Food', budget: 500, actual: 450, variance: -50 },
-  { category: 'Transport', budget: 180, actual: 200, variance: 20 },
-  { category: 'Bills', budget: 400, actual: 380, variance: -20 },
-  { category: 'Health', budget: 150, actual: 120, variance: -30 },
-  { category: 'Learning', budget: 200, actual: 150, variance: -50 },
-  { category: 'Fun', budget: 150, actual: 120, variance: -30 }
-];
+import { useFinancialStore, ENVELOPE_CATEGORIES } from '../../../stores/financialStore';
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null;
@@ -45,6 +36,45 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function BudgetVsActualChart() {
+  const { transactions, selectedPeriod } = useFinancialStore();
+  const getEnvelopeStatus = useFinancialStore(state => state.getEnvelopeStatus);
+
+  // Calculate budget vs actual from real data
+  const data = useMemo(() => {
+    // Get current month's envelope status (includes allocated and spent)
+    const envelopeStatus = getEnvelopeStatus ? getEnvelopeStatus() : {};
+
+    // Build chart data from envelope status
+    const chartData = [];
+    Object.values(envelopeStatus).forEach(env => {
+      const categoryConfig = ENVELOPE_CATEGORIES[env.categoryId] || {};
+      const name = categoryConfig.name || env.categoryId?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Unknown';
+      const budget = env.allocated || 0;
+      const actual = Math.round(env.spent || 0);
+      const variance = actual - budget;
+
+      if (budget > 0 || actual > 0) {
+        chartData.push({
+          category: name,
+          budget: Math.round(budget),
+          actual,
+          variance
+        });
+      }
+    });
+
+    // Sort by budget descending and limit to 6
+    return chartData.sort((a, b) => b.budget - a.budget).slice(0, 6);
+  }, [transactions, getEnvelopeStatus]);
+
+  if (data.length === 0) {
+    return (
+      <div className="chart-container flex items-center justify-center h-[300px]">
+        <p className="text-white/50 text-sm">No budget data to display</p>
+      </div>
+    );
+  }
+
   return (
     <div className="chart-container">
       <ResponsiveContainer width="100%" height={300}>

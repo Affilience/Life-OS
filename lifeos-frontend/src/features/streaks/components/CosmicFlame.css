@@ -25,11 +25,11 @@
   animation: flicker 0.3s ease-in-out infinite alternate;
 }
 
-/* Outer flame - red/orange */
+/* Outer flame - red/orange (using design token colors) */
 .flame-outer {
   width: 50px;
   height: 70px;
-  background: linear-gradient(to top, #ff4500, #ff6b35, #ffa500);
+  background: linear-gradient(to top, var(--streak-fire-start), var(--streak-fire-mid1), var(--streak-fire-mid2));
   filter: blur(2px);
   opacity: 0.8;
   animation-delay: 0s;
@@ -39,7 +39,7 @@
 .flame-middle {
   width: 40px;
   height: 60px;
-  background: linear-gradient(to top, #ff6b35, #ffa500, #ffd700);
+  background: linear-gradient(to top, var(--streak-fire-mid1), var(--streak-fire-mid2), var(--streak-fire-mid3));
   filter: blur(1px);
   opacity: 0.9;
   animation-delay: 0.1s;
@@ -49,7 +49,7 @@
 .flame-inner {
   width: 28px;
   height: 45px;
-  background: linear-gradient(to top, #ffd700, #ffed4a, #fffacd);
+  background: linear-gradient(to top, var(--streak-fire-mid3), var(--streak-fire-end), #fffacd);
   filter: blur(0.5px);
   animation-delay: 0.15s;
 }

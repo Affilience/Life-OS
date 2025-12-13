@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   useWorkoutStore,
   CARDIO_TYPES,
@@ -41,6 +41,30 @@ import {
   X,
 } from 'lucide-react';
 import './CardioTab.css';
+
+// Hook for responsive chart dimensions
+const useChartDimensions = () => {
+  const [dimensions, setDimensions] = useState({ height: 300, outerRadius: 100, innerRadius: 60 });
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      const width = window.innerWidth;
+      if (width <= 480) {
+        setDimensions({ height: 220, outerRadius: 70, innerRadius: 40 });
+      } else if (width <= 768) {
+        setDimensions({ height: 260, outerRadius: 85, innerRadius: 50 });
+      } else {
+        setDimensions({ height: 300, outerRadius: 100, innerRadius: 60 });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  return dimensions;
+};
 
 // Log Cardio Modal Component
 function LogCardioModal({ onClose, onSave }) {
@@ -272,7 +296,7 @@ function CardioActivityCard({ workout, onDelete }) {
       <div className="activity-stats">
         <div className="stat">
           <Route className="w-4 h-4" />
-          <span className="stat-value">{workout.distance.toFixed(2)}</span>
+          <span className="stat-value">{(workout.distance || 0).toFixed(2)}</span>
           <span className="stat-unit">{type.unit}</span>
         </div>
         <div className="stat">
@@ -319,6 +343,9 @@ export default function CardioTab() {
   const [selectedActivity, setSelectedActivity] = useState('all');
   const [timeRange, setTimeRange] = useState(30);
   const [chartView, setChartView] = useState('pace'); // pace, distance, duration, weekly
+
+  // Get responsive chart dimensions
+  const { height: chartHeight, outerRadius, innerRadius } = useChartDimensions();
 
   // Get stats
   const stats = useMemo(() =>
@@ -426,7 +453,7 @@ export default function CardioTab() {
             <Route className="w-6 h-6 text-emerald-400" />
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.totalDistance.toFixed(1)}</span>
+            <span className="stat-value">{(stats.totalDistance || 0).toFixed(1)}</span>
             <span className="stat-label">Total {selectedType?.unit || 'Distance'}</span>
           </div>
         </div>
@@ -521,7 +548,7 @@ export default function CardioTab() {
 
         <div className="chart-container">
           {chartView === 'pace' && selectedActivity !== 'all' && paceTrendData.length > 0 && (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <LineChart data={paceTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="date" stroke="rgba(255,255,255,0.5)" fontSize={12} />
@@ -548,14 +575,14 @@ export default function CardioTab() {
           )}
 
           {chartView === 'distance' && distanceTrendData.length > 0 && (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <AreaChart data={distanceTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="date" stroke="rgba(255,255,255,0.5)" fontSize={12} />
                 <YAxis stroke="rgba(255,255,255,0.5)" fontSize={12} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1724', border: '1px solid rgba(255,255,255,0.1)' }}
-                  formatter={(value) => [value.toFixed(2), 'Distance']}
+                  formatter={(value) => [(value || 0).toFixed(2), 'Distance']}
                 />
                 <Area
                   type="monotone"
@@ -569,7 +596,7 @@ export default function CardioTab() {
           )}
 
           {chartView === 'weekly' && weeklyData.length > 0 && (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="period" stroke="rgba(255,255,255,0.5)" fontSize={12} />
@@ -577,7 +604,7 @@ export default function CardioTab() {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1724', border: '1px solid rgba(255,255,255,0.1)' }}
                   formatter={(value, name) => [
-                    name === 'totalDistance' ? value.toFixed(2) : value,
+                    name === 'totalDistance' ? (value || 0).toFixed(2) : value,
                     name === 'totalDistance' ? 'Distance' : 'Sessions'
                   ]}
                 />
@@ -588,14 +615,14 @@ export default function CardioTab() {
 
           {chartView === 'breakdown' && activityBreakdown.length > 0 && (
             <div className="breakdown-chart">
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <PieChart>
                   <Pie
                     data={activityBreakdown}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={innerRadius}
+                    outerRadius={outerRadius}
                     paddingAngle={2}
                     dataKey="value"
                   >

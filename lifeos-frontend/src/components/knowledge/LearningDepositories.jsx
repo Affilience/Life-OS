@@ -1,85 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Book, Headphones, Video, GraduationCap, ChevronRight, Star, Clock } from 'lucide-react';
+import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import './LearningDepositories.css';
-
-// Mock data structure
-const depositoriesData = {
-  books: {
-    label: 'Books',
-    icon: Book,
-    count: 127,
-    genres: {
-      tech: { label: 'Technology', count: 45, items: [
-        { id: 1, title: 'Clean Code', author: 'Robert C. Martin', rating: 5, completed: true, date: '2025-10-15' },
-        { id: 2, title: 'Design Patterns', author: 'Gang of Four', rating: 4, completed: true, date: '2025-09-20' },
-        { id: 3, title: 'Refactoring', author: 'Martin Fowler', rating: 5, completed: false, progress: 60 },
-      ]},
-      business: { label: 'Business', count: 32, items: [
-        { id: 4, title: 'Zero to One', author: 'Peter Thiel', rating: 5, completed: true, date: '2025-08-10' },
-        { id: 5, title: 'The Lean Startup', author: 'Eric Ries', rating: 4, completed: true, date: '2025-07-22' },
-      ]},
-      philosophy: { label: 'Philosophy', count: 28, items: [
-        { id: 6, title: 'Meditations', author: 'Marcus Aurelius', rating: 5, completed: true, date: '2025-09-05' },
-        { id: 7, title: 'The Daily Stoic', author: 'Ryan Holiday', rating: 4, completed: false, progress: 40 },
-      ]},
-      fiction: { label: 'Fiction', count: 22, items: [
-        { id: 8, title: 'Dune', author: 'Frank Herbert', rating: 5, completed: true, date: '2025-06-15' },
-      ]}
-    }
-  },
-  podcasts: {
-    label: 'Podcasts',
-    icon: Headphones,
-    count: 84,
-    genres: {
-      tech: { label: 'Technology', count: 35, items: [
-        { id: 9, title: 'Syntax.fm', author: 'Wes Bos & Scott Tolinski', episodesWatched: 24, completed: false },
-        { id: 10, title: 'The Changelog', author: 'Changelog Media', episodesWatched: 12, completed: false },
-      ]},
-      business: { label: 'Business', count: 28, items: [
-        { id: 11, title: 'How I Built This', author: 'Guy Raz', episodesWatched: 42, completed: false },
-        { id: 12, title: 'Masters of Scale', author: 'Reid Hoffman', episodesWatched: 18, completed: false },
-      ]},
-      science: { label: 'Science', count: 21, items: [
-        { id: 13, title: 'Lex Fridman Podcast', author: 'Lex Fridman', episodesWatched: 56, completed: false },
-      ]}
-    }
-  },
-  videos: {
-    label: 'Videos',
-    icon: Video,
-    count: 156,
-    genres: {
-      tutorials: { label: 'Tutorials', count: 89, items: [
-        { id: 14, title: 'React Advanced Patterns', author: 'Kent C. Dodds', duration: '4h 30m', completed: true },
-        { id: 15, title: 'PostgreSQL Performance', author: 'Hussein Nasser', duration: '2h 15m', completed: false, progress: 70 },
-      ]},
-      talks: { label: 'Conference Talks', count: 45, items: [
-        { id: 16, title: 'The Future of Web', author: 'Various', duration: '45m', completed: true },
-      ]},
-      documentaries: { label: 'Documentaries', count: 22, items: [
-        { id: 17, title: 'The Social Dilemma', author: 'Netflix', duration: '1h 34m', completed: true },
-      ]}
-    }
-  },
-  courses: {
-    label: 'Courses',
-    icon: GraduationCap,
-    count: 28,
-    genres: {
-      programming: { label: 'Programming', count: 18, items: [
-        { id: 18, title: 'Advanced React & GraphQL', author: 'Wes Bos', progress: 85, completed: false },
-        { id: 19, title: 'Node.js Mastery', author: 'Andrew Mead', progress: 100, completed: true, rating: 5 },
-      ]},
-      design: { label: 'Design', count: 6, items: [
-        { id: 20, title: 'Figma Masterclass', author: 'Design Course', progress: 45, completed: false },
-      ]},
-      business: { label: 'Business', count: 4, items: [
-        { id: 21, title: 'Marketing Fundamentals', author: 'Seth Godin', progress: 30, completed: false },
-      ]}
-    }
-  }
-};
 
 // Depository Card Component (Level 1)
 function DepositoryCard({ type, data, onClick }) {
@@ -185,6 +107,110 @@ const LearningDepositories = () => {
   const [currentLevel, setCurrentLevel] = useState('types'); // 'types', 'genres', 'items'
   const [selectedType, setSelectedType] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState(null);
+
+  // Get data from store
+  const { books, media, initializeFromSupabase } = useKnowledgeStore();
+
+  // Initialize data on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
+
+  // Build depositories data from store
+  const depositoriesData = useMemo(() => {
+    // Group books by genre/tags
+    const booksByGenre = {};
+    (books || []).forEach(book => {
+      const genre = book.tags?.[0] || book.metadata?.genre || 'general';
+      const genreKey = genre.toLowerCase().replace(/\s+/g, '-');
+      if (!booksByGenre[genreKey]) {
+        booksByGenre[genreKey] = { label: genre.charAt(0).toUpperCase() + genre.slice(1), count: 0, items: [] };
+      }
+      booksByGenre[genreKey].count++;
+      booksByGenre[genreKey].items.push({
+        id: book.id,
+        title: book.title,
+        author: book.author || 'Unknown',
+        rating: book.rating,
+        completed: book.status === 'completed',
+        date: book.completedAt,
+        progress: book.progress?.total > 0 ? Math.round((book.progress.current / book.progress.total) * 100) : 0
+      });
+    });
+
+    // Group media by type first, then by genre
+    const podcastsByGenre = {};
+    const videosByGenre = {};
+    const coursesByGenre = {};
+
+    (media || []).forEach(item => {
+      const genre = item.tags?.[0] || item.category || 'general';
+      const genreKey = genre.toLowerCase().replace(/\s+/g, '-');
+      const mediaItem = {
+        id: item.id,
+        title: item.title,
+        author: item.creator || 'Unknown',
+        duration: item.duration || '',
+        completed: item.status === 'completed' || item.status === 'watched',
+        progress: item.progress || 0,
+        rating: item.rating,
+        episodesWatched: item.episodesWatched || 0
+      };
+
+      if (item.type === 'podcast') {
+        if (!podcastsByGenre[genreKey]) {
+          podcastsByGenre[genreKey] = { label: genre.charAt(0).toUpperCase() + genre.slice(1), count: 0, items: [] };
+        }
+        podcastsByGenre[genreKey].count++;
+        podcastsByGenre[genreKey].items.push(mediaItem);
+      } else if (item.type === 'video' || item.type === 'youtube') {
+        if (!videosByGenre[genreKey]) {
+          videosByGenre[genreKey] = { label: genre.charAt(0).toUpperCase() + genre.slice(1), count: 0, items: [] };
+        }
+        videosByGenre[genreKey].count++;
+        videosByGenre[genreKey].items.push(mediaItem);
+      } else if (item.type === 'course') {
+        if (!coursesByGenre[genreKey]) {
+          coursesByGenre[genreKey] = { label: genre.charAt(0).toUpperCase() + genre.slice(1), count: 0, items: [] };
+        }
+        coursesByGenre[genreKey].count++;
+        coursesByGenre[genreKey].items.push(mediaItem);
+      }
+    });
+
+    // Count totals
+    const totalBooks = (books || []).length;
+    const totalPodcasts = Object.values(podcastsByGenre).reduce((sum, g) => sum + g.count, 0);
+    const totalVideos = Object.values(videosByGenre).reduce((sum, g) => sum + g.count, 0);
+    const totalCourses = Object.values(coursesByGenre).reduce((sum, g) => sum + g.count, 0);
+
+    return {
+      books: {
+        label: 'Books',
+        icon: Book,
+        count: totalBooks,
+        genres: Object.keys(booksByGenre).length > 0 ? booksByGenre : { general: { label: 'General', count: 0, items: [] } }
+      },
+      podcasts: {
+        label: 'Podcasts',
+        icon: Headphones,
+        count: totalPodcasts,
+        genres: Object.keys(podcastsByGenre).length > 0 ? podcastsByGenre : { general: { label: 'General', count: 0, items: [] } }
+      },
+      videos: {
+        label: 'Videos',
+        icon: Video,
+        count: totalVideos,
+        genres: Object.keys(videosByGenre).length > 0 ? videosByGenre : { general: { label: 'General', count: 0, items: [] } }
+      },
+      courses: {
+        label: 'Courses',
+        icon: GraduationCap,
+        count: totalCourses,
+        genres: Object.keys(coursesByGenre).length > 0 ? coursesByGenre : { general: { label: 'General', count: 0, items: [] } }
+      }
+    };
+  }, [books, media]);
 
   const handleTypeClick = (type) => {
     setSelectedType(type);

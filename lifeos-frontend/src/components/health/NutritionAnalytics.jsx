@@ -1,52 +1,101 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Apple, TrendingUp, Target, Activity } from 'lucide-react';
 import AnalyticsCard from '../shared/AnalyticsCard';
 import TrendLineChart from '../charts/TrendLineChart';
 import ComparisonBarChart from '../charts/ComparisonBarChart';
+import { useHealthStore } from '../../stores/healthStore';
 import './NutritionAnalytics.css';
 
-// Mock data - would come from API in production
-const calorieData = [
-  { date: 'Mon', calories: 2150 },
-  { date: 'Tue', calories: 2300 },
-  { date: 'Wed', calories: 2050 },
-  { date: 'Thu', calories: 2400 },
-  { date: 'Fri', calories: 2200 },
-  { date: 'Sat', calories: 2500 },
-  { date: 'Sun', calories: 2250 }
-];
-
-const proteinData = [
-  { date: 'Mon', grams: 145 },
-  { date: 'Tue', grams: 160 },
-  { date: 'Wed', grams: 135 },
-  { date: 'Thu', grams: 170 },
-  { date: 'Fri', grams: 155 },
-  { date: 'Sat', grams: 165 },
-  { date: 'Sun', grams: 150 }
-];
-
-const carbsData = [
-  { date: 'Mon', grams: 220 },
-  { date: 'Tue', grams: 250 },
-  { date: 'Wed', grams: 210 },
-  { date: 'Thu', grams: 260 },
-  { date: 'Fri', grams: 230 },
-  { date: 'Sat', grams: 270 },
-  { date: 'Sun', grams: 240 }
-];
-
-const adherenceData = [
-  { date: 'Mon', adherence: 92 },
-  { date: 'Tue', adherence: 88 },
-  { date: 'Wed', adherence: 95 },
-  { date: 'Thu', adherence: 85 },
-  { date: 'Fri', adherence: 90 },
-  { date: 'Sat', adherence: 78 },
-  { date: 'Sun', adherence: 93 }
-];
-
 export default function NutritionAnalytics() {
+  const { meals, dailyGoals } = useHealthStore();
+
+  // Calculate all analytics data from meals
+  const { calorieData, proteinData, carbsData, adherenceData, summary } = useMemo(() => {
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const targetCalories = dailyGoals?.calories || 2300;
+    const targetProtein = dailyGoals?.protein || 150;
+    const targetCarbs = dailyGoals?.carbs || 250;
+    const targetFat = dailyGoals?.fat || 70;
+
+    // Build last 7 days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      last7Days.push({
+        dateStr: d.toISOString().split('T')[0],
+        dayOfWeek: d.getDay()
+      });
+    }
+
+    // Aggregate meals by day
+    const dailyData = last7Days.map(({ dateStr, dayOfWeek }) => {
+      const dayMeals = (meals || []).filter(m => m.timestamp?.startsWith(dateStr));
+      const calories = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+      const protein = dayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+      const carbs = dayMeals.reduce((sum, m) => sum + (m.carbs || 0), 0);
+      const fat = dayMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
+
+      // Calculate adherence as % of target (100% = perfect)
+      const calorieAdherence = targetCalories > 0 ? Math.min(100, (calories / targetCalories) * 100) : 0;
+
+      return {
+        date: dayLabels[dayOfWeek],
+        calories,
+        protein,
+        carbs,
+        fat,
+        adherence: Math.round(calorieAdherence)
+      };
+    });
+
+    // Build separate data arrays for each chart
+    const calorieDataArr = dailyData.map(d => ({ date: d.date, calories: d.calories }));
+    const proteinDataArr = dailyData.map(d => ({ date: d.date, grams: d.protein }));
+    const carbsDataArr = dailyData.map(d => ({ date: d.date, grams: d.carbs }));
+    const adherenceDataArr = dailyData.map(d => ({ date: d.date, adherence: d.adherence }));
+
+    // Calculate summary stats
+    const daysWithData = dailyData.filter(d => d.calories > 0).length;
+    const avgCalories = daysWithData > 0
+      ? Math.round(dailyData.reduce((sum, d) => sum + d.calories, 0) / daysWithData)
+      : 0;
+    const avgProtein = daysWithData > 0
+      ? Math.round(dailyData.reduce((sum, d) => sum + d.protein, 0) / daysWithData)
+      : 0;
+    const avgCarbs = daysWithData > 0
+      ? Math.round(dailyData.reduce((sum, d) => sum + d.carbs, 0) / daysWithData)
+      : 0;
+    const avgFat = daysWithData > 0
+      ? Math.round(dailyData.reduce((sum, d) => sum + d.fat, 0) / daysWithData)
+      : 0;
+    const avgAdherence = daysWithData > 0
+      ? Math.round(dailyData.reduce((sum, d) => sum + d.adherence, 0) / daysWithData)
+      : 0;
+
+    return {
+      calorieData: calorieDataArr,
+      proteinData: proteinDataArr,
+      carbsData: carbsDataArr,
+      adherenceData: adherenceDataArr,
+      summary: {
+        avgCalories,
+        avgProtein,
+        avgCarbs,
+        avgFat,
+        avgAdherence,
+        targetCalories,
+        targetProtein,
+        targetCarbs,
+        targetFat,
+        calorieDiff: avgCalories - targetCalories,
+        proteinDiff: avgProtein - targetProtein,
+        carbsDiff: avgCarbs - targetCarbs,
+        fatDiff: avgFat - targetFat
+      }
+    };
+  }, [meals, dailyGoals]);
   return (
     <div className="nutrition-analytics">
       {/* Calorie Trends */}
@@ -54,8 +103,8 @@ export default function NutritionAnalytics() {
         title="Daily Calorie Intake"
         icon={Apple}
         metric={{
-          value: '2,264 cal',
-          change: 5.3
+          value: `${summary.avgCalories.toLocaleString()} cal`,
+          change: summary.calorieDiff !== 0 ? Math.round((summary.calorieDiff / summary.targetCalories) * 100) : 0
         }}
         defaultRange="7d"
       >
@@ -74,8 +123,8 @@ export default function NutritionAnalytics() {
         title="Protein Intake"
         icon={Activity}
         metric={{
-          value: '154g',
-          change: 8.2
+          value: `${summary.avgProtein}g`,
+          change: summary.proteinDiff !== 0 ? Math.round((summary.proteinDiff / summary.targetProtein) * 100) : 0
         }}
         defaultRange="7d"
       >
@@ -94,8 +143,8 @@ export default function NutritionAnalytics() {
         title="Carbohydrate Intake"
         icon={TrendingUp}
         metric={{
-          value: '240g',
-          change: 6.5
+          value: `${summary.avgCarbs}g`,
+          change: summary.carbsDiff !== 0 ? Math.round((summary.carbsDiff / summary.targetCarbs) * 100) : 0
         }}
         defaultRange="7d"
       >
@@ -112,8 +161,8 @@ export default function NutritionAnalytics() {
         title="Diet Adherence"
         icon={Target}
         metric={{
-          value: '89%',
-          change: 3.5
+          value: `${summary.avgAdherence}%`,
+          change: 0
         }}
         defaultRange="7d"
       >
@@ -134,34 +183,42 @@ export default function NutritionAnalytics() {
         <div className="summary-grid">
           <div className="summary-card">
             <div className="summary-label">Avg Daily Calories</div>
-            <div className="summary-value">2,264</div>
+            <div className="summary-value">{summary.avgCalories.toLocaleString()}</div>
             <div className="summary-detail">
-              <span className="summary-target">Target: 2,300</span>
-              <span className="summary-diff negative">-36 cal</span>
+              <span className="summary-target">Target: {summary.targetCalories.toLocaleString()}</span>
+              <span className={`summary-diff ${summary.calorieDiff >= 0 ? 'positive' : 'negative'}`}>
+                {summary.calorieDiff >= 0 ? '+' : ''}{summary.calorieDiff} cal
+              </span>
             </div>
           </div>
           <div className="summary-card">
             <div className="summary-label">Avg Protein</div>
-            <div className="summary-value">154g</div>
+            <div className="summary-value">{summary.avgProtein}g</div>
             <div className="summary-detail">
-              <span className="summary-target">Target: 150g</span>
-              <span className="summary-diff positive">+4g</span>
+              <span className="summary-target">Target: {summary.targetProtein}g</span>
+              <span className={`summary-diff ${summary.proteinDiff >= 0 ? 'positive' : 'negative'}`}>
+                {summary.proteinDiff >= 0 ? '+' : ''}{summary.proteinDiff}g
+              </span>
             </div>
           </div>
           <div className="summary-card">
             <div className="summary-label">Avg Carbs</div>
-            <div className="summary-value">240g</div>
+            <div className="summary-value">{summary.avgCarbs}g</div>
             <div className="summary-detail">
-              <span className="summary-target">Target: 250g</span>
-              <span className="summary-diff negative">-10g</span>
+              <span className="summary-target">Target: {summary.targetCarbs}g</span>
+              <span className={`summary-diff ${summary.carbsDiff >= 0 ? 'positive' : 'negative'}`}>
+                {summary.carbsDiff >= 0 ? '+' : ''}{summary.carbsDiff}g
+              </span>
             </div>
           </div>
           <div className="summary-card">
             <div className="summary-label">Avg Fats</div>
-            <div className="summary-value">72g</div>
+            <div className="summary-value">{summary.avgFat}g</div>
             <div className="summary-detail">
-              <span className="summary-target">Target: 70g</span>
-              <span className="summary-diff positive">+2g</span>
+              <span className="summary-target">Target: {summary.targetFat}g</span>
+              <span className={`summary-diff ${summary.fatDiff >= 0 ? 'positive' : 'negative'}`}>
+                {summary.fatDiff >= 0 ? '+' : ''}{summary.fatDiff}g
+              </span>
             </div>
           </div>
         </div>

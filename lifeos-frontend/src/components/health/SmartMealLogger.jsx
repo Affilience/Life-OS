@@ -185,7 +185,7 @@ export default function SmartMealLogger({ onMealLogged }) {
   };
 
   return (
-    <div className="bg-surface/50 border border-border-subtle rounded-2xl p-5 mb-5">
+    <div className="bg-surface/50 border border-border-subtle rounded-2xl p-5 mb-5" data-tour="log-meal-btn">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
@@ -198,19 +198,19 @@ export default function SmartMealLogger({ onMealLogged }) {
       </div>
 
       {/* Meal Type Selector */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
         {MEAL_TYPES.map((type) => (
           <button
             key={type.value}
             onClick={() => setMealType(type.value)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all flex-1 min-w-[70px] sm:min-w-[80px] sm:flex-none sm:px-4 sm:gap-2 ${
               mealType === type.value
                 ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
                 : 'bg-surface-alt/50 text-fg-secondary hover:bg-surface-alt border border-transparent'
             }`}
           >
-            <span>{type.icon}</span>
-            <span>{type.label}</span>
+            <span className="text-base sm:text-lg">{type.icon}</span>
+            <span className="text-xs sm:text-sm">{type.label}</span>
           </button>
         ))}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -18,68 +18,28 @@ import {
   Cell,
 } from 'recharts';
 import { TrendingUp, Dumbbell, Calendar, Trophy, Target, Activity } from 'lucide-react';
+import { useWorkoutStore } from '../../../stores/workoutStore';
 import './WorkoutCharts.css';
 
-// Generate sample workout data
-const weeklyVolumeData = [
-  { week: 'Week 1', chest: 12000, back: 14000, legs: 18000, shoulders: 8000, arms: 6000 },
-  { week: 'Week 2', chest: 13200, back: 15000, legs: 19500, shoulders: 8800, arms: 6500 },
-  { week: 'Week 3', chest: 14000, back: 15800, legs: 20000, shoulders: 9200, arms: 7000 },
-  { week: 'Week 4', chest: 14500, back: 16500, legs: 21000, shoulders: 9500, arms: 7200 },
-];
+// Hook to get responsive chart height
+const useChartHeight = () => {
+  const [height, setHeight] = useState(350);
 
-// Progressive overload data - bench press example
-const progressionData = [
-  { date: 'Jan 1', weight: 135, reps: 8, volume: 1080 },
-  { date: 'Jan 8', weight: 140, reps: 8, volume: 1120 },
-  { date: 'Jan 15', weight: 145, reps: 7, volume: 1015 },
-  { date: 'Jan 22', weight: 145, reps: 8, volume: 1160 },
-  { date: 'Jan 29', weight: 150, reps: 7, volume: 1050 },
-  { date: 'Feb 5', weight: 150, reps: 8, volume: 1200 },
-  { date: 'Feb 12', weight: 155, reps: 7, volume: 1085 },
-  { date: 'Feb 19', weight: 155, reps: 8, volume: 1240 },
-];
+  useEffect(() => {
+    const updateHeight = () => {
+      const width = window.innerWidth;
+      if (width <= 480) setHeight(220);
+      else if (width <= 768) setHeight(280);
+      else setHeight(350);
+    };
 
-// Workout frequency calendar heatmap data
-const workoutFrequencyData = [
-  { day: 'Mon', workouts: 12 },
-  { day: 'Tue', workouts: 8 },
-  { day: 'Wed', workouts: 15 },
-  { day: 'Thu', workouts: 6 },
-  { day: 'Fri', workouts: 14 },
-  { day: 'Sat', workouts: 10 },
-  { day: 'Sun', workouts: 4 },
-];
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
-// Volume vs Reps scatter plot
-const volumeRepsData = [
-  { reps: 5, weight: 200, volume: 1000 },
-  { reps: 6, weight: 185, volume: 1110 },
-  { reps: 8, weight: 165, volume: 1320 },
-  { reps: 10, weight: 145, volume: 1450 },
-  { reps: 12, weight: 125, volume: 1500 },
-  { reps: 15, weight: 105, volume: 1575 },
-  { reps: 20, weight: 85, volume: 1700 },
-];
-
-// Personal records timeline
-const prTimelineData = [
-  { month: 'Sep', prs: 2 },
-  { month: 'Oct', prs: 3 },
-  { month: 'Nov', prs: 5 },
-  { month: 'Dec', prs: 4 },
-  { month: 'Jan', prs: 6 },
-  { month: 'Feb', prs: 7 },
-];
-
-// Muscle group distribution
-const muscleGroupData = [
-  { muscle: 'Chest', sets: 45, volume: 14500 },
-  { muscle: 'Back', sets: 52, volume: 16500 },
-  { muscle: 'Legs', sets: 60, volume: 21000 },
-  { muscle: 'Shoulders', sets: 35, volume: 9500 },
-  { muscle: 'Arms', sets: 28, volume: 7200 },
-];
+  return height;
+};
 
 // Custom tooltip
 const CustomTooltip = ({ active, payload, label }) => {
@@ -102,6 +62,211 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function WorkoutCharts() {
   const [activeChart, setActiveChart] = useState('volume-trend');
+  const chartHeight = useChartHeight();
+
+  // Connect to store
+  const { workouts } = useWorkoutStore();
+
+  // Calculate chart data from real workouts
+  const chartData = useMemo(() => {
+    const today = new Date();
+
+    // Get last 4 weeks
+    const weeks = [];
+    for (let w = 3; w >= 0; w--) {
+      const weekStart = new Date(today);
+      weekStart.setDate(weekStart.getDate() - (w * 7 + 7));
+      const weekEnd = new Date(today);
+      weekEnd.setDate(weekEnd.getDate() - (w * 7));
+      weeks.push({ start: weekStart, end: weekEnd, label: `Week ${4 - w}` });
+    }
+
+    // Weekly volume by muscle group
+    const weeklyVolumeData = weeks.map(({ start, end, label }) => {
+      const weekWorkouts = (workouts || []).filter(w => {
+        const wDate = new Date(w.date);
+        return wDate >= start && wDate < end;
+      });
+
+      const muscleVolume = { week: label, chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0 };
+
+      weekWorkouts.forEach(workout => {
+        (workout.exercises || []).forEach(ex => {
+          const volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
+          const muscle = (ex.muscleGroup || workout.type || 'other').toLowerCase();
+          if (muscleVolume.hasOwnProperty(muscle)) {
+            muscleVolume[muscle] += volume;
+          } else if (muscle.includes('chest') || muscle.includes('push')) {
+            muscleVolume.chest += volume;
+          } else if (muscle.includes('back') || muscle.includes('pull')) {
+            muscleVolume.back += volume;
+          } else if (muscle.includes('leg') || muscle.includes('lower')) {
+            muscleVolume.legs += volume;
+          } else if (muscle.includes('shoulder')) {
+            muscleVolume.shoulders += volume;
+          } else if (muscle.includes('arm') || muscle.includes('bicep') || muscle.includes('tricep')) {
+            muscleVolume.arms += volume;
+          }
+        });
+      });
+
+      return muscleVolume;
+    });
+
+    // Workout frequency by day of week
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+
+    (workouts || []).forEach(w => {
+      const dayOfWeek = new Date(w.date).getDay();
+      dayCounts[dayOfWeek]++;
+    });
+
+    const workoutFrequencyData = dayLabels.map((day, i) => ({
+      day,
+      workouts: dayCounts[i]
+    }));
+
+    // Muscle group distribution (total)
+    const muscleGroups = { Chest: { sets: 0, volume: 0 }, Back: { sets: 0, volume: 0 },
+                          Legs: { sets: 0, volume: 0 }, Shoulders: { sets: 0, volume: 0 }, Arms: { sets: 0, volume: 0 } };
+
+    (workouts || []).forEach(workout => {
+      (workout.exercises || []).forEach(ex => {
+        const volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
+        const muscle = (ex.muscleGroup || workout.type || 'other').toLowerCase();
+        let targetGroup = 'Arms';
+        if (muscle.includes('chest') || muscle.includes('push')) targetGroup = 'Chest';
+        else if (muscle.includes('back') || muscle.includes('pull')) targetGroup = 'Back';
+        else if (muscle.includes('leg') || muscle.includes('lower')) targetGroup = 'Legs';
+        else if (muscle.includes('shoulder')) targetGroup = 'Shoulders';
+
+        muscleGroups[targetGroup].sets += ex.sets || 0;
+        muscleGroups[targetGroup].volume += volume;
+      });
+    });
+
+    const muscleGroupData = Object.entries(muscleGroups).map(([muscle, data]) => ({
+      muscle,
+      sets: data.sets,
+      volume: data.volume
+    }));
+
+    // PR timeline (PRs per month from workout data)
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const prByMonth = {};
+    (workouts || []).forEach(w => {
+      if (w.personalRecords && w.personalRecords.length > 0) {
+        const month = new Date(w.date).getMonth();
+        prByMonth[month] = (prByMonth[month] || 0) + w.personalRecords.length;
+      }
+    });
+
+    // Get last 6 months
+    const prTimelineData = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today);
+      d.setMonth(d.getMonth() - i);
+      const monthIndex = d.getMonth();
+      prTimelineData.push({
+        month: monthNames[monthIndex],
+        prs: prByMonth[monthIndex] || 0
+      });
+    }
+
+    // Progressive Overload Data - track main lifts over time
+    // Group workouts by date and find key exercises (bench, squat, deadlift)
+    const progressionByExercise = {};
+    const sortedWorkouts = [...(workouts || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    sortedWorkouts.forEach(workout => {
+      const dateStr = new Date(workout.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      (workout.exercises || []).forEach(ex => {
+        const exerciseName = (ex.name || ex.exercise || '').toLowerCase();
+        // Track main compound lifts
+        if (exerciseName.includes('bench') || exerciseName.includes('squat') ||
+            exerciseName.includes('deadlift') || exerciseName.includes('press')) {
+          const volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
+          const maxWeight = ex.weight || 0;
+
+          if (!progressionByExercise[exerciseName]) {
+            progressionByExercise[exerciseName] = [];
+          }
+          progressionByExercise[exerciseName].push({
+            date: dateStr,
+            weight: maxWeight,
+            volume: volume
+          });
+        }
+      });
+    });
+
+    // Use the most common exercise for progression chart (usually bench press)
+    let progressionData = [];
+    const exerciseNames = Object.keys(progressionByExercise);
+    if (exerciseNames.length > 0) {
+      // Find exercise with most data points
+      const mainExercise = exerciseNames.reduce((a, b) =>
+        progressionByExercise[a].length >= progressionByExercise[b].length ? a : b
+      );
+      progressionData = progressionByExercise[mainExercise].slice(-10); // Last 10 sessions
+    }
+
+    // Volume vs Reps scatter data - extract set-level data
+    const volumeRepsData = [];
+    (workouts || []).forEach(workout => {
+      (workout.exercises || []).forEach(ex => {
+        const reps = ex.reps || 0;
+        const weight = ex.weight || 0;
+        const sets = ex.sets || 1;
+        const volume = sets * reps * weight;
+
+        if (reps > 0 && volume > 0) {
+          volumeRepsData.push({
+            reps,
+            weight,
+            volume,
+            exercise: ex.name || ex.exercise || 'Unknown'
+          });
+        }
+      });
+    });
+
+    // Stats
+    const totalVolume = weeklyVolumeData.reduce((sum, week) =>
+      sum + week.chest + week.back + week.legs + week.shoulders + week.arms, 0
+    );
+    const totalPRs = Object.values(prByMonth).reduce((sum, count) => sum + count, 0);
+    const avgFrequency = (workouts || []).length > 0
+      ? Math.round(((workouts || []).length / 4) * 10) / 10 // Approx workouts per week
+      : 0;
+
+    // Calculate volume increase (last week vs previous week)
+    const lastWeekVolume = weeklyVolumeData[3]
+      ? weeklyVolumeData[3].chest + weeklyVolumeData[3].back + weeklyVolumeData[3].legs + weeklyVolumeData[3].shoulders + weeklyVolumeData[3].arms
+      : 0;
+    const prevWeekVolume = weeklyVolumeData[2]
+      ? weeklyVolumeData[2].chest + weeklyVolumeData[2].back + weeklyVolumeData[2].legs + weeklyVolumeData[2].shoulders + weeklyVolumeData[2].arms
+      : 0;
+    const volumeChange = prevWeekVolume > 0 ? Math.round(((lastWeekVolume - prevWeekVolume) / prevWeekVolume) * 100) : 0;
+
+    return {
+      weeklyVolumeData,
+      workoutFrequencyData,
+      muscleGroupData,
+      prTimelineData,
+      progressionData,
+      volumeRepsData,
+      stats: {
+        totalVolume: Math.round(totalVolume / 1000),
+        totalPRs,
+        volumeChange,
+        avgFrequency
+      }
+    };
+  }, [workouts]);
+
+  const { weeklyVolumeData, workoutFrequencyData, muscleGroupData, prTimelineData, progressionData, volumeRepsData, stats } = chartData;
 
   const charts = [
     { id: 'volume-trend', label: 'Volume Trends', icon: TrendingUp },
@@ -148,20 +313,22 @@ export default function WorkoutCharts() {
               <h3 className="chart-title">Training Volume by Muscle Group</h3>
               <p className="chart-subtitle">Weekly volume in pounds lifted</p>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={weeklyVolumeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="week" stroke="rgba(255,255,255,0.6)" />
-                <YAxis stroke="rgba(255,255,255,0.6)" />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
-                <Bar dataKey="chest" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="back" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="legs" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="shoulders" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="arms" stackId="a" fill="#ef4444" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper chart-wrapper-single-axis">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <BarChart data={weeklyVolumeData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="week" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis stroke="rgba(255,255,255,0.6)" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
+                  <Bar dataKey="chest" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="back" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="legs" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="shoulders" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="arms" stackId="a" fill="#ef4444" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -172,38 +339,40 @@ export default function WorkoutCharts() {
               <h3 className="chart-title">Progressive Overload - Bench Press</h3>
               <p className="chart-subtitle">Weight and volume progression over time</p>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={progressionData}>
-                <defs>
-                  <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="date" stroke="rgba(255,255,255,0.6)" />
-                <YAxis yAxisId="left" stroke="rgba(255,255,255,0.6)" />
-                <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.6)" />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
-                <Area
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="volume"
-                  fill="url(#volumeGradient)"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="weight"
-                  stroke="#8b5cf6"
-                  strokeWidth={3}
-                  dot={{ r: 6, fill: '#8b5cf6' }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper chart-wrapper-dual-axis">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <ComposedChart data={progressionData}>
+                  <defs>
+                    <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="date" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis yAxisId="left" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.6)" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
+                  <Area
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="volume"
+                    fill="url(#volumeGradient)"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="#8b5cf6"
+                    strokeWidth={3}
+                    dot={{ r: 6, fill: '#8b5cf6' }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -214,19 +383,21 @@ export default function WorkoutCharts() {
               <h3 className="chart-title">Workout Frequency by Day</h3>
               <p className="chart-subtitle">Total workouts completed per weekday</p>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={workoutFrequencyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="day" stroke="rgba(255,255,255,0.6)" />
-                <YAxis stroke="rgba(255,255,255,0.6)" />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="workouts" radius={[8, 8, 0, 0]}>
-                  {workoutFrequencyData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getFrequencyColor(entry.workouts)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper chart-wrapper-single-axis">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <BarChart data={workoutFrequencyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis stroke="rgba(255,255,255,0.6)" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="workouts" radius={[8, 8, 0, 0]}>
+                    {workoutFrequencyData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={getFrequencyColor(entry.workouts)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             <div className="frequency-legend">
               <div className="frequency-legend-item">
                 <div className="frequency-color" style={{ background: '#10b981' }} />
@@ -255,28 +426,30 @@ export default function WorkoutCharts() {
               <h3 className="chart-title">Personal Records Timeline</h3>
               <p className="chart-subtitle">New PRs achieved per month</p>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={prTimelineData}>
-                <defs>
-                  <linearGradient id="prGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" />
-                <YAxis stroke="rgba(255,255,255,0.6)" />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="prs"
-                  stroke="#f59e0b"
-                  strokeWidth={3}
-                  fill="url(#prGradient)"
-                  dot={{ r: 8, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff' }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper chart-wrapper-single-axis">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <AreaChart data={prTimelineData}>
+                  <defs>
+                    <linearGradient id="prGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis stroke="rgba(255,255,255,0.6)" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="prs"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    fill="url(#prGradient)"
+                    dot={{ r: 8, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff' }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -287,17 +460,19 @@ export default function WorkoutCharts() {
               <h3 className="chart-title">Training Distribution</h3>
               <p className="chart-subtitle">Sets and volume per muscle group this month</p>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={muscleGroupData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis type="number" stroke="rgba(255,255,255,0.6)" />
-                <YAxis dataKey="muscle" type="category" stroke="rgba(255,255,255,0.6)" />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
-                <Bar dataKey="sets" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
-                <Line dataKey="volume" stroke="#10b981" strokeWidth={3} dot={{ r: 6 }} />
-              </ComposedChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper chart-wrapper-single-axis">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <ComposedChart data={muscleGroupData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis type="number" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis dataKey="muscle" type="category" stroke="rgba(255,255,255,0.6)" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
+                  <Bar dataKey="sets" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                  <Line dataKey="volume" stroke="#10b981" strokeWidth={3} dot={{ r: 6 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -308,34 +483,36 @@ export default function WorkoutCharts() {
               <h3 className="chart-title">Volume vs Rep Range Analysis</h3>
               <p className="chart-subtitle">Relationship between reps, weight, and total volume</p>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
-              <ScatterChart>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis
-                  dataKey="reps"
-                  type="number"
-                  name="Reps"
-                  stroke="rgba(255,255,255,0.6)"
-                  label={{ value: 'Reps per Set', position: 'insideBottom', offset: -5 }}
-                />
-                <YAxis
-                  dataKey="volume"
-                  type="number"
-                  name="Volume"
-                  stroke="rgba(255,255,255,0.6)"
-                  label={{ value: 'Total Volume (lbs)', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
-                <Scatter name="Volume Distribution" data={volumeRepsData} fill="#8b5cf6">
-                  {volumeRepsData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.reps <= 6 ? '#ef4444' : entry.reps <= 12 ? '#8b5cf6' : '#3b82f6'}
-                    />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
+            <div className="chart-wrapper chart-wrapper-single-axis">
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <ScatterChart>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis
+                    dataKey="reps"
+                    type="number"
+                    name="Reps"
+                    stroke="rgba(255,255,255,0.6)"
+                    label={{ value: 'Reps per Set', position: 'insideBottom', offset: -5 }}
+                  />
+                  <YAxis
+                    dataKey="volume"
+                    type="number"
+                    name="Volume"
+                    stroke="rgba(255,255,255,0.6)"
+                    label={{ value: 'Total Volume (lbs)', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
+                  <Scatter name="Volume Distribution" data={volumeRepsData} fill="#8b5cf6">
+                    {volumeRepsData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.reps <= 6 ? '#ef4444' : entry.reps <= 12 ? '#8b5cf6' : '#3b82f6'}
+                      />
+                    ))}
+                  </Scatter>
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
             <div className="rep-range-legend">
               <div className="rep-range-item">
                 <div className="rep-range-color" style={{ background: '#ef4444' }} />
@@ -361,7 +538,7 @@ export default function WorkoutCharts() {
             <Dumbbell className="w-5 h-5" style={{ color: '#8b5cf6' }} />
           </div>
           <div className="stat-content">
-            <div className="stat-value">68.5k</div>
+            <div className="stat-value">{stats.totalVolume > 0 ? `${stats.totalVolume}k` : '-'}</div>
             <div className="stat-label">Total Volume (lbs)</div>
           </div>
         </div>
@@ -371,7 +548,7 @@ export default function WorkoutCharts() {
             <Trophy className="w-5 h-5" style={{ color: '#f59e0b' }} />
           </div>
           <div className="stat-content">
-            <div className="stat-value">27</div>
+            <div className="stat-value">{stats.totalPRs || '-'}</div>
             <div className="stat-label">Personal Records</div>
           </div>
         </div>
@@ -381,7 +558,7 @@ export default function WorkoutCharts() {
             <TrendingUp className="w-5 h-5" style={{ color: '#10b981' }} />
           </div>
           <div className="stat-content">
-            <div className="stat-value">+12%</div>
+            <div className="stat-value">{stats.volumeChange !== 0 ? `${stats.volumeChange > 0 ? '+' : ''}${stats.volumeChange}%` : '-'}</div>
             <div className="stat-label">Volume Increase</div>
           </div>
         </div>
@@ -391,7 +568,7 @@ export default function WorkoutCharts() {
             <Calendar className="w-5 h-5" style={{ color: '#3b82f6' }} />
           </div>
           <div className="stat-content">
-            <div className="stat-value">4.5/wk</div>
+            <div className="stat-value">{stats.avgFrequency > 0 ? `${stats.avgFrequency}/wk` : '-'}</div>
             <div className="stat-label">Avg Frequency</div>
           </div>
         </div>

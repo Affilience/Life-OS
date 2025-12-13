@@ -47,65 +47,65 @@ const Button = ({
   const baseStyles = `
     inline-flex items-center justify-center gap-2
     font-medium transition-all duration-[150ms]
-    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50
     disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none
     ${fullWidth ? 'w-full' : ''}
   `;
 
   const variants = {
-    // Primary: Main call-to-action (purple)
+    // Primary: Main call-to-action (theme primary color)
     primary: `
-      bg-purple-500 text-white
-      hover:bg-purple-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.3)] hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+      bg-primary-500 text-text-primary
+      hover:bg-primary-600 hover:shadow-glow hover:-translate-y-[1px]
+      active:translate-y-[1px] active:shadow-soft
     `,
     // Gradient: Premium primary action with gradient
     gradient: `
-      bg-gradient-to-r from-purple-500 to-pink-500 text-white
-      hover:from-purple-600 hover:to-pink-600 hover:shadow-[0_8px_32px_rgba(139,92,246,0.4)] hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+      bg-gradient-to-r from-primary-500 to-secondary text-text-primary
+      hover:from-primary-600 hover:to-secondary hover:shadow-glow hover:-translate-y-[1px]
+      active:translate-y-[1px] active:shadow-soft
     `,
     // Secondary: Alternative action with dark background
     secondary: `
-      bg-[#12101a] text-white border border-white/10
-      hover:bg-[#1a1724] hover:border-purple-500/20 hover:-translate-y-[1px] hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]
-      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+      bg-bg-1 text-text-primary border border-border
+      hover:bg-bg-2 hover:border-primary-500/20 hover:-translate-y-[1px] hover:shadow-soft
+      active:translate-y-[1px] active:shadow-soft
     `,
-    // Outline: Purple outline style for secondary emphasis
+    // Outline: Primary outline style for secondary emphasis
     outline: `
-      bg-purple-500/10 text-purple-400 border border-purple-500/30
-      hover:bg-purple-500/20 hover:border-purple-500/50 hover:-translate-y-[1px] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)]
-      active:translate-y-[1px] active:bg-purple-500/25
+      bg-primary-500/10 text-primary-400 border border-primary-500/30
+      hover:bg-primary-500/20 hover:border-primary-500/50 hover:-translate-y-[1px] hover:shadow-glowSoft
+      active:translate-y-[1px] active:bg-primary-500/25
     `,
     // Ghost: Minimal tertiary action
     ghost: `
-      bg-transparent text-white/60 border border-transparent
-      hover:bg-[#1a1724]/80 hover:text-white hover:border-white/10 hover:-translate-y-[1px]
-      active:bg-[#1a1724] active:translate-y-[1px]
+      bg-transparent text-text-secondary border border-transparent
+      hover:bg-bg-2/80 hover:text-text-primary hover:border-border hover:-translate-y-[1px]
+      active:bg-bg-2 active:translate-y-[1px]
     `,
-    // Danger: Destructive actions (red)
+    // Danger: Destructive actions
     danger: `
-      bg-red-500 text-white
-      hover:bg-red-600 hover:shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+      bg-error text-text-primary
+      hover:bg-error/90 hover:shadow-glow hover:-translate-y-[1px]
+      active:translate-y-[1px] active:shadow-soft
     `,
     // Danger Outline: Less prominent destructive action
     'danger-outline': `
-      bg-red-500/10 text-red-400 border border-red-500/30
-      hover:bg-red-500/20 hover:border-red-500/50 hover:-translate-y-[1px]
-      active:translate-y-[1px] active:bg-red-500/25
+      bg-error/10 text-error border border-error/30
+      hover:bg-error/20 hover:border-error/50 hover:-translate-y-[1px]
+      active:translate-y-[1px] active:bg-error/25
     `,
-    // Success: Positive/confirmation actions (emerald)
+    // Success: Positive/confirmation actions
     success: `
-      bg-emerald-500 text-white
-      hover:bg-emerald-600 hover:shadow-[0_8px_32px_rgba(16,185,129,0.3)] hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+      bg-success text-text-primary
+      hover:bg-success/90 hover:shadow-glow hover:-translate-y-[1px]
+      active:translate-y-[1px] active:shadow-soft
     `,
     // Success Outline: Less prominent success action
     'success-outline': `
-      bg-emerald-500/10 text-emerald-400 border border-emerald-500/30
-      hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:-translate-y-[1px]
-      active:translate-y-[1px] active:bg-emerald-500/25
+      bg-success/10 text-success border border-success/30
+      hover:bg-success/20 hover:border-success/50 hover:-translate-y-[1px]
+      active:translate-y-[1px] active:bg-success/25
     `,
   };
 

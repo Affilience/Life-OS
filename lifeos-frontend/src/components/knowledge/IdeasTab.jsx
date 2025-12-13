@@ -1,141 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Lightbulb, Sprout, TreePine, Trophy, Clock, Tag, Star } from 'lucide-react';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
 import StatCard from '../shared/StatCard';
 import AddIdeaModal from './AddIdeaModal';
 import { EmptyState } from '../ui';
+import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import './IdeasTab.css';
 
 const IdeasTab = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [stageFilter, setStageFilter] = useState('all');
 
-  const stats = {
-    totalIdeas: 47,
-    seedIdeas: 12,
-    growingIdeas: 8,
-    matureIdeas: 3
-  };
+  // Get data from store
+  const { notes, createNote, updateNote, initializeFromSupabase } = useKnowledgeStore();
 
-  const [ideas, setIdeas] = useState([
-    {
-      id: 1,
-      title: 'Personal AI Assistant for Learning',
-      description: 'An AI that tracks learning patterns and suggests optimal study schedules',
-      stage: 'growing',
-      category: 'Technology',
-      priority: 'high',
-      dateCreated: '2025-10-15',
-      lastUpdated: '2025-10-26',
-      tags: ['AI', 'Education', 'Productivity'],
-      rating: 4,
-      notes: 'Research shows AI can improve learning efficiency by 40%. Need to explore implementation costs.',
-      nextActions: [
-        'Research existing AI learning platforms',
-        'Prototype basic recommendation engine',
-        'Survey potential users'
-      ]
-    },
-    {
-      id: 2,
-      title: 'Sustainable Packaging for Local Restaurants',
-      description: 'Biodegradable food packaging made from local agricultural waste',
-      stage: 'mature',
-      category: 'Business',
-      priority: 'high',
-      dateCreated: '2025-09-20',
-      lastUpdated: '2025-10-25',
-      tags: ['Sustainability', 'Business', 'Environment'],
-      rating: 5,
-      notes: 'Validated with 3 local restaurants. Material testing shows 90% decomposition in 6 months.',
-      nextActions: [
-        'Finalize manufacturing partnership',
-        'Launch pilot program with 5 restaurants',
-        'Develop marketing strategy'
-      ]
-    },
-    {
-      id: 3,
-      title: 'Community Garden Network App',
-      description: 'Platform connecting urban gardeners to share resources and knowledge',
-      stage: 'sprouting',
-      category: 'Social Impact',
-      priority: 'medium',
-      dateCreated: '2025-10-10',
-      lastUpdated: '2025-10-20',
-      tags: ['Community', 'Gardening', 'App'],
-      rating: 3,
-      notes: 'Initial user interviews show strong interest. Need to validate market size.',
-      nextActions: [
-        'Complete market research',
-        'Create wireframes',
-        'Find potential co-founder'
-      ]
-    },
-    {
-      id: 4,
-      title: 'Quantum Computing for Weather Prediction',
-      description: 'Using quantum algorithms to improve long-term weather forecasting accuracy',
-      stage: 'seed',
-      category: 'Science',
-      priority: 'low',
-      dateCreated: '2025-10-22',
-      lastUpdated: '2025-10-22',
-      tags: ['Quantum', 'Weather', 'Research'],
-      rating: 2,
-      notes: 'Interesting concept but requires deep technical expertise. Long-term research project.',
-      nextActions: [
-        'Read quantum computing fundamentals',
-        'Connect with meteorology researchers',
-        'Assess technical feasibility'
-      ]
-    },
-    {
-      id: 5,
-      title: 'Micro-Learning Mobile Game',
-      description: 'Educational game that teaches skills through 2-minute daily sessions',
-      stage: 'growing',
-      category: 'Education',
-      priority: 'medium',
-      dateCreated: '2025-09-28',
-      lastUpdated: '2025-10-24',
-      tags: ['Gaming', 'Education', 'Mobile'],
-      rating: 4,
-      notes: 'Prototype tested with 20 users. Average engagement: 15 days. Need better retention strategy.',
-      nextActions: [
-        'Improve game mechanics',
-        'Add social features',
-        'Seek educational partners'
-      ]
-    },
-    {
-      id: 6,
-      title: 'Voice-Controlled Smart Mirror',
-      description: 'Bathroom mirror with AI assistant for morning routines and health tracking',
-      stage: 'seed',
-      category: 'Technology',
-      priority: 'low',
-      dateCreated: '2025-10-18',
-      lastUpdated: '2025-10-19',
-      tags: ['IoT', 'Health', 'Smart Home'],
-      rating: 3,
-      notes: 'Cool concept but market might be saturated. Need unique value proposition.',
-      nextActions: [
-        'Analyze competitor products',
-        'Identify unique features',
-        'Estimate development costs'
-      ]
-    }
-  ]);
+  // Initialize data on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
+
+  // Transform notes with 'idea' tag into ideas format
+  const { ideas, stats } = useMemo(() => {
+    const ideaNotes = (notes || []).filter(note =>
+      note.tags?.includes('idea') || note.tags?.includes('Idea')
+    );
+
+    const transformedIdeas = ideaNotes.map(note => {
+      // Determine stage from tags
+      let stage = 'seed';
+      if (note.tags?.includes('mature') || note.tags?.includes('completed')) stage = 'mature';
+      else if (note.tags?.includes('growing') || note.tags?.includes('in-progress')) stage = 'growing';
+      else if (note.tags?.includes('sprouting')) stage = 'sprouting';
+
+      // Determine priority from tags
+      let priority = 'medium';
+      if (note.tags?.includes('high-priority') || note.tags?.includes('urgent')) priority = 'high';
+      else if (note.tags?.includes('low-priority')) priority = 'low';
+
+      // Get category from first non-stage/priority tag
+      const skipTags = ['idea', 'Idea', 'seed', 'sprouting', 'growing', 'mature', 'completed', 'in-progress', 'high-priority', 'low-priority', 'urgent'];
+      const category = note.tags?.find(t => !skipTags.includes(t)) || 'General';
+
+      // Parse content for description and notes
+      const lines = (note.content || '').split('\n');
+      const description = lines[0] || note.title;
+
+      return {
+        id: note.id,
+        title: note.title || 'Untitled Idea',
+        description,
+        stage,
+        category,
+        priority,
+        dateCreated: note.createdAt,
+        lastUpdated: note.updatedAt,
+        tags: note.tags?.filter(t => !skipTags.includes(t)) || [],
+        rating: note.rating || 3,
+        notes: lines.slice(1).join('\n').trim() || '',
+        nextActions: []
+      };
+    });
+
+    // Calculate stats
+    const totalIdeas = transformedIdeas.length;
+    const seedIdeas = transformedIdeas.filter(i => i.stage === 'seed').length;
+    const growingIdeas = transformedIdeas.filter(i => i.stage === 'growing' || i.stage === 'sprouting').length;
+    const matureIdeas = transformedIdeas.filter(i => i.stage === 'mature').length;
+
+    return {
+      ideas: transformedIdeas.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated)),
+      stats: {
+        totalIdeas,
+        seedIdeas,
+        growingIdeas,
+        matureIdeas
+      }
+    };
+  }, [notes]);
 
   const handleIdeaSubmit = (ideaData) => {
-    const newIdea = {
-      ...ideaData,
-      id: ideas.length + 1
-    };
-    setIdeas(prev => [newIdea, ...prev]);
-    console.log('Idea planted:', newIdea);
+    // Create a note with 'idea' tag
+    const tags = ['idea', ideaData.stage || 'seed'];
+    if (ideaData.priority === 'high') tags.push('high-priority');
+    if (ideaData.priority === 'low') tags.push('low-priority');
+    if (ideaData.category) tags.push(ideaData.category);
+    if (ideaData.tags) tags.push(...ideaData.tags);
+
+    const content = [
+      ideaData.description || '',
+      ideaData.notes || '',
+      ideaData.nextActions?.length > 0 ? '\n**Next Actions:**\n' + ideaData.nextActions.map(a => `- ${a}`).join('\n') : ''
+    ].filter(Boolean).join('\n');
+
+    createNote({
+      title: ideaData.title,
+      content,
+      tags: [...new Set(tags)]
+    });
+    console.log('Idea planted:', ideaData);
   };
 
   const getStageIcon = (stage) => {

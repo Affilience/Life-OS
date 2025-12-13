@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
-import { Calendar, BookOpen, ShoppingCart } from 'lucide-react';
-import { RecipeLibrary, WeeklyMealPlanner, GroceryList } from './meal-planning';
+import { Calendar, BookOpen } from 'lucide-react';
+import { RecipeLibrary, WeeklyMealPlanner } from './meal-planning';
 
 const SUB_TABS = [
   { id: 'planner', name: 'Week Planner', icon: Calendar },
   { id: 'recipes', name: 'Recipes', icon: BookOpen },
-  { id: 'grocery', name: 'Grocery List', icon: ShoppingCart },
 ];
 
 export default function MealPlanningTab() {
   const [activeSubTab, setActiveSubTab] = useState('planner');
-
-  const handleGenerateGroceryList = () => {
-    setActiveSubTab('grocery');
-  };
 
   return (
     <div className="meal-planning-tab px-4 py-6">
@@ -40,11 +35,8 @@ export default function MealPlanningTab() {
 
       {/* Content */}
       <div className="space-y-6">
-        {activeSubTab === 'planner' && (
-          <WeeklyMealPlanner onGenerateGroceryList={handleGenerateGroceryList} />
-        )}
+        {activeSubTab === 'planner' && <WeeklyMealPlanner />}
         {activeSubTab === 'recipes' && <RecipeLibrary />}
-        {activeSubTab === 'grocery' && <GroceryList />}
       </div>
     </div>
   );

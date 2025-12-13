@@ -1,0 +1,57 @@
+{
+  "name": "Dashboard",
+  "route": "/dashboard",
+  "navigation": "Sidebar → Dashboard (home icon)",
+  "purpose": "Central hub showing unified view of all modules, quick stats, correlations, and AI insights",
+  "key_features": [
+    {
+      "name": "Hero Section",
+      "description": "Shows user avatar, current level, XP progress, and daily greeting"
+    },
+    {
+      "name": "Today's Plan Widget",
+      "description": "Shows scheduled time blocks and tasks for today from Calendar module"
+    },
+    {
+      "name": "Streak Stats Widget",
+      "description": "Displays active streaks across all modules with flame indicators"
+    },
+    {
+      "name": "Module Health Widget",
+      "description": "Shows health/activity status of each module as percentage"
+    },
+    {
+      "name": "Quick Actions Widget",
+      "description": "Buttons for common actions: Log Workout, Add Task, Write Journal, etc."
+    },
+    {
+      "name": "Weekly Insights Widget",
+      "description": "AI-generated insights about user patterns and suggestions"
+    },
+    {
+      "name": "Financial Snapshot Widget",
+      "description": "Quick view of budget status, spending, and savings goals"
+    },
+    {
+      "name": "Goals Progress Widget",
+      "description": "Progress bars for active goals across modules"
+    },
+    {
+      "name": "Recent Activity Widget",
+      "description": "Timeline of recent actions across all modules"
+    }
+  ],
+  "common_user_actions": [
+    "Check daily overview",
+    "See streak status",
+    "Access quick actions",
+    "View AI insights",
+    "Check goal progress"
+  ],
+  "related_modules": ["All modules feed data to Dashboard"],
+  "tips": [
+    "The dashboard is the default landing page",
+    "Widgets can be customized in Settings",
+    "Click any widget to go to its source module"
+  ]
+}

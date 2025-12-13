@@ -15,9 +15,6 @@
     "@anthropic-ai/sdk": "^0.70.1",
     "@capacitor/haptics": "^7.0.2",
     "@flodlc/nebula": "^1.0.56",
-    "@react-spring/three": "^10.0.3",
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.18.0",
     "@supabase/supabase-js": "^2.81.1",
     "@tanstack/react-query": "^5.90.10",
     "@tanstack/react-query-devtools": "^5.90.2",
@@ -25,6 +22,7 @@
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
     "autoprefixer": "^10.4.21",
+    "canvas-confetti": "^1.9.4",
     "cors": "^2.8.5",
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
@@ -39,6 +37,7 @@
     "playwright": "^1.57.0",
     "postcss": "^8.5.6",
     "react": "18.2.0",
+    "react-confetti": "^6.4.0",
     "react-dom": "18.2.0",
     "react-grid-layout": "^1.5.2",
     "react-markdown": "^10.1.0",
@@ -47,11 +46,7 @@
     "recharts": "^3.4.1",
     "remark-gfm": "^4.0.1",
     "tailwindcss": "^3.4.15",
-    "three": "^0.154.0",
     "zustand": "^5.0.8"
-  },
-  "overrides": {
-    "react-reconciler": "0.27.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

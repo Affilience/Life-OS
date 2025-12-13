@@ -623,9 +623,62 @@ export const PRESTIGE_CONFIG = {
   },
 };
 
-// Calculate XP required for level (with prestige scaling)
+/**
+ * Calculate XP required for a specific level (exponential scaling)
+ *
+ * Progression Philosophy:
+ * - Early levels (1-10): Accessible, learn the system (500-2,000 XP)
+ * - Mid levels (11-20): Challenging, requires dedication (2,500-8,000 XP)
+ * - Late levels (21-30): Very hard, months of effort (10,000-40,000 XP)
+ * - End game (31-40): Legendary, years of dedication (50,000-200,000+ XP)
+ *
+ * Formula: baseXP * (1.15 ^ level) with tier multipliers
+ */
 export function calculateXPForLevel(level, prestige = 0) {
-  const baseXP = level * 100;
-  const multiplier = PRESTIGE_CONFIG[prestige]?.bonuses?.xpMultiplier || 1;
-  return Math.floor(baseXP / multiplier);
+  // Base XP with exponential scaling
+  const baseXP = 500; // Starting XP for level 1
+  const growthRate = 1.15; // 15% increase per level
+
+  // Tier multipliers for major milestones
+  let tierMultiplier = 1;
+  if (level > 30) tierMultiplier = 2.5;      // Legendary tier
+  else if (level > 20) tierMultiplier = 1.8; // Master tier
+  else if (level > 10) tierMultiplier = 1.3; // Trials tier
+
+  const xpRequired = Math.floor(baseXP * Math.pow(growthRate, level - 1) * tierMultiplier);
+
+  // Apply prestige bonus (makes it slightly easier after prestige)
+  const prestigeMultiplier = PRESTIGE_CONFIG[prestige]?.bonuses?.xpMultiplier || 1;
+
+  return Math.floor(xpRequired / prestigeMultiplier);
+}
+
+/**
+ * Calculate total XP needed to reach a level from level 1
+ */
+export function calculateTotalXPForLevel(targetLevel, prestige = 0) {
+  let total = 0;
+  for (let lvl = 1; lvl < targetLevel; lvl++) {
+    total += calculateXPForLevel(lvl, prestige);
+  }
+  return total;
+}
+
+/**
+ * Calculate level from total XP
+ */
+export function calculateLevelFromTotalXP(totalXP, prestige = 0) {
+  let level = 1;
+  let xpRemaining = totalXP;
+
+  while (xpRemaining >= calculateXPForLevel(level, prestige) && level < 100) {
+    xpRemaining -= calculateXPForLevel(level, prestige);
+    level++;
+  }
+
+  return {
+    level,
+    currentXP: xpRemaining,
+    xpToNextLevel: calculateXPForLevel(level, prestige),
+  };
 }

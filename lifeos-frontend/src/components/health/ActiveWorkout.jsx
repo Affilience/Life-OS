@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useWorkoutStore } from '../../stores/workoutStore';
 import { EXERCISE_DATABASE } from '../../data/exerciseDatabase';
 import ExerciseSelector from './ExerciseSelector';
+
+// Helper to get exercise data from built-in or custom exercises
+const getExerciseData = (exerciseId, customExercises) => {
+  return EXERCISE_DATABASE[exerciseId] || customExercises?.[exerciseId] || null;
+};
 import SetLogger from './SetLogger';
 import RestTimer from './RestTimer';
 import PRBadge from './PRBadge';
@@ -31,6 +36,7 @@ export default function ActiveWorkout() {
     cancelWorkout,
     updateWorkoutNotes,
     personalRecords,
+    customExercises,
   } = useWorkoutStore();
 
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -64,7 +70,7 @@ export default function ActiveWorkout() {
   }
 
   const currentExercise = activeWorkout.exercises[currentExerciseIndex];
-  const exerciseData = currentExercise ? EXERCISE_DATABASE[currentExercise.exerciseId] : null;
+  const exerciseData = currentExercise ? getExerciseData(currentExercise.exerciseId, customExercises) : null;
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -200,7 +206,7 @@ export default function ActiveWorkout() {
 
             <div className="exercise-tabs">
               {activeWorkout.exercises.map((exercise, index) => {
-                const exData = EXERCISE_DATABASE[exercise.exerciseId];
+                const exData = getExerciseData(exercise.exerciseId, customExercises);
                 const isActive = index === currentExerciseIndex;
                 const completedSetsCount = exercise.sets.filter(s => s.completed).length;
                 const allCompleted = completedSetsCount === exercise.sets.length;

@@ -1,38 +1,56 @@
 /**
  * Claude AI Service
- * Handles all interactions with Claude API via backend proxy
+ * Handles all interactions with Claude API via Supabase Edge Functions
  */
 
-const API_BASE = 'http://localhost:3001';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Edge function endpoint
+const NOVA_CHAT_URL = `${SUPABASE_URL}/functions/v1/nova-chat`;
 
 export const claudeService = {
   /**
    * Send a message to Claude and get a response
    * @param {Array} messages - Array of {role: 'user'|'assistant', content: string}
-   * @param {Object} options - Additional options (system prompt, max_tokens, etc.)
+   * @param {Object} options - Additional options (system prompt, userContext, etc.)
    */
   async chat(messages, options = {}) {
     try {
-      const response = await fetch(`${API_BASE}/api/claude/chat`, {
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        throw new Error('Supabase configuration missing. Check your .env.local file.');
+      }
+
+      const response = await fetch(NOVA_CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           messages,
-          options
+          system: options.system,
+          userContext: options.userContext,
+          stream: false,
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to get response from Claude');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to get response (${response.status})`);
       }
 
-      return await response.json();
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Unknown error occurred');
+      }
+
+      return { content: data.content, usage: data.usage };
     } catch (error) {
       console.error('Claude API Error:', error);
-      throw new Error(`Failed to get response from Claude: ${error.message}`);
+      throw new Error(`Failed to get response from Nova: ${error.message}`);
     }
   },
 
@@ -44,20 +62,28 @@ export const claudeService = {
    */
   async streamChat(messages, onChunk, options = {}) {
     try {
-      const response = await fetch(`${API_BASE}/api/claude/stream`, {
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        throw new Error('Supabase configuration missing. Check your .env.local file.');
+      }
+
+      const response = await fetch(NOVA_CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           messages,
-          options
+          system: options.system,
+          userContext: options.userContext,
+          stream: true,
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to stream response');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to stream response (${response.status})`);
       }
 
       const reader = response.body.getReader();
@@ -94,5 +120,12 @@ export const claudeService = {
       console.error('Claude Streaming Error:', error);
       throw new Error(`Failed to stream response: ${error.message}`);
     }
+  },
+
+  /**
+   * Check if the service is configured and available
+   */
+  isConfigured() {
+    return !!(SUPABASE_URL && SUPABASE_ANON_KEY);
   }
 };

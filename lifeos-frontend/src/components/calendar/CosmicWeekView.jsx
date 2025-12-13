@@ -21,11 +21,79 @@ import CosmicTimeBlock from './CosmicTimeBlock';
 import CreateTimeBlockModal from './CreateTimeBlockModal';
 
 export default function CosmicWeekView() {
-  const { timeBlocks, getBlocksForDate, getBufferPercentage } = useCalendarStore();
+  const {
+    timeBlocks,
+    getBlocksForDate,
+    getBufferPercentage,
+    getPlanningAccuracy,
+    getEnergyPatterns,
+    getThisWeeksBlocks
+  } = useCalendarStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [editingBlock, setEditingBlock] = useState(null);
+
+  // Calculate weekly stats from actual data
+  const weeklyStats = React.useMemo(() => {
+    const weekBlocks = getThisWeeksBlocks();
+
+    // Deep work hours this week
+    const deepWorkBlocks = weekBlocks.filter(b => b.type === 'deep_work');
+    const deepWorkMinutes = deepWorkBlocks.reduce((sum, b) => sum + (b.plannedDuration || 0), 0);
+    const deepWorkHours = (deepWorkMinutes / 60).toFixed(1);
+
+    // Planning accuracy
+    const accuracy = getPlanningAccuracy();
+    const accuracyPercent = accuracy.count > 0
+      ? Math.round(Math.min(100, Math.max(0, (1 - Math.abs(1 - accuracy.ratio)) * 100)))
+      : null;
+
+    // Peak energy time from patterns
+    const energyPatterns = getEnergyPatterns();
+    let peakEnergyTime = null;
+    let maxHighEnergy = 0;
+
+    Object.entries(energyPatterns).forEach(([hour, data]) => {
+      if (data.high > maxHighEnergy) {
+        maxHighEnergy = data.high;
+        peakEnergyTime = parseInt(hour);
+      }
+    });
+
+    // Format peak energy time range
+    let peakEnergyDisplay = '—';
+    if (peakEnergyTime !== null) {
+      const endHour = peakEnergyTime + 2;
+      peakEnergyDisplay = `${peakEnergyTime}-${endHour > 12 ? endHour - 12 : endHour} ${endHour >= 12 ? 'PM' : 'AM'}`;
+    }
+
+    // Average buffer time for the week
+    const today = new Date();
+    let totalBuffer = 0;
+    let daysWithBlocks = 0;
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - today.getDay() + 1 + i); // Monday-based week
+      const dateStr = d.toISOString().split('T')[0];
+      const dayBlocks = getBlocksForDate(dateStr);
+      if (dayBlocks.length > 0) {
+        totalBuffer += getBufferPercentage(dateStr);
+        daysWithBlocks++;
+      }
+    }
+
+    const avgBuffer = daysWithBlocks > 0 ? Math.round(totalBuffer / daysWithBlocks) : null;
+
+    return {
+      deepWorkHours,
+      accuracyPercent,
+      peakEnergyDisplay,
+      avgBuffer,
+      hasData: weekBlocks.length > 0
+    };
+  }, [timeBlocks, getThisWeeksBlocks, getPlanningAccuracy, getEnergyPatterns, getBlocksForDate, getBufferPercentage]);
 
   // Get start of week (Monday)
   const getWeekStart = (date) => {
@@ -110,7 +178,7 @@ export default function CosmicWeekView() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#0c0a10] relative overflow-hidden">
+    <div className="h-full flex flex-col bg-bg-0 relative overflow-hidden">
       {/* Cosmic Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Nebula gradients */}
@@ -129,89 +197,121 @@ export default function CosmicWeekView() {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 p-6 border-b border-white/10/50 bg-[#12101a]/20 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
+      <div className="relative z-10 p-4 md:p-6 border-b border-border/50 bg-bg-elevated/20 backdrop-blur-sm">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => navigateWeek(-1)}
-              className="p-2 hover:bg-purple-500/20 rounded-lg transition-all text-white/60 hover:text-purple-300"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-primary-500/20 rounded-lg transition-all text-text-muted hover:text-primary-300"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
 
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-white">{formatWeekRange()}</h2>
-              <p className="text-sm text-white/50">Week {getWeekNumber(weekStart)}</p>
+              <h2 className="text-lg sm:text-2xl font-bold text-text-primary">{formatWeekRange()}</h2>
+              <p className="text-xs sm:text-sm text-text-muted">Week {getWeekNumber(weekStart)}</p>
             </div>
 
             <button
               onClick={() => navigateWeek(1)}
-              className="p-2 hover:bg-purple-500/20 rounded-lg transition-all text-white/60 hover:text-purple-300"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-primary-500/20 rounded-lg transition-all text-text-muted hover:text-primary-300"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={goToToday}
-              className="px-4 py-2 bg-[#1a1724] hover:bg-[#221e2e] text-zinc-300 rounded-lg transition-all text-sm font-medium"
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 min-h-[44px] bg-bg-1 hover:bg-bg-2 text-zinc-300 rounded-lg transition-all text-sm font-medium"
             >
               Today
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-purple-500/30"
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 min-h-[44px] bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 text-text-primary rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary-500/30"
+              data-tour="add-block-btn"
             >
               <Plus className="w-4 h-4" />
-              Add Time Block
+              <span className="hidden sm:inline">Add Time Block</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
+          <div className="bg-bg-elevated/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
               <Sun className="w-3 h-3" />
               <span>Peak Energy</span>
             </div>
-            <div className="text-lg font-bold text-white">9-11 AM</div>
+            <div className="text-lg font-bold text-text-primary">
+              {weeklyStats.peakEnergyDisplay}
+            </div>
+            {!weeklyStats.hasData && (
+              <div className="text-xs text-text-muted mt-0.5">Track blocks to learn</div>
+            )}
           </div>
-          <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
+          <div className="bg-bg-elevated/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
               <Zap className="w-3 h-3" />
               <span>Deep Work</span>
             </div>
-            <div className="text-lg font-bold text-purple-400">4.5h</div>
+            <div className="text-lg font-bold text-primary-400">
+              {weeklyStats.deepWorkHours}h
+            </div>
+            <div className="text-xs text-text-muted mt-0.5">this week</div>
           </div>
-          <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
+          <div className="bg-bg-elevated/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
               <TrendingUp className="w-3 h-3" />
               <span>Planning Accuracy</span>
             </div>
-            <div className="text-lg font-bold text-green-400">87%</div>
+            <div className={`text-lg font-bold ${
+              weeklyStats.accuracyPercent !== null
+                ? weeklyStats.accuracyPercent >= 80 ? 'text-green-400'
+                  : weeklyStats.accuracyPercent >= 60 ? 'text-yellow-400'
+                  : 'text-orange-400'
+                : 'text-text-muted'
+            }`}>
+              {weeklyStats.accuracyPercent !== null ? `${weeklyStats.accuracyPercent}%` : '—'}
+            </div>
+            {weeklyStats.accuracyPercent === null && (
+              <div className="text-xs text-text-muted mt-0.5">Complete blocks to track</div>
+            )}
           </div>
-          <div className="bg-[#12101a]/60 backdrop-blur-sm border border-white/10/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
+          <div className="bg-bg-elevated/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
               <Calendar className="w-3 h-3" />
               <span>Buffer Time</span>
             </div>
-            <div className="text-lg font-bold text-blue-400">22%</div>
+            <div className={`text-lg font-bold ${
+              weeklyStats.avgBuffer !== null
+                ? weeklyStats.avgBuffer >= 20 ? 'text-green-400'
+                  : weeklyStats.avgBuffer >= 10 ? 'text-yellow-400'
+                  : 'text-red-400'
+                : 'text-text-muted'
+            }`}>
+              {weeklyStats.avgBuffer !== null ? `${weeklyStats.avgBuffer}%` : '—'}
+            </div>
+            {weeklyStats.avgBuffer === null && (
+              <div className="text-xs text-text-muted mt-0.5">Add blocks to calculate</div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Week Grid */}
-      <div className="flex-1 overflow-auto relative z-10">
-        <div className="min-w-[1200px] flex">
+      <div className="flex-1 overflow-auto relative z-10 -webkit-overflow-scrolling-touch">
+        <div className="min-w-[800px] lg:min-w-[1200px] flex">
           {/* Time Column */}
-          <div className="w-20 flex-shrink-0 border-r border-white/10/50 bg-[#12101a]/20">
-            <div className="h-12 border-b border-white/10/50" />
+          <div className="w-20 flex-shrink-0 border-r border-border/50 bg-bg-elevated/20">
+            <div className="h-12 border-b border-border/50" />
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="h-16 border-b border-white/10/30 flex items-start justify-center pt-2"
+                className="h-16 border-b border-border/30 flex items-start justify-center pt-2"
               >
                 <span className="text-xs text-zinc-600 font-medium">
                   {hour.toString().padStart(2, '0')}:00
@@ -229,7 +329,7 @@ export default function CosmicWeekView() {
             return (
               <div
                 key={dayIndex}
-                className="flex-1 border-r border-white/10/50 relative"
+                className="flex-1 border-r border-border/50 relative"
                 style={{
                   background: today
                     ? 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, transparent 100%)'
@@ -238,16 +338,16 @@ export default function CosmicWeekView() {
               >
                 {/* Day Header */}
                 <div
-                  className={`h-12 border-b border-white/10/50 flex flex-col items-center justify-center ${
-                    today ? 'bg-purple-500/10' : 'bg-[#12101a]/20'
+                  className={`h-12 border-b border-border/50 flex flex-col items-center justify-center ${
+                    today ? 'bg-primary-500/10' : 'bg-bg-elevated/20'
                   }`}
                 >
-                  <div className="text-xs text-white/50 uppercase">
+                  <div className="text-xs text-text-muted uppercase">
                     {date.toLocaleDateString('en-GB', { weekday: 'short' })}
                   </div>
                   <div
                     className={`text-sm font-bold ${
-                      today ? 'text-purple-400' : 'text-white'
+                      today ? 'text-primary-400' : 'text-text-primary'
                     }`}
                   >
                     {date.getDate()}
@@ -263,10 +363,10 @@ export default function CosmicWeekView() {
                     <div
                       key={hour}
                       onClick={() => handleSlotClick(date, hour)}
-                      className="h-16 border-b border-white/10/30 hover:bg-purple-500/5 transition-all cursor-pointer group relative"
+                      className="h-16 border-b border-border/30 hover:bg-primary-500/5 transition-all cursor-pointer group relative"
                     >
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-purple-400 font-medium">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-primary-400 font-medium">
                           + Add Block
                         </div>
                       </div>

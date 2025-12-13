@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ResolutionsSetup } from '../components/onboarding/setup';
+import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
 import {
   Target,
   Plus,
@@ -24,6 +26,7 @@ import ResolutionCard from '../components/resolutions/ResolutionCard';
 import AddResolutionModal from '../components/resolutions/AddResolutionModal';
 import YearProgressRing from '../components/resolutions/YearProgressRing';
 import AchievementBadges from '../components/resolutions/AchievementBadges';
+import { triggerGamification } from '../hooks/useGamification';
 
 // Navigation tabs matching PurposeValues
 const navTabs = [
@@ -40,6 +43,10 @@ export default function Resolutions() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedResolution, setSelectedResolution] = useState(null);
   const navigate = useNavigate();
+  const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
+
+  // Show setup wizard if resolutions module not configured during onboarding
+  const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('resolutions');
 
   const {
     resolutions,
@@ -63,6 +70,8 @@ export default function Resolutions() {
 
   const handleCheckIn = (resolutionId) => {
     checkIn(resolutionId);
+    // Award XP for resolution check-in
+    triggerGamification('resolutionCheckIn', { xpOverride: 20, module: 'purpose' });
   };
 
   const handleEdit = (resolution) => {
@@ -95,7 +104,22 @@ export default function Resolutions() {
         </div>
       </div>
 
+      {/* Setup Wizard (if needed) */}
+      {showSetup && (
+        <div className="p-4">
+          <ResolutionsSetup
+            onComplete={() => {
+              useIntegratedOnboardingStore.getState().markModuleComplete('resolutions');
+            }}
+            onSkip={() => {
+              useIntegratedOnboardingStore.getState().markModuleComplete('resolutions');
+            }}
+          />
+        </div>
+      )}
+
       {/* Page Content */}
+      {!showSetup && (
       <div className="px-6 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -266,6 +290,7 @@ export default function Resolutions() {
           </div>
         )}
       </div>
+      )}
 
       {/* Add Resolution Modal */}
       <AnimatePresence>
