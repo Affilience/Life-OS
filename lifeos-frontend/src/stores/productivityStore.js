@@ -625,6 +625,8 @@ const useProductivityStore = create(
           projects: [newProject, ...state.projects],
         }));
         syncProjectToSupabase(newProject);
+        // Award XP for creating a new project
+        triggerGamification('projectCreated', { xpOverride: 15, module: 'productivity' });
       },
 
       updateProject: (projectId, updates) => {

@@ -532,6 +532,9 @@ export const useKnowledgeStore = create(
         }));
         syncBookToSupabase(newBook);
 
+        // Award XP for adding a book to your library
+        triggerGamification('ideaCaptured', { xpOverride: 10, module: 'knowledge' });
+
         return newBook.id;
       },
 

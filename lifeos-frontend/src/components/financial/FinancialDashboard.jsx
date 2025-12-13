@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import {
   Wallet,
   Target,
+  DollarSign,
 } from 'lucide-react';
 import UnifiedBudgetTab from './UnifiedBudgetTab';
 import FinancialGoalsTab from './FinancialGoalsTab';
+import PageHeader from '../shared/PageHeader';
 
 /**
  * FinancialDashboard - Streamlined 2-tab financial management
@@ -24,6 +26,17 @@ const FinancialDashboard = () => {
 
   return (
     <div className="financial-page min-h-screen bg-[#0c0a10]">
+      {/* Page Header */}
+      <div className="px-4 pt-6">
+        <PageHeader
+          title="Finances"
+          subtitle="Track spending, manage budgets, and reach your savings goals"
+          icon={DollarSign}
+          module="financial"
+          variant="elevated"
+        />
+      </div>
+
       {/* Tab Navigation */}
       <div className="sticky top-0 z-40 bg-[#0c0a10] border-b border-slate-800" data-tour="financial-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">

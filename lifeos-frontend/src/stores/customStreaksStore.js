@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { DEV_USER_ID } from '../lib/dev-auth';
+import { triggerGamification } from '../hooks/useGamification';
 
 /**
  * Custom Streaks Store
@@ -57,6 +58,128 @@ export const STREAK_FREQUENCIES = [
   { id: 'weekends', label: 'Weekends', description: 'Saturday and Sunday' },
   { id: 'custom', label: 'Custom Days', description: 'Choose specific days' },
 ];
+
+// Action-to-streak mapping for auto-extension
+// Maps gamification actions to streak icon IDs and name keywords
+export const ACTION_TO_STREAK_MAP = {
+  // Health & Fitness
+  workoutCompleted: {
+    icons: ['workout', 'stretch'],
+    keywords: ['workout', 'gym', 'exercise', 'fitness', 'training', 'lift'],
+  },
+  cardioSession: {
+    icons: ['walk', 'workout'],
+    keywords: ['cardio', 'run', 'running', 'walk', 'walking', 'jog'],
+  },
+  mealLogged: {
+    icons: ['cooking'],
+    keywords: ['meal', 'food', 'eat', 'nutrition', 'diet', 'cooking'],
+  },
+  waterLogged: {
+    icons: ['water'],
+    keywords: ['water', 'hydra', 'drink'],
+  },
+  sleepLogged: {
+    icons: ['sleep', 'early'],
+    keywords: ['sleep', 'bed', 'rest'],
+  },
+
+  // Knowledge & Learning
+  bookCompleted: {
+    icons: ['reading'],
+    keywords: ['read', 'book', 'reading'],
+  },
+  articleRead: {
+    icons: ['reading'],
+    keywords: ['read', 'article', 'reading'],
+  },
+  noteCreated: {
+    icons: ['journal', 'learn'],
+    keywords: ['note', 'write', 'writing'],
+  },
+  practiceSession: {
+    icons: ['music', 'art', 'language', 'coding', 'learn'],
+    keywords: ['practice', 'learn', 'study', 'skill', 'music', 'art', 'code', 'language'],
+  },
+  courseCompleted: {
+    icons: ['learn'],
+    keywords: ['course', 'learn', 'study', 'class'],
+  },
+
+  // Journal & Mindfulness
+  journalEntry: {
+    icons: ['journal', 'gratitude'],
+    keywords: ['journal', 'diary', 'write', 'reflect'],
+  },
+  gratitudeLogged: {
+    icons: ['gratitude'],
+    keywords: ['gratitude', 'grateful', 'thankful'],
+  },
+  moodLogged: {
+    icons: ['journal'],
+    keywords: ['mood', 'feeling', 'emotion'],
+  },
+
+  // Productivity
+  pomodoroCompleted: {
+    icons: ['coding', 'learn'],
+    keywords: ['pomodoro', 'focus', 'deep work', 'work'],
+  },
+  deepWorkHour: {
+    icons: ['coding'],
+    keywords: ['deep work', 'focus', 'concentration'],
+  },
+  taskCompleted: {
+    icons: ['star'],
+    keywords: ['task', 'todo', 'productivity'],
+  },
+
+  // Financial
+  expenseLogged: {
+    icons: ['budget'],
+    keywords: ['budget', 'expense', 'spending', 'money', 'finance'],
+  },
+  savingsContribution: {
+    icons: ['budget'],
+    keywords: ['save', 'saving', 'budget', 'money'],
+  },
+
+  // Health - specific
+  vitaminsLogged: {
+    icons: ['vitamins'],
+    keywords: ['vitamin', 'supplement', 'medicine', 'pill'],
+  },
+
+  // Social & Wellness
+  meditationCompleted: {
+    icons: ['meditation'],
+    keywords: ['meditat', 'mindful', 'breath', 'calm'],
+  },
+  socialActivity: {
+    icons: ['social'],
+    keywords: ['social', 'friend', 'family', 'call', 'meetup'],
+  },
+  outdoorActivity: {
+    icons: ['nature', 'walk'],
+    keywords: ['outdoor', 'nature', 'outside', 'park', 'hike'],
+  },
+  screenFreeTime: {
+    icons: ['phone'],
+    keywords: ['screen free', 'no phone', 'digital detox', 'unplug'],
+  },
+
+  // Morning routine
+  earlyRise: {
+    icons: ['early'],
+    keywords: ['early', 'morning', 'wake', '5am', '6am'],
+  },
+
+  // Skincare/self-care
+  skincareRoutine: {
+    icons: ['skincare'],
+    keywords: ['skincare', 'skin', 'face', 'self care', 'routine'],
+  },
+};
 
 const useCustomStreaksStore = create(
   persist(
@@ -158,6 +281,9 @@ const useCustomStreaksStore = create(
             isLoading: false,
           }));
 
+          // Award XP for creating a new habit streak
+          triggerGamification('streakMaintained', { xpOverride: 15, module: 'habits' });
+
           return { success: true, streak: data };
         } catch (err) {
           console.error('Error creating streak:', err);
@@ -229,6 +355,22 @@ const useCustomStreaksStore = create(
               ),
               completions: [...state.completions, data || completion],
             }));
+
+            // Award XP for streak completion
+            const finalStreak = newCurrentStreak + 1;
+            let xpAmount = 10; // Base XP for daily streak
+
+            // Bonus XP for streak milestones
+            if (finalStreak === 7) xpAmount = 25;
+            else if (finalStreak === 14) xpAmount = 35;
+            else if (finalStreak === 30) xpAmount = 50;
+            else if (finalStreak === 60) xpAmount = 75;
+            else if (finalStreak === 90) xpAmount = 100;
+            else if (finalStreak === 180) xpAmount = 150;
+            else if (finalStreak === 365) xpAmount = 250;
+            else if (finalStreak % 100 === 0) xpAmount = 100; // Every 100 days
+
+            triggerGamification('streakDay', { xpOverride: xpAmount, module: 'habits', currentStreak: finalStreak });
           }
 
           return { success: true };
@@ -423,6 +565,118 @@ const useCustomStreaksStore = create(
         }
 
         return data;
+      },
+
+      /**
+       * Check and auto-extend streaks based on a gamification action
+       * Returns array of extended streaks for celebration
+       * @param {string} action - The gamification action (e.g., 'workoutCompleted')
+       * @returns {Array} Array of { streak, previousStreak, newStreak } objects
+       */
+      checkAndAutoExtendStreaks: async (action) => {
+        const { streaks, completions } = get();
+        const mapping = ACTION_TO_STREAK_MAP[action];
+
+        if (!mapping || streaks.length === 0) {
+          return [];
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const extendedStreaks = [];
+
+        // Find matching streaks by icon or name keywords
+        for (const streak of streaks) {
+          // Check if already completed today
+          const alreadyCompleted = completions.some(
+            c => c.streak_id === streak.id && c.completed_date === today
+          );
+
+          if (alreadyCompleted) {
+            continue;
+          }
+
+          // Check if streak matches by icon
+          const iconMatch = mapping.icons.includes(streak.icon?.replace(/[^\w]/g, '').toLowerCase());
+
+          // Check if streak matches by name keywords (case-insensitive)
+          const nameMatch = mapping.keywords.some(keyword =>
+            streak.name?.toLowerCase().includes(keyword.toLowerCase())
+          );
+
+          // Also check description
+          const descMatch = mapping.keywords.some(keyword =>
+            streak.description?.toLowerCase().includes(keyword.toLowerCase())
+          );
+
+          if (iconMatch || nameMatch || descMatch) {
+            // Get previous streak count before logging
+            const previousStreak = streak.current_streak || 0;
+
+            // Log the completion
+            const result = await get().logCompletion(streak.id, today);
+
+            if (result.success) {
+              // Get updated streak
+              const updatedStreak = get().streaks.find(s => s.id === streak.id);
+              const newStreak = updatedStreak?.current_streak || previousStreak + 1;
+
+              extendedStreaks.push({
+                streak: updatedStreak || streak,
+                previousStreak,
+                newStreak,
+                action,
+              });
+
+              console.log('[CustomStreaks] Auto-extended streak:', {
+                name: streak.name,
+                action,
+                previousStreak,
+                newStreak,
+                matchedBy: iconMatch ? 'icon' : nameMatch ? 'name' : 'description',
+              });
+            }
+          }
+        }
+
+        return extendedStreaks;
+      },
+
+      /**
+       * Find streaks that would match a given action (without extending)
+       * Useful for UI to show which streaks will auto-complete
+       */
+      getStreaksForAction: (action) => {
+        const { streaks, completions } = get();
+        const mapping = ACTION_TO_STREAK_MAP[action];
+
+        if (!mapping) return [];
+
+        const today = new Date().toISOString().split('T')[0];
+        const matchingStreaks = [];
+
+        for (const streak of streaks) {
+          const alreadyCompleted = completions.some(
+            c => c.streak_id === streak.id && c.completed_date === today
+          );
+
+          const iconMatch = mapping.icons.includes(streak.icon?.replace(/[^\w]/g, '').toLowerCase());
+          const nameMatch = mapping.keywords.some(keyword =>
+            streak.name?.toLowerCase().includes(keyword.toLowerCase())
+          );
+          const descMatch = mapping.keywords.some(keyword =>
+            streak.description?.toLowerCase().includes(keyword.toLowerCase())
+          );
+
+          if (iconMatch || nameMatch || descMatch) {
+            matchingStreaks.push({
+              ...streak,
+              alreadyCompleted,
+              matchedBy: iconMatch ? 'icon' : nameMatch ? 'name' : 'description',
+            });
+          }
+        }
+
+        return matchingStreaks;
       },
     }),
     {

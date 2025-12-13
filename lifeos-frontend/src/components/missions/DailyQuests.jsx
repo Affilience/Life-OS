@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -23,6 +23,7 @@ import {
 import useDailyTasksStore, { TASK_CATEGORIES, PRIORITY_LEVELS } from '../../stores/dailyTasksStore';
 import { EmptyState } from '../ui';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
+import { feedback } from '../../services/microInteractions';
 
 // Map category to icon
 const CATEGORY_ICONS = {
@@ -78,7 +79,20 @@ export default function DailyQuests() {
     });
   }, [todaysTasks]);
 
-  const handleToggleQuest = (questId) => {
+  const handleToggleQuest = (questId, event) => {
+    const quest = quests.find(q => q.id === questId);
+    const wasCompleted = quest?.completed;
+
+    // Trigger micro-interactions
+    if (!wasCompleted) {
+      const rect = event?.currentTarget?.getBoundingClientRect();
+      feedback.questComplete({
+        position: rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null,
+      });
+    } else {
+      feedback.taskUncomplete();
+    }
+
     toggleTask(questId);
   };
 
@@ -308,7 +322,7 @@ export default function DailyQuests() {
               return (
                 <button
                   key={quest.id}
-                  onClick={() => handleToggleQuest(quest.id)}
+                  onClick={(e) => handleToggleQuest(quest.id, e)}
                   className={`
                     relative bg-bg-1 border rounded-xl p-5 text-left
                     transition-all duration-200 hover:scale-[1.02]

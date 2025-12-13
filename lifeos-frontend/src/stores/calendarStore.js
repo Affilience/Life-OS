@@ -7,6 +7,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase, getCurrentUserId } from '../lib/supabase';
+import { triggerGamification } from '../hooks/useGamification';
 
 // ============================================
 // SUPABASE SYNC HELPERS
@@ -277,6 +278,9 @@ export const useCalendarStore = create(
         // Sync to Supabase
         syncTimeBlockToSupabase(newBlock);
 
+        // Award XP for scheduling a time block
+        triggerGamification('eventCreated', { xpOverride: 5, module: 'calendar' });
+
         return newBlock.id;
       },
 
@@ -360,7 +364,15 @@ export const useCalendarStore = create(
         }));
         // Sync to Supabase
         const block = get().timeBlocks.find(b => b.id === blockId);
-        if (block) syncTimeBlockToSupabase(block);
+        if (block) {
+          syncTimeBlockToSupabase(block);
+
+          // Award XP for completing a time block
+          // Base XP is 15, with bonus for longer sessions
+          const durationBonus = Math.floor((block.actualDuration || block.plannedDuration || 30) / 30) * 5;
+          const xpAmount = Math.min(15 + durationBonus, 40); // Cap at 40 XP
+          triggerGamification('timeBlockCompleted', { xpOverride: xpAmount, module: 'calendar' });
+        }
       },
 
       /**

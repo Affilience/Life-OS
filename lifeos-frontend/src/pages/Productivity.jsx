@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Clock, BarChart3, FolderKanban } from 'lucide-react';
+import { Clock, BarChart3, FolderKanban, Zap } from 'lucide-react';
 import ProductivityDashboard from '../components/productivity/ProductivityDashboard';
 import WorkSessionsTab from '../components/productivity/WorkSessionsTab';
 import ProjectsTab from '../components/productivity/ProjectsTab';
 import { ProductivitySetup } from '../components/onboarding/setup';
 import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
+import PageHeader from '../components/shared/PageHeader';
 
 export default function Productivity() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -21,6 +22,17 @@ export default function Productivity() {
 
   return (
     <div className="productivity-page min-h-screen bg-bg-0">
+      {/* Page Header */}
+      <div className="px-4 pt-6">
+        <PageHeader
+          title="Productivity"
+          subtitle="Track deep work, manage projects, and maximize your output"
+          icon={Zap}
+          module="productivity"
+          variant="elevated"
+        />
+      </div>
+
       {/* Tab Navigation - Productivity uses indigo accent */}
       <div className="sticky top-0 z-40 bg-bg-0 border-b border-indigo-500/20" data-tour="productivity-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">

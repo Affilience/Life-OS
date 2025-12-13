@@ -9,9 +9,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, SkipForward, Play, RotateCcw } from 'lucide-react';
-import { useTourStore, ROUTE_TO_TOUR } from '../../stores/tourStore';
+import { useTourStore, ROUTE_TO_TOUR, TOUR_IDS } from '../../stores/tourStore';
 import { getTour, getTourStep, getTourStepCount, NOVA_STATES, POSITIONS } from './tourDefinitions';
 import useGamificationStore from '../../stores/gamificationStore';
+import useDashboardStore from '../../stores/dashboardStore';
 import './FeatureTour.css';
 
 /**
@@ -209,10 +210,10 @@ function TourTooltip({ step, stepIndex, totalSteps, position, onNext, onPrev, on
     <motion.div
       className={`tour-tooltip tour-tooltip-${position.position || 'bottom'}`}
       style={{ top: position.top, left: position.left }}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+      initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
     >
       {/* Nova Avatar */}
       <div className="tour-tooltip-nova">
@@ -379,8 +380,8 @@ function SpotlightOverlay({ targetRect, onClick, allowClickThrough }) {
         onClick={onClick}
       />
 
-      {/* Animated border around target */}
-      <motion.div
+      {/* Static border around target - no animation for stability */}
+      <div
         className="tour-spotlight-border"
         style={{
           left: spotlightLeft,
@@ -390,10 +391,6 @@ function SpotlightOverlay({ targetRect, onClick, allowClickThrough }) {
           borderRadius,
           pointerEvents: 'none',
         }}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.3 }}
       />
     </motion.div>
   );
@@ -587,6 +584,15 @@ export default function FeatureTour() {
   };
 
   const handleComplete = () => {
+    // If completing the dashboard tour, mark onboarding setup as complete
+    if (activeTour === TOUR_IDS.DASHBOARD) {
+      try {
+        const dashboardStore = useDashboardStore.getState();
+        dashboardStore.completeOnboardingSetup();
+      } catch (e) {
+        console.warn('[Tour] Could not mark onboarding setup complete:', e);
+      }
+    }
     completeTour();
   };
 

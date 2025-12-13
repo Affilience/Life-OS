@@ -141,10 +141,11 @@ const Missions = () => {
     <div className="space-y-8 animate-fade-in">
       <PageHeader
         title={pageTitle}
+        subtitle="Track your daily progress and build lasting habits"
         stats={`${quickStats.streak} day ${terms.streak.toLowerCase()} · ${quickStats.completed} completed`}
         icon={PageIcon}
         module="missions"
-        variant="icon"
+        variant="elevated"
       />
 
       {/* First-Run Setup (during onboarding) */}

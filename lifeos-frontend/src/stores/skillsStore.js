@@ -260,6 +260,9 @@ const useSkillsStore = create(
         // Sync to Supabase
         syncSkillToSupabase(newSkill);
 
+        // Award XP for adding a new skill to track
+        triggerGamification('skillAdded', { xpOverride: 15, module: 'skills' });
+
         return newSkill;
       },
 
@@ -421,6 +424,11 @@ const useSkillsStore = create(
 
       // Toggle goal completion
       toggleGoal: (skillId, goalId) => {
+        // Check if we're completing or uncompleting
+        const skill = get().skills.find(s => s.id === skillId);
+        const goal = skill?.goals.find(g => g.id === goalId);
+        const isCompleting = goal && !goal.completed;
+
         set(state => ({
           skills: state.skills.map(skill =>
             skill.id === skillId
@@ -433,6 +441,11 @@ const useSkillsStore = create(
               : skill
           ),
         }));
+
+        // Award XP only when completing a goal (not uncompleting)
+        if (isCompleting) {
+          triggerGamification('goalCompleted', { xpOverride: 20, module: 'skills' });
+        }
       },
 
       // Add milestone

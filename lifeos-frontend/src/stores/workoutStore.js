@@ -747,6 +747,9 @@ export const useWorkoutStore = create(
           customTemplates: [...state.customTemplates, newTemplate],
         });
 
+        // Award XP for creating a workout template
+        triggerGamification('workoutTemplateCreated', { xpOverride: 15, module: 'health' });
+
         return newTemplate;
       },
 

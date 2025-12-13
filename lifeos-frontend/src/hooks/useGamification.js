@@ -19,6 +19,7 @@ import { usePetStore } from '../stores/petStore';
 import { useGamificationStore } from '../stores/gamificationStore';
 import usePerkStore from '../stores/perkStore';
 import useQuestsStore from '../stores/questsStore';
+import useCustomStreaksStore from '../stores/customStreaksStore';
 import { calculatePerkBonusXP, addStatXP } from '../utils/perkEffects';
 
 // Global celebration trigger (set by CelebrationProvider)
@@ -132,6 +133,14 @@ const ACTION_STAT_MAP = {
   challengeCompleted: 'challengesCompleted',
   challengeCreated: 'challengesCreated',
 
+  // Calendar
+  timeBlockCompleted: 'timeBlocksCompleted',
+  eventCreated: 'eventsCreated',
+
+  // Streaks / Habits
+  streakDay: 'streakDays',
+  streakMaintained: 'streaksMaintained',
+
   // General / Milestones
   loginDay: 'loginDays',
   consecutiveDay: 'consecutiveDays',
@@ -187,6 +196,9 @@ const XP_VALUES = {
   prSet: 25,
   cardioSession: 20,
   savingsContribution: 15,
+  friendAdded: 15,
+  challengeCreated: 20,
+  streakMaintained: 15,
 
   // Low XP actions (5-10)
   waterLogged: 5,
@@ -200,6 +212,8 @@ const XP_VALUES = {
   loginDay: 5,
   dayActive: 5,
   activityLogged: 5,
+  eventCreated: 5,
+  streakDay: 10,
 
   // Default
   default: 10,
@@ -517,7 +531,17 @@ export async function triggerGamification(action, options = {}) {
   // 7.5 Auto-check quest progress based on updated stats
   // This enables automatic quest completion when underlying actions are performed
   const questsStore = useQuestsStore.getState();
-  questsStore.checkAndUpdateQuestProgress();
+  const completedQuests = questsStore.checkAndUpdateQuestProgress();
+
+  // 7.55 Auto-extend custom streaks based on action type
+  // This enables streaks to auto-complete when relevant actions are performed
+  let extendedStreaks = [];
+  try {
+    const customStreaksStore = useCustomStreaksStore.getState();
+    extendedStreaks = await customStreaksStore.checkAndAutoExtendStreaks(action);
+  } catch (e) {
+    console.warn('[Gamification] Could not auto-extend streaks:', e);
+  }
 
   // 7.6 Auto-complete daily tasks based on action type
   // This enables tasks like "Write a quick reflection" to auto-complete when journal entry is saved
@@ -598,6 +622,32 @@ export async function triggerGamification(action, options = {}) {
     });
   }
 
+  // Streak extension celebrations
+  if (extendedStreaks.length > 0 && globalCelebrate) {
+    const celebrationDelay = (newAchievements.length + newPets.length) * 1500;
+    extendedStreaks.forEach((extended, index) => {
+      setTimeout(() => {
+        globalCelebrate.streakExtended({
+          streak: extended.streak,
+          previousStreak: extended.previousStreak,
+          newStreak: extended.newStreak,
+        });
+      }, celebrationDelay + index * 2000);
+    });
+  }
+
+  // Quest completion celebrations
+  if (completedQuests && completedQuests.length > 0 && globalCelebrate) {
+    const celebrationDelay = (newAchievements.length + newPets.length + extendedStreaks.length) * 1500;
+    completedQuests.forEach((quest, index) => {
+      setTimeout(() => {
+        globalCelebrate.questCompleted({
+          quest,
+        });
+      }, celebrationDelay + index * 2000);
+    });
+  }
+
   console.log('[Gamification] Store action:', {
     action,
     baseXP,
@@ -616,6 +666,8 @@ export async function triggerGamification(action, options = {}) {
     stat: statName,
     newAchievements,
     newPets,
+    extendedStreaks,
+    completedQuests: completedQuests || [],
   };
 }
 

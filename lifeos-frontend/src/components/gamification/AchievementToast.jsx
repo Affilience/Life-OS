@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { getRarityColor } from '../../stores/gamificationStore';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
+import { feedback } from '../../services/microInteractions';
 
 /**
  * Achievement Toast - Notification when achievements are unlocked
@@ -24,6 +25,20 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
   if (!visibility.showAchievementPopups) {
     return null;
   }
+
+  // Trigger achievement feedback when toast appears
+  useEffect(() => {
+    if (isVisible && achievement) {
+      // Different feedback based on rarity
+      const rarity = achievement.rarity || 'common';
+      if (rarity === 'legendary' || rarity === 'epic') {
+        feedback.achievement(); // Full celebration for rare achievements
+      } else {
+        feedback.achievementUnlock(); // Simpler feedback for common ones
+      }
+    }
+  }, [isVisible, achievement]);
+
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {

@@ -161,10 +161,11 @@ export default function Social() {
     <div className="space-y-8 animate-fade-in">
       <PageHeader
         title="Social"
+        subtitle="Connect with friends, join guilds, and climb the leaderboards"
         stats={`${friends.length} friends${userStats.rank !== '-' ? ` · Rank #${userStats.rank}` : ''}`}
         icon={Heart}
         module="social"
-        variant="icon"
+        variant="elevated"
       />
 
       {/* Tab Navigation */}

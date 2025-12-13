@@ -12,6 +12,7 @@ import {
   Trophy,
   Target
 } from 'lucide-react';
+import { feedback } from '../../services/microInteractions';
 import './SetLogger.css';
 
 // Calculate estimated 1RM using Brzycki formula
@@ -80,6 +81,15 @@ export default function SetLogger({ exercise, exerciseData, exerciseIndex, onSet
       (weightNum > currentPR.weight) ||
       (weightNum === currentPR.weight && repsNum > currentPR.reps)
     );
+
+    // Trigger micro-interactions
+    if (isPR) {
+      // PR celebration - major feedback!
+      feedback.personalBest();
+    } else {
+      // Regular set completion
+      feedback.workoutSet();
+    }
 
     onSetComplete(activeSetIndex, weightNum, repsNum, isPR, setType);
 

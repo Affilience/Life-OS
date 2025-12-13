@@ -7,6 +7,12 @@ export { default as Badge } from './Badge';
 export { default as Stat } from './Stat';
 export { default as Progress } from './Progress';
 export { default as EmptyState, EmptyStateInline } from './EmptyState';
+
+// Satisfying UI Components (with micro-interactions)
+export { default as SatisfyingCheckbox } from './SatisfyingCheckbox';
+export { default as SatisfyingButton } from './SatisfyingButton';
+export { default as SatisfyingToggle } from './SatisfyingToggle';
+export { default as SatisfyingProgress } from './SatisfyingProgress';
 export { ToastProvider, useToast } from './Toast';
 export {
   FormField,

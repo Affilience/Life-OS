@@ -1,6 +1,7 @@
 import React from 'react';
-import { Calendar, DollarSign, Compass, Target, Gift, Shield, Settings, Sparkles, Book } from 'lucide-react';
+import { Calendar, DollarSign, Compass, Target, Gift, Shield, Settings, Sparkles, Book, MoreHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import PageHeader from '../components/shared/PageHeader';
 
 export default function More() {
   const navigate = useNavigate();
@@ -45,12 +46,13 @@ export default function More() {
     <div className="more-page min-h-screen p-4 pb-24">
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-            Galaxy
-          </h1>
-          <p className="text-slate-400">Access additional features and settings</p>
-        </div>
+        <PageHeader
+          title="Galaxy"
+          subtitle="Access additional features and settings"
+          icon={MoreHorizontal}
+          module="default"
+          variant="elevated"
+        />
 
         {/* Sections */}
         {sections.map((section, idx) => (

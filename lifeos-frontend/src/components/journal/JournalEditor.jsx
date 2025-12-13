@@ -3,6 +3,7 @@ import { Save, Calendar, Tag, Smile, Type, Hash } from 'lucide-react';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
 import MoodSelector from './MoodSelector';
+import { feedback } from '../../services/microInteractions';
 import './JournalEditor.css';
 
 const JournalEditor = () => {
@@ -51,7 +52,10 @@ const JournalEditor = () => {
     
     console.log('Entry saved:', entryData);
     setIsSaving(false);
-    
+
+    // Trigger satisfying feedback on successful save
+    feedback.taskComplete({ celebrate: true });
+
     // Reset form
     setEntry({
       title: '',

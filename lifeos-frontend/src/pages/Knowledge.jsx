@@ -1,11 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BarChart3, Library, FileText } from 'lucide-react';
 import KnowledgeDashboard from '../components/knowledge/KnowledgeDashboard';
 import KnowledgeNew from './KnowledgeNew';
 import NotesTab from '../components/knowledge/NotesTab';
 
 export default function Knowledge() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
+
+  // Sync tab state with URL params
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    // Update URL without triggering navigation
+    setSearchParams({ tab: tabId }, { replace: true });
+  };
 
   const tabs = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
@@ -23,7 +39,7 @@ export default function Knowledge() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 data-tour={`knowledge-tab-${tab.id}`}
                 className={`flex-1 min-w-[120px] px-4 py-4 flex flex-col items-center gap-2 transition-all ${
                   activeTab === tab.id
@@ -41,7 +57,7 @@ export default function Knowledge() {
 
       {/* Active Tab Content */}
       <div className="tab-content">
-        {activeTab === 'dashboard' && <KnowledgeDashboard />}
+        {activeTab === 'dashboard' && <KnowledgeDashboard onTabChange={handleTabChange} />}
         {activeTab === 'library' && <KnowledgeNew />}
         {activeTab === 'notes' && <NotesTab />}
       </div>

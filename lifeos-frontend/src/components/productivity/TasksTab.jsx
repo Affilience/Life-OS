@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Plus,
   Circle,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import useProductivityStore from '../../stores/productivityStore';
 import { EmptyState } from '../ui';
+import { feedback } from '../../services/microInteractions';
 import './TasksTab.css';
 
 export default function TasksTab() {
@@ -146,7 +147,17 @@ export default function TasksTab() {
     setExpandedTasks(prev => ({ ...prev, [parentTaskId]: true }));
   };
 
-  const handleToggleSubtask = (subtaskId) => {
+  const handleToggleSubtask = (subtaskId, wasCompleted, event) => {
+    // Trigger micro-interactions
+    if (!wasCompleted) {
+      const rect = event?.currentTarget?.getBoundingClientRect();
+      feedback.taskComplete({
+        celebrate: false, // Subtasks get subtle feedback only
+        position: rect ? { x: rect.left + rect.width / 2, y: rect.top } : null,
+      });
+    } else {
+      feedback.taskUncomplete();
+    }
     toggleSubtaskComplete(subtaskId);
   };
 
@@ -387,7 +398,20 @@ export default function TasksTab() {
 
                   {/* Checkbox */}
                   <button
-                    onClick={() => toggleTaskComplete(task.id)}
+                    onClick={(e) => {
+                      const wasCompleted = task.status === 'completed';
+                      // Trigger micro-interactions
+                      if (!wasCompleted) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        feedback.taskComplete({
+                          celebrate: true,
+                          position: { x: rect.left + rect.width / 2, y: rect.top },
+                        });
+                      } else {
+                        feedback.taskUncomplete();
+                      }
+                      toggleTaskComplete(task.id);
+                    }}
                     className="task-checkbox"
                   >
                     {task.status === 'completed' ? (
@@ -545,7 +569,7 @@ export default function TasksTab() {
                         className={`subtask-item ${subtask.status === 'completed' ? 'completed' : ''}`}
                       >
                         <button
-                          onClick={() => handleToggleSubtask(subtask.id)}
+                          onClick={(e) => handleToggleSubtask(subtask.id, subtask.status === 'completed', e)}
                           className="subtask-checkbox"
                         >
                           {subtask.status === 'completed' ? (

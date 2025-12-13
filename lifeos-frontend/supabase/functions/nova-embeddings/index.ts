@@ -43,7 +43,7 @@ async function generateEmbedding(text: string, retries = 2): Promise<number[]> {
           "Authorization": `Bearer ${OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "text-embedding-ada-002",
+          model: "text-embedding-3-small", // Newer, better, cheaper model
           input: text.slice(0, 8000), // Limit input length
         }),
       });
@@ -175,11 +175,11 @@ serve(async (req) => {
 
       const embedding = await generateEmbedding(text);
 
-      // Use the search function we created
+      // Use the match function from nova_memories table
       const { data, error } = await supabase
-        .rpc("search_nova_memories", {
+        .rpc("match_nova_memories", {
           query_embedding: embedding,
-          match_user_id: userId,
+          p_user_id: userId,
           match_threshold: 0.7,
           match_count: limit,
         });

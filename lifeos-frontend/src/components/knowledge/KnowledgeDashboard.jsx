@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Book,
   BookOpen,
@@ -13,6 +13,7 @@ import {
 import MiniBarChart from '../shared/charts/MiniBarChart';
 import { useContentStore } from '../../stores/contentStore';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
+import QuickCapture from './QuickCapture';
 
 // Helper to get relative time string
 const getRelativeTime = (dateString) => {
@@ -46,8 +47,9 @@ const getRelativeTime = (dateString) => {
  * - Implementation rate
  * - Learning streaks
  */
-export default function KnowledgeDashboard() {
+export default function KnowledgeDashboard({ onTabChange }) {
   const navigate = useNavigate();
+  const [showQuickCapture, setShowQuickCapture] = useState(false);
 
   // Connect to real stores
   const { contentItems, stats, getInProgress, getCompleted, getImplementationRate } = useContentStore();
@@ -58,13 +60,17 @@ export default function KnowledgeDashboard() {
   const highlights = knowledgeState?.highlights || [];
 
   const handleCaptureNote = () => {
-    // Navigate to the Knowledge module where QuickCapture is available
-    navigate('/knowledge');
+    // Open the QuickCapture modal
+    setShowQuickCapture(true);
   };
 
   const handleBrowseLibrary = () => {
-    // Navigate to the Knowledge module library view
-    navigate('/knowledge');
+    // Switch to the library tab if callback provided, otherwise navigate
+    if (onTabChange) {
+      onTabChange('library');
+    } else {
+      navigate('/knowledge?tab=library');
+    }
   };
 
   // Get books in progress
@@ -514,6 +520,26 @@ export default function KnowledgeDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Quick Capture Modal */}
+      {showQuickCapture && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#12101a] border border-white/10 rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Quick Capture</h3>
+              <button
+                onClick={() => setShowQuickCapture(false)}
+                className="text-white/60 hover:text-white p-1"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4">
+              <QuickCapture onClose={() => setShowQuickCapture(false)} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

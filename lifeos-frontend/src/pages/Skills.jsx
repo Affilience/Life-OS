@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Target, Clock, TrendingUp, Flame } from 'lucide-react';
+import { Plus, Target, Clock, TrendingUp, Flame, GraduationCap } from 'lucide-react';
 import useSkillsStore, {
   getProficiencyLevel,
   getXpProgress,
@@ -7,6 +7,7 @@ import useSkillsStore, {
 } from '../stores/skillsStore';
 import LogPracticeModal from '../components/skills/LogPracticeModal';
 import SkillDetailView from '../components/skills/SkillDetailView';
+import PageHeader from '../components/shared/PageHeader';
 
 /**
  * Skills - Individual Skill Learning & Tracking
@@ -88,48 +89,28 @@ const Skills = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-slate-900/50 to-transparent border border-slate-800/50 rounded-xl">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+    <div className="space-y-6 px-4 pt-6">
+      {/* Page Header */}
+      <PageHeader
+        title="Skills"
+        subtitle="Track your learning journey and master new abilities"
+        stats={`${overallStats.totalSkills} skills · ${overallStats.totalHours}h practiced`}
+        icon={GraduationCap}
+        module="skills"
+        variant="elevated"
+        actions={
+          <button
+            onClick={() => setShowAddSkill(true)}
+            className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all"
+            data-tour="add-skill-btn"
+          >
+            <Plus className="w-4 h-4" />
+            Add
+          </button>
+        }
+      />
 
-        <div className="relative px-4 py-6">
-          {/* Header with Add Button */}
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-white">Your Skills</h1>
-            <button
-              onClick={() => setShowAddSkill(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium flex items-center gap-2 transition-all shadow-lg shadow-purple-500/20"
-              data-tour="add-skill-btn"
-            >
-              <Plus className="w-4 h-4" />
-              Add Skill
-            </button>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="flex justify-center gap-6 text-center">
-            <div>
-              <div className="text-2xl font-bold text-white">{overallStats.totalSkills}</div>
-              <div className="text-xs text-slate-500 uppercase tracking-wide">Active Skills</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-400">
-                {overallStats.totalHours}h
-              </div>
-              <div className="text-xs text-slate-500 uppercase tracking-wide">Total Hours</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-400">
-                {overallStats.bestStreak}
-              </div>
-              <div className="text-xs text-slate-500 uppercase tracking-wide">Best Streak</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4">
+      <div>
         {/* Skills Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" data-tour="skill-constellation">
           {skills.map(skill => {

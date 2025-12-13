@@ -754,6 +754,8 @@ export const useFinancialStore = create(
         }));
         // Sync to Supabase
         syncBudgetToSupabase(newBudget);
+        // Award XP for creating a budget
+        triggerGamification('budgetCreated', { xpOverride: 20, module: 'financial' });
       },
 
       updateBudget: (id, updates) => {
@@ -1405,6 +1407,8 @@ export const useFinancialStore = create(
         }));
         // Sync to Supabase
         syncSinkingFundToSupabase(newFund);
+        // Award XP for creating a sinking fund
+        triggerGamification('sinkingFundCreated', { xpOverride: 15, module: 'financial' });
 
         return newFund.id;
       },
@@ -1430,6 +1434,7 @@ export const useFinancialStore = create(
       },
 
       contributeSinkingFund: (id, amount) => {
+        const fundBefore = get().sinkingFunds.find(f => f.id === id);
         set((state) => ({
           sinkingFunds: state.sinkingFunds.map((f) =>
             f.id === id ? { ...f, currentAmount: f.currentAmount + amount } : f
@@ -1437,7 +1442,16 @@ export const useFinancialStore = create(
         }));
         // Sync to Supabase
         const fund = get().sinkingFunds.find(f => f.id === id);
-        if (fund) syncSinkingFundToSupabase(fund);
+        if (fund) {
+          syncSinkingFundToSupabase(fund);
+          // Award XP for contributing to sinking fund
+          triggerGamification('sinkingFundContribution', { xpOverride: 10, module: 'financial' });
+          // Check if fund was just completed
+          if (fundBefore && fundBefore.currentAmount < fundBefore.targetAmount &&
+              fund.currentAmount >= fund.targetAmount) {
+            triggerGamification('sinkingFundCompleted', { xpOverride: 50, module: 'financial' });
+          }
+        }
       },
 
       withdrawSinkingFund: (id, amount) => {

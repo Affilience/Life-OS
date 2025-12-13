@@ -10,6 +10,7 @@ import redis, { LEADERBOARD_KEYS } from '../services/redis';
 import { moderateComment, validateDisplayName, validateBio } from '../services/contentModeration';
 import { initializeSocialRealtime, cleanupSocialRealtime } from '../services/socialRealtime';
 import { DEV_USER_ID, isDevMode } from '../lib/dev-auth';
+import { triggerGamification } from '../hooks/useGamification';
 
 // Helper to get current user ID (supports dev mode)
 const getCurrentUserId = async () => {
@@ -361,6 +362,8 @@ export const useSocialStore = create(
         if (!error) {
           get().fetchFriends();
           get().fetchPendingRequests();
+          // Award XP for making a new friend
+          triggerGamification('friendAdded', { xpOverride: 15, module: 'social' });
         }
         return { data, error };
       },
@@ -1230,6 +1233,8 @@ export const useSocialStore = create(
               });
           }
           get().fetchChallenges();
+          // Award XP for creating a challenge
+          triggerGamification('challengeCreated', { xpOverride: 20, module: 'social' });
         }
 
         return { data, error };
@@ -1363,24 +1368,22 @@ export const useSocialStore = create(
 
         if (!challenge) return { error: 'Challenge not found' };
 
-        // Award XP
+        // Award XP through gamification pipeline
         if (challenge.xp_reward > 0) {
-          // Update user's total XP in profile
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('total_xp')
-            .eq('id', userId)
-            .single();
+          // Use triggerGamification for proper XP pipeline (achievements, level up, etc.)
+          triggerGamification('challengeCompleted', {
+            xpOverride: challenge.xp_reward,
+            module: 'social'
+          });
 
-          const newTotalXP = (profile?.total_xp || 0) + challenge.xp_reward;
-
-          await supabase
-            .from('user_profiles')
-            .update({ total_xp: newTotalXP })
-            .eq('id', userId);
-
-          // Sync to Redis leaderboards
+          // Also sync to Redis leaderboards for social features
           try {
+            const { data: profile } = await supabase
+              .from('user_profiles')
+              .select('total_xp')
+              .eq('id', userId)
+              .single();
+            const newTotalXP = (profile?.total_xp || 0) + challenge.xp_reward;
             await redis.updateUserXP(userId, newTotalXP, challenge.xp_reward);
           } catch (e) {
             console.error('Failed to sync XP to leaderboard:', e);

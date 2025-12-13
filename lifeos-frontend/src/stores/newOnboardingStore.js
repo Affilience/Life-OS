@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import useDashboardStore from './dashboardStore';
 
 /**
  * New Onboarding Store
@@ -377,6 +378,15 @@ export const useNewOnboardingStore = create(
 
       // Complete onboarding
       completeOnboarding: () => {
+        // Set up the default dashboard layout for new users
+        // This ensures the dashboard tour has all the expected elements visible
+        try {
+          const dashboardStore = useDashboardStore.getState();
+          dashboardStore.setupOnboardingDashboard();
+        } catch (e) {
+          console.warn('[Onboarding] Could not set up onboarding dashboard:', e);
+        }
+
         set({
           isOnboardingActive: false,
           isOnboardingComplete: true,
@@ -510,6 +520,11 @@ export const useNewOnboardingStore = create(
     {
       name: 'lifeos-new-onboarding',
       version: 1,
+      // Migration function to handle version changes
+      migrate: (persistedState, version) => {
+        // Version 0 -> 1: No changes needed, just return state
+        return persistedState;
+      },
       partialize: (state) => ({
         // Persist everything except transient UI state
         currentStep: state.currentStep,

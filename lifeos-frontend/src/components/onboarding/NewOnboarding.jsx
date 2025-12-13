@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNewOnboardingStore, ONBOARDING_STEPS, STEP_ORDER } from '../../stores/newOnboardingStore';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
@@ -16,6 +16,78 @@ import LaunchStep from './steps/LaunchStep';
 
 // Nova Guide Component
 import NovaOnboardingGuide from './NovaOnboardingGuide';
+
+/**
+ * Optimized static starfield background using CSS animations
+ * Pre-generated positions for performance - no re-renders
+ */
+const StarfieldBackground = memo(function StarfieldBackground() {
+  // Pre-generate star positions once
+  const stars = useMemo(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      size: Math.random() * 2 + 1,
+      delay: Math.random() * 3,
+      duration: Math.random() * 2 + 2,
+    })), []
+  );
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Static stars with CSS animations */}
+      {stars.map((star) => (
+        <div
+          key={star.id}
+          className="absolute rounded-full bg-white animate-twinkle"
+          style={{
+            width: star.size,
+            height: star.size,
+            left: star.left,
+            top: star.top,
+            animationDelay: `${star.delay}s`,
+            animationDuration: `${star.duration}s`,
+          }}
+        />
+      ))}
+
+      {/* Static nebula glow effects - no animation needed */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-pink-500/10 rounded-full blur-[80px]" />
+      <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-blue-500/5 rounded-full blur-[60px]" />
+    </div>
+  );
+});
+
+/**
+ * Step transition variants for smooth animations
+ */
+const stepVariants = {
+  initial: {
+    opacity: 0,
+    scale: 0.95,
+    filter: 'blur(8px)'
+  },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1], // Custom ease for smooth feel
+    }
+  },
+  exit: {
+    opacity: 0,
+    scale: 1.02,
+    filter: 'blur(4px)',
+    transition: {
+      duration: 0.25,
+      ease: 'easeIn'
+    }
+  }
+};
 
 /**
  * NewOnboarding - Main orchestrator for the new onboarding flow
@@ -165,60 +237,10 @@ export default function NewOnboarding({ onComplete }) {
       className={`fixed inset-0 z-50 ${getBackgroundStyle()} overflow-hidden`}
       onClick={handleGlobalClick}
     >
-      {/* Animated starfield background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Large distant stars */}
-        {[...Array(50)].map((_, i) => (
-          <motion.div
-            key={`star-${i}`}
-            className="absolute rounded-full bg-white"
-            style={{
-              width: Math.random() * 2 + 1,
-              height: Math.random() * 2 + 1,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0.2, 0.8, 0.2],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: Math.random() * 3 + 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
-          />
-        ))}
+      {/* Optimized starfield background - memoized and uses CSS animations */}
+      <StarfieldBackground />
 
-        {/* Floating particles */}
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={`particle-${i}`}
-            className="absolute w-1 h-1 bg-purple-500/40 rounded-full"
-            initial={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
-              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
-              scale: Math.random() * 0.5 + 0.5,
-            }}
-            animate={{
-              y: [null, Math.random() * -300 - 100],
-              opacity: [0.4, 0.8, 0],
-            }}
-            transition={{
-              duration: Math.random() * 15 + 10,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-          />
-        ))}
-
-        {/* Nebula glow effects */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-pink-500/10 rounded-full blur-[80px]" />
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-blue-500/5 rounded-full blur-[60px]" />
-      </div>
-
-      {/* Progress bar */}
+      {/* Progress bar with smooth animation */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
         <motion.div
           className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
@@ -228,20 +250,25 @@ export default function NewOnboarding({ onComplete }) {
         />
       </div>
 
-      {/* Step indicator */}
-      <div className="absolute top-4 right-4 text-white/40 text-sm">
+      {/* Step indicator with fade animation */}
+      <motion.div
+        className="absolute top-4 right-4 text-white/40 text-sm backdrop-blur-sm px-3 py-1 rounded-full bg-white/5"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
         Step {currentIndex + 1} of {totalSteps}
-      </div>
+      </motion.div>
 
-      {/* Main content area */}
+      {/* Main content area with improved layout */}
       <div className="relative h-full flex flex-col items-center justify-center p-4 sm:p-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
+            variants={stepVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             className="w-full max-w-4xl"
           >
             {renderStep()}

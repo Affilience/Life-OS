@@ -21,6 +21,7 @@ export const TOUR_IDS = {
   CALENDAR: 'calendar',
   JOURNAL: 'journal',
   SKILLS: 'skills',
+  PURPOSE: 'purpose',
   SOCIAL: 'social',
   SETTINGS: 'settings',
 };
@@ -37,6 +38,7 @@ export const ROUTE_TO_TOUR = {
   '/calendar': TOUR_IDS.CALENDAR,
   '/journal': TOUR_IDS.JOURNAL,
   '/skills': TOUR_IDS.SKILLS,
+  '/purpose': TOUR_IDS.PURPOSE,
   '/social': TOUR_IDS.SOCIAL,
   '/settings': TOUR_IDS.SETTINGS,
 };

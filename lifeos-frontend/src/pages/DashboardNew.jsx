@@ -1,8 +1,9 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Move, Check, Undo2, Redo2, Plus, LayoutGrid } from 'lucide-react';
+import { Settings, Move, Check, Undo2, Redo2, Plus, LayoutGrid, Home } from 'lucide-react';
 import useDashboardStore, { DASHBOARD_WIDGETS } from '../stores/dashboardStore';
+import PageHeader from '../components/shared/PageHeader';
 import DashboardSettingsModal from '../components/dashboard/DashboardSettingsModal';
 import AddWidgetModal from '../components/dashboard/AddWidgetModal';
 import { WidgetWrapper, WIDGET_COMPONENTS } from '../components/dashboard/widgets';
@@ -119,8 +120,15 @@ export default function DashboardNew() {
 
       {/* Top Bar */}
       <div className="sticky top-0 z-30 bg-bg-0/95 backdrop-blur-md border-b border-border-subtle">
-        <div className="px-6 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-text-primary">Dashboard</h1>
+        <div className="px-4 py-3 flex items-center justify-between">
+          <PageHeader
+            title="Dashboard"
+            subtitle="Your personal command center"
+            icon={Home}
+            module="default"
+            variant="elevated"
+            className="mb-0 flex-1"
+          />
           <div className="flex items-center gap-2">
             {/* Undo/Redo buttons (only in edit mode) */}
             {isEditMode && (

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Dumbbell, BarChart3, Apple, Activity } from 'lucide-react';
+import { Dumbbell, BarChart3, Apple, Activity, HeartPulse } from 'lucide-react';
 import HealthDashboard from '../components/health/HealthDashboard';
 import WorkoutsTab from '../components/health/WorkoutsTab';
 import NutritionTab from '../components/health/NutritionTab';
 import CardioTab from '../components/health/CardioTab';
 import { HealthSetup } from '../components/onboarding/setup';
 import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
+import PageHeader from '../components/shared/PageHeader';
 
 export default function Health() {
   const location = useLocation();
@@ -32,6 +33,17 @@ export default function Health() {
 
   return (
     <div className="health-page min-h-screen bg-bg-0">
+      {/* Page Header */}
+      <div className="px-4 pt-6">
+        <PageHeader
+          title="Health"
+          subtitle="Track workouts, nutrition, and cardio to optimize your fitness"
+          icon={HeartPulse}
+          module="health"
+          variant="elevated"
+        />
+      </div>
+
       {/* Tab Navigation */}
       <div className="sticky top-0 z-40 bg-bg-0 border-b border-border" data-tour="health-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">

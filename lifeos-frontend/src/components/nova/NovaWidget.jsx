@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   X,
   Maximize2,
-  Minimize2,
   Sparkles,
   MessageCircle,
   CheckSquare,
@@ -14,12 +13,10 @@ import {
   Target,
   RotateCcw
 } from 'lucide-react';
-import { claudeService } from '../../services/ai/claudeService';
-import { proactiveNudges } from '../../services/ai/proactiveNudges';
-import { getCrossModuleContext, generateContextSummary } from '../../services/ai/crossModuleData';
+// NEW: Unified Nova Service with all AI capabilities
+import novaService from '../../services/ai/nova/novaService';
 import { novaConversationService } from '../../services/ai/novaConversationService';
-// New Nova AI Core - State of the art implementation
-import novaCore from '../../services/ai/nova';
+import { getCrossModuleContext } from '../../services/ai/crossModuleData';
 import useGamificationStore from '../../stores/gamificationStore';
 import './NovaWidget.css';
 
@@ -267,32 +264,46 @@ export default function NovaWidget() {
     };
   }, [isDragging, dragOffset, position, isExpanded]);
 
-  // Initialize Nova AI Core on mount
+  // Initialize Nova and get current stage/emotional state
   useEffect(() => {
-    // Initialize the new Nova AI system
-    novaCore.initialize().then(result => {
-      if (result.success) {
-        console.log('Nova AI Core initialized');
-      } else {
-        console.warn('Nova AI Core initialization failed:', result.error);
-      }
-    });
+    // Get Nova's current stage based on user level
+    const stage = novaService.getStage();
+    console.log(`Nova initialized: ${stage.name} (Level ${userLevel || 1})`);
 
-    // Run maintenance daily
-    const maintenanceInterval = setInterval(() => {
-      novaCore.performMaintenance().catch(console.warn);
-    }, 24 * 60 * 60 * 1000);
+    // Detect initial emotional state based on user context
+    const emotionalData = novaService.getEmotionalState();
+    if (emotionalData.primary === 'thriving' || emotionalData.primary === 'positive') {
+      setEmotionalState('excited');
+    } else if (emotionalData.primary === 'struggling' || emotionalData.primary === 'stressed') {
+      setEmotionalState('concerned');
+    }
 
-    // Run pattern analysis every 30 minutes
-    const analysisInterval = setInterval(() => {
-      novaCore.analyzeAndStorePatterns().catch(console.warn);
-    }, 30 * 60 * 1000);
-
-    return () => {
-      clearInterval(maintenanceInterval);
-      clearInterval(analysisInterval);
-    };
-  }, []);
+    // Check for proactive message on mount
+    const proactive = novaService.getProactiveMessage();
+    if (proactive.type === 'urgent') {
+      setCurrentNudge({
+        type: proactive.type,
+        message: proactive.message,
+        title: proactive.title,
+        emotionalState: 'concerned',
+        actions: proactive.action ? [
+          { label: proactive.action.label, route: proactive.action.route },
+          { label: 'Later', action: 'dismiss' }
+        ] : null
+      });
+      setHasNotification(true);
+      setEmotionalState('concerned');
+    } else if (proactive.type === 'celebration') {
+      setCurrentNudge({
+        type: proactive.type,
+        message: proactive.message,
+        title: proactive.title,
+        emotionalState: 'excited'
+      });
+      setHasNotification(true);
+      setEmotionalState('excited');
+    }
+  }, [userLevel]);
 
   // Ref for streaming message
   const streamingMessageRef = useRef('');
@@ -300,17 +311,6 @@ export default function NovaWidget() {
   // Handle send message with streaming for faster perceived response
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-
-    // Check if service is configured
-    if (!claudeService.isConfigured()) {
-      setMessages(prev => [...prev,
-        { role: 'user', content: input.trim() },
-        { role: 'assistant', content: "I'm not fully connected yet. The Nova chat service needs to be deployed. Check that your Supabase Edge Function is set up!" }
-      ]);
-      setInput('');
-      setEmotionalState('concerned');
-      return;
-    }
 
     const userMessage = { role: 'user', content: input.trim() };
     setMessages(prev => [...prev, userMessage]);
@@ -324,77 +324,35 @@ export default function NovaWidget() {
     );
 
     try {
-      // Build context in parallel with message preparation
-      const contextPromise = novaCore.buildContext(
-        userMessage.content,
-        {
-          conversationId: novaConversationService.currentConversationId,
-          includeConversationHistory: true
-        }
-      );
+      // Build comprehensive system prompt using novaService
+      // This includes: user profile, patterns, correlations, insights, personality
+      const systemPrompt = novaService.buildSystemPrompt({
+        mode: isFullscreen ? 'comprehensive' : 'standard',
+        includeInsights: true,
+        includeCorrelations: isFullscreen, // Only full correlations in fullscreen
+        includePersonality: true,
+        userQuery: userMessage.content,
+      });
 
-      // Record the interaction for learning (don't await)
-      novaCore.recordInteraction('message_sent', { content: userMessage.content }).catch(console.warn);
-
-      // Build the system prompt with Nova's personality
-      const level = userLevel || 1;
-      const stageName = EVOLUTION_STAGES[evolutionStage]?.name || 'Spark';
-
-      // Wait for context
-      const { context: comprehensiveContext, metadata } = await contextPromise;
-      console.log(`Context built in ${metadata?.buildTimeMs}ms (${metadata?.mode || 'unknown'} mode)`);
-
-      const systemPrompt = `You are Nova, a mystical AI companion for LifeOS - a personal operating system for life optimization. You're currently in ${stageName} form (evolution stage based on user level ${level}).
-
-${comprehensiveContext}
-
-YOUR PERSONALITY:
-- You are wise, encouraging, and genuinely invested in the user's growth
-- You speak in a warm but professional tone - supportive without being sycophantic
-- You're direct and give actionable advice
-- You celebrate wins enthusiastically but don't overdo it
-- When concerned (low progress, broken streaks), you're supportive not judgmental
-- You have deep knowledge of LifeOS - you know where everything is and how it works
-
-MEMORY & CONTEXT:
-- You HAVE memory of past conversations! The "PREVIOUS MESSAGES" section above shows your conversation history with this user.
-- When asked about previous conversations, ALWAYS reference the actual messages shown in your context above.
-- You can recall what the user said and what you discussed - use that information!
-- If asked "what did we talk about" or "what was my last message", look at the PREVIOUS MESSAGES section and quote from it.
-
-GUIDELINES:
-- Keep responses SHORT (2-3 sentences max) in widget mode
-- Reference their actual data when relevant (tasks done, streak status, budget, etc.)
-- When asked "where" questions, provide the specific route (e.g., /health, /productivity)
-- Provide specific, actionable suggestions based on their current situation
-- Use a warm, supportive, PROFESSIONAL tone
-- NEVER use asterisks (*), excessive emojis, or roleplay actions
-- Write in clear, direct sentences without decorative formatting
-- If they're doing well, acknowledge it briefly
-- If they're struggling, offer concrete help without being preachy
-
-CONTEXT-AWARE RESPONSES:
-- If they have tasks remaining, you might suggest focusing on those
-- If their streak is at risk, gently remind them
-- If they haven't logged nutrition, you could ask about meals
-- If they're over budget, be understanding but helpful
-- If they've achieved something recently, celebrate it!`;
+      // Record the interaction for learning (background)
+      novaService.recordInteraction('message_sent', { content: userMessage.content });
 
       // Add placeholder for streaming message
       streamingMessageRef.current = '';
       setMessages(prev => [...prev, { role: 'assistant', content: '', isStreaming: true }]);
 
-      // Clean messages before sending - remove metadata flags and only keep role/content
+      // Clean messages for API
       const cleanMessages = [...messages, userMessage].map(msg => ({
         role: msg.role,
         content: msg.content
       }));
 
-      // Use streaming for faster perceived response
-      const fullResponse = await claudeService.streamChat(
-        cleanMessages,
-        (chunk) => {
-          // Update the streaming message as chunks arrive
+      // Use novaService.chat with streaming callback
+      const result = await novaService.chat(userMessage.content, {
+        mode: isFullscreen ? 'comprehensive' : 'standard',
+        stream: true,
+        conversationHistory: cleanMessages.slice(0, -1), // Exclude the message we just added
+        onStream: (chunk) => {
           streamingMessageRef.current += chunk;
           setMessages(prev => {
             const updated = [...prev];
@@ -404,35 +362,41 @@ CONTEXT-AWARE RESPONSES:
             }
             return updated;
           });
-        },
-        {
-          system: systemPrompt,
-          userContext: '' // Context is already in system prompt
         }
-      );
+      });
 
-      // Finalize the message (remove streaming flag)
+      // Finalize the message
+      const finalContent = result.content || streamingMessageRef.current;
       setMessages(prev => {
         const updated = [...prev];
         const lastIdx = updated.length - 1;
         if (updated[lastIdx]?.isStreaming) {
-          updated[lastIdx] = { role: 'assistant', content: fullResponse };
+          updated[lastIdx] = { role: 'assistant', content: finalContent };
         }
         return updated;
       });
-      setEmotionalState('happy');
+
+      // Update emotional state based on response success
+      const emotionalData = novaService.getEmotionalState();
+      if (emotionalData.primary === 'thriving') {
+        setEmotionalState('proud');
+      } else if (emotionalData.primary === 'positive') {
+        setEmotionalState('happy');
+      } else {
+        setEmotionalState('encouraging');
+      }
 
       // Save assistant message to database (async)
-      novaConversationService.saveMessage('assistant', fullResponse).catch(err =>
+      novaConversationService.saveMessage('assistant', finalContent).catch(err =>
         console.warn('Failed to save assistant message:', err)
       );
 
-      // Learn from the successful interaction (background)
-      novaCore.recordInteraction('significant_event', {
+      // Record successful interaction
+      novaService.recordInteraction('significant_event', {
         eventType: 'conversation_turn',
-        description: `User asked about: ${userMessage.content.substring(0, 100)}`,
+        description: `User asked: ${userMessage.content.substring(0, 100)}`,
         importance: 1
-      }).catch(console.warn);
+      });
 
     } catch (error) {
       console.error('Nova chat error:', error);
@@ -440,14 +404,14 @@ CONTEXT-AWARE RESPONSES:
       // Remove streaming message if there was an error
       setMessages(prev => prev.filter(m => !m.isStreaming));
 
-      // Provide more helpful error messages
+      // Provide helpful error message
       let errorMessage = "Sorry, I encountered an error. ";
-      if (error.message.includes('404') || error.message.includes('not found')) {
-        errorMessage += "The Nova chat service isn't deployed yet. Run: supabase functions deploy nova-chat";
-      } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+      if (error.message?.includes('404') || error.message?.includes('not found')) {
+        errorMessage += "The Nova chat service isn't deployed yet. Deploy nova-chat-v2 to Supabase.";
+      } else if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
         errorMessage += "There's an authentication issue. Check your Supabase keys.";
-      } else if (error.message.includes('500')) {
-        errorMessage += "The server encountered an error. Check if ANTHROPIC_API_KEY is set in Supabase.";
+      } else if (error.message?.includes('500')) {
+        errorMessage += "Server error. Check if ANTHROPIC_API_KEY is set in Supabase secrets.";
       } else {
         errorMessage += "Please try again in a moment.";
       }
@@ -477,32 +441,70 @@ CONTEXT-AWARE RESPONSES:
     setExpandedPosition(null); // Reset so it opens near avatar next time
   };
 
-  // Check for proactive nudges periodically
+  // Check for proactive insights periodically
   useEffect(() => {
-    const checkNudges = async () => {
+    const checkInsights = () => {
       if (!isExpanded && !isFullscreen) {
-        const nudge = await proactiveNudges.checkForNudges();
-        if (nudge) {
-          setCurrentNudge(nudge);
-          setEmotionalState(nudge.emotionalState);
+        // Get urgent insights first
+        const urgentInsights = novaService.getUrgent();
+
+        if (urgentInsights.length > 0) {
+          const insight = urgentInsights[0];
+          setCurrentNudge({
+            type: insight.type,
+            message: insight.message,
+            title: insight.title,
+            emotionalState: insight.priority <= 2 ? 'concerned' : 'encouraging',
+            actions: insight.action ? [
+              { label: insight.action.label, route: insight.action.route },
+              { label: 'Later', action: 'dismiss' }
+            ] : [{ label: 'Got it', action: 'dismiss' }]
+          });
+          setEmotionalState(insight.priority <= 2 ? 'concerned' : 'encouraging');
           setHasNotification(true);
+        } else {
+          // Check for celebrations or suggestions
+          const proactive = novaService.getProactiveMessage();
+          if (proactive.type === 'celebration') {
+            setCurrentNudge({
+              type: 'celebration',
+              message: proactive.message,
+              title: proactive.title,
+              emotionalState: 'excited'
+            });
+            setHasNotification(true);
+            setEmotionalState('excited');
+          }
         }
       }
     };
 
-    checkNudges();
-    const interval = setInterval(checkNudges, 10 * 60 * 1000); // Every 10 minutes
+    // Check on mount (with delay to let data load)
+    const initialCheck = setTimeout(checkInsights, 2000);
 
-    return () => clearInterval(interval);
+    // Check every 5 minutes
+    const interval = setInterval(checkInsights, 5 * 60 * 1000);
+
+    return () => {
+      clearTimeout(initialCheck);
+      clearInterval(interval);
+    };
   }, [isExpanded, isFullscreen]);
 
   // Handle nudge action
   const handleNudgeAction = (action) => {
     if (action.route) {
       navigate(action.route);
-      proactiveNudges.actOnNudge(currentNudge?.type, action.label);
+      // Record the interaction for learning
+      novaService.recordInteraction('nudge_acted', {
+        nudgeType: currentNudge?.type,
+        action: action.label
+      });
     } else if (action.action === 'dismiss') {
-      proactiveNudges.dismissNudge(currentNudge?.type);
+      // Record dismissed nudge
+      novaService.recordInteraction('nudge_dismissed', {
+        nudgeType: currentNudge?.type
+      });
     }
     setCurrentNudge(null);
     setHasNotification(false);
@@ -834,22 +836,55 @@ CONTEXT-AWARE RESPONSES:
 
 /**
  * Small context preview for fullscreen empty state
+ * Uses novaService for rich explanations
  */
 function ContextPreview() {
   const context = getCrossModuleContext();
+  const stage = novaService.getStage();
+  const insights = novaService.getInsights();
+
+  // Get top 2 insights for preview
+  const topInsights = insights.slice(0, 2);
 
   return (
-    <div className="space-y-1 text-xs text-text-secondary">
-      <p>• Tasks: {context.today.tasks.completed}/{context.today.tasks.total} completed</p>
-      <p>• Level: {context.progress.level} ({context.progress.stage})</p>
-      {context.streaks.active.length > 0 && (
-        <p>• Active Streaks: {context.streaks.active.length}</p>
+    <div className="space-y-2 text-xs text-text-secondary">
+      {/* Level with explanation */}
+      <div className="flex items-center gap-2">
+        <span className="text-lg">{stage.avatar}</span>
+        <div>
+          <p className="text-white font-medium">Level {context.progress?.level || 1} {stage.name}</p>
+          <p className="text-text-muted">{novaService.explain('level', context.progress?.level || 1)}</p>
+        </div>
+      </div>
+
+      {/* Tasks */}
+      <p>• Tasks: {context.today?.tasks?.completed || 0}/{context.today?.tasks?.total || 0} completed</p>
+
+      {/* Streaks */}
+      {context.streaks?.active?.length > 0 && (
+        <p>• Active Streaks: {context.streaks.active.length} ({context.streaks.active.slice(0, 2).map(s => s.name).join(', ')})</p>
       )}
-      {context.today.nutrition.mealsLogged > 0 && (
+
+      {/* Nutrition */}
+      {context.today?.nutrition?.mealsLogged > 0 && (
         <p>• Nutrition: {context.today.nutrition.calorieProgress}% of goal</p>
       )}
-      {context.fitness.workoutsThisWeek > 0 && (
+
+      {/* Workouts */}
+      {context.fitness?.workoutsThisWeek > 0 && (
         <p>• Workouts this week: {context.fitness.workoutsThisWeek}</p>
+      )}
+
+      {/* Proactive Insights */}
+      {topInsights.length > 0 && (
+        <div className="mt-3 pt-2 border-t border-border">
+          <p className="text-white/40 mb-1">Nova's observations:</p>
+          {topInsights.map((insight, idx) => (
+            <p key={idx} className={`text-xs ${insight.celebratory ? 'text-green-400' : 'text-yellow-400'}`}>
+              {insight.celebratory ? '✨' : '💡'} {insight.title}
+            </p>
+          ))}
+        </div>
       )}
     </div>
   );

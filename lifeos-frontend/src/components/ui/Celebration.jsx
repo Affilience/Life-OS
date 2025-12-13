@@ -14,11 +14,16 @@
  * - Minimal: No celebrations, silent notifications only
  */
 
-import React, { useEffect, useState, useCallback, createContext, useContext, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, createContext, useContext, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Star, Trophy, Zap, Flame, Target, Crown, Sparkles, TrendingUp, CheckCircle } from 'lucide-react';
 import { setCelebrationTrigger } from '../../hooks/useGamification';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
+import {
+  StreakExtendedCelebration,
+  QuestCompletedCelebration,
+  AchievementUnlockedCelebration,
+} from './DuolingoCelebration';
 
 // Context for celebration triggers
 const CelebrationContext = createContext(null);
@@ -387,6 +392,7 @@ export function MilestoneCelebration({
 /**
  * CelebrationProvider - Context provider for triggering celebrations
  * Mode-aware: respects visibility settings for each celebration type
+ * Includes queue system for Duolingo-style celebrations
  */
 export function CelebrationProvider({ children }) {
   const [confetti, setConfetti] = useState(false);
@@ -394,9 +400,41 @@ export function CelebrationProvider({ children }) {
   const [achievement, setAchievement] = useState(null);
   const [streak, setStreak] = useState(null);
 
+  // Duolingo-style celebration queue
+  const [celebrationQueue, setCelebrationQueue] = useState([]);
+  const [currentCelebration, setCurrentCelebration] = useState(null);
+  const isProcessingRef = useRef(false);
+
   // Get mode visibility settings
   const mode = useGamificationModeStore((state) => state.mode);
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+
+  // Process celebration queue
+  const processQueue = useCallback(() => {
+    if (isProcessingRef.current || celebrationQueue.length === 0) {
+      return;
+    }
+
+    isProcessingRef.current = true;
+    const [next, ...rest] = celebrationQueue;
+    setCelebrationQueue(rest);
+    setCurrentCelebration(next);
+  }, [celebrationQueue]);
+
+  // Handle celebration complete
+  const handleCelebrationComplete = useCallback(() => {
+    setCurrentCelebration(null);
+    isProcessingRef.current = false;
+    // Small delay before processing next
+    setTimeout(processQueue, 300);
+  }, [processQueue]);
+
+  // Process queue when it changes
+  useEffect(() => {
+    if (!currentCelebration && celebrationQueue.length > 0) {
+      processQueue();
+    }
+  }, [celebrationQueue, currentCelebration, processQueue]);
 
   const celebrate = useMemo(() => ({
     confetti: (options = {}) => {
@@ -422,6 +460,35 @@ export function CelebrationProvider({ children }) {
       // Only show streak celebration if streak flame is enabled
       if (visibility.showStreakFlame) {
         setStreak(days);
+      }
+    },
+
+    // Duolingo-style celebrations (queued)
+    streakExtended: (options) => {
+      if (visibility.showStreakFlame) {
+        setCelebrationQueue(prev => [...prev, { type: 'streakExtended', ...options }]);
+      }
+    },
+    questCompleted: (options) => {
+      if (visibility.showAchievementPopups) {
+        setCelebrationQueue(prev => [...prev, { type: 'questCompleted', ...options }]);
+      }
+    },
+    achievementUnlocked: (options) => {
+      if (visibility.showAchievementPopups) {
+        setCelebrationQueue(prev => [...prev, { type: 'achievementUnlocked', ...options }]);
+      }
+    },
+
+    // Batch add to queue (for multiple celebrations at once)
+    queueCelebrations: (celebrations) => {
+      const filtered = celebrations.filter(c => {
+        if (c.type === 'streakExtended') return visibility.showStreakFlame;
+        if (c.type === 'questCompleted' || c.type === 'achievementUnlocked') return visibility.showAchievementPopups;
+        return true;
+      });
+      if (filtered.length > 0) {
+        setCelebrationQueue(prev => [...prev, ...filtered]);
       }
     },
   }), [visibility]);
@@ -464,6 +531,35 @@ export function CelebrationProvider({ children }) {
           onComplete={() => setStreak(null)}
         />
       )}
+
+      {/* Duolingo-style Streak Extended */}
+      {visibility.showStreakFlame && (
+        <StreakExtendedCelebration
+          show={currentCelebration?.type === 'streakExtended'}
+          streak={currentCelebration?.streak}
+          previousStreak={currentCelebration?.previousStreak || 0}
+          newStreak={currentCelebration?.newStreak || 1}
+          onComplete={handleCelebrationComplete}
+        />
+      )}
+
+      {/* Duolingo-style Quest Completed */}
+      {visibility.showAchievementPopups && (
+        <QuestCompletedCelebration
+          show={currentCelebration?.type === 'questCompleted'}
+          quest={currentCelebration?.quest}
+          onComplete={handleCelebrationComplete}
+        />
+      )}
+
+      {/* Duolingo-style Achievement Unlocked */}
+      {visibility.showAchievementPopups && (
+        <AchievementUnlockedCelebration
+          show={currentCelebration?.type === 'achievementUnlocked'}
+          achievement={currentCelebration?.achievement}
+          onComplete={handleCelebrationComplete}
+        />
+      )}
     </CelebrationContext.Provider>
   );
 }
@@ -480,6 +576,10 @@ export function useCelebration() {
       levelUp: () => {},
       achievement: () => {},
       streak: () => {},
+      streakExtended: () => {},
+      questCompleted: () => {},
+      achievementUnlocked: () => {},
+      queueCelebrations: () => {},
     };
   }
   return context;

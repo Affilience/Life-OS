@@ -17,8 +17,10 @@ import {
   Check,
   X,
   Loader2,
-  Edit3
+  Edit3,
+  UserCircle
 } from 'lucide-react';
+import PageHeader from '../components/shared/PageHeader';
 import { useNavigate } from 'react-router-dom';
 import { useStats } from '../hooks/useStats';
 import { STAT_CONFIG } from '../utils/statsSystem';
@@ -310,20 +312,19 @@ export default function Character() {
       {/* Header */}
       <div className="sticky top-0 z-30 bg-bg-0 border-b border-border-subtle w-full">
         {/* Title */}
-        <div className="px-4 sm:px-6 py-4">
-          <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-            <Sparkles className={`w-6 h-6 ${styles.headerIcon}`} />
-            {mode === 'cosmic' ? 'Character' : 'Profile'}
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            {mode === 'cosmic'
+        <div className="px-4 sm:px-6 pt-4">
+          <PageHeader
+            title={mode === 'cosmic' ? 'Character' : 'Profile'}
+            subtitle={mode === 'cosmic'
               ? 'Customize your hero and unlock new abilities'
               : mode === 'professional'
                 ? 'Track your growth and unlock new capabilities'
                 : 'View your progress and stats'}
-          </p>
+            icon={UserCircle}
+            module="character"
+            variant="elevated"
+          />
         </div>
-
 
         {/* Tab Navigation */}
         <div className="flex gap-1.5 sm:gap-2 px-2 sm:px-4 pb-2 overflow-x-auto scrollbar-hide w-full">

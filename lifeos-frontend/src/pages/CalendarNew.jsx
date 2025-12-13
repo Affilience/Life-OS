@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { List, Grid } from 'lucide-react';
+import { List, Grid, Calendar } from 'lucide-react';
 import CosmicWeekView from '../components/calendar/CosmicWeekView';
 import CosmicDayView from '../components/calendar/CosmicDayView';
 import { CalendarSetup } from '../components/onboarding/setup';
 import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
+import PageHeader from '../components/shared/PageHeader';
 
 /**
  * Astral Map - Calendar & Time
@@ -36,6 +37,17 @@ const CalendarNew = () => {
 
   return (
     <div className="calendar-page min-h-screen bg-bg-0">
+      {/* Page Header */}
+      <div className="px-4 pt-6">
+        <PageHeader
+          title="Calendar"
+          subtitle="Plan your time, track actual usage, and optimize your schedule"
+          icon={Calendar}
+          module="calendar"
+          variant="elevated"
+        />
+      </div>
+
       {/* Tab Navigation */}
       <div className="sticky top-0 z-40 bg-bg-0 border-b border-border" data-tour="calendar-views">
         <div className="flex overflow-x-auto hide-scrollbar">

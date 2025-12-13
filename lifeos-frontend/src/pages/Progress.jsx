@@ -24,10 +24,11 @@ export default function Progress() {
     <div className="space-y-8 animate-fade-in">
       <PageHeader
         title="Progress"
+        subtitle="Track your growth and evolve your avatar"
         stats={`Level ${level} · ${xp} XP`}
         icon={Sparkles}
         module="progress"
-        variant="icon"
+        variant="elevated"
       />
 
       {/* Tab Navigation */}

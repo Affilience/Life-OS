@@ -4,6 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // DEVELOPMENT: Auth disabled
 // import { useAuth } from './hooks/useAuth';
 import MainLayout from './components/layout/MainLayout';
+
+// Capacitor native services
+import { initializeNativeServices } from './services/nativeService';
 import LoadingScreen from './components/shared/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/Toast';
@@ -153,9 +156,12 @@ function App() {
   //   }
   // }, [hasSeenWelcome, hasSeenIntro, newOnboardingComplete]);
 
-  // Enable dark mode on app load
+  // Enable dark mode and initialize native services on app load
   useEffect(() => {
     document.documentElement.classList.add('dark');
+
+    // Initialize Capacitor native services (splash screen, status bar, etc.)
+    initializeNativeServices();
   }, []);
 
   // Initialize Supabase stores on app load

@@ -261,7 +261,7 @@ export default function PlanTomorrowTab() {
     estimatedMinutes: 30,
   });
   const [templateName, setTemplateName] = useState('');
-  const [viewMode, setViewMode] = useState('tomorrow'); // 'tomorrow' or 'today'
+  const [viewMode, setViewMode] = useState('today'); // 'today' or 'tomorrow'
 
   // Subtask state
   const [expandedTasks, setExpandedTasks] = useState({}); // { taskId: boolean }

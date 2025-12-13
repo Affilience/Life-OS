@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResolutionsSetup } from '../components/onboarding/setup';
 import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
+import PageHeader from '../components/shared/PageHeader';
 import {
   Target,
   Plus,
@@ -20,6 +21,7 @@ import {
   Compass,
   Heart,
   Brain,
+  Flag,
 } from 'lucide-react';
 import { useResolutionStore, RESOLUTION_CATEGORIES } from '../stores/resolutionStore';
 import ResolutionCard from '../components/resolutions/ResolutionCard';
@@ -120,30 +122,26 @@ export default function Resolutions() {
 
       {/* Page Content */}
       {!showSetup && (
-      <div className="px-6 pt-6">
+      <div className="px-4 pt-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <Target className="w-7 h-7 text-indigo-400" />
-              {targetYear} Resolutions
-            </h1>
-            <p className="text-white/50 mt-1 text-sm">
-              {isBeforeTargetYear
-                ? `${daysRemaining} days until ${targetYear} begins - start planning now!`
-                : `${daysRemaining} days left to achieve your goals`
-              }
-            </p>
-          </div>
-
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl flex items-center gap-2 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            New Resolution
-          </button>
-        </div>
+        <PageHeader
+          title={`${targetYear} Resolutions`}
+          subtitle={isBeforeTargetYear
+            ? `${daysRemaining} days until ${targetYear} begins`
+            : `${daysRemaining} days left to achieve your goals`}
+          icon={Flag}
+          module="missions"
+          variant="elevated"
+          actions={
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg flex items-center gap-1.5 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add
+            </button>
+          }
+        />
 
         {/* Year Progress Ring - Centered */}
         <div className="flex justify-center mb-8">

@@ -40,6 +40,7 @@ import useBadHabitsStore, {
   HEALTH_BENEFITS,
 } from '../../stores/badHabitsStore';
 import { useGamificationModeStore, TERMINOLOGY } from '../../stores/gamificationModeStore';
+import { feedback, celebrations } from '../../services/microInteractions';
 
 // Mode-specific styling
 const MODE_STYLES = {
@@ -571,8 +572,21 @@ export default function BadHabitsTracker() {
       habits.forEach(habit => {
         const newMilestones = checkMilestones(habit.id);
         if (newMilestones.length > 0) {
-          // Could trigger a celebration/notification here
-          console.log(`New milestones unlocked for ${habit.name}:`, newMilestones);
+          // Trigger celebration for milestone unlock!
+          newMilestones.forEach(milestone => {
+            // Different celebration based on milestone significance
+            if (milestone.days >= 30) {
+              // Major milestone - full celebration
+              feedback.streakMilestone(milestone.days);
+            } else if (milestone.days >= 7) {
+              // Weekly milestone - medium celebration
+              celebrations.rise({ colors: celebrations.presets.PALETTES?.cosmic || ['#8B5CF6', '#A78BFA'] });
+              feedback.achievement();
+            } else {
+              // Early milestone - subtle celebration
+              feedback.achievement();
+            }
+          });
         }
       });
     };

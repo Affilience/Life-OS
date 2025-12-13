@@ -1100,6 +1100,7 @@ const useQuestsStore = create(
         const stats = achievementsStore.stats;
         const weekKey = getWeekKey();
         const monthKey = getMonthKey();
+        const newlyCompletedQuests = [];
 
         // Helper to get current stat value for a requirement type
         const getStatValue = (requirementType, requirement) => {
@@ -1156,6 +1157,7 @@ const useQuestsStore = create(
             const result = checkMultiStatRequirement(requirement);
             if (result.met) {
               get().updateWeeklyQuestProgress(quest.id, requirement.count || 1, weekKey);
+              newlyCompletedQuests.push({ ...quest, type: 'weekly' });
             }
             return;
           }
@@ -1166,7 +1168,11 @@ const useQuestsStore = create(
 
           // Update quest progress if changed
           if (currentProgress !== quest.progress) {
+            const willComplete = currentProgress >= requirement.count;
             get().updateWeeklyQuestProgress(quest.id, currentProgress, weekKey);
+            if (willComplete) {
+              newlyCompletedQuests.push({ ...quest, type: 'weekly' });
+            }
           }
         });
 
@@ -1184,6 +1190,7 @@ const useQuestsStore = create(
             if (result.met) {
               const target = requirement.count || Object.values(requirement).find(v => typeof v === 'number') || 1;
               get().updateMonthlyQuestProgress(quest.id, target, monthKey);
+              newlyCompletedQuests.push({ ...quest, type: 'monthly' });
             }
             return;
           }
@@ -1194,7 +1201,11 @@ const useQuestsStore = create(
 
           // Update quest progress if changed
           if (currentProgress !== quest.progress) {
+            const willComplete = currentProgress >= requirement.count;
             get().updateMonthlyQuestProgress(quest.id, currentProgress, monthKey);
+            if (willComplete) {
+              newlyCompletedQuests.push({ ...quest, type: 'monthly' });
+            }
           }
         });
 
@@ -1264,9 +1275,18 @@ const useQuestsStore = create(
           // Calculate damage based on progress
           const tasksCompleted = currentProgress - battle.tasksCompleted;
           if (tasksCompleted > 0) {
+            const healthBefore = battle.bossHealth;
             get().dealDamageToBoss(battle.id, tasksCompleted);
+            // Check if boss was defeated
+            const updatedBattle = get().activeBossBattles.find(b => b.id === battle.id);
+            if (updatedBattle?.defeated && !battle.defeated) {
+              newlyCompletedQuests.push({ ...battle, type: 'boss', name: battle.bossName || 'Boss Battle' });
+            }
           }
         });
+
+        // Return newly completed quests for celebration
+        return newlyCompletedQuests;
       },
 
       getRecentCompletedQuests: (limit = 10) => {

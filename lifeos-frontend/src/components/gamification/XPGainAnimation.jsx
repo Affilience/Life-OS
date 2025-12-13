@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
+import { feedback } from '../../services/microInteractions';
 
 /**
  * XP Gain Animation - Floating +XP indicator
@@ -15,6 +16,12 @@ export default function XPGainAnimation({ amount, multiplier = 1.0, onComplete }
   const mode = useGamificationModeStore((state) => state.mode);
   const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+
+  // Trigger feedback on mount
+  useEffect(() => {
+    const displayAmount = Math.floor(amount * multiplier);
+    feedback.xpGain(displayAmount);
+  }, [amount, multiplier]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

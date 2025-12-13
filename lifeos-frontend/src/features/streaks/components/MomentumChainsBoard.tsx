@@ -6,6 +6,7 @@ import { useGamificationStore } from '../../../stores/gamificationStore';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../../stores/gamificationModeStore';
 import useCustomStreaksStore from '../../../stores/customStreaksStore';
 import AddCustomStreakModal from '../../../components/streaks/AddCustomStreakModal';
+import { feedback } from '../../../services/microInteractions';
 import {
   CalendarGridView,
   ChainLinksView,
@@ -510,8 +511,23 @@ export function MomentumChainsBoard() {
     const isCompleted = isCompletedForDate(streakId, today);
 
     if (isCompleted) {
+      // Unchecking
+      feedback.taskUncomplete();
       await undoCompletion(streakId, today);
     } else {
+      // Checking in - trigger feedback based on streak length
+      const chain = chains.find(c => c.id === streakId);
+      const currentStreak = chain?.currentStreak || 0;
+
+      // Different feedback for milestone streaks
+      if (currentStreak + 1 === 7 || currentStreak + 1 === 30 || currentStreak + 1 === 100) {
+        feedback.streakMilestone(currentStreak + 1);
+      } else if (currentStreak >= 3) {
+        feedback.streakContinue(currentStreak + 1);
+      } else {
+        feedback.taskComplete({ celebrate: true });
+      }
+
       await logCompletion(streakId, today);
     }
   };

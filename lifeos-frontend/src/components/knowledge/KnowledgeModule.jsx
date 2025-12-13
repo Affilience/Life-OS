@@ -92,9 +92,10 @@ function MainCanvas() {
         <div className="px-4 md:px-6 py-4">
           <PageHeader
             title={getViewTitle()}
+            subtitle="Capture ideas, track books, and build your second brain"
             icon={BookOpen}
             module="knowledge"
-            variant="default"
+            variant="elevated"
             className="mb-0"
             actions={
               <div className="flex items-center gap-2 md:gap-3">

@@ -239,6 +239,7 @@ export const usePurposeStore = create(
 
       // Add/Update Mission Statement
       setMissionStatement: (statement) => {
+        const previousMission = get().missionStatement;
         set({ missionStatement: statement });
 
         // Sync to Supabase
@@ -250,10 +251,16 @@ export const usePurposeStore = create(
           visionTenYear: state.personalVision.tenYear,
           visionUltimate: state.personalVision.ultimate,
         });
+
+        // Award XP for setting/updating mission statement
+        // First time setting gets more XP
+        const xpAmount = previousMission ? 10 : 30;
+        triggerGamification('missionSet', { xpOverride: xpAmount, module: 'purpose' });
       },
 
       // Update Vision
       updateVision: (timeframe, vision) => {
+        const previousVision = get().personalVision[timeframe];
         set((state) => ({
           personalVision: {
             ...state.personalVision,
@@ -271,6 +278,10 @@ export const usePurposeStore = create(
           visionTenYear: updatedVision.tenYear,
           visionUltimate: updatedVision.ultimate,
         });
+
+        // Award XP for setting vision (first time gets more)
+        const xpAmount = previousVision ? 5 : 20;
+        triggerGamification('visionSet', { xpOverride: xpAmount, module: 'purpose' });
       },
 
       // Core Values Management

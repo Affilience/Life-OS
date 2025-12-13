@@ -26,7 +26,12 @@ import {
   GraduationCap,
   Play,
   RotateCcw,
+  Vibrate,
+  PartyPopper,
+  Music,
+  Cog,
 } from 'lucide-react';
+import PageHeader from '../components/shared/PageHeader';
 import {
   downloadLocalStorageBackup,
 } from '../utils/dataMigration';
@@ -41,6 +46,13 @@ import { useNewOnboardingStore } from '../stores/newOnboardingStore';
 import { useSocialStore } from '../stores/socialStore';
 import { useTourStore, TOUR_IDS } from '../stores/tourStore';
 import { getAllTours } from '../components/tours/tourDefinitions';
+import {
+  haptics,
+  sounds,
+  celebrations,
+  getMicroInteractionSettings,
+  setMicroInteractionSettings,
+} from '../services/microInteractions';
 
 const SETTINGS_SECTIONS = [
   {
@@ -77,6 +89,13 @@ const SETTINGS_SECTIONS = [
     icon: GraduationCap,
     color: 'from-cyan-500 to-blue-500',
     description: 'Nova-guided tutorials and help',
+  },
+  {
+    id: 'feedback',
+    title: 'Feedback & Sounds',
+    icon: Vibrate,
+    color: 'from-pink-500 to-rose-500',
+    description: 'Haptics, sounds, and celebrations',
   },
 ];
 
@@ -752,6 +771,138 @@ function PrivacySettingsPanel() {
   );
 }
 
+// Feedback & Sounds Settings Panel
+function FeedbackSettingsPanel() {
+  const [settings, setSettings] = useState(() => getMicroInteractionSettings());
+  const [testPlaying, setTestPlaying] = useState(false);
+
+  const updateSetting = (key, value) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    setMicroInteractionSettings({ [key]: value });
+  };
+
+  const testSound = () => {
+    if (testPlaying) return;
+    setTestPlaying(true);
+    sounds.success();
+    setTimeout(() => setTestPlaying(false), 500);
+  };
+
+  const testHaptic = async () => {
+    await haptics.notification('success');
+  };
+
+  const testCelebration = () => {
+    celebrations.burst({ particleCount: 30 });
+  };
+
+  return (
+    <div className="divide-y divide-border-subtle">
+      {/* Haptic Feedback */}
+      <div className="px-5 py-4 flex items-center justify-between">
+        <div className="flex-1">
+          <div className="text-text-primary font-medium flex items-center gap-2">
+            <Vibrate className="w-4 h-4 text-pink-400" />
+            Haptic Feedback
+          </div>
+          <div className="text-sm text-text-muted mt-0.5">Vibration feedback on interactions</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={testHaptic}
+            className="text-xs px-3 py-1.5 bg-bg-hover border border-border rounded-lg text-text-muted hover:bg-bg-2 transition-colors"
+          >
+            Test
+          </button>
+          <SettingToggle
+            enabled={settings.haptics}
+            onToggle={() => updateSetting('haptics', !settings.haptics)}
+          />
+        </div>
+      </div>
+
+      {/* Sound Effects */}
+      <div className="px-5 py-4 flex items-center justify-between">
+        <div className="flex-1">
+          <div className="text-text-primary font-medium flex items-center gap-2">
+            <Music className="w-4 h-4 text-purple-400" />
+            Sound Effects
+          </div>
+          <div className="text-sm text-text-muted mt-0.5">Audio feedback for actions</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={testSound}
+            disabled={testPlaying}
+            className="text-xs px-3 py-1.5 bg-bg-hover border border-border rounded-lg text-text-muted hover:bg-bg-2 transition-colors disabled:opacity-50"
+          >
+            Test
+          </button>
+          <SettingToggle
+            enabled={settings.sounds}
+            onToggle={() => updateSetting('sounds', !settings.sounds)}
+          />
+        </div>
+      </div>
+
+      {/* Sound Volume */}
+      {settings.sounds && (
+        <div className="px-5 py-4 bg-bg-hover flex items-center justify-between">
+          <div className="flex-1">
+            <div className="text-text-primary font-medium">Volume</div>
+            <div className="text-sm text-text-muted mt-0.5">{Math.round(settings.soundVolume * 100)}%</div>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={settings.soundVolume * 100}
+            onChange={(e) => updateSetting('soundVolume', parseInt(e.target.value) / 100)}
+            className="w-32 accent-primary-500"
+          />
+        </div>
+      )}
+
+      {/* Celebrations */}
+      <div className="px-5 py-4 flex items-center justify-between">
+        <div className="flex-1">
+          <div className="text-text-primary font-medium flex items-center gap-2">
+            <PartyPopper className="w-4 h-4 text-yellow-400" />
+            Celebration Effects
+          </div>
+          <div className="text-sm text-text-muted mt-0.5">Confetti and particles for achievements</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={testCelebration}
+            className="text-xs px-3 py-1.5 bg-bg-hover border border-border rounded-lg text-text-muted hover:bg-bg-2 transition-colors"
+          >
+            Test
+          </button>
+          <SettingToggle
+            enabled={settings.celebrations}
+            onToggle={() => updateSetting('celebrations', !settings.celebrations)}
+          />
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="px-5 py-4 bg-primary-500/5 border-t border-primary-500/20">
+        <div className="flex items-start gap-3">
+          <Sparkles className="w-5 h-5 text-primary-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="text-text-primary font-medium text-sm">Satisfying Interactions</div>
+            <div className="text-xs text-text-muted mt-1">
+              These settings control the micro-interactions throughout the app. Haptics work best on mobile devices, while sounds and celebrations work on all platforms.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Feature Tours Settings Panel
 function FeatureToursSettingsPanel() {
   const {
@@ -922,6 +1073,8 @@ export default function Settings() {
         return <PrivacySettingsPanel />;
       case 'tours':
         return <FeatureToursSettingsPanel />;
+      case 'feedback':
+        return <FeedbackSettingsPanel />;
       default:
         return null;
     }
@@ -931,13 +1084,13 @@ export default function Settings() {
     <div className="min-h-screen bg-bg-0 pb-20">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-bg-0/95 backdrop-blur-md border-b border-border-subtle px-6 py-4">
-        <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-          <SettingsIcon className="w-6 h-6 text-primary-400" />
-          Settings
-        </h1>
-        <p className="text-sm text-text-secondary mt-1">
-          Manage your account and preferences
-        </p>
+        <PageHeader
+          title="Settings"
+          subtitle="Manage your account and preferences"
+          icon={Cog}
+          module="default"
+          variant="elevated"
+        />
       </div>
 
       <div className="px-4 pt-6 pb-4 space-y-4">

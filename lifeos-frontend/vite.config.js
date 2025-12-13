@@ -4,7 +4,13 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+
+  // Important: Use relative paths for Capacitor iOS/Android builds
+  base: './',
+
   build: {
+    // Output directory (must match capacitor.config.ts webDir)
+    outDir: 'dist',
     // Optimize chunk splitting
     rollupOptions: {
       output: {
@@ -119,6 +125,8 @@ export default defineConfig({
   },
   // Proxy API requests to backend server in development
   server: {
+    host: true, // Allow external access for Capacitor live reload
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

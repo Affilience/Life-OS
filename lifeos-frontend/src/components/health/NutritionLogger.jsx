@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, X, Loader2, AlertCircle } from 'lucide-react';
 import { searchMockFoods, parseNutrients } from '../../services/nutritionMockData';
-import { haptics } from '../../utils/haptics';
+import { feedback, haptics } from '../../services/microInteractions';
 
 export default function NutritionLogger({ onAddFood }) {
   const [query, setQuery] = useState('');
@@ -54,22 +54,22 @@ export default function NutritionLogger({ onAddFood }) {
     } catch (err) {
       console.error('Search failed:', err);
       setError('Search failed. Please try again.');
-      await haptics.error();
+      feedback.error();
     } finally {
       setSearching(false);
     }
   };
 
   const handleSelectFood = async (food) => {
-    await haptics.light();
+    haptics.impact('light');
     setSelectedFood(food);
   };
 
   const handleAddFood = async () => {
     if (!selectedFood) return;
 
-    await haptics.success();
-    await haptics.medium();
+    // Trigger satisfying feedback for adding food
+    feedback.taskComplete({ celebrate: false });
 
     onAddFood?.({
       id: `food-${Date.now()}`,
@@ -86,7 +86,7 @@ export default function NutritionLogger({ onAddFood }) {
   };
 
   const handleClear = async () => {
-    await haptics.light();
+    haptics.impact('light');
     setQuery('');
     setResults([]);
     setSelectedFood(null);

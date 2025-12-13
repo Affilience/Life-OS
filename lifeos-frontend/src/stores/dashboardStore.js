@@ -269,8 +269,43 @@ const DEFAULT_LAYOUTS = {
   ],
 };
 
+// Onboarding layout - optimized for the dashboard tour
+// This layout ensures all tour-targeted elements are visible and well-positioned
+const ONBOARDING_LAYOUTS = {
+  lg: [
+    { i: 'heroSection', x: 0, y: 0, w: 2, h: 2 },
+    { i: 'streakStats', x: 2, y: 0, w: 2, h: 1 },
+    { i: 'todaysPlan', x: 2, y: 1, w: 2, h: 2 },
+    { i: 'weeklyInsights', x: 0, y: 2, w: 2, h: 2 },
+    { i: 'moduleHealth', x: 0, y: 4, w: 4, h: 3 },
+  ],
+  md: [
+    { i: 'heroSection', x: 0, y: 0, w: 2, h: 2 },
+    { i: 'streakStats', x: 0, y: 2, w: 2, h: 1 },
+    { i: 'todaysPlan', x: 0, y: 3, w: 2, h: 2 },
+    { i: 'weeklyInsights', x: 0, y: 5, w: 2, h: 2 },
+    { i: 'moduleHealth', x: 0, y: 7, w: 2, h: 4 },
+  ],
+  sm: [
+    { i: 'heroSection', x: 0, y: 0, w: 1, h: 2 },
+    { i: 'streakStats', x: 0, y: 2, w: 1, h: 1 },
+    { i: 'todaysPlan', x: 0, y: 3, w: 1, h: 2 },
+    { i: 'weeklyInsights', x: 0, y: 5, w: 1, h: 3 },
+    { i: 'moduleHealth', x: 0, y: 8, w: 1, h: 5 },
+  ],
+};
+
 // Preset layouts with grid configurations
 export const DASHBOARD_PRESETS = {
+  onboarding: {
+    id: 'onboarding',
+    name: 'New User Layout',
+    description: 'Default layout for new users during onboarding tour',
+    icon: '🚀',
+    widgets: ['heroSection', 'streakStats', 'todaysPlan', 'weeklyInsights', 'moduleHealth'],
+    layouts: ONBOARDING_LAYOUTS,
+    isOnboarding: true, // Flag to identify this as the onboarding preset
+  },
   full: {
     id: 'full',
     name: 'Full Overview',
@@ -380,6 +415,9 @@ const useDashboardStore = create(
       // Supabase sync state
       isInitialized: false,
 
+      // Track if user has completed initial dashboard setup (onboarding)
+      hasCompletedOnboardingSetup: false,
+
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
@@ -397,6 +435,7 @@ const useDashboardStore = create(
               widgetVisibility: dashboard.widgetVisibility || get().widgetVisibility,
               layouts: dashboard.layouts || get().layouts,
               currentPreset: dashboard.currentPreset || get().currentPreset,
+              hasCompletedOnboardingSetup: dashboard.hasCompletedOnboardingSetup ?? false,
               isInitialized: true,
             });
           } else {
@@ -415,6 +454,7 @@ const useDashboardStore = create(
           widgetVisibility: state.widgetVisibility,
           layouts: state.layouts,
           currentPreset: state.currentPreset,
+          hasCompletedOnboardingSetup: state.hasCompletedOnboardingSetup,
         });
       },
 
@@ -622,6 +662,39 @@ const useDashboardStore = create(
 
         // Sync to Supabase
         get().syncToSupabase();
+      },
+
+      // Set up dashboard for onboarding (new users)
+      // This ensures a consistent layout for the dashboard tour
+      setupOnboardingDashboard: () => {
+        const preset = DASHBOARD_PRESETS.onboarding;
+        if (!preset) return;
+
+        const newVisibility = Object.fromEntries(
+          Object.keys(DASHBOARD_WIDGETS).map((id) => [id, preset.widgets.includes(id)])
+        );
+
+        set({
+          widgetVisibility: newVisibility,
+          layouts: preset.layouts,
+          currentPreset: 'onboarding',
+          hasCompletedOnboardingSetup: false, // Not completed until tour is done
+        });
+
+        // Sync to Supabase
+        get().syncToSupabase();
+      },
+
+      // Mark onboarding setup as complete (called after dashboard tour)
+      completeOnboardingSetup: () => {
+        set({ hasCompletedOnboardingSetup: true });
+        // Sync to Supabase
+        get().syncToSupabase();
+      },
+
+      // Check if dashboard needs onboarding setup
+      needsOnboardingSetup: () => {
+        return !get().hasCompletedOnboardingSetup;
       },
 
       // Check if a widget is visible

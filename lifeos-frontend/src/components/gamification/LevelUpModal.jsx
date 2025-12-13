@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon, CheckCircleIcon, ArrowUpIcon, TrophyIcon } from '@heroicons/react/24/outline';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
+import { feedback } from '../../services/microInteractions';
 
 /**
  * Level Up Modal - Celebration when reaching a new level
@@ -16,6 +17,13 @@ export default function LevelUpModal({ isOpen, onClose, data }) {
   const mode = useGamificationModeStore((state) => state.mode);
   const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+
+  // Trigger level up feedback when modal opens
+  useEffect(() => {
+    if (isOpen && data) {
+      feedback.levelUp();
+    }
+  }, [isOpen, data]);
 
   if (!data) return null;
 
