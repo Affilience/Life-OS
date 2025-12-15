@@ -6,10 +6,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 
+// Helper to safely get notes as string (handles array or string)
+const getNotesAsString = (notes) => {
+  if (!notes) return '';
+  if (typeof notes === 'string') return notes;
+  if (Array.isArray(notes)) return ''; // Array is for linked note IDs, not text
+  return '';
+};
+
 export default function MediaDetailView({ mediaId }) {
   const { getMediaById, updateMedia, deleteMedia, setActiveView } = useKnowledgeStore();
   const media = getMediaById(mediaId);
-  const [notes, setNotes] = useState(media?.notes || '');
+  const [notes, setNotes] = useState(getNotesAsString(media?.textNotes ?? media?.notes));
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(new Date(media?.updatedAt || Date.now()));
 
@@ -23,10 +31,11 @@ export default function MediaDetailView({ mediaId }) {
       clearTimeout(saveTimeoutRef.current);
     }
 
+    const currentNotes = getNotesAsString(media.textNotes ?? media.notes);
     saveTimeoutRef.current = setTimeout(() => {
-      if (notes !== media.notes) {
+      if (notes !== currentNotes) {
         setIsSaving(true);
-        updateMedia(mediaId, { notes });
+        updateMedia(mediaId, { textNotes: notes });
         setLastSaved(new Date());
         setTimeout(() => setIsSaving(false), 500);
       }
@@ -42,7 +51,7 @@ export default function MediaDetailView({ mediaId }) {
   // Initialize state when media changes
   useEffect(() => {
     if (media) {
-      setNotes(media.notes || '');
+      setNotes(getNotesAsString(media.textNotes ?? media.notes));
       setLastSaved(new Date(media.updatedAt));
     }
   }, [mediaId]);
@@ -235,7 +244,7 @@ export default function MediaDetailView({ mediaId }) {
                   <div className="bg-[#1a1724]/30 rounded-lg p-4">
                     <div className="text-xs text-zinc-600 mb-1">Added</div>
                     <div className="text-sm font-medium text-white">
-                      {new Date(media.addedAt).toLocaleDateString()}
+                      {new Date(media.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -290,7 +299,7 @@ export default function MediaDetailView({ mediaId }) {
           {/* Metadata */}
           <div className="mt-6 pt-6 border-t border-white/10/50">
             <div className="flex items-center gap-4 text-xs text-zinc-600">
-              <span>Created {new Date(media.addedAt).toLocaleString()}</span>
+              <span>Created {new Date(media.createdAt).toLocaleString()}</span>
               <span>•</span>
               <span>Last updated {new Date(media.updatedAt).toLocaleString()}</span>
             </div>

@@ -7,31 +7,49 @@ const screenshots = [
     id: "dashboard",
     title: "Dashboard",
     description: "Your command center. See everything at a glance.",
+    image: "/assets/screenshots/dashboard.png",
   },
   {
     id: "character",
     title: "Character",
     description: "Watch your avatar evolve as you level up.",
+    image: "/assets/screenshots/character.png",
   },
   {
     id: "productivity",
     title: "Productivity",
     description: "Deep work tracking and task management.",
+    image: "/assets/screenshots/productivity.png",
   },
   {
     id: "health",
     title: "Health",
     description: "Workouts, nutrition, and sleep in one place.",
+    image: "/assets/screenshots/health.png",
   },
   {
     id: "journal",
     title: "Journal",
     description: "Beautiful book-style journaling experience.",
+    image: "/assets/screenshots/journal.png",
   },
   {
     id: "skills",
     title: "Skills",
     description: "Skyrim-inspired skill trees with real perks.",
+    image: "/assets/screenshots/skills.png",
+  },
+  {
+    id: "quests",
+    title: "Quests",
+    description: "Epic quests and daily missions to complete.",
+    image: "/assets/screenshots/quests.png",
+  },
+  {
+    id: "calendar",
+    title: "Calendar",
+    description: "Plan your days and track your time.",
+    image: "/assets/screenshots/calendar.png",
   },
 ];
 
@@ -75,15 +93,25 @@ export function Screenshots() {
         <div className="relative">
           {/* Main Screenshot */}
           <div className="screenshot-frame max-w-5xl mx-auto glow-purple">
-            <div className="aspect-[16/10] bg-[#1a1724] flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-white/30 text-lg mb-2">
-                  [{activeScreenshot?.title} Screenshot]
-                </p>
-                <p className="text-white/20 text-sm">
-                  {activeScreenshot?.description}
-                </p>
-              </div>
+            <div className="aspect-[16/10] bg-[#1a1724] rounded-xl overflow-hidden">
+              {activeScreenshot?.image ? (
+                <img
+                  src={activeScreenshot.image}
+                  alt={activeScreenshot.title}
+                  className="w-full h-full object-cover object-top"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <p className="text-white/30 text-lg mb-2">
+                      [{activeScreenshot?.title} Screenshot]
+                    </p>
+                    <p className="text-white/20 text-sm">
+                      {activeScreenshot?.description}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

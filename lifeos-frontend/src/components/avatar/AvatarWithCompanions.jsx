@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { PET_DATABASE, TIER_INFO } from '../../stores/petStore';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
+import AvatarRenderer from './AvatarRenderer';
 
 /**
  * AvatarWithCompanions - Natural companion display around the avatar
@@ -17,7 +18,8 @@ export function AvatarWithCompanions({
   avatarAlt = 'Avatar',
   activePets = [],
   avatarSize = 224, // 56 * 4 = 224px (w-56)
-  className = ''
+  className = '',
+  useEquipment = true, // Use AvatarRenderer by default
 }) {
   const { isVisible, mode } = useGamificationModeStore();
 
@@ -139,23 +141,27 @@ export function AvatarWithCompanions({
         );
       })}
 
-      {/* Main Avatar */}
+      {/* Main Avatar - use AvatarRenderer with equipment or fallback to img */}
       <motion.div
         className="relative z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <img
-          src={avatarSrc}
-          alt={avatarAlt}
-          className="pixelated"
-          style={{
-            width: avatarSize,
-            height: avatarSize,
-            imageRendering: 'pixelated',
-          }}
-        />
+        {useEquipment ? (
+          <AvatarRenderer size={avatarSize} animate={true} showStats={false} />
+        ) : (
+          <img
+            src={avatarSrc}
+            alt={avatarAlt}
+            className="pixelated"
+            style={{
+              width: avatarSize,
+              height: avatarSize,
+              imageRendering: 'pixelated',
+            }}
+          />
+        )}
       </motion.div>
 
       {/* Ground shadow */}
@@ -249,13 +255,17 @@ export function CompactAvatarWithPets({
  * MediumAvatarWithPets - Medium version for character page
  * Supports up to 6 pets arranged around the avatar
  * Responsive: shrinks on mobile to fit screen width
+ *
+ * @param useEquipment - If true, uses AvatarRenderer to show equipped items (default: true)
+ * @param avatarSrc - Fallback sprite src if useEquipment is false
  */
 export function MediumAvatarWithPets({
   avatarSrc,
   avatarAlt = 'Avatar',
   activePets = [],
   size = 240,
-  className = ''
+  className = '',
+  useEquipment = true, // New prop - use AvatarRenderer by default
 }) {
   const { isVisible } = useGamificationModeStore();
 
@@ -346,20 +356,28 @@ export function MediumAvatarWithPets({
         );
       })}
 
-      {/* Main Avatar */}
-      <motion.img
-        src={avatarSrc}
-        alt={avatarAlt}
-        className="pixelated relative z-10"
-        style={{
-          width: size,
-          height: size,
-          imageRendering: 'pixelated',
-        }}
+      {/* Main Avatar - use AvatarRenderer with equipment or fallback to img */}
+      <motion.div
+        className="relative z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-      />
+      >
+        {useEquipment ? (
+          <AvatarRenderer size={size} animate={true} showStats={false} />
+        ) : (
+          <img
+            src={avatarSrc}
+            alt={avatarAlt}
+            className="pixelated"
+            style={{
+              width: size,
+              height: size,
+              imageRendering: 'pixelated',
+            }}
+          />
+        )}
+      </motion.div>
 
       {/* Ground shadow */}
       <div

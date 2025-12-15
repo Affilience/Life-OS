@@ -69,8 +69,43 @@ export function Hero() {
         {/* Hero Image/Screenshot */}
         <div className="mt-20 relative">
           <div className="screenshot-frame mx-auto max-w-5xl glow-purple">
-            <div className="aspect-[16/10] bg-[#1a1724] flex items-center justify-center">
-              <p className="text-white/30 text-lg">[Dashboard Screenshot]</p>
+            <div className="aspect-[16/10] bg-[#1a1724] rounded-xl overflow-hidden">
+              <img
+                src="/assets/screenshots/dashboard.png"
+                alt="LifeOS Dashboard"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+          </div>
+
+          {/* Floating UI Elements */}
+          <div className="hidden lg:block absolute -left-8 top-1/3 glass-card p-4 animate-float">
+            <div className="flex items-center gap-3">
+              <img
+                src="/assets/sprites/pets/pet_phoenix.png"
+                alt="Phoenix Pet"
+                className="w-10 h-10"
+                style={{ imageRendering: 'pixelated' }}
+              />
+              <div>
+                <p className="text-white text-sm font-medium">Phoenix joined!</p>
+                <p className="text-white/50 text-xs">+10% XP bonus</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden lg:block absolute -right-8 top-1/4 glass-card p-4 animate-float" style={{ animationDelay: "1s" }}>
+            <div className="flex items-center gap-3">
+              <img
+                src="/assets/sprites/equipment/sword_celestial.png"
+                alt="Celestial Sword"
+                className="w-10 h-10"
+                style={{ imageRendering: 'pixelated' }}
+              />
+              <div>
+                <p className="text-white text-sm font-medium">Epic Drop!</p>
+                <p className="text-amber-400 text-xs">Celestial Sword</p>
+              </div>
             </div>
           </div>
         </div>

@@ -27,14 +27,25 @@ export function Gamification() {
                 From a tiny seed of potential to a magnificent cosmic being.
               </p>
 
-              {/* Evolution Stages Preview */}
+              {/* Evolution Stages Preview - Actual Sprites */}
               <div className="grid grid-cols-5 gap-4 mb-6">
-                {["Seed", "Sprout", "Sapling", "Tree", "Cosmos"].map((stage, i) => (
+                {[
+                  { name: "Dreamer", level: 1, sprite: "/assets/sprites/avatar/hero_base_stage_1_dreamer.png" },
+                  { name: "Swordsman", level: 10, sprite: "/assets/sprites/avatar/hero_base_stage_10_swordsman.png" },
+                  { name: "Veteran", level: 20, sprite: "/assets/sprites/avatar/hero_base_stage_20_veteran.png" },
+                  { name: "Warlord", level: 30, sprite: "/assets/sprites/avatar/hero_base_stage_30_warlord.png" },
+                  { name: "Master", level: 40, sprite: "/assets/sprites/avatar/hero_base_stage_40_avatar_of_mastery.png" },
+                ].map((stage, i) => (
                   <div key={i} className="text-center">
-                    <div className="w-12 h-12 mx-auto rounded-full bg-gradient-to-br from-purple-500/30 to-cyan-500/30 flex items-center justify-center text-xl mb-2">
-                      {["🌱", "🌿", "🌳", "✨", "🌌"][i]}
+                    <div className="w-16 h-16 mx-auto rounded-lg bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center mb-2 overflow-hidden p-1">
+                      <img
+                        src={stage.sprite}
+                        alt={stage.name}
+                        className="w-full h-full object-contain pixelated"
+                        style={{ imageRendering: 'pixelated' }}
+                      />
                     </div>
-                    <span className="text-xs text-white/40">{stage}</span>
+                    <span className="text-xs text-white/40">Lv.{stage.level}</span>
                   </div>
                 ))}
               </div>
@@ -124,6 +135,73 @@ export function Gamification() {
                   (2x XP for morning tasks) or "Deep Focus" (bonus for long work sessions).
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Equipment & Companions Showcase */}
+        <div className="mt-16 grid md:grid-cols-2 gap-8">
+          {/* Equipment Showcase */}
+          <div className="glass-card p-6">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <span className="text-2xl">⚔️</span> Collect Epic Equipment
+            </h3>
+            <p className="text-white/60 text-sm mb-6">
+              Earn and equip weapons, armor, and accessories. Each piece has unique stats and visual flair.
+            </p>
+            <div className="grid grid-cols-6 gap-3">
+              {[
+                "/assets/sprites/equipment/sword_celestial.png",
+                "/assets/sprites/equipment/sword_void.png",
+                "/assets/sprites/equipment/phoenix_battleplate.png",
+                "/assets/sprites/equipment/armor_cosmic.png",
+                "/assets/sprites/equipment/aegis_of_mastery.png",
+                "/assets/sprites/equipment/dragon_shield.png",
+              ].map((sprite, i) => (
+                <div
+                  key={i}
+                  className="aspect-square rounded-lg bg-gradient-to-br from-purple-500/10 to-amber-500/10 border border-white/10 p-1.5 hover:border-purple-500/50 transition-colors"
+                >
+                  <img
+                    src={sprite}
+                    alt="Equipment"
+                    className="w-full h-full object-contain"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Companions/Pets Showcase */}
+          <div className="glass-card p-6">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <span className="text-2xl">🐾</span> Mythical Companions
+            </h3>
+            <p className="text-white/60 text-sm mb-6">
+              Collect companions that boost your stats and accompany you on your journey.
+            </p>
+            <div className="grid grid-cols-6 gap-3">
+              {[
+                "/assets/sprites/pets/pet_phoenix.png",
+                "/assets/sprites/pets/pet_kitsune_pup.png",
+                "/assets/sprites/pets/pet_azure_dragon.png",
+                "/assets/sprites/pets/pet_griffin_chick.png",
+                "/assets/sprites/pets/pet_fenrir_pup.png",
+                "/assets/sprites/pets/pet_pegasus.png",
+              ].map((sprite, i) => (
+                <div
+                  key={i}
+                  className="aspect-square rounded-lg bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-white/10 p-1.5 hover:border-cyan-500/50 transition-colors"
+                >
+                  <img
+                    src={sprite}
+                    alt="Companion"
+                    className="w-full h-full object-contain"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>

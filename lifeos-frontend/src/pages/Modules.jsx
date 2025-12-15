@@ -92,9 +92,10 @@ export default function Modules() {
       <div className="sticky top-0 z-40 bg-bg-0 border-b border-border-subtle px-6 py-4">
         <PageHeader
           title="Modules"
+          subtitle="Navigate your personal operating system"
           icon={LayoutGrid}
           module="default"
-          variant="icon"
+          variant="elevated"
           className="mb-0"
         />
       </div>

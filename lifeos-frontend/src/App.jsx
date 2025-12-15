@@ -19,8 +19,8 @@ import { ModeAwareRoute } from './components/layout/ModeAwareRoute';
 import useIntegratedOnboardingStore from './stores/integratedOnboardingStore';
 import EnhancedOnboarding from './components/onboarding/EnhancedOnboarding';
 
-// Full Onboarding Flow (9-step experience with Nova guide and premium animations)
-import NovaGuidedOnboarding from './components/onboarding/NovaGuidedOnboarding';
+// Full Onboarding Flow (6-step improved experience with constellation picker)
+import ImprovedOnboarding from './components/onboarding/ImprovedOnboarding';
 import { useNewOnboardingStore } from './stores/newOnboardingStore';
 
 // Supabase store initialization
@@ -46,6 +46,8 @@ import { initializeThemeStore } from './stores/themeStore';
 import { initializeBadHabitsStore } from './stores/badHabitsStore';
 import { initializePerkStore } from './stores/perkStore';
 import { initializeSocialStore } from './stores/socialStore';
+import { initializeModuleMasteryStore } from './stores/moduleMasteryStore';
+import { initializeSkillPointsStore } from './stores/skillPointsStore';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -100,6 +102,7 @@ const EvolutionShowcase = lazy(() => import('./components/avatar/EvolutionShowca
 const EquipmentInventory = lazy(() => import('./components/avatar/EquipmentInventory'));
 const Social = lazy(() => import('./pages/Social'));
 const AICompanion = lazy(() => import('./pages/AICompanion'));
+const EquipmentTest = lazy(() => import('./pages/EquipmentTest'));
 
 // DEVELOPMENT: Protected Route disabled - direct access to all pages
 // function ProtectedRoute({ children }) {
@@ -132,9 +135,16 @@ function App() {
       if (stored) {
         const parsed = JSON.parse(stored);
         // Check if onboarding is complete in persisted state
-        return !parsed?.state?.isOnboardingComplete;
+        // Zustand persist stores: { state: {...}, version: number }
+        const isComplete = parsed?.state?.isOnboardingComplete === true;
+        const isNotActive = parsed?.state?.isOnboardingActive === false;
+
+        // If explicitly marked complete OR explicitly not active, don't show
+        if (isComplete || isNotActive) {
+          return false;
+        }
       }
-      return true; // No stored state, show onboarding
+      return true; // No stored state or not complete, show onboarding
     } catch {
       return true; // Error reading, show onboarding
     }
@@ -142,11 +152,11 @@ function App() {
 
   // Sync with store state after hydration
   useEffect(() => {
-    // Only update if store says complete but we're still showing
-    if (newOnboardingComplete && showNewOnboarding) {
+    // Hide onboarding if store says complete or not active
+    if ((newOnboardingComplete || !isOnboardingActive) && showNewOnboarding) {
       setShowNewOnboarding(false);
     }
-  }, [newOnboardingComplete, showNewOnboarding]);
+  }, [newOnboardingComplete, isOnboardingActive, showNewOnboarding]);
 
   // Legacy: Show welcome modal if user hasn't seen it (fallback)
   // DISABLED: New onboarding system replaces the old EnhancedOnboarding
@@ -190,6 +200,8 @@ function App() {
           initializeThemeStore(),
           initializeBadHabitsStore(),
           initializeSocialStore(),
+          initializeModuleMasteryStore(),
+          initializeSkillPointsStore(),
         ]);
         // Initialize perk store after other stores (needs stats data)
         initializePerkStore();
@@ -286,6 +298,9 @@ function App() {
                       <EvolutionShowcase />
                     </ModeAwareRoute>
                   } />
+                  <Route path="/equipment-test" element={
+                    <EquipmentTest />
+                  } />
                 </Routes>
               </MainLayout>
             } />
@@ -296,7 +311,7 @@ function App() {
 
           {/* Full Onboarding Flow - shown on first visit */}
           {showNewOnboarding && (
-            <NovaGuidedOnboarding onComplete={() => setShowNewOnboarding(false)} />
+            <ImprovedOnboarding onComplete={() => setShowNewOnboarding(false)} />
           )}
 
           {/* Enhanced Onboarding - legacy fallback if new onboarding was completed */}

@@ -56,6 +56,7 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
   const slotIcons = {
     helmet: '⛑️',
     chest: '🛡️',
+    legs: '👖',
     weapon: '⚔️',
     shield: '🛡️',
     cape: '🧥',
@@ -67,11 +68,12 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
   const professionalSlotLabels = {
     helmet: 'Focus',
     chest: 'Core',
+    legs: 'Guard',
     weapon: 'Tool',
     shield: 'Guard',
     cape: 'Boost',
-    ring: 'Trait',
-    amulet: 'Trait',
+    ring: 'Bond',
+    amulet: 'Charm',
   };
 
   const slotLabel = mode === 'cosmic' ? item.slot : professionalSlotLabels[item.slot] || item.slot;

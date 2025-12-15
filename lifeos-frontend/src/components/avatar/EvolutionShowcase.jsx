@@ -137,10 +137,12 @@ export default function EvolutionShowcase() {
   }
 
   const getSpritePath = (stage) => {
-    return getHeroSpritePath(stage.levelRequired, stage.name);
+    // Use stage.stage (the stage number 1-40) not stage.levelRequired
+    return getHeroSpritePath(stage.stage, stage.name);
   };
 
-  const isUnlocked = (requiredLevel) => currentLevel >= requiredLevel;
+  // DEV MODE: Unlock all stages for preview
+  const isUnlocked = (requiredLevel) => true; // currentLevel >= requiredLevel;
 
   return (
     <div className="min-h-screen bg-[#0c0a10] pb-20">

@@ -10,9 +10,10 @@
 
 import React, { useState } from 'react';
 import { usePetStore, PET_DATABASE, TIER_INFO } from '../../stores/petStore';
-import { Lock, Star, Sparkles, Crown, BookOpen, X, Zap, TrendingUp } from 'lucide-react';
+import { Lock, Star, Sparkles, Crown, BookOpen, X, Zap, TrendingUp, Trophy, Coins } from 'lucide-react';
 import Card from '../ui/Card';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
+import UnlockBadge from '../shared/UnlockBadge';
 
 const PetsSection = ({ forceShow = false }) => {
   const {
@@ -506,10 +507,17 @@ function PetCard({ pet, unlocked, active, onClick, onEquip, forceShowSprites = f
         <div className="text-xs mb-2" style={{ color: 'rgba(255, 255, 255, 0.38)' }}>
           {mode === 'cosmic' && `${pet.culture} • `}{tierLabel}
         </div>
-        {unlocked && (
+        {unlocked ? (
           <div className="text-xs font-medium" style={{ color: tierColor }}>
             {pet.bonusDescription}
           </div>
+        ) : (
+          <UnlockBadge
+            method={pet.unlockMethod}
+            description={pet.unlockDescription}
+            requirement={pet.unlockRequirement}
+            size="sm"
+          />
         )}
       </div>
 
@@ -655,9 +663,15 @@ function PetDetailModal({ pet, onClose }) {
               <h3 className="text-lg font-bold mb-2" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
                 Locked
               </h3>
-              <p className="text-sm sm:text-base mb-4" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
-                {pet.unlockDescription}
-              </p>
+              <div className="flex justify-center mb-4">
+                <UnlockBadge
+                  method={pet.unlockMethod}
+                  description={pet.unlockDescription}
+                  requirement={pet.unlockRequirement}
+                  size="md"
+                  showLabel={true}
+                />
+              </div>
             </div>
           )}
         </div>

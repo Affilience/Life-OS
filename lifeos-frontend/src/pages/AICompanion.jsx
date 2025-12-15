@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Loader2, User, Bot } from 'lucide-react';
+import { Send, Sparkles, Loader2, User, Bot, MessageCircle } from 'lucide-react';
 import { claudeService } from '../services/ai/claudeService';
+import PageHeader from '../components/shared/PageHeader';
 
 /**
  * AI Companion Chat Interface
@@ -156,15 +157,14 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
     <div className="min-h-screen flex flex-col bg-[#0c0a10] text-white">
       {/* Header */}
       <div className="border-b border-[#2a2a2a] bg-[#12101a] px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-            <Sparkles size={20} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold">AI Companion</h1>
-            <p className="text-sm text-white/60">Your personal LifeOS assistant</p>
-          </div>
-        </div>
+        <PageHeader
+          title="AI Companion"
+          subtitle="Your personal LifeOS assistant"
+          icon={MessageCircle}
+          module="knowledge"
+          variant="elevated"
+          className="mb-0"
+        />
       </div>
 
       {/* Messages Area */}

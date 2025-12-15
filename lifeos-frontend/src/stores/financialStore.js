@@ -436,6 +436,7 @@ const initializeFromSupabase = async (set, get) => {
     if (transformedSinkingFunds.length > 0) updates.sinkingFunds = transformedSinkingFunds;
     if (settings.monthlyIncomeTarget) updates.monthlyIncomeTarget = settings.monthlyIncomeTarget;
     if (settings.envelopeSettings) updates.envelopeSettings = settings.envelopeSettings;
+    if (settings.currency) updates.currency = settings.currency;
 
     set(updates);
 
@@ -690,6 +691,9 @@ export const useFinancialStore = create(
       selectedPeriod: 'month', // 'week' | 'month' | 'year' | 'all'
       selectedAccount: 'all',
       selectedCategory: 'all',
+
+      // Currency setting
+      currency: 'USD', // User's preferred currency
 
       // Envelope budgeting state
       envelopeBudgets: {}, // { '2025-01': { food: 300, transport: 100, ... } }
@@ -1266,8 +1270,16 @@ export const useFinancialStore = create(
       setMonthlyIncomeTarget: (amount) => {
         set({ monthlyIncomeTarget: amount });
         // Sync settings to Supabase
-        const { envelopeSettings } = get();
-        syncSettingsToSupabase({ monthlyIncomeTarget: amount, envelopeSettings });
+        const { envelopeSettings, currency } = get();
+        syncSettingsToSupabase({ monthlyIncomeTarget: amount, envelopeSettings, currency });
+      },
+
+      // Set currency
+      setCurrency: (currencyCode) => {
+        set({ currency: currencyCode });
+        // Sync settings to Supabase
+        const { monthlyIncomeTarget, envelopeSettings } = get();
+        syncSettingsToSupabase({ monthlyIncomeTarget, envelopeSettings, currency: currencyCode });
       },
 
       // Get envelope status for all categories in a month
@@ -1577,6 +1589,7 @@ export const useFinancialStore = create(
         monthlyIncomeTarget: state.monthlyIncomeTarget,
         envelopeSettings: state.envelopeSettings,
         sinkingFunds: state.sinkingFunds,
+        currency: state.currency,
       }),
     }
   )

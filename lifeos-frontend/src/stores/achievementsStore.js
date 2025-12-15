@@ -10,6 +10,16 @@ import { supabase } from '../lib/supabase';
 import { DEV_USER_ID } from '../lib/dev-auth';
 import { triggerGamification } from '../hooks/useGamification';
 
+// Lazy import unlock service to avoid circular dependencies
+let unlockServiceRef = null;
+const getUnlockService = async () => {
+  if (!unlockServiceRef) {
+    const module = await import('../services/unlockService');
+    unlockServiceRef = module.default;
+  }
+  return unlockServiceRef;
+};
+
 // Achievement Categories
 export const ACHIEVEMENT_CATEGORIES = {
   quests: { id: 'quests', name: 'Quests', icon: '🎯', color: 'from-purple-500 to-pink-500' },
@@ -1850,6 +1860,14 @@ const useAchievementsStore = create(
 
           // Sync achievement unlocks to database
           get().syncAchievementUnlocks(newUnlocks, now);
+
+          // Trigger unlock service to check for pet/equipment unlocks
+          (async () => {
+            const unlockService = await getUnlockService();
+            for (const achievement of newUnlocks) {
+              await unlockService.onAchievementUnlock(achievement.id);
+            }
+          })();
         }
 
         return newUnlocks;

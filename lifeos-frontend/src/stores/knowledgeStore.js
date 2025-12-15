@@ -98,6 +98,17 @@ const initializeFromSupabase = async (set, get) => {
       metadata: b.metadata || {},
     })) || [];
 
+    // Map database status back to local status format
+    const mapDbStatusToLocal = (status) => {
+      const statusMap = {
+        'want': 'want-to-watch',
+        'in_progress': 'watching',
+        'completed': 'completed',
+        'abandoned': 'abandoned',
+      };
+      return statusMap[status] || 'want-to-watch';
+    };
+
     const transformedMedia = media?.map(m => ({
       id: m.id,
       type: m.media_type || 'youtube',
@@ -106,11 +117,13 @@ const initializeFromSupabase = async (set, get) => {
       thumbnailUrl: m.thumbnail_url,
       url: m.url || '',
       duration: m.duration || '',
-      status: m.status || 'want-to-watch',
-      notes: m.linked_notes || [],
+      status: mapDbStatusToLocal(m.status),
+      notes: m.linked_notes || [], // Array of linked note IDs
+      textNotes: m.text_notes || '', // String for inline notes
       tags: m.tags || [],
       watchedAt: m.watched_at,
       createdAt: m.created_at,
+      updatedAt: m.updated_at,
       isFavorite: m.is_favorite || false,
     })) || [];
 
@@ -225,30 +238,74 @@ const syncBookToSupabase = async (book, action = 'upsert') => {
   }
 };
 
+// Map local media types to database-allowed types
+const mapMediaType = (type) => {
+  const typeMap = {
+    'youtube': 'video',
+    'video': 'video',
+    'podcast': 'podcast',
+    'article': 'article',
+    'book': 'book',
+    'course': 'course',
+  };
+  return typeMap[type] || 'video';
+};
+
+// Map local status to database-allowed status
+const mapMediaStatus = (status) => {
+  const statusMap = {
+    'want-to-watch': 'want',
+    'want-to-read': 'want',
+    'want': 'want',
+    'watching': 'in_progress',
+    'reading': 'in_progress',
+    'in-progress': 'in_progress',
+    'in_progress': 'in_progress',
+    'completed': 'completed',
+    'abandoned': 'abandoned',
+  };
+  return statusMap[status] || 'want';
+};
+
 const syncMediaToSupabase = async (media, action = 'upsert') => {
   try {
     const userId = await getCurrentUserId();
     if (!userId) return;
 
     if (action === 'delete') {
-      await supabase.from('knowledge_media').delete().eq('id', media.id).eq('user_id', userId);
+      // Only delete if it's a UUID (was synced to Supabase)
+      if (media.id && !media.id.startsWith('media-')) {
+        await supabase.from('knowledge_media').delete().eq('id', media.id).eq('user_id', userId);
+      }
     } else {
+      // Generate a proper UUID for new items, or use existing UUID
+      const dbId = media.id && !media.id.startsWith('media-')
+        ? media.id
+        : crypto.randomUUID();
+
       await supabase.from('knowledge_media').upsert({
-        id: media.id,
+        id: dbId,
         user_id: userId,
-        media_type: media.type,
+        media_type: mapMediaType(media.type),
         title: media.title,
         creator: media.creator,
         thumbnail_url: media.thumbnailUrl,
         url: media.url,
         duration: media.duration,
-        status: media.status,
+        status: mapMediaStatus(media.status),
         linked_notes: media.notes || [],
+        text_notes: media.textNotes || '', // String for inline notes
         tags: media.tags || [],
         watched_at: media.watchedAt,
         is_favorite: media.isFavorite || false,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
+
+      // Update local state with the proper UUID if it was a temp id
+      if (media.id && media.id.startsWith('media-')) {
+        const store = useKnowledgeStore.getState();
+        store.updateMediaId(media.id, dbId);
+      }
     }
   } catch (error) {
     console.error('Error syncing media to Supabase:', error);
@@ -617,10 +674,12 @@ export const useKnowledgeStore = create(
           url: mediaData.url || '',
           duration: mediaData.duration || '',
           status: mediaData.status || 'want-to-watch',
-          notes: [],
+          notes: [], // Array of linked note IDs
+          textNotes: mediaData.textNotes || mediaData.notes || '', // String for inline notes
           tags: mediaData.tags || [],
           watchedAt: null,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           isFavorite: false,
         };
 
@@ -639,7 +698,11 @@ export const useKnowledgeStore = create(
         set((state) => ({
           media: state.media.map((item) => {
             if (item.id === mediaId) {
-              const updatedItem = { ...item, ...updates };
+              const updatedItem = {
+                ...item,
+                ...updates,
+                updatedAt: new Date().toISOString(),
+              };
 
               // Auto-set watchedAt when status changes to completed
               if (updates.status === 'completed' && !item.watchedAt) {
@@ -666,6 +729,18 @@ export const useKnowledgeStore = create(
           activeItemId: state.activeItemId === mediaId ? null : state.activeItemId,
         }));
         if (media) syncMediaToSupabase(media, 'delete');
+      },
+
+      /**
+       * Update media ID (used when syncing temp ID to database UUID)
+       */
+      updateMediaId: (oldId, newId) => {
+        set((state) => ({
+          media: state.media.map((item) =>
+            item.id === oldId ? { ...item, id: newId } : item
+          ),
+          activeItemId: state.activeItemId === oldId ? newId : state.activeItemId,
+        }));
       },
 
       // ============================================

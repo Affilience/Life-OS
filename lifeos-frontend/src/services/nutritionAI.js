@@ -141,6 +141,8 @@ const LOCAL_FOOD_CACHE = {
   'baked potato': { calories: 93, protein: 2.5, carbs: 21, fat: 0.1, fiber: 2.2, sugar: 1.1, saturatedFat: 0, transFat: 0, cholesterol: 0, sodium: 10, potassium: 535, calcium: 15, iron: 1.1, magnesium: 28, phosphorus: 70, zinc: 0.4, vitaminA: 0, vitaminC: 9.6, vitaminD: 0, vitaminE: 0, vitaminK: 2.1, vitaminB6: 0.35, vitaminB12: 0, folate: 28, serving: '100g' },
   'mashed potatoes': { calories: 83, protein: 1.9, carbs: 16, fat: 1.5, fiber: 1.5, sugar: 1.2, saturatedFat: 0.9, transFat: 0, cholesterol: 4, sodium: 333, potassium: 284, calcium: 22, iron: 0.3, magnesium: 18, phosphorus: 44, zinc: 0.3, vitaminA: 45, vitaminC: 7.4, vitaminD: 0, vitaminE: 0.1, vitaminK: 1.3, vitaminB6: 0.22, vitaminB12: 0.02, folate: 9, serving: '100g' },
   'french fries': { calories: 312, protein: 3.4, carbs: 41, fat: 15, fiber: 3.8, sugar: 0.3, saturatedFat: 2.3, transFat: 0.1, cholesterol: 0, sodium: 210, potassium: 579, calcium: 12, iron: 0.8, magnesium: 35, phosphorus: 125, zinc: 0.5, vitaminA: 0, vitaminC: 5.6, vitaminD: 0, vitaminE: 1.2, vitaminK: 16, vitaminB6: 0.37, vitaminB12: 0, folate: 23, serving: '100g' },
+  'chips': { calories: 312, protein: 3.4, carbs: 41, fat: 15, fiber: 3.8, sugar: 0.3, saturatedFat: 2.3, transFat: 0.1, cholesterol: 0, sodium: 210, potassium: 579, calcium: 12, iron: 0.8, magnesium: 35, phosphorus: 125, zinc: 0.5, vitaminA: 0, vitaminC: 5.6, vitaminD: 0, vitaminE: 1.2, vitaminK: 16, vitaminB6: 0.37, vitaminB12: 0, folate: 23, serving: '150g (British chips/fries)' },
+  'fries': { calories: 312, protein: 3.4, carbs: 41, fat: 15, fiber: 3.8, sugar: 0.3, saturatedFat: 2.3, transFat: 0.1, cholesterol: 0, sodium: 210, potassium: 579, calcium: 12, iron: 0.8, magnesium: 35, phosphorus: 125, zinc: 0.5, vitaminA: 0, vitaminC: 5.6, vitaminD: 0, vitaminE: 1.2, vitaminK: 16, vitaminB6: 0.37, vitaminB12: 0, folate: 23, serving: '100g' },
   'hash browns': { calories: 326, protein: 3.2, carbs: 35, fat: 20, fiber: 3.2, sugar: 0.5, saturatedFat: 3.2, transFat: 0.1, cholesterol: 0, sodium: 342, potassium: 390, calcium: 14, iron: 0.6, magnesium: 26, phosphorus: 65, zinc: 0.4, vitaminA: 0, vitaminC: 6.5, vitaminD: 0, vitaminE: 1.5, vitaminK: 12, vitaminB6: 0.3, vitaminB12: 0, folate: 15, serving: '100g' },
   'sweet potato': { calories: 86, protein: 1.6, carbs: 20, fat: 0.1, fiber: 3, sugar: 4.2, saturatedFat: 0, transFat: 0, cholesterol: 0, sodium: 55, potassium: 337, calcium: 30, iron: 0.6, magnesium: 25, phosphorus: 47, zinc: 0.3, vitaminA: 709, vitaminC: 2.4, vitaminD: 0, vitaminE: 0.3, vitaminK: 1.8, vitaminB6: 0.2, vitaminB12: 0, folate: 11, serving: '100g' },
   'yam': { calories: 118, protein: 1.5, carbs: 28, fat: 0.2, fiber: 4.1, sugar: 0.5, saturatedFat: 0, transFat: 0, cholesterol: 0, sodium: 9, potassium: 816, calcium: 17, iron: 0.5, magnesium: 21, phosphorus: 55, zinc: 0.2, vitaminA: 7, vitaminC: 17, vitaminD: 0, vitaminE: 0.4, vitaminK: 2.3, vitaminB6: 0.29, vitaminB12: 0, folate: 23, serving: '100g' },
@@ -463,10 +465,46 @@ const FOOD_SERVING_WEIGHTS = {
   'cookie': { piece: 30, pieces: 30 },
   'oreo': { piece: 11, pieces: 11 },
   'chip': { piece: 1, pieces: 1 },
-  'chips': { piece: 28, pieces: 28 },  // small handful
+  'potato chips': { piece: 28, pieces: 28, serving: 28 },  // small handful of crisps
+  'crisps': { piece: 28, pieces: 28, serving: 28 },  // British crisps
+  // British chips = French fries (typical restaurant portion)
+  'chips': { serving: 150, piece: 150, pieces: 150 },  // British chips = fries, ~150g typical
+  'fries': { serving: 150, piece: 150, pieces: 150 },
+  'french fries': { serving: 150, piece: 150, pieces: 150 },
+  // Steaks - typical restaurant portions
+  'steak': { serving: 225, piece: 225, pieces: 225 },  // ~8oz steak
+  'ribeye': { serving: 280, piece: 280, pieces: 280 },  // ~10oz ribeye
+  'sirloin': { serving: 225, piece: 225, pieces: 225 },  // ~8oz sirloin
+  'filet mignon': { serving: 170, piece: 170, pieces: 170 },  // ~6oz filet
+  'fillet steak': { serving: 170, piece: 170, pieces: 170 },
+  't-bone': { serving: 340, piece: 340, pieces: 340 },  // ~12oz t-bone
   // Crackers
   'cracker': { piece: 5, pieces: 5 },
   'crackers': { piece: 5, pieces: 5 },
+};
+
+// Default portion sizes in grams when no quantity is specified
+// This makes "steak and chips" give realistic calorie estimates
+const DEFAULT_PORTION_SIZES = {
+  // Proteins - typical restaurant/home portions
+  'steak': 225,           // 8oz steak
+  'ribeye': 280,          // 10oz ribeye
+  'sirloin': 225,         // 8oz sirloin
+  'filet mignon': 170,    // 6oz filet
+  'fillet steak': 170,
+  't-bone': 340,          // 12oz t-bone
+  'chicken breast': 172,  // 6oz breast
+  'salmon': 170,          // 6oz fillet
+  'pork chop': 200,       // 7oz chop
+  // Sides - typical restaurant portions
+  'chips': 150,           // British chips/fries
+  'fries': 150,
+  'french fries': 150,
+  'mashed potatoes': 175,
+  'rice': 150,
+  'pasta': 180,
+  // Default for most items
+  '_default': 100,
 };
 
 /**
@@ -550,6 +588,14 @@ function calculateFromCache(parsedInput, cachedFood) {
   const foodServings = FOOD_SERVING_WEIGHTS[foodLower];
   if (foodServings && foodServings[unitLower]) {
     gramsPerUnit = foodServings[unitLower];
+  }
+  // If unit is "serving" and we have a default portion size, use it
+  else if (unitLower === 'serving' && DEFAULT_PORTION_SIZES[foodLower]) {
+    gramsPerUnit = DEFAULT_PORTION_SIZES[foodLower];
+  }
+  // Also check the cached food name (e.g., when 'chips' matches 'french fries')
+  else if (unitLower === 'serving' && cachedFood.food && DEFAULT_PORTION_SIZES[cachedFood.food.toLowerCase()]) {
+    gramsPerUnit = DEFAULT_PORTION_SIZES[cachedFood.food.toLowerCase()];
   }
 
   const totalGrams = amount * gramsPerUnit;

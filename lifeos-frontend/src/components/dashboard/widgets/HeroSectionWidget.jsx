@@ -6,6 +6,7 @@ import { useAvatarStore } from '../../../stores/avatarStore';
 import { usePetStore, PET_DATABASE } from '../../../stores/petStore';
 import { getStageByLevel } from '../../../data/avatarEvolution';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../../stores/gamificationModeStore';
+import AvatarRenderer from '../../avatar/AvatarRenderer';
 
 const HeroSectionWidget = memo(function HeroSectionWidget() {
   const navigate = useNavigate();
@@ -85,12 +86,10 @@ const HeroSectionWidget = memo(function HeroSectionWidget() {
           <div className="absolute inset-0 bg-primary-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity scale-75" />
 
           <div className="relative w-36 h-36 flex items-center justify-center">
-            <img
-              src={avatarSpritePath}
-              alt="Avatar"
-              className="w-36 h-36 pixelated relative z-10 drop-shadow-lg"
-              style={{ imageRendering: 'pixelated' }}
-            />
+            {/* Use AvatarRenderer to show equipped items */}
+            <div className="relative z-10">
+              <AvatarRenderer size={144} animate={true} showStats={false} />
+            </div>
 
             {/* Show all active pets positioned around the avatar */}
             {activePetsData.map((pet, index) => (

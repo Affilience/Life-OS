@@ -546,6 +546,7 @@ export async function triggerGamification(action, options = {}) {
   // 7.6 Auto-complete daily tasks based on action type
   // This enables tasks like "Write a quick reflection" to auto-complete when journal entry is saved
   // Uses the semantic task service for comprehensive keyword matching
+  let autoCompletedTasks = [];
   try {
     const [{ default: useDailyTasksStore }, { getTasksForAction }] = await Promise.all([
       import('../stores/dailyTasksStore'),
@@ -565,8 +566,12 @@ export async function triggerGamification(action, options = {}) {
 
       if (matchingTasks.length > 0) {
         matchingTasks.forEach(task => {
-          console.log('[Gamification] Auto-completing task via semantic match:', task.title, '| Action:', action);
-          dailyTasksStore.toggleTask(task.id, today);
+          // Only auto-complete tasks that aren't already completed
+          if (!task.completed) {
+            console.log('[Gamification] Auto-completing task via semantic match:', task.title, '| Action:', action);
+            dailyTasksStore.toggleTask(task.id, today);
+            autoCompletedTasks.push(task);
+          }
         });
       }
     }
@@ -648,6 +653,31 @@ export async function triggerGamification(action, options = {}) {
     });
   }
 
+  // Daily task auto-completion celebrations
+  // Shows a Duolingo-style celebration when tasks are auto-completed by actions
+  if (autoCompletedTasks.length > 0 && globalCelebrate) {
+    const celebrationDelay = (
+      newAchievements.length +
+      newPets.length +
+      extendedStreaks.length +
+      (completedQuests?.length || 0)
+    ) * 1500;
+
+    autoCompletedTasks.forEach((task, index) => {
+      setTimeout(() => {
+        globalCelebrate.questCompleted({
+          quest: {
+            name: task.title,
+            title: task.title,
+            type: 'daily',
+            description: 'Daily task completed!',
+            xpReward: XP_VALUES.taskCompleted || 20,
+          },
+        });
+      }, celebrationDelay + index * 2000);
+    });
+  }
+
   console.log('[Gamification] Store action:', {
     action,
     baseXP,
@@ -668,6 +698,7 @@ export async function triggerGamification(action, options = {}) {
     newPets,
     extendedStreaks,
     completedQuests: completedQuests || [],
+    autoCompletedTasks,
   };
 }
 

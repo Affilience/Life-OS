@@ -6,6 +6,7 @@ import { EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, getEquipmentBySlot, EQUIPMENT_RARI
 import { calculateXPForLevel } from '../../data/avatarEvolution';
 import AvatarRenderer from './AvatarRenderer';
 import { X, Lock, Check, Star, TrendingUp } from 'lucide-react';
+import UnlockBadge from '../shared/UnlockBadge';
 import './AvatarCustomization.css';
 
 export default function AvatarCustomization({ onClose }) {
@@ -227,12 +228,14 @@ export default function AvatarCustomization({ onClose }) {
                         </div>
 
                         {/* Unlock Condition */}
-                        {!isUnlocked && item.unlockedBy !== 'default' && (
+                        {!isUnlocked && item.unlockMethod !== 'default' && (
                           <div className="unlock-condition">
-                            <Lock className="w-3 h-3" />
-                            <span className="unlock-text">
-                              Unlock by: {formatUnlockCondition(item.unlockedBy)}
-                            </span>
+                            <UnlockBadge
+                              method={item.unlockMethod}
+                              description={item.unlockDescription}
+                              requirement={item.unlockRequirement}
+                              size="sm"
+                            />
                           </div>
                         )}
                       </div>
@@ -249,14 +252,3 @@ export default function AvatarCustomization({ onClose }) {
   );
 }
 
-function formatUnlockCondition(unlockCondition) {
-  if (!unlockCondition.module || !unlockCondition.requirement) return 'Unknown';
-
-  const module = unlockCondition.module.charAt(0).toUpperCase() + unlockCondition.module.slice(1);
-  const req = unlockCondition.requirement
-    .replace(/_/g, ' ')
-    .replace(/(\d+)/g, '$1 ')
-    .trim();
-
-  return `${module}: ${req}`;
-}

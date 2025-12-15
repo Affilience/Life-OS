@@ -18,7 +18,8 @@ import {
   X,
   Loader2,
   Edit3,
-  UserCircle
+  UserCircle,
+  ArrowUpCircle
 } from 'lucide-react';
 import PageHeader from '../components/shared/PageHeader';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +38,11 @@ import { useGamificationModeStore, TERMINOLOGY, AVATAR_STAGE_NAMES, VISIBILITY }
 import { useGamificationStore } from '../stores/gamificationStore';
 import { useNewOnboardingStore } from '../stores/newOnboardingStore';
 import { useSocialStore } from '../stores/socialStore';
+import { useSkillPointsStore } from '../stores/skillPointsStore';
 import { getStageByLevel, getNextStageMilestone } from '../data/avatarEvolution';
+import SkillPointAllocator from '../components/character/SkillPointAllocator';
+import StatBreakdown from '../components/character/StatBreakdown';
+import { Info } from 'lucide-react';
 
 // Mode-specific styling
 const MODE_STYLES = {
@@ -223,12 +228,23 @@ export default function Character() {
   // Get username from social store (primary source - from database)
   const { socialProfile, updateUsername, checkUsernameAvailable, fetchSocialProfile } = useSocialStore();
 
+  // Get skill points
+  const { unallocatedPoints, initializeForLevel } = useSkillPointsStore();
+
+  // Initialize skill points based on level
+  useEffect(() => {
+    if (level > 0) {
+      initializeForLevel(level);
+    }
+  }, [level, initializeForLevel]);
+
   // Prefer socialProfile (database) over onboarding store (local)
   const displayName = socialProfile?.display_name || socialProfile?.username || profile.displayName || profile.username || 'Traveler';
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [usernameStatus, setUsernameStatus] = useState({ checking: false, available: null, error: null });
   const [savingUsername, setSavingUsername] = useState(false);
+  const [showStatBreakdown, setShowStatBreakdown] = useState(false);
 
   // Fetch social profile on mount
   useEffect(() => {
@@ -484,6 +500,17 @@ export default function Character() {
                       </button>
                     </div>
                   )}
+
+                  {/* Evolution Showcase Button */}
+                  {visibility.showAvatar && (
+                    <button
+                      onClick={() => navigate('/evolution')}
+                      className={`mt-3 flex items-center gap-2 px-4 py-2 bg-gradient-to-r ${styles.actionBtn} rounded-lg text-sm font-medium text-text-primary hover:opacity-90 transition-all shadow-lg`}
+                    >
+                      <ArrowUpCircle className="w-4 h-4" />
+                      <span>View Evolution Stages</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Right: Stats */}
@@ -536,6 +563,22 @@ export default function Character() {
                       <div className="text-lg font-bold text-text-primary">{balanceScore}%</div>
                     </div>
                   </div>
+
+                  {/* Stat Breakdown Button */}
+                  <button
+                    onClick={() => setShowStatBreakdown(true)}
+                    className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-lg text-sm text-text-muted hover:text-text-primary transition-all"
+                  >
+                    <Info className="w-4 h-4" />
+                    <span>View Stat Sources</span>
+                  </button>
+
+                  {/* Skill Point Allocator - Compact inline version */}
+                  {mode !== 'minimal' && (
+                    <div className="mt-3">
+                      <SkillPointAllocator compact />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -660,6 +703,11 @@ export default function Character() {
           </div>
         )}
       </div>
+
+      {/* Stat Breakdown Modal */}
+      {showStatBreakdown && (
+        <StatBreakdown onClose={() => setShowStatBreakdown(false)} />
+      )}
     </div>
   );
 }

@@ -329,7 +329,7 @@ export default function KnowledgeDashboard({ onTabChange }) {
                 <div className="text-center py-4 text-text-primary/50">
                   <p>No books in progress</p>
                   <button
-                    onClick={() => navigate('/knowledge')}
+                    onClick={() => onTabChange?.('library')}
                     className="text-blue-400 hover:text-blue-300 text-sm mt-2"
                   >
                     Add a book to read

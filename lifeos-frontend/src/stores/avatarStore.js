@@ -1,7 +1,37 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase, getCurrentUserId } from '../lib/supabase';
-import { AVATAR_TIERS, EQUIPMENT_DATABASE, calculateStats } from '../data/avatarData';
+import { AVATAR_TIERS, calculateStats } from '../data/avatarData';
+import { EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, EQUIPMENT_RARITY } from '../data/equipmentDatabase';
+
+// Lazy store imports to avoid circular dependencies
+let achievementsStoreRef = null;
+let perkStoreRef = null;
+let gamificationStoreRef = null;
+
+const getAchievementsStore = async () => {
+  if (!achievementsStoreRef) {
+    const module = await import('./achievementsStore');
+    achievementsStoreRef = module.default;
+  }
+  return achievementsStoreRef;
+};
+
+const getPerkStore = async () => {
+  if (!perkStoreRef) {
+    const module = await import('./perkStore');
+    perkStoreRef = module.default;
+  }
+  return perkStoreRef;
+};
+
+const getGamificationStore = async () => {
+  if (!gamificationStoreRef) {
+    const module = await import('./gamificationStore');
+    gamificationStoreRef = module.default;
+  }
+  return gamificationStoreRef;
+};
 
 // Default state for new users
 const DEFAULT_STATE = {
@@ -13,25 +43,37 @@ const DEFAULT_STATE = {
   totalXPEarned: 0,
   characterGender: 'male',
   equipped: {
-    helmet: 'helmet_basic',
-    suit: 'suit_basic',
-    backpack: 'backpack_basic',
-    tool: 'tool_scanner',
-    badge: null,
+    helmet: 'helmet_cloth_cap',
+    chest: 'chest_cloth_tunic',
+    legs: null,
+    mainHand: 'weapon_training_sword',
+    offHand: 'shield_wooden_buckler',
+    cape: 'cape_traveler',
+    ring1: null,
+    ring2: null,
+    amulet: null,
   },
   cosmetic: {
     helmet: null,
-    suit: null,
-    backpack: null,
-    tool: null,
-    badge: null,
+    chest: null,
+    legs: null,
+    mainHand: null,
+    offHand: null,
+    cape: null,
+    ring1: null,
+    ring2: null,
+    amulet: null,
   },
   dyes: {
     helmet: null,
-    suit: null,
-    backpack: null,
-    tool: null,
-    badge: null,
+    chest: null,
+    legs: null,
+    mainHand: null,
+    offHand: null,
+    cape: null,
+    ring1: null,
+    ring2: null,
+    amulet: null,
   },
   // Bazaar cosmetics (titles, frames)
   ownedCosmetics: [], // Array of cosmetic item IDs owned
@@ -41,9 +83,10 @@ const DEFAULT_STATE = {
   },
   unlockedEquipment: [
     'helmet_basic',
-    'suit_basic',
-    'backpack_basic',
-    'tool_scanner',
+    'chest_basic',
+    'weapon_basic_sword',
+    'shield_basic',
+    'cape_basic',
   ],
   stats: {
     defense: 3,
@@ -251,7 +294,11 @@ export const useAvatarStore = create(
         const item = EQUIPMENT_DATABASE[itemId];
         if (!item) return false;
         if (item.slot !== slot) return false;
-        if (!get().unlockedEquipment.includes(itemId)) return false;
+
+        // Allow if unlocked OR if it's default equipment
+        const isDefault = item.unlockMethod === 'default';
+        const isUnlocked = get().unlockedEquipment.includes(itemId);
+        if (!isDefault && !isUnlocked) return false;
 
         set(state => ({
           equipped: {
@@ -309,24 +356,223 @@ export const useAvatarStore = create(
         get().syncToSupabase();
       },
 
+      // Check if a specific unlock requirement is met
+      checkUnlockRequirement: async (item, { level, prestige, stats, unlockedAchievements, perkState }) => {
+        const req = item.unlockRequirement;
+        const method = item.unlockMethod;
+
+        // Default items are always unlocked
+        if (method === 'default') {
+          return true;
+        }
+
+        // Bazaar items are never auto-unlocked - must be purchased
+        if (method === 'bazaar') {
+          return false;
+        }
+
+        // Level-based unlocks
+        if (method === 'level') {
+          // Check for prestige requirement
+          if (req.prestige) {
+            return prestige >= req.prestige;
+          }
+          return level >= req.level;
+        }
+
+        // Achievement-based unlocks
+        if (method === 'achievement') {
+          // First check if the specific achievement is unlocked
+          if (req.achievementId && unlockedAchievements?.includes(req.achievementId)) {
+            return true;
+          }
+          // Fallback to stat-based check
+          if (req.fallbackStat && req.fallbackTarget) {
+            return (stats[req.fallbackStat] || 0) >= req.fallbackTarget;
+          }
+          return false;
+        }
+
+        // Skill tree-based unlocks
+        if (method === 'skill_tree') {
+          const treeLevels = perkState?.treeLevels || {};
+          const unlockedPerks = perkState?.unlockedPerks || [];
+
+          // Check for specific perk unlock (OR condition)
+          if (req.orPerkId && unlockedPerks.includes(req.orPerkId)) {
+            return true;
+          }
+
+          // Check for specific tree level requirement
+          if (req.tree && req.level) {
+            const treeLevel = treeLevels[req.tree] || 0;
+            if (treeLevel >= req.level) {
+              return true;
+            }
+          }
+
+          // Check for any tree reaching a level
+          if (req.anyTree && req.level) {
+            return Object.values(treeLevels).some(lvl => lvl >= req.level);
+          }
+
+          // Check for all trees reaching a level
+          if (req.allTrees && req.level) {
+            const trees = ['body', 'mind', 'spirit', 'wealth', 'social', 'craft'];
+            return trees.every(tree => (treeLevels[tree] || 0) >= req.level);
+          }
+
+          return false;
+        }
+
+        return false;
+      },
+
       // Check for equipment unlocks based on progress
-      checkUnlocks: () => {
-        const progress = get().moduleProgress;
-        const unlocked = get().unlockedEquipment;
-        let newUnlocks = [];
+      checkUnlocks: async () => {
+        const { unlockedEquipment, unlockEquipment, checkUnlockRequirement, level, prestige } = get();
 
-        Object.entries(EQUIPMENT_DATABASE).forEach(([itemId, item]) => {
-          if (unlocked.includes(itemId)) return;
-          if (item.unlockedBy === 'default') return;
+        // Import stores dynamically to avoid circular dependencies
+        const [achievementsStore, perkStore] = await Promise.all([
+          getAchievementsStore(),
+          getPerkStore()
+        ]);
 
-          // Check unlock conditions
-          if (checkUnlockCondition(item.unlockedBy, progress)) {
-            get().unlockEquipment(itemId);
+        const achievementsState = achievementsStore.getState();
+        const perkState = perkStore.getState();
+
+        const stats = achievementsState.stats || {};
+        const unlockedAchievements = achievementsState.unlockedAchievements || [];
+
+        const newUnlocks = [];
+
+        // Check each equipment's unlock condition
+        for (const [itemId, item] of Object.entries(EQUIPMENT_DATABASE)) {
+          if (unlockedEquipment.includes(itemId)) continue; // Already owned
+
+          const shouldUnlock = await checkUnlockRequirement(item, {
+            level,
+            prestige,
+            stats,
+            unlockedAchievements,
+            perkState,
+          });
+
+          if (shouldUnlock) {
+            await unlockEquipment(itemId);
             newUnlocks.push(item);
           }
-        });
+        }
 
         return newUnlocks;
+      },
+
+      // Purchase equipment from the Bazaar
+      purchaseEquipment: async (itemId) => {
+        const { unlockedEquipment, unlockEquipment } = get();
+        const item = EQUIPMENT_DATABASE[itemId];
+
+        // Validate item exists and is bazaar-purchasable
+        if (!item || item.unlockMethod !== 'bazaar') {
+          console.error('[AvatarStore] Equipment cannot be purchased:', itemId);
+          return { success: false, error: 'Equipment cannot be purchased' };
+        }
+
+        // Check if already owned
+        if (unlockedEquipment.includes(itemId)) {
+          return { success: false, error: 'Already owned' };
+        }
+
+        const price = item.unlockRequirement.price;
+
+        // Get gamification store to handle credits
+        const gamificationStore = await getGamificationStore();
+        const gamificationState = gamificationStore.getState();
+        const currentCredits = gamificationState.cosmicCredits || 0;
+
+        // Check if user has enough credits
+        if (currentCredits < price) {
+          return {
+            success: false,
+            error: 'Insufficient credits',
+            required: price,
+            current: currentCredits,
+          };
+        }
+
+        // Deduct credits
+        gamificationState.spendCredits(price, `Equipment purchase: ${item.name}`);
+
+        // Unlock the equipment
+        await unlockEquipment(itemId);
+
+        // Log the purchase to timeline
+        const userId = await getCurrentUserId();
+        if (userId) {
+          try {
+            await supabase.from('timeline').insert({
+              user_id: userId,
+              module: 'bazaar',
+              entry_type: 'equipment_purchased',
+              title: `Purchased ${item.name}`,
+              description: `Bought ${item.name} for ${price} Cosmic Credits`,
+              metadata: {
+                item_id: itemId,
+                slot: item.slot,
+                rarity: item.rarity,
+                price: price,
+              },
+            });
+          } catch (error) {
+            console.error('Error logging equipment purchase to timeline:', error);
+          }
+        }
+
+        return {
+          success: true,
+          item: item,
+          creditsSpent: price,
+          remainingCredits: currentCredits - price,
+        };
+      },
+
+      // Get equipment available for purchase in the Bazaar
+      getPurchasableEquipment: () => {
+        const { unlockedEquipment } = get();
+
+        return Object.entries(EQUIPMENT_DATABASE)
+          .filter(([itemId, item]) => {
+            // Must be bazaar-purchasable and not already owned
+            return item.unlockMethod === 'bazaar' && !unlockedEquipment.includes(itemId);
+          })
+          .map(([itemId, item]) => ({
+            ...item,
+            id: itemId,
+            price: item.unlockRequirement.price,
+          }))
+          .sort((a, b) => a.price - b.price);
+      },
+
+      // Get all locked equipment grouped by unlock method (for UI display)
+      getLockedEquipmentByMethod: () => {
+        const { unlockedEquipment } = get();
+
+        const grouped = {
+          level: [],
+          achievement: [],
+          skill_tree: [],
+          bazaar: [],
+        };
+
+        Object.entries(EQUIPMENT_DATABASE)
+          .filter(([itemId, item]) => !unlockedEquipment.includes(itemId) && item.unlockMethod !== 'default')
+          .forEach(([itemId, item]) => {
+            if (grouped[item.unlockMethod]) {
+              grouped[item.unlockMethod].push({ ...item, id: itemId });
+            }
+          });
+
+        return grouped;
       },
 
       // Recalculate stats from equipped items
@@ -394,10 +640,14 @@ export const useAvatarStore = create(
         set({
           cosmetic: {
             helmet: null,
-            suit: null,
-            backpack: null,
-            tool: null,
-            badge: null,
+            chest: null,
+            legs: null,
+            mainHand: null,
+            offHand: null,
+            cape: null,
+            ring1: null,
+            ring2: null,
+            amulet: null,
           },
         });
         get().syncToSupabase();
@@ -448,18 +698,22 @@ export const useAvatarStore = create(
         set({
           dyes: {
             helmet: null,
-            suit: null,
-            backpack: null,
-            tool: null,
-            badge: null,
+            chest: null,
+            legs: null,
+            mainHand: null,
+            offHand: null,
+            cape: null,
+            ring1: null,
+            ring2: null,
+            amulet: null,
           },
         });
         get().syncToSupabase();
       },
 
-      // Get all visual equipment
+      // Get all visual equipment (RPG slots)
       getVisualEquipment: () => {
-        const slots = ['helmet', 'suit', 'backpack', 'tool', 'badge'];
+        const slots = ['helmet', 'chest', 'legs', 'mainHand', 'offHand', 'cape'];
         const visual = {};
 
         slots.forEach(slot => {
@@ -525,10 +779,11 @@ export const useAvatarStore = create(
       getHeroSpritePath: (stageNumber, stageName) => {
         const gender = get().characterGender;
         const nameSlug = stageName.toLowerCase().replace(/ /g, '_');
+        // Use base evolution sprites (no armor) for equipment overlay system
         if (gender === 'female') {
-          return `/assets/avatar/evolution/heroine_v3_stage_${stageNumber}_${nameSlug}.png`;
+          return `/assets/avatar/base-evolution/heroine_base_stage_${stageNumber}_${nameSlug}.png`;
         }
-        return `/assets/avatar/evolution/hero_v3_stage_${stageNumber}_${nameSlug}.png`;
+        return `/assets/avatar/base-evolution/hero_base_stage_${stageNumber}_${nameSlug}.png`;
       },
 
       // Prestige/Rebirth system
@@ -656,42 +911,6 @@ function getTierForLevel(level) {
   if (level >= 26) return 3;
   if (level >= 11) return 2;
   return 1;
-}
-
-function checkUnlockCondition(unlockCondition, progress) {
-  if (!unlockCondition?.module || !unlockCondition?.requirement) return false;
-
-  const moduleProgress = progress[unlockCondition.module];
-  if (!moduleProgress) return false;
-
-  const requirement = unlockCondition.requirement;
-
-  if (requirement === 'complete_50_tasks') {
-    return moduleProgress.tasksCompleted >= 50;
-  }
-  if (requirement === 'complete_200_tasks') {
-    return moduleProgress.tasksCompleted >= 200;
-  }
-  if (requirement === 'complete_500_tasks') {
-    return moduleProgress.tasksCompleted >= 500;
-  }
-  if (requirement === '30_workouts_completed') {
-    return moduleProgress.workoutsCompleted >= 30;
-  }
-  if (requirement === '90_day_workout_streak') {
-    return moduleProgress.workoutStreak >= 90;
-  }
-  if (requirement === 'finish_10_books') {
-    return moduleProgress.booksCompleted >= 10;
-  }
-  if (requirement === 'master_5_skills') {
-    return moduleProgress.skillsMastered >= 5;
-  }
-  if (requirement === '30_days_tracked') {
-    return moduleProgress.daysTracked >= 30;
-  }
-
-  return false;
 }
 
 // Hook to initialize store from Supabase on app load

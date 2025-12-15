@@ -264,13 +264,14 @@ export default function SmartMealLogger({ onMealLogged }) {
 
         {/* Quick Suggestions */}
         {suggestions.length > 0 && (
-          <div className="absolute z-10 left-0 right-0 mt-2 bg-surface border border-border-subtle rounded-xl shadow-2xl overflow-hidden">
+          <div className="absolute z-10 left-0 right-0 mt-2 rounded-xl shadow-2xl overflow-hidden border border-border-subtle" style={{ backgroundColor: '#12101a' }}>
             {suggestions.map((suggestion, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion.name)}
                 className="w-full px-4 py-3 text-left hover:bg-violet-500/10 transition-colors flex justify-between items-center border-b border-border-subtle last:border-0"
+                style={{ backgroundColor: '#12101a' }}
               >
                 <span className="text-fg-primary font-medium capitalize">{suggestion.name}</span>
                 <span className="text-fg-tertiary text-sm">{suggestion.calories} cal</span>

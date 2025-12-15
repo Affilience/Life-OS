@@ -4,10 +4,11 @@
  */
 
 import React, { useState } from 'react';
-import { Package, Zap, Shield, Star, Sparkles, AlertCircle, Crown, Frame, Check, X } from 'lucide-react';
+import { Package, Zap, Shield, Star, Sparkles, AlertCircle, Crown, Frame, Check, X, Sword, ShieldIcon } from 'lucide-react';
 import { useGamificationStore, getRarityColor } from '../../stores/gamificationStore';
 import { useAvatarStore, COSMETIC_DEFINITIONS } from '../../stores/avatarStore';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
+import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
 
 // Rarity colors for cosmetics
 const RARITY_COLORS = {
@@ -18,13 +19,51 @@ const RARITY_COLORS = {
   legendary: '#f59e0b',
 };
 
+// Equipment slot icons and labels
+const SLOT_INFO = {
+  helmet: { icon: '🪖', label: 'Helmets' },
+  chest: { icon: '🛡️', label: 'Chest Armor' },
+  legs: { icon: '👖', label: 'Leg Armor' },
+  mainHand: { icon: '⚔️', label: 'Weapons' },
+  offHand: { icon: '🛡️', label: 'Off-Hand' },
+  cape: { icon: '🧣', label: 'Capes' },
+  ring: { icon: '💍', label: 'Rings' },
+  amulet: { icon: '📿', label: 'Amulets' },
+};
+
 export default function InventorySection() {
-  const [activeTab, setActiveTab] = useState('consumables');
+  const [activeTab, setActiveTab] = useState('equipment');
   const { inventory, useInventoryItem } = useGamificationStore();
-  const { ownedCosmetics, activeCosmetics, setActiveCosmetic } = useAvatarStore();
+  const { ownedCosmetics, activeCosmetics, setActiveCosmetic, unlockedEquipment, equipped, equipItem } = useAvatarStore();
   const { mode } = useGamificationModeStore();
   const [useConfirmItem, setUseConfirmItem] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+
+  // Get equipment details for unlocked items
+  const ownedEquipmentItems = React.useMemo(() => {
+    return (unlockedEquipment || [])
+      .map(id => EQUIPMENT_DATABASE[id])
+      .filter(Boolean)
+      .sort((a, b) => {
+        // Sort by rarity (legendary first), then by slot
+        const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
+        const rarityDiff = (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5);
+        if (rarityDiff !== 0) return rarityDiff;
+        return (a.slot || '').localeCompare(b.slot || '');
+      });
+  }, [unlockedEquipment]);
+
+  // Group equipment by slot
+  const equipmentBySlot = React.useMemo(() => {
+    const grouped = {};
+    ownedEquipmentItems.forEach(item => {
+      if (!grouped[item.slot]) grouped[item.slot] = [];
+      grouped[item.slot].push(item);
+    });
+    return grouped;
+  }, [ownedEquipmentItems]);
+
+  const hasEquipment = ownedEquipmentItems.length > 0;
 
   // Handle using consumable item
   const handleUseItem = (item) => {
@@ -115,7 +154,7 @@ export default function InventorySection() {
   });
 
   const hasConsumables = inventory.length > 0;
-  const hasAnything = hasConsumables || hasAnyCosmetics;
+  const hasAnything = hasConsumables || hasAnyCosmetics || hasEquipment;
 
   // Empty state for entire section
   if (!hasAnything) {
@@ -139,15 +178,26 @@ export default function InventorySection() {
         <div>
           <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
             <Package className="w-5 h-5 text-emerald-400" />
-            Inventory & Cosmetics
+            Inventory
           </h3>
           <p className="text-sm text-text-muted">
-            {inventory.length} consumable{inventory.length !== 1 ? 's' : ''} • {groupedCosmetics.title.length + groupedCosmetics.frame.length} cosmetic{groupedCosmetics.title.length + groupedCosmetics.frame.length !== 1 ? 's' : ''}
+            {ownedEquipmentItems.length} equipment • {inventory.length} consumable{inventory.length !== 1 ? 's' : ''} • {groupedCosmetics.title.length + groupedCosmetics.frame.length} cosmetic{groupedCosmetics.title.length + groupedCosmetics.frame.length !== 1 ? 's' : ''}
           </p>
         </div>
 
         {/* Tab Buttons */}
         <div className="flex gap-1 bg-bg-0 p-1 rounded-lg border border-border">
+          <button
+            onClick={() => setActiveTab('equipment')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+              activeTab === 'equipment'
+                ? 'bg-orange-500/20 text-orange-400'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
+          >
+            <Sword className="w-3.5 h-3.5" />
+            Equipment
+          </button>
           <button
             onClick={() => setActiveTab('consumables')}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
@@ -186,6 +236,126 @@ export default function InventorySection() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Equipment Tab */}
+      {activeTab === 'equipment' && (
+        <>
+          {!hasEquipment ? (
+            <div className="bg-bg-1 border border-border rounded-xl p-6 text-center">
+              <Sword className="w-12 h-12 mx-auto mb-3 text-text-muted opacity-40" />
+              <p className="text-text-muted text-sm">
+                No equipment yet. Purchase gear from the {mode === 'cosmic' ? 'Bazaar' : 'Shop'}!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(SLOT_INFO).map(([slotKey, slotMeta]) => {
+                const slotItems = equipmentBySlot[slotKey] || [];
+                if (slotItems.length === 0) return null;
+
+                const equippedId = equipped[slotKey];
+
+                return (
+                  <div key={slotKey} className="bg-bg-1 border border-border rounded-xl p-4">
+                    <h4 className="font-semibold text-text-primary flex items-center gap-2 mb-3">
+                      <span className="text-lg">{slotMeta.icon}</span>
+                      {slotMeta.label}
+                      {equippedId && (
+                        <span className="text-xs text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full ml-auto">
+                          1 Equipped
+                        </span>
+                      )}
+                    </h4>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {slotItems.map(item => {
+                        const isEquipped = equippedId === item.id;
+                        const rarityColor = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
+
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => equipItem(slotKey, isEquipped ? null : item.id)}
+                            className={`
+                              relative p-3 rounded-xl text-left transition-all
+                              ${isEquipped
+                                ? 'bg-orange-500/20 border-2 border-orange-500'
+                                : 'bg-bg-2 border border-border hover:border-orange-500/50'
+                              }
+                            `}
+                          >
+                            {/* Equipped Indicator */}
+                            {isEquipped && (
+                              <div className="absolute top-2 right-2 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+
+                            {/* Item Icon */}
+                            <div
+                              className="w-10 h-10 rounded-lg flex items-center justify-center mb-2 mx-auto"
+                              style={{ backgroundColor: `${rarityColor}20` }}
+                            >
+                              {item.sprite ? (
+                                <img
+                                  src={item.sprite}
+                                  alt={item.name}
+                                  className="w-full h-full object-contain pixelated p-1"
+                                  style={{ imageRendering: 'pixelated' }}
+                                />
+                              ) : (
+                                <span className="text-xl">{item.icon || slotMeta.icon}</span>
+                              )}
+                            </div>
+
+                            {/* Item Name */}
+                            <p className="font-semibold text-text-primary text-xs text-center truncate mb-1">
+                              {item.name}
+                            </p>
+
+                            {/* Rarity */}
+                            <p
+                              className="text-xs text-center capitalize"
+                              style={{ color: rarityColor }}
+                            >
+                              {item.rarity}
+                            </p>
+
+                            {/* Stats Preview */}
+                            {item.stats && Object.keys(item.stats).length > 0 && (
+                              <div className="mt-2 flex flex-wrap justify-center gap-1">
+                                {Object.entries(item.stats).slice(0, 2).map(([stat, value]) => (
+                                  <span
+                                    key={stat}
+                                    className="text-[10px] bg-bg-0 px-1.5 py-0.5 rounded text-text-muted"
+                                  >
+                                    +{value} {stat.slice(0, 3).toUpperCase()}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Unequip button if something is equipped */}
+                    {equippedId && (
+                      <button
+                        onClick={() => equipItem(slotKey, null)}
+                        className="mt-3 text-xs text-text-muted hover:text-red-400 flex items-center gap-1 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                        Unequip {slotMeta.label.replace(/s$/, '')}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* Consumables Tab */}

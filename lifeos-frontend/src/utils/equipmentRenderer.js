@@ -12,25 +12,25 @@ export function getEquipmentLayerOrder(facing = 'down', animationState = 'idle')
     down: {
       // Facing toward camera
       back: ['cape_back', 'backpack'],
-      middle: ['body', 'suit', 'legs', 'boots'],
+      middle: ['body', 'suit', 'legs'],
       front: ['mainHand', 'offHand', 'helmet', 'badge'],
     },
     up: {
       // Facing away from camera
       back: ['mainHand', 'offHand', 'backpack'],
-      middle: ['body', 'suit', 'legs', 'boots', 'cape'],
+      middle: ['body', 'suit', 'legs', 'cape'],
       front: ['helmet'],
     },
     left: {
       // Facing left
       back: ['cape', 'backpack', 'offHand'],
-      middle: ['body', 'suit', 'legs', 'boots'],
+      middle: ['body', 'suit', 'legs'],
       front: ['mainHand', 'helmet', 'badge'],
     },
     right: {
       // Facing right (mirror of left)
       back: ['cape', 'backpack', 'mainHand'],
-      middle: ['body', 'suit', 'legs', 'boots'],
+      middle: ['body', 'suit', 'legs'],
       front: ['offHand', 'helmet', 'badge'],
     },
   };
@@ -48,13 +48,9 @@ export const EQUIPMENT_TO_LAYER_MAP = {
   helmet: 'helmet',
   chest: 'suit',
   legs: 'legs',
-  boots: 'boots',
   mainHand: 'mainHand',
   offHand: 'offHand',
   cape: 'cape',
-  ring1: null, // Rings don't have visual representation
-  ring2: null,
-  amulet: 'badge', // Amulet shows as badge on chest
   backpack: 'backpack',
   tool: 'mainHand', // Tools are held in main hand
   badge: 'badge',
@@ -84,8 +80,9 @@ export function getEquipmentSpritePath(equipmentId, slot) {
  * @param {number} size - Render size
  * @param {Object} effects - Visual effects (glow, particles, etc.)
  * @param {string} dyeColor - Optional color tint
+ * @param {Object} options - Additional render options (flipHorizontal, slot)
  */
-export function renderEquipmentLayer(ctx, sprite, x, y, size, effects = {}, dyeColor = null) {
+export function renderEquipmentLayer(ctx, sprite, x, y, size, effects = {}, dyeColor = null, options = {}) {
   if (!sprite) return;
 
   ctx.save();
@@ -111,8 +108,15 @@ export function renderEquipmentLayer(ctx, sprite, x, y, size, effects = {}, dyeC
     ctx.fillStyle = dyeColor;
   }
 
-  // Draw the equipment sprite
-  ctx.drawImage(sprite, Math.floor(x), Math.floor(y), size, size);
+  // Handle horizontal flip for offHand items (shields, etc.)
+  if (options.flipHorizontal) {
+    ctx.translate(x + size, y);
+    ctx.scale(-1, 1);
+    ctx.drawImage(sprite, 0, 0, size, size);
+  } else {
+    // Draw the equipment sprite normally
+    ctx.drawImage(sprite, Math.floor(x), Math.floor(y), size, size);
+  }
 
   // Reset composite operation
   if (dyeColor) {
@@ -280,7 +284,6 @@ function findEquipmentForLayer(equippedItems, layerName) {
     helmet: 'helmet',
     suit: 'chest',
     legs: 'legs',
-    boots: 'boots',
     mainHand: 'mainHand',
     offHand: 'offHand',
     cape: 'cape',

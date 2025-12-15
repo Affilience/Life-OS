@@ -1,17 +1,18 @@
 /**
  * Equipment Showcase - Paper Doll Layout
- * Impressive equipment display with character in center
- * Inspired by classic RPG character sheets
+ * Uses avatarStore for equipment management
  */
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useGamificationStore } from '../../stores/gamificationStore';
+import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useAvatarStore } from '../../stores/avatarStore';
+import { useGamificationStore } from '../../stores/gamificationStore';
 import { useStats } from '../../hooks/useStats';
-import { supabase } from '../../lib/supabase';
 import { usePetStore, PET_DATABASE } from '../../stores/petStore';
+import { EQUIPMENT_DATABASE, EQUIPMENT_RARITY, EQUIPMENT_SLOTS } from '../../data/equipmentDatabase';
+import { useGamificationModeStore, VISIBILITY } from '../../stores/gamificationModeStore';
 import { getStageByLevel } from '../../data/avatarEvolution';
+import AvatarRenderer from './AvatarRenderer';
 import {
   Shield,
   Sword,
@@ -21,105 +22,86 @@ import {
   Zap,
   Brain,
   TrendingUp,
-  Lock
+  Lock,
+  X
 } from 'lucide-react';
-import { useGamificationModeStore, VISIBILITY } from '../../stores/gamificationModeStore';
 
-// Rarity definitions with enhanced visual effects
-const EQUIPMENT_RARITY = {
-  common: {
-    name: 'Common',
-    color: '#9CA3AF',
-    glow: 'rgba(156, 163, 175, 0.2)',
-    shine: 'rgba(156, 163, 175, 0.5)'
-  },
-  uncommon: {
-    name: 'Uncommon',
-    color: '#10B981',
-    glow: 'rgba(16, 185, 129, 0.3)',
-    shine: 'rgba(16, 185, 129, 0.6)'
-  },
-  rare: {
-    name: 'Rare',
-    color: '#3B82F6',
-    glow: 'rgba(59, 130, 246, 0.4)',
-    shine: 'rgba(59, 130, 246, 0.7)'
-  },
-  epic: {
-    name: 'Epic',
-    color: '#A855F7',
-    glow: 'rgba(168, 85, 247, 0.5)',
-    shine: 'rgba(168, 85, 247, 0.8)'
-  },
-  legendary: {
-    name: 'Legendary',
-    color: '#F59E0B',
-    glow: 'rgba(245, 158, 11, 0.6)',
-    shine: 'rgba(245, 158, 11, 0.9)',
-    pulse: true
-  },
-};
-
-// Equipment slots with positioning for paper doll layout
-const EQUIPMENT_SLOTS = {
+// Slot definitions for paper doll layout
+const PAPERDOLL_SLOTS = {
   helmet: {
     name: 'Helmet',
-    position: 'top-center',
     icon: '/assets/equipment/slots/slot_helmet.png',
-    fallbackIcon: '⛑️'
+    fallbackIcon: '⛑️',
+    storeSlot: 'helmet',
   },
-  amulet: {
-    name: 'Amulet',
-    position: 'top-left',
-    icon: '/assets/equipment/slots/slot_amulet.png',
-    fallbackIcon: '📿'
+  legs: {
+    name: 'Legs',
+    icon: '/assets/equipment/slots/slot_legs.png',
+    fallbackIcon: '👖',
+    storeSlot: 'legs',
   },
   cape: {
     name: 'Cape',
-    position: 'top-right',
     icon: '/assets/equipment/slots/slot_cape.png',
-    fallbackIcon: '🧥'
+    fallbackIcon: '🧥',
+    storeSlot: 'cape',
   },
-  weapon: {
+  mainHand: {
     name: 'Weapon',
-    position: 'middle-left',
     icon: '/assets/equipment/slots/slot_weapon.png',
-    fallbackIcon: '⚔️'
+    fallbackIcon: '⚔️',
+    storeSlot: 'mainHand',
   },
   chest: {
     name: 'Chest',
-    position: 'middle-center',
     icon: '/assets/equipment/slots/slot_chest.png',
-    fallbackIcon: '🦺'
+    fallbackIcon: '🦺',
+    storeSlot: 'chest',
   },
-  shield: {
+  offHand: {
     name: 'Shield',
-    position: 'middle-right',
     icon: '/assets/equipment/slots/slot_shield.png',
-    fallbackIcon: '🛡️'
+    fallbackIcon: '🛡️',
+    storeSlot: 'offHand',
   },
-  ring: {
-    name: 'Ring',
-    position: 'bottom-center',
+  ring1: {
+    name: 'Ring 1',
     icon: '/assets/equipment/slots/slot_ring.png',
-    fallbackIcon: '💍'
+    fallbackIcon: '💍',
+    storeSlot: 'ring1',
+  },
+  ring2: {
+    name: 'Ring 2',
+    icon: '/assets/equipment/slots/slot_ring.png',
+    fallbackIcon: '💍',
+    storeSlot: 'ring2',
+  },
+  amulet: {
+    name: 'Amulet',
+    icon: '/assets/equipment/slots/slot_amulet.png',
+    fallbackIcon: '📿',
+    storeSlot: 'amulet',
   },
 };
-
-// DEV MODE flag
-const DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true';
 
 export default function EquipmentShowcase() {
   const { mode } = useGamificationModeStore();
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
 
+  // Use avatarStore for equipment
   const {
-    equippedItems: storeEquippedItems,
-    ownedEquipment,
+    equipped,
+    unlockedEquipment,
     equipItem,
     unequipItem,
     level,
-  } = useGamificationStore();
+    prestige,
+    getHeroSpritePath,
+  } = useAvatarStore();
+
+  // Get level from gamification store (main source of truth for level)
+  const { level: gamificationLevel } = useGamificationStore();
+  const effectiveLevel = gamificationLevel || level || 1;
 
   // Hide equipment showcase in minimal mode
   if (!visibility.showEquipment) {
@@ -127,269 +109,284 @@ export default function EquipmentShowcase() {
   }
 
   // Use unified stats system
-  const { stats, statBreakdown, totalPower, synergies } = useStats();
+  const { stats, statBreakdown } = useStats();
 
   // Get active/equipped pets
   const { activePets } = usePetStore();
 
-  // Get avatar info for dynamic sprite
-  const { prestige = 0, getHeroSpritePath } = useAvatarStore();
-  const evolutionStage = getStageByLevel(level, prestige);
-  const avatarSpritePath = evolutionStage
-    ? getHeroSpritePath(evolutionStage.levelRequired, evolutionStage.name)
-    : '/assets/avatar/evolution/hero_v3_stage_1_dreamer.png';
+  // Get current evolution stage and avatar sprite (same as Character page)
+  const currentStage = getStageByLevel(effectiveLevel, prestige || 0);
+  const avatarSpritePath = getHeroSpritePath(currentStage.levelRequired, currentStage.name);
 
-  const [devEquipment, setDevEquipment] = useState([]);
-  const [devEquippedItems, setDevEquippedItems] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [filterRarity, setFilterRarity] = useState('all');
   const [showInventory, setShowInventory] = useState(false);
 
-  // Load all equipment from database in dev mode
-  useEffect(() => {
-    if (DEV_MODE) {
-      loadAllEquipment();
-    }
-  }, []);
-
-  const loadAllEquipment = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('equipment_items')
-      .select('*')
-      .order('required_level', { ascending: true });
-
-    if (!error && data) {
-      setDevEquipment(data);
-    }
-    setLoading(false);
-  };
-
-  // Use dev or store data
-  const availableEquipment = DEV_MODE ? devEquipment : ownedEquipment;
-  const equippedItems = DEV_MODE ? devEquippedItems : storeEquippedItems;
-
-  // Stats are now calculated by useStats hook - no need for manual calculation
+  // Get all available equipment from EQUIPMENT_DATABASE
+  const availableEquipment = useMemo(() => {
+    return Object.values(EQUIPMENT_DATABASE).filter(item => {
+      // Show if unlocked OR if it's default equipment (default = always available)
+      const isUnlocked = unlockedEquipment.includes(item.id);
+      const isDefault = item.unlockMethod === 'default';
+      // Default equipment is always available regardless of level
+      // Other equipment requires meeting the level requirement
+      if (isDefault) return true;
+      const meetsLevel = item.levelRequired <= effectiveLevel;
+      return isUnlocked && meetsLevel;
+    });
+  }, [unlockedEquipment, effectiveLevel]);
 
   // Get equipped item for a slot
   const getEquippedForSlot = (slotId) => {
-    if (DEV_MODE) {
-      return equippedItems.find(item => item.slot === slotId);
-    } else {
-      return equippedItems.find(item => item.equipment_items?.slot === slotId);
-    }
+    const itemId = equipped[slotId];
+    if (!itemId) return null;
+    return EQUIPMENT_DATABASE[itemId] || null;
   };
 
-  // Get sprite URL
+  // Get sprite URL for inventory display
   const getItemSpriteUrl = (item) => {
     if (!item) return null;
-    if (item.image_path) return item.image_path;
-    if (item.sprite_url) return item.sprite_url;
-
-    const slug = item.slug || item.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-    const slotFolder = item.slot === 'chest' ? 'chests' : `${item.slot}s`;
-    return `/assets/equipment/${slotFolder}/${slug}.png`;
+    // Use sprite path for inventory icons (not overlay)
+    return item.sprite?.path || null;
   };
 
   // Handle equip/unequip
   const handleEquip = async (itemId) => {
-    if (DEV_MODE) {
-      const item = availableEquipment.find(e => e.id === itemId);
-      if (!item) return;
+    const item = EQUIPMENT_DATABASE[itemId];
+    if (!item) return;
 
-      const isEquipped = devEquippedItems.some(e => e.id === itemId);
+    const currentEquipped = equipped[item.slot];
 
-      if (isEquipped) {
-        setDevEquippedItems(devEquippedItems.filter(e => e.id !== itemId));
-      } else {
-        const filtered = devEquippedItems.filter(e => e.slot !== item.slot);
-        setDevEquippedItems([...filtered, item]);
-      }
+    if (currentEquipped === itemId) {
+      // Unequip if clicking on already equipped item
+      await unequipItem(item.slot);
     } else {
-      const item = availableEquipment.find(e => e.equipment_id === itemId);
-      if (!item) return;
-
-      const isEquipped = equippedItems.some(e => e.equipment_id === itemId);
-
-      if (isEquipped) {
-        await unequipItem(itemId);
-      } else {
-        await equipItem(itemId);
-      }
+      // Equip the new item
+      await equipItem(item.slot, itemId);
     }
 
-    // Close inventory after equipping
     setShowInventory(false);
   };
 
-  // Get available items for selected slot
-  const getAvailableItems = (slot) => {
+  // Rarity order for sorting (common first, legendary last)
+  const RARITY_ORDER = {
+    common: 1,
+    uncommon: 2,
+    rare: 3,
+    epic: 4,
+    legendary: 5,
+  };
+
+  // Get available items for selected slot, sorted by rarity
+  const getAvailableItems = (slotId) => {
+    const slot = PAPERDOLL_SLOTS[slotId];
+    if (!slot) return [];
+
+    const storeSlot = slot.storeSlot;
+
     return availableEquipment
-      .filter(item => item.slot === slot)
-      .filter(item => filterRarity === 'all' || item.rarity === filterRarity);
+      .filter(item => {
+        // Map store slots to equipment slots
+        if (storeSlot === 'legs') {
+          return item.slot === 'legs';
+        }
+        // Ring slots can use any ring
+        if (storeSlot === 'ring1' || storeSlot === 'ring2') {
+          return item.slot === 'ring';
+        }
+        return item.slot === storeSlot;
+      })
+      .filter(item => filterRarity === 'all' || item.rarity === filterRarity)
+      .sort((a, b) => {
+        // Sort by rarity (common -> legendary)
+        const rarityA = RARITY_ORDER[a.rarity] || 0;
+        const rarityB = RARITY_ORDER[b.rarity] || 0;
+        if (rarityA !== rarityB) return rarityA - rarityB;
+        // Secondary sort by name
+        return a.name.localeCompare(b.name);
+      });
   };
 
   return (
     <div className="space-y-6">
-        {/* Paper Doll Equipment Display */}
-        <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-4 sm:p-6 md:p-8 relative overflow-hidden">
-          {/* Background Glow Effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-orange-500/5 pointer-events-none" />
+      {/* Paper Doll Equipment Display */}
+      <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-4 sm:p-6 md:p-8 relative overflow-hidden">
+        {/* Background Glow Effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-orange-500/5 pointer-events-none" />
 
-          {/* Paper Doll Grid - 2 columns layout, responsive */}
-          <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 max-w-5xl mx-auto py-4 md:py-8">
-            {/* Left Column - Equipment Slots (becomes top row on mobile) */}
-            <div className="flex flex-row md:flex-col gap-3 md:gap-6 order-1 md:order-1">
-              <PaperdollSlot
-                slotId="helmet"
-                slot={EQUIPMENT_SLOTS.helmet}
-                equippedItem={getEquippedForSlot('helmet')}
-                onSelect={() => {
-                  setSelectedSlot('helmet');
-                  setShowInventory(true);
-                }}
-                getItemSpriteUrl={getItemSpriteUrl}
-              />
-              <PaperdollSlot
-                slotId="weapon"
-                slot={EQUIPMENT_SLOTS.weapon}
-                equippedItem={getEquippedForSlot('weapon')}
-                onSelect={() => {
-                  setSelectedSlot('weapon');
-                  setShowInventory(true);
-                }}
-                getItemSpriteUrl={getItemSpriteUrl}
-              />
-              <PaperdollSlot
-                slotId="amulet"
-                slot={EQUIPMENT_SLOTS.amulet}
-                equippedItem={getEquippedForSlot('amulet')}
-                onSelect={() => {
-                  setSelectedSlot('amulet');
-                  setShowInventory(true);
-                }}
-                getItemSpriteUrl={getItemSpriteUrl}
-              />
-            </div>
+        {/* Paper Doll Grid - 2 columns layout, responsive */}
+        <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 max-w-5xl mx-auto py-4 md:py-8">
+          {/* Left Column - Equipment Slots */}
+          <div className="flex flex-row md:flex-col gap-3 md:gap-6 order-1 md:order-1">
+            <PaperdollSlot
+              slotId="helmet"
+              slot={PAPERDOLL_SLOTS.helmet}
+              equippedItem={getEquippedForSlot('helmet')}
+              onSelect={() => {
+                setSelectedSlot('helmet');
+                setShowInventory(true);
+              }}
+              getItemSpriteUrl={getItemSpriteUrl}
+            />
+            <PaperdollSlot
+              slotId="mainHand"
+              slot={PAPERDOLL_SLOTS.mainHand}
+              equippedItem={getEquippedForSlot('mainHand')}
+              onSelect={() => {
+                setSelectedSlot('mainHand');
+                setShowInventory(true);
+              }}
+              getItemSpriteUrl={getItemSpriteUrl}
+            />
+            <PaperdollSlot
+              slotId="legs"
+              slot={PAPERDOLL_SLOTS.legs}
+              equippedItem={getEquippedForSlot('legs')}
+              onSelect={() => {
+                setSelectedSlot('legs');
+                setShowInventory(true);
+              }}
+              getItemSpriteUrl={getItemSpriteUrl}
+            />
+          </div>
 
-            {/* Center: Character Avatar with Pets - No Box */}
-            <div className="flex flex-col items-center justify-center order-first md:order-2">
-              <div className="relative flex items-end justify-center gap-2">
-                {/* Left Pet (if any) */}
-                {activePets[0] && PET_DATABASE[activePets[0]] && (
-                  <img
-                    src={PET_DATABASE[activePets[0]].sprite}
-                    alt={PET_DATABASE[activePets[0]].name}
-                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 pixelated self-end mb-2"
-                    style={{ imageRendering: 'pixelated' }}
-                  />
-                )}
+          {/* Center: Character Avatar with Pets */}
+          <div className="flex flex-col items-center justify-center order-first md:order-2">
+            <div className="relative flex items-end justify-center gap-2">
+              {/* Left Pet (if any) */}
+              {activePets[0] && PET_DATABASE[activePets[0]] && (
+                <img
+                  src={PET_DATABASE[activePets[0]].sprite}
+                  alt={PET_DATABASE[activePets[0]].name}
+                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 pixelated self-end mb-2"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              )}
 
-                {/* Main Avatar - No Box */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl scale-150" />
-                  <img
-                    src={avatarSpritePath}
-                    alt="Character"
-                    className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 pixelated relative z-10"
-                    style={{ imageRendering: 'pixelated' }}
-                  />
+              {/* Main Avatar with Equipment - Uses AvatarRenderer for equipment overlay */}
+              <div className="relative" style={{ width: '256px', height: '256px', minWidth: '256px', minHeight: '256px' }}>
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl scale-150" />
+                <div className="relative z-10">
+                  <AvatarRenderer size={256} animate={true} />
                 </div>
-
-                {/* Right Pet (if any) */}
-                {activePets[1] && PET_DATABASE[activePets[1]] && (
-                  <img
-                    src={PET_DATABASE[activePets[1]].sprite}
-                    alt={PET_DATABASE[activePets[1]].name}
-                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 pixelated self-end mb-2"
-                    style={{ imageRendering: 'pixelated' }}
-                  />
-                )}
               </div>
 
-              {/* Additional Pets Row (3rd onwards) */}
-              {activePets.length > 2 && (
-                <div className="flex items-center justify-center gap-2 mt-2">
-                  {activePets.slice(2).map((petId) => {
-                    const pet = PET_DATABASE[petId];
-                    if (!pet) return null;
-                    return (
-                      <img
-                        key={petId}
-                        src={pet.sprite}
-                        alt={pet.name}
-                        className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 pixelated"
-                        style={{ imageRendering: 'pixelated' }}
-                      />
-                    );
-                  })}
-                </div>
+              {/* Right Pet (if any) */}
+              {activePets[1] && PET_DATABASE[activePets[1]] && (
+                <img
+                  src={PET_DATABASE[activePets[1]].sprite}
+                  alt={PET_DATABASE[activePets[1]].name}
+                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 pixelated self-end mb-2"
+                  style={{ imageRendering: 'pixelated' }}
+                />
               )}
             </div>
 
-            {/* Right Column - Equipment Slots (becomes bottom row on mobile) */}
-            <div className="flex flex-row md:flex-col gap-3 md:gap-6 order-2 md:order-3 flex-wrap justify-center">
-              <PaperdollSlot
-                slotId="cape"
-                slot={EQUIPMENT_SLOTS.cape}
-                equippedItem={getEquippedForSlot('cape')}
-                onSelect={() => {
-                  setSelectedSlot('cape');
-                  setShowInventory(true);
-                }}
-                getItemSpriteUrl={getItemSpriteUrl}
-              />
-              <PaperdollSlot
-                slotId="chest"
-                slot={EQUIPMENT_SLOTS.chest}
-                equippedItem={getEquippedForSlot('chest')}
-                onSelect={() => {
-                  setSelectedSlot('chest');
-                  setShowInventory(true);
-                }}
-                getItemSpriteUrl={getItemSpriteUrl}
-              />
-              <PaperdollSlot
-                slotId="shield"
-                slot={EQUIPMENT_SLOTS.shield}
-                equippedItem={getEquippedForSlot('shield')}
-                onSelect={() => {
-                  setSelectedSlot('shield');
-                  setShowInventory(true);
-                }}
-                getItemSpriteUrl={getItemSpriteUrl}
-              />
-              <PaperdollSlot
-                slotId="ring"
-                slot={EQUIPMENT_SLOTS.ring}
-                equippedItem={getEquippedForSlot('ring')}
-                onSelect={() => {
-                  setSelectedSlot('ring');
-                  setShowInventory(true);
-                }}
-                getItemSpriteUrl={getItemSpriteUrl}
-              />
-            </div>
+            {/* Additional Pets Row (3rd onwards) */}
+            {activePets.length > 2 && (
+              <div className="flex items-center justify-center gap-2 mt-2">
+                {activePets.slice(2).map((petId) => {
+                  const pet = PET_DATABASE[petId];
+                  if (!pet) return null;
+                  return (
+                    <img
+                      key={petId}
+                      src={pet.sprite}
+                      alt={pet.name}
+                      className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 pixelated"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Equipment Slots */}
+          <div className="flex flex-row md:flex-col gap-3 md:gap-6 order-2 md:order-3 flex-wrap justify-center">
+            <PaperdollSlot
+              slotId="cape"
+              slot={PAPERDOLL_SLOTS.cape}
+              equippedItem={getEquippedForSlot('cape')}
+              onSelect={() => {
+                setSelectedSlot('cape');
+                setShowInventory(true);
+              }}
+              getItemSpriteUrl={getItemSpriteUrl}
+            />
+            <PaperdollSlot
+              slotId="chest"
+              slot={PAPERDOLL_SLOTS.chest}
+              equippedItem={getEquippedForSlot('chest')}
+              onSelect={() => {
+                setSelectedSlot('chest');
+                setShowInventory(true);
+              }}
+              getItemSpriteUrl={getItemSpriteUrl}
+            />
+            <PaperdollSlot
+              slotId="offHand"
+              slot={PAPERDOLL_SLOTS.offHand}
+              equippedItem={getEquippedForSlot('offHand')}
+              onSelect={() => {
+                setSelectedSlot('offHand');
+                setShowInventory(true);
+              }}
+              getItemSpriteUrl={getItemSpriteUrl}
+            />
           </div>
         </div>
 
-        {/* Stats Display */}
-        <StatsDisplay stats={stats} />
+        {/* Accessories Row - Rings and Amulet */}
+        <div className="flex justify-center gap-4 mt-4">
+          <PaperdollSlot
+            slotId="ring1"
+            slot={PAPERDOLL_SLOTS.ring1}
+            equippedItem={getEquippedForSlot('ring1')}
+            onSelect={() => {
+              setSelectedSlot('ring1');
+              setShowInventory(true);
+            }}
+            getItemSpriteUrl={getItemSpriteUrl}
+          />
+          <PaperdollSlot
+            slotId="amulet"
+            slot={PAPERDOLL_SLOTS.amulet}
+            equippedItem={getEquippedForSlot('amulet')}
+            onSelect={() => {
+              setSelectedSlot('amulet');
+              setShowInventory(true);
+            }}
+            getItemSpriteUrl={getItemSpriteUrl}
+          />
+          <PaperdollSlot
+            slotId="ring2"
+            slot={PAPERDOLL_SLOTS.ring2}
+            equippedItem={getEquippedForSlot('ring2')}
+            onSelect={() => {
+              setSelectedSlot('ring2');
+              setShowInventory(true);
+            }}
+            getItemSpriteUrl={getItemSpriteUrl}
+          />
+        </div>
+      </div>
+
+      {/* Stats Display */}
+      <StatsDisplay stats={stats} statBreakdown={statBreakdown} />
 
       {/* Inventory Modal */}
       {showInventory && selectedSlot && (
         <InventoryModal
           slotId={selectedSlot}
-          slotName={EQUIPMENT_SLOTS[selectedSlot].name}
+          slotName={PAPERDOLL_SLOTS[selectedSlot]?.name || selectedSlot}
           items={getAvailableItems(selectedSlot)}
-          equippedItems={equippedItems}
+          equipped={equipped}
           filterRarity={filterRarity}
           setFilterRarity={setFilterRarity}
           onClose={() => setShowInventory(false)}
           onEquip={handleEquip}
           getItemSpriteUrl={getItemSpriteUrl}
-          devMode={DEV_MODE}
         />
       )}
     </div>
@@ -413,11 +410,11 @@ function PaperdollSlot({ slotId, slot, equippedItem, onSelect, getItemSpriteUrl 
         style={{
           borderColor: rarity ? rarity.color : 'rgba(255, 255, 255, 0.1)',
           background: rarity
-            ? `radial-gradient(circle at center, ${rarity.glow}, rgba(26, 26, 26, 0.8))`
+            ? `radial-gradient(circle at center, ${rarity.glow || 'rgba(255,255,255,0.1)'}, rgba(26, 26, 26, 0.8))`
             : 'rgba(26, 26, 26, 0.6)',
-          boxShadow: rarity && rarity.pulse
+          boxShadow: rarity && rarity.hasParticles
             ? `0 0 20px ${rarity.glow}, 0 0 40px ${rarity.glow}`
-            : rarity
+            : rarity?.glow
             ? `0 0 15px ${rarity.glow}`
             : 'none',
         }}
@@ -434,7 +431,7 @@ function PaperdollSlot({ slotId, slot, equippedItem, onSelect, getItemSpriteUrl 
                 style={{ imageRendering: 'pixelated' }}
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                 }}
               />
               <div className="hidden w-full h-full items-center justify-center text-4xl font-bold" style={{ color: rarity?.color }}>
@@ -450,7 +447,7 @@ function PaperdollSlot({ slotId, slot, equippedItem, onSelect, getItemSpriteUrl 
                 style={{ imageRendering: 'pixelated' }}
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'block';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
                 }}
               />
               <span className="hidden text-4xl">{slot.fallbackIcon}</span>
@@ -468,8 +465,8 @@ function PaperdollSlot({ slotId, slot, equippedItem, onSelect, getItemSpriteUrl 
           <div
             className="text-xs font-bold truncate"
             style={{
-              color: rarity.color,
-              textShadow: `0 0 8px ${rarity.glow}`,
+              color: rarity?.color || '#fff',
+              textShadow: rarity?.glow ? `0 0 8px ${rarity.glow}` : 'none',
             }}
           >
             {equippedItem.name}
@@ -480,46 +477,61 @@ function PaperdollSlot({ slotId, slot, equippedItem, onSelect, getItemSpriteUrl 
   );
 }
 
-// Stats Display Component
-function StatsDisplay({ stats }) {
+// Stats Display Component - Shows total stats from ALL sources
+function StatsDisplay({ stats, statBreakdown }) {
   const statConfig = {
-    defense: { icon: Shield, color: '#3B82F6', label: 'Defense' },
     strength: { icon: Sword, color: '#EF4444', label: 'Strength' },
     vitality: { icon: Heart, color: '#10B981', label: 'Vitality' },
     intelligence: { icon: Brain, color: '#8B5CF6', label: 'Intelligence' },
     wisdom: { icon: Sparkles, color: '#F59E0B', label: 'Wisdom' },
+    defense: { icon: Shield, color: '#3B82F6', label: 'Defense' },
   };
 
-  const totalStats = Object.values(stats).reduce((sum, val) => sum + val, 0);
+  const totalStats = Object.values(stats).reduce((sum, val) => sum + (val || 0), 0);
 
   return (
     <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
           <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-          Equipment Stats
+          Character Stats
         </h3>
         <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-purple-500/20 border border-purple-500/30">
-          <span className="text-xs sm:text-sm text-purple-300">Total: +{totalStats}</span>
+          <span className="text-xs sm:text-sm text-purple-300">Total Power: {totalStats}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
-        {Object.entries(stats).map(([statKey, value]) => {
-          const config = statConfig[statKey];
+        {Object.entries(statConfig).map(([statKey, config]) => {
+          const value = stats[statKey] || 0;
           const Icon = config.icon;
+          const breakdown = statBreakdown?.[statKey] || {};
 
           return (
             <div
               key={statKey}
-              className="bg-[#12101a] rounded-xl p-3 sm:p-4 border border-white/5"
+              className="bg-[#12101a] rounded-xl p-3 sm:p-4 border border-white/5 group relative"
             >
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                 <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: config.color }} />
                 <span className="text-[10px] sm:text-xs text-white/60">{config.label}</span>
               </div>
               <div className="text-xl sm:text-2xl font-bold" style={{ color: value > 0 ? config.color : '#6B7280' }}>
-                +{value}
+                {value}
+              </div>
+
+              {/* Breakdown Tooltip on Hover */}
+              <div className="absolute left-0 bottom-full mb-2 w-48 bg-[#0f0d14] border border-white/10 rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20 shadow-xl pointer-events-none">
+                <div className="text-xs font-semibold text-white/80 mb-2">Stat Sources</div>
+                <div className="space-y-1 text-[10px]">
+                  {breakdown.base > 0 && <div className="flex justify-between"><span className="text-white/50">Base</span><span className="text-white/70">+{breakdown.base}</span></div>}
+                  {breakdown.allocated > 0 && <div className="flex justify-between"><span className="text-white/50">Allocated</span><span className="text-blue-400">+{breakdown.allocated}</span></div>}
+                  {breakdown.equipment > 0 && <div className="flex justify-between"><span className="text-white/50">Equipment</span><span className="text-purple-400">+{breakdown.equipment}</span></div>}
+                  {breakdown.pets > 0 && <div className="flex justify-between"><span className="text-white/50">Pets</span><span className="text-pink-400">+{breakdown.pets}</span></div>}
+                  {breakdown.perks > 0 && <div className="flex justify-between"><span className="text-white/50">Perks</span><span className="text-yellow-400">+{breakdown.perks}</span></div>}
+                  {breakdown.achievements > 0 && <div className="flex justify-between"><span className="text-white/50">Achievements</span><span className="text-green-400">+{breakdown.achievements}</span></div>}
+                  {breakdown.mastery > 0 && <div className="flex justify-between"><span className="text-white/50">Mastery</span><span className="text-orange-400">+{breakdown.mastery}</span></div>}
+                </div>
               </div>
             </div>
           );
@@ -529,23 +541,32 @@ function StatsDisplay({ stats }) {
   );
 }
 
-// Inventory Modal Component
+// Inventory Modal Component - Uses Portal to render at document body level
 function InventoryModal({
   slotId,
   slotName,
   items,
-  equippedItems,
+  equipped,
   filterRarity,
   setFilterRarity,
   onClose,
   onEquip,
   getItemSpriteUrl,
-  devMode
 }) {
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{
+        background: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(8px)',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+      }}
       onClick={onClose}
     >
       <div
@@ -579,7 +600,7 @@ function InventoryModal({
               onClick={onClose}
               className="p-2 hover:bg-white/10 rounded-lg transition-colors"
             >
-              <span className="text-2xl text-white">×</span>
+              <X className="w-6 h-6 text-white" />
             </button>
           </div>
         </div>
@@ -589,20 +610,18 @@ function InventoryModal({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {items.map(item => {
               const rarity = EQUIPMENT_RARITY[item.rarity];
-              const isEquipped = devMode
-                ? equippedItems.some(e => e.id === item.id)
-                : equippedItems.some(e => e.equipment_id === item.equipment_id);
+              const isEquipped = equipped[item.slot] === item.id;
 
               return (
                 <div
                   key={item.id}
                   className="rounded-xl overflow-hidden cursor-pointer group relative transition-all duration-200 hover:scale-105"
                   style={{
-                    background: `radial-gradient(circle at top, ${rarity.glow}, rgba(39, 39, 42, 0.6))`,
-                    border: `2px solid ${rarity.color}`,
-                    boxShadow: rarity.pulse
+                    background: `radial-gradient(circle at top, ${rarity?.glow || 'rgba(255,255,255,0.1)'}, rgba(39, 39, 42, 0.6))`,
+                    border: `2px solid ${rarity?.color || '#fff'}`,
+                    boxShadow: rarity?.hasParticles
                       ? `0 0 20px ${rarity.glow}`
-                      : `0 0 10px ${rarity.glow}`,
+                      : `0 0 10px ${rarity?.glow || 'transparent'}`,
                   }}
                   onClick={() => onEquip(item.id)}
                 >
@@ -615,28 +634,28 @@ function InventoryModal({
                       style={{ imageRendering: 'pixelated' }}
                       onError={(e) => {
                         e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
+                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
                       }}
                     />
-                    <div className="hidden text-4xl font-bold" style={{ color: rarity.color }}>
+                    <div className="hidden text-4xl font-bold" style={{ color: rarity?.color }}>
                       {item.name[0]}
                     </div>
                   </div>
 
                   {/* Item Info */}
                   <div className="p-3 bg-black/60 backdrop-blur-sm">
-                    <div className="text-sm font-bold mb-1" style={{ color: rarity.color }}>
+                    <div className="text-sm font-bold mb-1" style={{ color: rarity?.color || '#fff' }}>
                       {item.name}
                     </div>
-                    <div className="text-xs text-white/60 mb-2">{rarity.name}</div>
+                    <div className="text-xs text-white/60 mb-2">{rarity?.name || 'Unknown'}</div>
 
-                    {/* Stats */}
+                    {/* Stats from item.stats object */}
                     <div className="space-y-1">
-                      {item.defense > 0 && <div className="text-xs text-blue-400">+{item.defense} DEF</div>}
-                      {item.strength > 0 && <div className="text-xs text-red-400">+{item.strength} STR</div>}
-                      {item.vitality > 0 && <div className="text-xs text-green-400">+{item.vitality} VIT</div>}
-                      {item.intelligence > 0 && <div className="text-xs text-purple-400">+{item.intelligence} INT</div>}
-                      {item.wisdom > 0 && <div className="text-xs text-yellow-400">+{item.wisdom} WIS</div>}
+                      {item.stats?.defense > 0 && <div className="text-xs text-blue-400">+{item.stats.defense} DEF</div>}
+                      {item.stats?.strength > 0 && <div className="text-xs text-red-400">+{item.stats.strength} STR</div>}
+                      {item.stats?.vitality > 0 && <div className="text-xs text-green-400">+{item.stats.vitality} VIT</div>}
+                      {item.stats?.intelligence > 0 && <div className="text-xs text-purple-400">+{item.stats.intelligence} INT</div>}
+                      {item.stats?.wisdom > 0 && <div className="text-xs text-yellow-400">+{item.stats.wisdom} WIS</div>}
                     </div>
                   </div>
 
@@ -660,6 +679,7 @@ function InventoryModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -151,136 +151,220 @@ export const MODULE_STAT_MAPPING = {
 // STAT CALCULATION FUNCTIONS
 // ============================================
 
+// Base stats for all characters
+export const BASE_STATS = {
+  [STATS.STRENGTH]: 5,
+  [STATS.VITALITY]: 5,
+  [STATS.INTELLIGENCE]: 5,
+  [STATS.WISDOM]: 5,
+  [STATS.DEFENSE]: 5,
+};
+
+// Skill points awarded per level
+export const SKILL_POINTS_PER_LEVEL = 3;
+
+// Achievement milestone thresholds and bonuses
+export const ACHIEVEMENT_MILESTONES = [
+  { count: 10, bonus: 2 },
+  { count: 25, bonus: 3 },
+  { count: 50, bonus: 5 },
+  { count: 100, bonus: 8 },
+  { count: 150, bonus: 12 },
+];
+
+// Module mastery stat bonuses per level
+export const MODULE_MASTERY_BONUSES = {
+  health: { strength: 0.5, vitality: 0.5 },
+  productivity: { wisdom: 0.8, defense: 0.2 },
+  knowledge: { intelligence: 0.8, wisdom: 0.2 },
+  journal: { wisdom: 0.5, vitality: 0.3, intelligence: 0.2 },
+  financial: { defense: 0.6, wisdom: 0.4 },
+  skills: { strength: 0.2, vitality: 0.2, intelligence: 0.2, wisdom: 0.2, defense: 0.2 },
+};
+
+// Pet bonus type to stat mapping (enhanced)
+export const PET_STAT_MAPPING = {
+  learning: { intelligence: 1.0 },
+  productivity: { wisdom: 0.7, defense: 0.3 },
+  health: { strength: 0.5, vitality: 0.5 },
+  time: { wisdom: 1.0 },
+  creativity: { intelligence: 0.6, wisdom: 0.4 },
+  universal: { strength: 0.2, vitality: 0.2, intelligence: 0.2, wisdom: 0.2, defense: 0.2 },
+  power: { strength: 1.0 },
+  mastery: { intelligence: 0.5, wisdom: 0.5 },
+};
+
 /**
  * Calculate total stats from all sources
+ * 7 Sources: Base, Allocated Points, Equipment, Pets, Perks, Achievements, Module Mastery
  */
 export function calculateTotalStats(sources = {}) {
   const {
     equipment = [],
     pets = [],
-    perks = [],
-    achievements = 0,
-    levelBonus = 0,
+    perkBonuses = {},
+    achievementCount = 0,
+    allocatedPoints = {},
+    moduleMastery = {},
   } = sources;
 
+  // 1. Start with base stats
   const stats = {
-    [STATS.STRENGTH]: 0,
-    [STATS.VITALITY]: 0,
-    [STATS.INTELLIGENCE]: 0,
-    [STATS.WISDOM]: 0,
-    [STATS.DEFENSE]: 0,
+    [STATS.STRENGTH]: BASE_STATS[STATS.STRENGTH],
+    [STATS.VITALITY]: BASE_STATS[STATS.VITALITY],
+    [STATS.INTELLIGENCE]: BASE_STATS[STATS.INTELLIGENCE],
+    [STATS.WISDOM]: BASE_STATS[STATS.WISDOM],
+    [STATS.DEFENSE]: BASE_STATS[STATS.DEFENSE],
   };
 
-  // Equipment bonuses
+  // 2. Allocated skill points
+  if (allocatedPoints.strength) stats[STATS.STRENGTH] += allocatedPoints.strength;
+  if (allocatedPoints.vitality) stats[STATS.VITALITY] += allocatedPoints.vitality;
+  if (allocatedPoints.intelligence) stats[STATS.INTELLIGENCE] += allocatedPoints.intelligence;
+  if (allocatedPoints.wisdom) stats[STATS.WISDOM] += allocatedPoints.wisdom;
+  if (allocatedPoints.defense) stats[STATS.DEFENSE] += allocatedPoints.defense;
+
+  // 3. Equipment bonuses (supports both flat stats and nested stats object)
   equipment.forEach(item => {
-    if (item.strength) stats[STATS.STRENGTH] += item.strength;
-    if (item.vitality) stats[STATS.VITALITY] += item.vitality;
-    if (item.intelligence) stats[STATS.INTELLIGENCE] += item.intelligence;
-    if (item.wisdom) stats[STATS.WISDOM] += item.wisdom;
-    if (item.defense) stats[STATS.DEFENSE] += item.defense;
+    // Support nested stats object from EQUIPMENT_DATABASE
+    const itemStats = item.stats || item;
+    if (itemStats.strength) stats[STATS.STRENGTH] += itemStats.strength;
+    if (itemStats.vitality) stats[STATS.VITALITY] += itemStats.vitality;
+    if (itemStats.intelligence) stats[STATS.INTELLIGENCE] += itemStats.intelligence;
+    if (itemStats.wisdom) stats[STATS.WISDOM] += itemStats.wisdom;
+    if (itemStats.defense) stats[STATS.DEFENSE] += itemStats.defense;
   });
 
-  // Pet bonuses (stored as percentages, convert to flat bonuses)
+  // 4. Pet bonuses (enhanced mapping)
   pets.forEach(pet => {
     const petBonus = pet.bonusAmount || 0;
-    // Distribute pet bonus across relevant stats based on bonus type
-    const statBonus = Math.floor(petBonus / 2); // Convert % to flat bonus
+    const mapping = PET_STAT_MAPPING[pet.bonusType] || PET_STAT_MAPPING.universal;
 
-    switch (pet.bonusType) {
-      case 'learning':
-        stats[STATS.INTELLIGENCE] += statBonus;
-        break;
-      case 'productivity':
-        stats[STATS.WISDOM] += statBonus;
-        break;
-      case 'health':
-        stats[STATS.STRENGTH] += statBonus;
-        stats[STATS.VITALITY] += statBonus;
-        break;
-      case 'universal':
-        Object.keys(stats).forEach(stat => stats[stat] += Math.floor(statBonus / 5));
-        break;
+    Object.entries(mapping).forEach(([stat, multiplier]) => {
+      stats[stat] += Math.floor(petBonus * multiplier);
+    });
+  });
+
+  // 5. Perk bonuses
+  if (perkBonuses.strength) stats[STATS.STRENGTH] += perkBonuses.strength;
+  if (perkBonuses.vitality) stats[STATS.VITALITY] += perkBonuses.vitality;
+  if (perkBonuses.intelligence) stats[STATS.INTELLIGENCE] += perkBonuses.intelligence;
+  if (perkBonuses.wisdom) stats[STATS.WISDOM] += perkBonuses.wisdom;
+  if (perkBonuses.defense) stats[STATS.DEFENSE] += perkBonuses.defense;
+
+  // 6. Achievement milestone bonuses
+  let achievementBonus = 0;
+  ACHIEVEMENT_MILESTONES.forEach(milestone => {
+    if (achievementCount >= milestone.count) {
+      achievementBonus += milestone.bonus;
     }
   });
-
-  // Perk bonuses (future implementation)
-  // perks.forEach(perk => { ... });
-
-  // Achievement bonuses
   Object.keys(stats).forEach(stat => {
-    stats[stat] += achievements;
+    stats[stat] += achievementBonus;
   });
 
-  // Level milestone bonuses
-  Object.keys(stats).forEach(stat => {
-    stats[stat] += levelBonus;
+  // 7. Module mastery bonuses
+  Object.entries(moduleMastery).forEach(([module, level]) => {
+    const bonuses = MODULE_MASTERY_BONUSES[module];
+    if (bonuses) {
+      Object.entries(bonuses).forEach(([stat, perLevel]) => {
+        stats[stat] += Math.floor(level * perLevel);
+      });
+    }
   });
 
   return stats;
 }
 
 /**
- * Calculate stat breakdown by source
+ * Calculate stat breakdown by source (7 sources)
  */
 export function calculateStatBreakdown(sources = {}) {
   const breakdown = {};
 
   Object.values(STATS).forEach(stat => {
     breakdown[stat] = {
+      base: BASE_STATS[stat],
+      allocated: 0,
       equipment: 0,
       pets: 0,
       perks: 0,
       achievements: 0,
-      levels: 0,
+      mastery: 0,
       total: 0,
     };
   });
 
-  // Calculate each source
-  const { equipment = [], pets = [], achievements = 0, levelBonus = 0 } = sources;
+  const {
+    equipment = [],
+    pets = [],
+    perkBonuses = {},
+    achievementCount = 0,
+    allocatedPoints = {},
+    moduleMastery = {},
+  } = sources;
 
-  // Equipment
+  // Allocated points
+  Object.values(STATS).forEach(stat => {
+    breakdown[stat].allocated = allocatedPoints[stat] || 0;
+  });
+
+  // Equipment (supports both flat stats and nested stats object)
   equipment.forEach(item => {
+    const itemStats = item.stats || item;
     Object.values(STATS).forEach(stat => {
-      if (item[stat]) {
-        breakdown[stat].equipment += item[stat];
+      if (itemStats[stat]) {
+        breakdown[stat].equipment += itemStats[stat];
       }
     });
   });
 
-  // Pets
+  // Pets (enhanced mapping)
   pets.forEach(pet => {
-    const petBonus = Math.floor((pet.bonusAmount || 0) / 2);
+    const petBonus = pet.bonusAmount || 0;
+    const mapping = PET_STAT_MAPPING[pet.bonusType] || PET_STAT_MAPPING.universal;
 
-    switch (pet.bonusType) {
-      case 'learning':
-        breakdown[STATS.INTELLIGENCE].pets += petBonus;
-        break;
-      case 'productivity':
-        breakdown[STATS.WISDOM].pets += petBonus;
-        break;
-      case 'health':
-        breakdown[STATS.STRENGTH].pets += petBonus;
-        breakdown[STATS.VITALITY].pets += petBonus;
-        break;
-      case 'universal':
-        Object.values(STATS).forEach(stat => {
-          breakdown[stat].pets += Math.floor(petBonus / 5);
-        });
-        break;
+    Object.entries(mapping).forEach(([stat, multiplier]) => {
+      breakdown[stat].pets += Math.floor(petBonus * multiplier);
+    });
+  });
+
+  // Perks
+  Object.values(STATS).forEach(stat => {
+    breakdown[stat].perks = perkBonuses[stat] || 0;
+  });
+
+  // Achievement milestones
+  let achievementBonus = 0;
+  ACHIEVEMENT_MILESTONES.forEach(milestone => {
+    if (achievementCount >= milestone.count) {
+      achievementBonus += milestone.bonus;
+    }
+  });
+  Object.values(STATS).forEach(stat => {
+    breakdown[stat].achievements = achievementBonus;
+  });
+
+  // Module mastery
+  Object.entries(moduleMastery).forEach(([module, level]) => {
+    const bonuses = MODULE_MASTERY_BONUSES[module];
+    if (bonuses) {
+      Object.entries(bonuses).forEach(([stat, perLevel]) => {
+        breakdown[stat].mastery += Math.floor(level * perLevel);
+      });
     }
   });
 
-  // Achievements & Levels
+  // Calculate totals
   Object.values(STATS).forEach(stat => {
-    breakdown[stat].achievements = achievements;
-    breakdown[stat].levels = levelBonus;
     breakdown[stat].total =
+      breakdown[stat].base +
+      breakdown[stat].allocated +
       breakdown[stat].equipment +
       breakdown[stat].pets +
       breakdown[stat].perks +
       breakdown[stat].achievements +
-      breakdown[stat].levels;
+      breakdown[stat].mastery;
   });
 
   return breakdown;
@@ -453,6 +537,11 @@ export default {
   STAT_CONFIG,
   STAT_SCALING,
   MODULE_STAT_MAPPING,
+  BASE_STATS,
+  SKILL_POINTS_PER_LEVEL,
+  ACHIEVEMENT_MILESTONES,
+  MODULE_MASTERY_BONUSES,
+  PET_STAT_MAPPING,
   calculateTotalStats,
   calculateStatBreakdown,
   calculateStatXPMultiplier,

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Gift, TrendingUp, Filter, Coins, X } from 'lucide-react';
+import { Plus, Gift, TrendingUp, Filter, Coins, X, ShoppingBag } from 'lucide-react';
 import { RewardCard } from '../../features/rewards/components/RewardCard';
 import { useRewards, useCreateReward, useRedeemReward } from '../../api/rewards';
 import { useCosmicCurrency } from '../../api/currency';
 import { EmptyState } from '../ui';
+import PageHeader from '../shared/PageHeader';
 
 const CATEGORY_OPTIONS = [
   { value: 'entertainment', label: 'Entertainment', icon: '🎮' },
@@ -82,26 +83,26 @@ export default function RewardMarketplace() {
   return (
     <div className="cosmic-panel cosmic-border cosmic-lift p-6 rounded-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-3xl font-bold cosmic-title mb-2">
-            🛒 Reward Marketplace
-          </h2>
-          <p className="text-white/60">
-            Spend your hard-earned Cosmic Credits on rewards you define
-          </p>
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold cosmic-glow"
-        >
-          <Plus className="w-5 h-5" />
-          Add Reward
-        </motion.button>
-      </div>
+      <PageHeader
+        title="Rewards"
+        subtitle="Spend your hard-earned Cosmic Credits"
+        stats={`${userCredits.toLocaleString()} credits available`}
+        icon={ShoppingBag}
+        module="progress"
+        variant="elevated"
+        className="mb-6"
+        actions={
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold cosmic-glow"
+          >
+            <Plus className="w-5 h-5" />
+            Add Reward
+          </motion.button>
+        }
+      />
 
       {/* User Credits Display */}
       <div className="mb-6 cosmic-card cosmic-border cosmic-glow rounded-xl p-4">

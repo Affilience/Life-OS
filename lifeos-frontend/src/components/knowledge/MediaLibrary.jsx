@@ -21,7 +21,7 @@ export default function MediaLibrary() {
   const sortedMedia = [...filteredMedia].sort((a, b) => {
     switch (sortBy) {
       case 'recent':
-        return new Date(b.addedAt) - new Date(a.addedAt);
+        return new Date(b.createdAt) - new Date(a.createdAt);
       case 'title':
         return a.title.localeCompare(b.title);
       case 'creator':
@@ -239,8 +239,8 @@ export default function MediaLibrary() {
                 <p className="text-xs text-white/50 mb-3">{item.creator}</p>
 
                 <div className="flex items-center justify-between text-xs text-zinc-600">
-                  <span>{new Date(item.addedAt).toLocaleDateString()}</span>
-                  {item.notes && (
+                  <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                  {item.notes && (typeof item.notes === 'string' ? item.notes.length > 0 : item.notes?.length > 0) && (
                     <div className="flex items-center gap-1">
                       <svg
                         className="w-3 h-3"

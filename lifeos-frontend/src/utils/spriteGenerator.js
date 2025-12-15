@@ -5,6 +5,7 @@
 
 import { AVATAR_TIERS, EQUIPMENT_RARITY } from '../data/avatarData';
 import { getStageByLevel } from '../data/avatarEvolution';
+import { useAvatarStore } from '../stores/avatarStore';
 
 const SPRITE_SIZE = 256; // Increased for better quality when scaled
 
@@ -16,50 +17,78 @@ function createCanvas(width, height) {
   return canvas;
 }
 
-// Generate base character sprite based on level (NEW - uses evolution stages!)
-export function generateSpriteByLevel(level, prestige = 0) {
+// Generate base character sprite based on level (NEW - uses base evolution sprites for overlay system!)
+export function generateSpriteByLevel(level, prestige = 0, gender = null) {
   const canvas = createCanvas(SPRITE_SIZE, SPRITE_SIZE);
   const ctx = canvas.getContext('2d');
 
   // Get the appropriate evolution stage for this level
   const stage = getStageByLevel(level, prestige);
 
+  // Get gender from store if not provided
+  const characterGender = gender || useAvatarStore.getState().characterGender || 'male';
+  const genderPrefix = characterGender === 'female' ? 'heroine' : 'hero';
+
   // Background (transparent)
   ctx.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
 
-  const spriteSheetPath = `/assets/avatar/${stage.sprite}`;
+  // Build base evolution sprite path (no armor - for equipment overlay system)
+  const stageName = stage.name.toLowerCase().replace(/ /g, '_');
+  const stageNumber = stage.levelRequired || level;
+  const baseSpritePath = `/assets/avatar/base-evolution/${genderPrefix}_base_stage_${stageNumber}_${stageName}.png`;
+
+  // Fallback to v3 sprites if base doesn't exist
+  const fallbackPath = `/assets/avatar/evolution/hero_v3_stage_${stageNumber}_${stageName}.png`;
+
+  // Second fallback to old path from stage data
+  const legacyPath = `/assets/avatar/${stage.sprite}`;
 
   return new Promise((resolve) => {
     const img = new Image();
+
+    // Try base sprite first (no armor)
     img.onload = () => {
-      // AI-generated sprites are 128x128, single frame
       const spriteWidth = 128;
       const spriteHeight = 128;
-
-      // Draw the sprite
-      ctx.drawImage(
-        img,
-        0, 0,
-        spriteWidth, spriteHeight,
-        0, 0,
-        SPRITE_SIZE, SPRITE_SIZE
-      );
-
+      ctx.drawImage(img, 0, 0, spriteWidth, spriteHeight, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
       resolve(canvas.toDataURL());
     };
+
     img.onerror = () => {
-      // Fallback to placeholder if image fails to load
-      console.warn(`Failed to load stage sprite: ${stage.sprite}`);
-      // Draw simple placeholder
-      ctx.fillStyle = stage.colors.primary;
-      ctx.fillRect(64, 96, 128, 112);
-      ctx.beginPath();
-      ctx.arc(128, 64, 48, 0, Math.PI * 2);
-      ctx.fillStyle = stage.colors.secondary;
-      ctx.fill();
-      resolve(canvas.toDataURL());
+      // Try v3 fallback
+      const fallbackImg = new Image();
+      fallbackImg.onload = () => {
+        const spriteWidth = 128;
+        const spriteHeight = 128;
+        ctx.drawImage(fallbackImg, 0, 0, spriteWidth, spriteHeight, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+        resolve(canvas.toDataURL());
+      };
+      fallbackImg.onerror = () => {
+        // Try legacy path
+        const legacyImg = new Image();
+        legacyImg.onload = () => {
+          const spriteWidth = 128;
+          const spriteHeight = 128;
+          ctx.drawImage(legacyImg, 0, 0, spriteWidth, spriteHeight, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+          resolve(canvas.toDataURL());
+        };
+        legacyImg.onerror = () => {
+          // Final fallback to placeholder
+          console.warn(`Failed to load stage sprite for stage ${stageNumber}: ${stage.name}`);
+          ctx.fillStyle = stage.colors?.primary || '#8B7355';
+          ctx.fillRect(64, 96, 128, 112);
+          ctx.beginPath();
+          ctx.arc(128, 64, 48, 0, Math.PI * 2);
+          ctx.fillStyle = stage.colors?.secondary || '#A0826D';
+          ctx.fill();
+          resolve(canvas.toDataURL());
+        };
+        legacyImg.src = legacyPath;
+      };
+      fallbackImg.src = fallbackPath;
     };
-    img.src = spriteSheetPath;
+
+    img.src = baseSpritePath;
   });
 }
 

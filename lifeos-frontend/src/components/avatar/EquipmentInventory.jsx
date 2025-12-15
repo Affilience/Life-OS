@@ -93,10 +93,11 @@ export default function EquipmentInventory() {
   const slots = [
     { id: 'helmet', name: 'Helmet', icon: '⛑️' },
     { id: 'chest', name: 'Chest', icon: '🦺' },
+    { id: 'legs', name: 'Legs', icon: '👖' },
     { id: 'weapon', name: 'Weapon', icon: '⚔️' },
     { id: 'shield', name: 'Shield', icon: '🛡️' },
     { id: 'cape', name: 'Cape', icon: '🧥' },
-    { id: 'ring', name: 'Ring', icon: '💍' },
+    { id: 'ring', name: 'Rings', icon: '💍' },
     { id: 'amulet', name: 'Amulet', icon: '📿' },
   ];
 

@@ -14,6 +14,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERK_TREES } from '../data/perkTrees';
 
+// Lazy import unlock service to avoid circular dependencies
+let unlockServiceRef = null;
+const getUnlockService = async () => {
+  if (!unlockServiceRef) {
+    const module = await import('../services/unlockService');
+    unlockServiceRef = module.default;
+  }
+  return unlockServiceRef;
+};
+
 // Map stats to perk tree IDs
 const STAT_TO_TREE_MAP = {
   body: 'body',
@@ -363,7 +373,7 @@ const usePerkStore = create(
        * Recalculate all unlocked perks based on current stat levels
        */
       recalculatePerks: () => {
-        const { statLevels } = get();
+        const { statLevels, unlockedPerksByTree: previousUnlockedPerks } = get();
         const newUnlockedPerksByTree = {};
 
         // Calculate unlocked perks for each tree
@@ -376,11 +386,32 @@ const usePerkStore = create(
         // Calculate active effects
         const newActiveEffects = calculateActiveEffects(newUnlockedPerksByTree);
 
+        // Detect newly unlocked perks
+        const newlyUnlockedPerks = [];
+        Object.entries(newUnlockedPerksByTree).forEach(([treeId, perkIds]) => {
+          const previousPerkIds = new Set(previousUnlockedPerks[treeId] || []);
+          perkIds.forEach(perkId => {
+            if (!previousPerkIds.has(perkId)) {
+              newlyUnlockedPerks.push({ perkId, treeId, treeLevel: statLevels[treeId] || 1 });
+            }
+          });
+        });
+
         set({
           unlockedPerksByTree: newUnlockedPerksByTree,
           activeEffects: newActiveEffects,
           lastCalculated: Date.now(),
         });
+
+        // Trigger unlock service for newly unlocked perks
+        if (newlyUnlockedPerks.length > 0) {
+          (async () => {
+            const unlockService = await getUnlockService();
+            for (const { perkId, treeId, treeLevel } of newlyUnlockedPerks) {
+              await unlockService.onPerkUnlock(perkId, treeId, treeLevel);
+            }
+          })();
+        }
 
         return newActiveEffects;
       },

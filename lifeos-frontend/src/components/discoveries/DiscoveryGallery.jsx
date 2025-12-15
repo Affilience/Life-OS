@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Star, Filter, Award, TrendingUp } from 'lucide-react';
+import { Trophy, Star, Filter, Award, TrendingUp, Telescope } from 'lucide-react';
 import { DiscoveryCard } from '../../features/discoveries/components/DiscoveryCard';
 import { useDiscoveries, useUserDiscoveries } from '../../api/discoveries';
+import PageHeader from '../shared/PageHeader';
 
 export default function DiscoveryGallery() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -54,14 +55,15 @@ export default function DiscoveryGallery() {
   return (
     <div className="cosmic-panel cosmic-border cosmic-lift p-6 rounded-2xl">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold cosmic-title mb-2">
-          🔭 Cosmic Discoveries
-        </h2>
-        <p className="text-white/60">
-          Unlock achievements across your cosmic journey. Each discovery grants points and rewards.
-        </p>
-      </div>
+      <PageHeader
+        title="Discoveries"
+        subtitle="Unlock achievements across your cosmic journey"
+        stats={`${unlockedCount}/${totalDiscoveries} unlocked · ${totalPoints.toLocaleString()} points`}
+        icon={Telescope}
+        module="progress"
+        variant="elevated"
+        className="mb-6"
+      />
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

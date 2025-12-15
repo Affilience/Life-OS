@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePurposeStore } from '../stores/purposeStore';
 import { PurposeSetup } from '../components/onboarding/setup';
 import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
+import PageHeader from '../components/shared/PageHeader';
 import {
   Compass,
   Target,
@@ -43,7 +44,7 @@ const PurposeValues = () => {
   const renderView = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView />;
+        return <DashboardView onTabChange={setActiveTab} />;
       case 'mission':
         return <MissionView />;
       case 'values':
@@ -51,12 +52,23 @@ const PurposeValues = () => {
       case 'vision':
         return <VisionView />;
       default:
-        return <DashboardView />;
+        return <DashboardView onTabChange={setActiveTab} />;
     }
   };
 
   return (
     <div className="purpose-page min-h-screen bg-[#0c0a10]">
+      {/* Page Header */}
+      <div className="px-4 pt-6">
+        <PageHeader
+          title="North Star"
+          subtitle="Define your mission, vision, and core values"
+          icon={Compass}
+          module="missions"
+          variant="elevated"
+        />
+      </div>
+
       {/* Tab Navigation */}
       <div className="sticky top-0 z-[9999] bg-[#0c0a10] border-b border-slate-800" data-tour="purpose-tabs">
         <div className="flex overflow-x-auto hide-scrollbar">
@@ -133,7 +145,7 @@ const PurposeValues = () => {
 };
 
 // Dashboard View
-function DashboardView() {
+function DashboardView({ onTabChange }) {
   const { missionStatement, coreValues, personalVision, getTopValues } =
     usePurposeStore();
 
@@ -189,7 +201,10 @@ function DashboardView() {
           ) : (
             <div className="text-center py-6">
               <p className="text-slate-400 mb-4">Your mission statement awaits discovery</p>
-              <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/30 transition-all">
+              <button
+                onClick={() => onTabChange?.('mission')}
+                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/30 transition-all"
+              >
                 Define Your Mission
               </button>
             </div>
@@ -210,7 +225,10 @@ function DashboardView() {
             <div className="text-center py-8">
               <Heart className="w-12 h-12 mx-auto mb-4 text-slate-600" />
               <p className="text-slate-400 mb-4">Define what matters most to you</p>
-              <button className="px-5 py-2.5 bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 rounded-xl font-medium transition-all border border-pink-500/30">
+              <button
+                onClick={() => onTabChange?.('values')}
+                className="px-5 py-2.5 bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 rounded-xl font-medium transition-all border border-pink-500/30"
+              >
                 Add Your First Value
               </button>
             </div>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Equipment Overlay Debug</title>
+  <style>
+    body {
+      background: #1a1a2e;
+      color: white;
+      font-family: monospace;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+    }
+    .test-case {
+      text-align: center;
+    }
+    .sprite-stack {
+      position: relative;
+      width: 256px;
+      height: 256px;
+      border: 2px solid #333;
+      background: repeating-linear-gradient(45deg, #222, #222 10px, #2a2a2a 10px, #2a2a2a 20px);
+    }
+    .sprite-stack img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 256px;
+      height: 256px;
+      image-rendering: pixelated;
+    }
+    .base { z-index: 1; }
+    .equipment { z-index: 2; }
+    .cape { z-index: 0; }
+    h3 { margin: 10px 0; color: #88f; font-size: 14px; }
+    h2 { color: #4f4; margin-top: 40px; border-bottom: 2px solid #4f4; padding-bottom: 10px; }
+    h2.old { color: #f44; border-color: #f44; }
+    .info { font-size: 12px; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>Equipment Overlay Debug</h1>
+  <p class="info">Comparing OLD (full-size) vs NEW (resized & positioned) overlays. All scaled 2x for visibility.</p>
+
+  <h2>✅ NEW - Properly Sized & Positioned Overlays</h2>
+  <div class="container">
+    <div class="test-case">
+      <h3>Base Character</h3>
+      <div class="sprite-stack">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>+ Iron Helmet (NEW)</h3>
+      <div class="sprite-stack">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/helmets/helmet_iron.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>+ Chainmail Chest (NEW)</h3>
+      <div class="sprite-stack">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/chest/chest_chainmail.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>+ Iron Sword (NEW)</h3>
+      <div class="sprite-stack">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/weapons/weapon_iron_sword.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>+ Wooden Shield (NEW)</h3>
+      <div class="sprite-stack">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/shields/shield_wooden.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>+ Cloth Cape (NEW)</h3>
+      <div class="sprite-stack">
+        <img class="cape" src="/assets/equipment/overlays-positioned/capes/cape_cloth.png">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>+ Leather Boots (NEW)</h3>
+      <div class="sprite-stack">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/boots/boots_leather.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>Full Set (NEW)</h3>
+      <div class="sprite-stack">
+        <img class="cape" src="/assets/equipment/overlays-positioned/capes/cape_cloth.png">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/chest/chest_chainmail.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/helmets/helmet_iron.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/weapons/weapon_iron_sword.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/shields/shield_wooden.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/boots/boots_leather.png">
+      </div>
+    </div>
+  </div>
+
+  <h2>✅ Legendary Equipment (NEW)</h2>
+  <div class="container">
+    <div class="test-case">
+      <h3>Dragon Set</h3>
+      <div class="sprite-stack">
+        <img class="cape" src="/assets/equipment/overlays-positioned/capes/cape_dragon.png">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_20_veteran.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/chest/chest_dragon.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/helmets/helmet_dragon.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/weapons/weapon_dragon_blade.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/shields/shield_dragon.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>Phoenix Set</h3>
+      <div class="sprite-stack">
+        <img class="cape" src="/assets/equipment/overlays-positioned/capes/cape_phoenix.png">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_30_warlord.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/chest/chest_phoenix_plate.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/helmets/helmet_phoenix_crown.png">
+        <img class="equipment" src="/assets/equipment/overlays-positioned/weapons/weapon_phoenix_sword.png">
+      </div>
+    </div>
+  </div>
+
+  <h2 class="old">❌ OLD - Full Size Overlays (Wrong!)</h2>
+  <div class="container">
+    <div class="test-case">
+      <h3>+ Iron Helmet (OLD)</h3>
+      <div class="sprite-stack" style="border-color: #f44;">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+        <img class="equipment" src="/assets/equipment/overlays/helmets/helmet_iron.png">
+      </div>
+    </div>
+
+    <div class="test-case">
+      <h3>+ Chainmail (OLD)</h3>
+      <div class="sprite-stack" style="border-color: #f44;">
+        <img class="base" src="/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png">
+        <img class="equipment" src="/assets/equipment/overlays/chest/chest_chainmail.png">
+      </div>
+    </div>
+  </div>
+</body>
+</html>

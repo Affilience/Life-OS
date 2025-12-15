@@ -3,15 +3,32 @@
  * Quick actions for creating notes, books, and media
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import AddMediaModal from './AddMediaModal';
 import AddBookModal from './AddBookModal';
 
 export default function QuickCapture() {
   const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
+
+  // Calculate menu position on render when open
+  const getMenuPosition = () => {
+    if (!buttonRef.current) return { top: 100, left: 100 };
+    const rect = buttonRef.current.getBoundingClientRect();
+    return {
+      top: rect.bottom + 8,
+      left: rect.left,
+    };
+  };
+
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+  };
+
   const { createNote, setActiveView } = useKnowledgeStore();
 
   const handleNewNote = () => {
@@ -109,7 +126,8 @@ export default function QuickCapture() {
     <div className="relative">
       {/* Main Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={handleToggle}
         data-tour="quick-capture-btn"
         className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all duration-200 shadow-lg shadow-purple-500/20"
       >
@@ -131,8 +149,8 @@ export default function QuickCapture() {
         <span className="font-medium">New</span>
       </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
+      {/* Dropdown Menu - rendered via portal to escape any overflow/z-index issues */}
+      {isOpen && createPortal(
         <>
           {/* Backdrop */}
           <div
@@ -140,8 +158,15 @@ export default function QuickCapture() {
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Menu - using portal-like fixed positioning to escape overflow clipping */}
-          <div className="absolute top-full right-0 mt-2 w-64 bg-[#12101a] border border-white/10/50 rounded-lg shadow-2xl z-[9999] animate-scale-in">
+          {/* Menu - using fixed positioning to escape overflow clipping */}
+          <div
+            className="fixed w-64 bg-[#12101a] border border-white/10 rounded-lg shadow-2xl z-[9999]"
+            style={{
+              top: `${getMenuPosition().top}px`,
+              left: `${getMenuPosition().left}px`,
+              animation: 'scaleIn 0.15s ease-out'
+            }}
+          >
             <div className="p-2">
               {actions.map((action) => (
                 <button
@@ -193,7 +218,7 @@ export default function QuickCapture() {
             </div>
 
             {/* Keyboard Hints */}
-            <div className="px-4 py-3 bg-[#12101a]/50 border-t border-white/10/50">
+            <div className="px-4 py-3 bg-[#12101a]/50 border-t border-white/10">
               <div className="flex items-center justify-between text-xs text-zinc-600">
                 <span>Quick Actions</span>
                 <div className="flex items-center gap-2">
@@ -205,7 +230,8 @@ export default function QuickCapture() {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* Add Media Modal */}

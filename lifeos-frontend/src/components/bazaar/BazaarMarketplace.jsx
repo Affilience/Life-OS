@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShoppingBag,
   Sword,
@@ -17,10 +17,15 @@ import {
   Package,
   Filter,
   Search,
+  PawPrint,
+  HardHat,
 } from 'lucide-react';
 import { useGamificationStore, getRarityColor } from '../../stores/gamificationStore';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 import { useAvatarStore } from '../../stores/avatarStore';
+import { usePetStore, PET_DATABASE, TIER_INFO } from '../../stores/petStore';
+import { EQUIPMENT_DATABASE } from '../../data/avatarData';
+import unlockService from '../../services/unlockService';
 
 // ============================================
 // SPRITE PATH HELPER
@@ -31,7 +36,10 @@ const getSpritePath = (category, id) => {
     'equipment': (id) => {
       if (id.startsWith('sword_')) return `/assets/bazaar/weapons/${id}.png`;
       if (id.startsWith('armor_')) return `/assets/bazaar/armor/${id}.png`;
-      if (id.startsWith('ring_') || id.startsWith('amulet_') || id.startsWith('cloak_')) return `/assets/bazaar/accessories/${id}.png`;
+      if (id.startsWith('ring_')) return `/assets/equipment/rings/${id}.png`;
+      if (id.startsWith('amulet_')) return `/assets/equipment/amulets/${id}.png`;
+      if (id.startsWith('legs_')) return `/assets/equipment/legs/${id}.png`;
+      if (id.startsWith('cloak_')) return `/assets/bazaar/accessories/${id}.png`;
       return null;
     },
     'consumable': (id) => `/assets/bazaar/consumables/${id}.png`,
@@ -166,31 +174,44 @@ const EQUIPMENT_ITEMS = [
     stats: { defense: 35, vitality: 15, wisdom: 5 },
     levelRequired: 22,
   },
-  // Accessories
+  // Leg Armor & Accessories
   {
-    id: 'ring_focus',
-    name: 'Ring of Focus',
-    description: 'Enhances mental clarity',
+    id: 'ring_vitality',
+    name: 'Ring of Vitality',
+    description: 'A ring pulsing with life energy',
     category: 'equipment',
-    slot: 'accessory',
-    rarity: 'uncommon',
-    price: 120,
+    slot: 'ring',
+    rarity: 'rare',
+    price: 250,
     icon: '💍',
-    sprite: '/assets/bazaar/accessories/ring_focus.png',
-    stats: { intelligence: 5, wisdom: 3 },
-    levelRequired: 3,
+    sprite: '/assets/equipment/rings/vitality_ring.png',
+    stats: { vitality: 6, defense: 3 },
+    levelRequired: 15,
   },
   {
-    id: 'amulet_vitality',
-    name: 'Amulet of Vitality',
-    description: 'Pulses with life-giving energy',
+    id: 'amulet_guardian',
+    name: 'Guardian Pendant',
+    description: 'Protection of the guardians',
     category: 'equipment',
-    slot: 'accessory',
+    slot: 'amulet',
+    rarity: 'rare',
+    price: 300,
+    icon: '📿',
+    sprite: '/assets/equipment/amulets/guardian_pendant.png',
+    stats: { defense: 6, vitality: 5 },
+    levelRequired: 15,
+  },
+  {
+    id: 'legs_chainmail',
+    name: 'Chainmail Leggings',
+    description: 'Interlocking metal rings protect your legs',
+    category: 'equipment',
+    slot: 'legs',
     rarity: 'rare',
     price: 350,
-    icon: '📿',
-    sprite: '/assets/bazaar/accessories/amulet_vitality.png',
-    stats: { vitality: 12, defense: 5 },
+    icon: '👖',
+    sprite: '/assets/equipment/legs/chainmail_leggings.png',
+    stats: { defense: 4, vitality: 2 },
     levelRequired: 8,
   },
   {
@@ -419,6 +440,8 @@ const ALL_ITEMS = [...EQUIPMENT_ITEMS, ...CONSUMABLE_ITEMS, ...COSMETIC_ITEMS, .
 
 const CATEGORIES = [
   { id: 'all', label: 'All Items', icon: Package },
+  { id: 'companions', label: 'Companions', icon: PawPrint },
+  { id: 'gear', label: 'Gear', icon: HardHat },
   { id: 'equipment', label: 'Equipment', icon: Sword },
   { id: 'consumable', label: 'Consumables', icon: Zap },
   { id: 'cosmetic', label: 'Cosmetics', icon: Sparkles },
@@ -521,6 +544,14 @@ function ItemCard({ item, owned, canAfford, onPurchase, level, mode }) {
             {item.effect.type === 'xp' && `+${item.effect.amount} XP`}
             {item.effect.type === 'xp_multiplier' && `${item.effect.amount}x XP for ${item.effect.duration}h`}
             {item.effect.type === 'shield' && `+${item.effect.amount} Shield${item.effect.amount > 1 ? 's' : ''}`}
+          </div>
+        )}
+
+        {/* Pet Bonus (for companions) */}
+        {item.bonusDescription && (
+          <div className="text-xs text-cyan-400 bg-cyan-500/10 rounded px-2 py-1 mb-3 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            {item.bonusDescription}
           </div>
         )}
 
@@ -724,6 +755,8 @@ export default function BazaarMarketplace() {
   const [rarityFilter, setRarityFilter] = useState('all');
   const [purchaseItem, setPurchaseItem] = useState(null);
   const [successItem, setSuccessItem] = useState(null);
+  const [purchasablePets, setPurchasablePets] = useState([]);
+  const [purchasableGear, setPurchasableGear] = useState([]);
 
   // Get store data
   const {
@@ -735,11 +768,52 @@ export default function BazaarMarketplace() {
     addToInventory,
   } = useGamificationStore();
 
-  const { addOwnedCosmetic, ownedCosmetics } = useAvatarStore();
+  const { addOwnedCosmetic, ownedCosmetics, unlockedEquipment, getPurchasableEquipment } = useAvatarStore();
+  const { ownedPets, getPurchasablePets } = usePetStore();
 
   const { mode } = useGamificationModeStore();
   const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+
+  // Fetch purchasable pets and gear
+  useEffect(() => {
+    const fetchPurchasables = () => {
+      // Get purchasable pets from pet store
+      const pets = getPurchasablePets();
+      setPurchasablePets(pets.map(pet => ({
+        id: pet.id,
+        name: pet.name,
+        description: pet.description,
+        category: 'companions',
+        rarity: pet.tier, // Map tier to rarity for display
+        price: pet.unlockRequirement?.price || 0,
+        icon: '🐾',
+        sprite: pet.sprite,
+        bonusDescription: pet.bonusDescription,
+        culture: pet.culture,
+        lore: pet.lore,
+        itemType: 'pet',
+      })));
+
+      // Get purchasable gear from avatar store
+      const gear = getPurchasableEquipment();
+      setPurchasableGear(gear.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        category: 'gear',
+        slot: item.slot,
+        rarity: item.rarity,
+        price: item.unlockRequirement?.price || 0,
+        icon: item.slot === 'helmet' ? '🪖' : item.slot === 'suit' ? '🦺' : item.slot === 'tool' ? '🔧' : '🏅',
+        sprite: `/assets/avatar/equipment/${item.sprite}.png`,
+        stats: item.stats,
+        itemType: 'gear',
+      })));
+    };
+
+    fetchPurchasables();
+  }, [ownedPets, unlockedEquipment]);
 
   // Hide bazaar in minimal mode
   if (!visibility.showBazaar) {
@@ -756,25 +830,39 @@ export default function BazaarMarketplace() {
     });
     // Add owned cosmetics from avatar store
     ownedCosmetics.forEach(id => ids.add(id));
+    // Add owned pets
+    ownedPets.forEach(id => ids.add(id));
+    // Add unlocked gear
+    unlockedEquipment.forEach(id => ids.add(id));
     // Also check localStorage for non-equipment items (legacy)
     try {
       const owned = JSON.parse(localStorage.getItem('owned_shop_items') || '[]');
       owned.forEach(id => ids.add(id));
     } catch (e) {}
     return ids;
-  }, [ownedEquipment, ownedCosmetics]);
+  }, [ownedEquipment, ownedCosmetics, ownedPets, unlockedEquipment]);
+
+  // Combine all items including dynamic pets and gear
+  const allItemsWithDynamic = useMemo(() => {
+    return [...ALL_ITEMS, ...purchasablePets, ...purchasableGear];
+  }, [purchasablePets, purchasableGear]);
 
   // Filter items
   const filteredItems = useMemo(() => {
-    return ALL_ITEMS.filter(item => {
+    return allItemsWithDynamic.filter(item => {
       // Category filter
       if (selectedCategory !== 'all' && item.category !== selectedCategory) {
         return false;
       }
 
-      // Rarity filter
-      if (rarityFilter !== 'all' && item.rarity !== rarityFilter) {
-        return false;
+      // Rarity filter - handle pet tiers as rarity
+      const itemRarity = item.rarity || item.tier;
+      if (rarityFilter !== 'all') {
+        // Map pet tiers to rarity for filtering
+        const normalizedRarity = itemRarity === 'mythic' ? 'legendary' : itemRarity;
+        if (normalizedRarity !== rarityFilter) {
+          return false;
+        }
       }
 
       // Search filter
@@ -782,21 +870,57 @@ export default function BazaarMarketplace() {
         const query = searchQuery.toLowerCase();
         return (
           item.name.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query)
+          item.description.toLowerCase().includes(query) ||
+          (item.bonusDescription && item.bonusDescription.toLowerCase().includes(query))
         );
       }
 
       return true;
     }).sort((a, b) => {
       // Sort by rarity, then by price
-      const rarityDiff = RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity);
+      const aRarity = a.rarity === 'mythic' ? 'legendary' : a.rarity;
+      const bRarity = b.rarity === 'mythic' ? 'legendary' : b.rarity;
+      const rarityDiff = RARITY_ORDER.indexOf(aRarity) - RARITY_ORDER.indexOf(bRarity);
       if (rarityDiff !== 0) return rarityDiff;
       return a.price - b.price;
     });
-  }, [selectedCategory, rarityFilter, searchQuery]);
+  }, [selectedCategory, rarityFilter, searchQuery, allItemsWithDynamic]);
 
   // Handle purchase
   const handlePurchase = async (item) => {
+    // Handle pet purchases through unlock service
+    if (item.itemType === 'pet') {
+      const result = await unlockService.purchasePet(item.id);
+      if (result.success) {
+        setPurchaseItem(null);
+        setSuccessItem({
+          ...item,
+          purchaseResult: result,
+        });
+      } else {
+        console.error('Failed to purchase pet:', result.error);
+        // Could show error toast here
+      }
+      return;
+    }
+
+    // Handle gear purchases through unlock service
+    if (item.itemType === 'gear') {
+      const result = await unlockService.purchaseEquipment(item.id);
+      if (result.success) {
+        setPurchaseItem(null);
+        setSuccessItem({
+          ...item,
+          purchaseResult: result,
+        });
+      } else {
+        console.error('Failed to purchase gear:', result.error);
+        // Could show error toast here
+      }
+      return;
+    }
+
+    // Original purchase flow for other items
     const result = await spendCredits(item.price, `purchase_${item.id}`);
 
     if (result.success) {
@@ -877,9 +1001,14 @@ export default function BazaarMarketplace() {
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           const isActive = selectedCategory === cat.id;
+          // Count items including dynamic pets and gear
           const count = cat.id === 'all'
-            ? ALL_ITEMS.length
-            : ALL_ITEMS.filter(i => i.category === cat.id).length;
+            ? allItemsWithDynamic.length
+            : cat.id === 'companions'
+              ? purchasablePets.length
+              : cat.id === 'gear'
+                ? purchasableGear.length
+                : ALL_ITEMS.filter(i => i.category === cat.id).length;
 
           return (
             <button

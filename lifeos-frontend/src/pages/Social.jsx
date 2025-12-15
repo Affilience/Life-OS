@@ -45,6 +45,12 @@ import AddFriendModal from '../components/social/AddFriendModal';
 import CreateGuildModal from '../components/social/CreateGuildModal';
 import ActivityFeedItem from '../components/social/ActivityFeedItem';
 import JoinLeaderboardModal from '../components/social/JoinLeaderboardModal';
+import usePvpStore from '../stores/pvpStore';
+import ActiveBattleCard from '../components/pvp/ActiveBattleCard';
+import PvPInviteModal from '../components/pvp/PvPInviteModal';
+import BattleView from '../components/pvp/BattleView';
+import LoadoutManager from '../components/pvp/LoadoutManager';
+import { getRankInfo } from '../utils/pvpCalculations';
 
 export default function Social() {
   const [activeTab, setActiveTab] = useState('feed');
@@ -55,10 +61,26 @@ export default function Social() {
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [showCreateGuildModal, setShowCreateGuildModal] = useState(false);
   const [showJoinLeaderboardModal, setShowJoinLeaderboardModal] = useState(false);
+  const [showPvPInviteModal, setShowPvPInviteModal] = useState(false);
+  const [selectedBattle, setSelectedBattle] = useState(null);
+  const [pvpSubTab, setPvpSubTab] = useState('battles'); // battles, loadout, history
 
   // Connect to gamification store for user's own stats
-  const { level, totalXP, globalStreak } = useGamificationStore();
+  const { level, totalXP, globalStreak, odoo } = useGamificationStore();
   const currentStreak = globalStreak?.current_streak || 0;
+  const userId = odoo;
+
+  // Connect to PvP store
+  const {
+    activeBattles,
+    pendingInvites: pvpPendingInvites,
+    userStats: pvpUserStats,
+    isLoading: pvpLoading,
+    initialize: initializePvp,
+    fetchBattleHistory,
+  } = usePvpStore();
+
+  const [pvpBattleHistory, setPvpBattleHistory] = useState([]);
 
   // Connect to social store
   const {
@@ -96,6 +118,20 @@ export default function Social() {
     initializeSocial();
   }, []);
 
+  // Initialize PvP data
+  useEffect(() => {
+    if (userId) {
+      initializePvp(userId);
+    }
+  }, [userId, initializePvp]);
+
+  // Fetch PvP battle history when switching to history tab
+  useEffect(() => {
+    if (activeTab === 'pvp' && pvpSubTab === 'history' && userId) {
+      fetchBattleHistory(userId).then(setPvpBattleHistory);
+    }
+  }, [activeTab, pvpSubTab, userId]);
+
   // User stats from real data
   const userStats = {
     rank: myRanks.global || '-',
@@ -108,6 +144,7 @@ export default function Social() {
 
   const TABS = [
     { id: 'feed', label: 'Feed', icon: Users },
+    { id: 'pvp', label: 'PvP Arena', icon: Swords, badge: pvpPendingInvites.length },
     { id: 'leaderboards', label: 'Leaderboards', icon: Trophy },
     { id: 'guilds', label: 'Guilds', icon: Shield },
     { id: 'friends', label: 'Friends', icon: UserPlus, badge: pendingRequests.length },
@@ -286,6 +323,208 @@ export default function Social() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* PVP ARENA TAB */}
+          {!loading && activeTab === 'pvp' && (
+            <div className="space-y-6" data-tour="social-pvp-section">
+              {/* If viewing a specific battle */}
+              {selectedBattle ? (
+                <BattleView
+                  battleId={selectedBattle}
+                  onBack={() => setSelectedBattle(null)}
+                />
+              ) : (
+                <>
+                  {/* PvP Stats Overview */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {/* Rank Card */}
+                    <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 border border-red-500/20 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xl">{getRankInfo(pvpUserStats?.rank_tier || 'bronze').icon}</span>
+                        <span className="text-xs text-white/50">Rank</span>
+                      </div>
+                      <p className="text-lg font-bold" style={{ color: getRankInfo(pvpUserStats?.rank_tier || 'bronze').color }}>
+                        {getRankInfo(pvpUserStats?.rank_tier || 'bronze').name}
+                      </p>
+                      <p className="text-xs text-white/40">ELO: {pvpUserStats?.elo_rating || 1000}</p>
+                    </div>
+
+                    {/* Record */}
+                    <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Trophy className="w-4 h-4 text-yellow-400" />
+                        <span className="text-xs text-white/50">Record</span>
+                      </div>
+                      <p className="text-lg font-bold text-white">
+                        {pvpUserStats?.wins || 0}W - {pvpUserStats?.losses || 0}L
+                      </p>
+                      <p className="text-xs text-white/40">{pvpUserStats?.draws || 0} draws</p>
+                    </div>
+
+                    {/* Win Streak */}
+                    <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Flame className="w-4 h-4 text-orange-400" />
+                        <span className="text-xs text-white/50">Win Streak</span>
+                      </div>
+                      <p className="text-lg font-bold text-white">{pvpUserStats?.current_win_streak || 0}</p>
+                      <p className="text-xs text-white/40">Best: {pvpUserStats?.longest_win_streak || 0}</p>
+                    </div>
+
+                    {/* Total Battles */}
+                    <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Swords className="w-4 h-4 text-red-400" />
+                        <span className="text-xs text-white/50">Battles</span>
+                      </div>
+                      <p className="text-lg font-bold text-white">{pvpUserStats?.total_battles || 0}</p>
+                      <p className="text-xs text-white/40">{pvpUserStats?.total_xp_from_pvp || 0} XP earned</p>
+                    </div>
+                  </div>
+
+                  {/* Pending PvP Invites Banner */}
+                  {pvpPendingInvites.length > 0 && (
+                    <button
+                      onClick={() => setShowPvPInviteModal(true)}
+                      className="w-full p-4 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-xl flex items-center justify-between hover:from-red-500/30 hover:to-orange-500/30 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-red-500/30 rounded-lg">
+                          <Swords className="w-5 h-5 text-red-400" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-white">
+                            {pvpPendingInvites.length} Battle Challenge{pvpPendingInvites.length > 1 ? 's' : ''}
+                          </p>
+                          <p className="text-sm text-white/60">Click to view and respond</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-white/40" />
+                    </button>
+                  )}
+
+                  {/* PvP Sub-tabs */}
+                  <div className="flex gap-2 bg-[#1a1724] p-1 rounded-xl w-fit">
+                    {[
+                      { id: 'battles', label: 'Active Battles' },
+                      { id: 'loadout', label: 'Loadout' },
+                      { id: 'history', label: 'History' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setPvpSubTab(tab.id)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          pvpSubTab === tab.id
+                            ? 'bg-red-500/20 text-red-400'
+                            : 'text-white/60 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Active Battles */}
+                  {pvpSubTab === 'battles' && (
+                    <div>
+                      {activeBattles.length === 0 ? (
+                        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-8 text-center">
+                          <Swords className="w-12 h-12 text-red-400 mx-auto mb-3 opacity-60" />
+                          <h4 className="text-white font-medium mb-2">No Active Battles</h4>
+                          <p className="text-white/50 text-sm mb-4">
+                            Challenge a friend to start battling! Your stats and equipment will determine your power.
+                          </p>
+                          <button className="px-6 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-lg font-medium transition-colors">
+                            Find Opponent
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {activeBattles.map((battle) => (
+                            <ActiveBattleCard
+                              key={battle.id}
+                              battle={battle}
+                              userId={userId}
+                              onClick={() => setSelectedBattle(battle.id)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Loadout Manager */}
+                  {pvpSubTab === 'loadout' && (
+                    <LoadoutManager userId={userId} />
+                  )}
+
+                  {/* Battle History */}
+                  {pvpSubTab === 'history' && (
+                    <div className="space-y-3">
+                      {pvpBattleHistory.length === 0 ? (
+                        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-8 text-center">
+                          <Clock className="w-12 h-12 text-white/40 mx-auto mb-3" />
+                          <h4 className="text-white font-medium mb-2">No Battle History</h4>
+                          <p className="text-white/50 text-sm">Complete battles to see them here</p>
+                        </div>
+                      ) : (
+                        pvpBattleHistory.map((battle) => {
+                          const isPlayer1 = battle.player1_id === userId;
+                          const won = battle.winner_id === userId;
+                          const isDraw = !battle.winner_id;
+
+                          return (
+                            <div
+                              key={battle.id}
+                              className={`p-4 rounded-xl border ${
+                                isDraw
+                                  ? 'bg-[#1a1724] border-white/10'
+                                  : won
+                                  ? 'bg-green-500/10 border-green-500/30'
+                                  : 'bg-red-500/10 border-red-500/30'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`p-2 rounded-lg ${
+                                    isDraw ? 'bg-white/10' : won ? 'bg-green-500/20' : 'bg-red-500/20'
+                                  }`}>
+                                    {isDraw ? (
+                                      <Users className="w-5 h-5 text-white/60" />
+                                    ) : won ? (
+                                      <Trophy className="w-5 h-5 text-green-400" />
+                                    ) : (
+                                      <Shield className="w-5 h-5 text-red-400" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className={`font-semibold ${
+                                      isDraw ? 'text-white/70' : won ? 'text-green-400' : 'text-red-400'
+                                    }`}>
+                                      {isDraw ? 'Draw' : won ? 'Victory' : 'Defeat'}
+                                    </p>
+                                    <p className="text-sm text-white/50">
+                                      vs Player {(isPlayer1 ? battle.player2_id : battle.player1_id)?.slice(0, 8)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm text-white/60 capitalize">{battle.battle_type}</p>
+                                  <p className="text-xs text-white/40">
+                                    {new Date(battle.updated_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
@@ -850,6 +1089,12 @@ export default function Social() {
         isOpen={showJoinLeaderboardModal}
         onClose={() => setShowJoinLeaderboardModal(false)}
       />
+      {showPvPInviteModal && (
+        <PvPInviteModal
+          invites={pvpPendingInvites}
+          onClose={() => setShowPvPInviteModal(false)}
+        />
+      )}
     </div>
   );
 }

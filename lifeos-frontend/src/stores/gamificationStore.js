@@ -6,6 +6,16 @@ import { calculateTotalStats, calculateStatBreakdown, getModuleXPMultiplier } fr
 import { useAvatarStore } from './avatarStore';
 import { calculateXPForLevel, calculateLevelFromTotalXP } from '../data/avatarEvolution';
 
+// Lazy import unlock service to avoid circular dependencies
+let unlockServiceRef = null;
+const getUnlockService = async () => {
+  if (!unlockServiceRef) {
+    const module = await import('../services/unlockService');
+    unlockServiceRef = module.default;
+  }
+  return unlockServiceRef;
+};
+
 // ============================================
 // HELPER FUNCTIONS (must be defined before store)
 // ============================================
@@ -451,6 +461,14 @@ export const useGamificationStore = create(
           leveled_up: leveledUp,
           stage_transition: stageTransition,
         });
+
+        // Trigger unlock service if leveled up (check for new pet/equipment unlocks)
+        if (leveledUp) {
+          (async () => {
+            const unlockService = await getUnlockService();
+            await unlockService.onLevelUp(newLevel);
+          })();
+        }
 
         return {
           xpGained: adjustedAmount,
