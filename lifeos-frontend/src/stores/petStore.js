@@ -14,6 +14,7 @@ let avatarStoreRef = null;
 let achievementsStoreRef = null;
 let perkStoreRef = null;
 let gamificationStoreRef = null;
+let unlockNotificationStoreRef = null;
 
 const getAvatarStore = () => {
   if (!avatarStoreRef) {
@@ -42,6 +43,17 @@ const getGamificationStore = () => {
   }
   return gamificationStoreRef;
 };
+
+const getUnlockNotificationStore = async () => {
+  if (!unlockNotificationStoreRef) {
+    const module = await import('./unlockNotificationStore');
+    unlockNotificationStoreRef = module.useUnlockNotificationStore;
+  }
+  return unlockNotificationStoreRef;
+};
+
+// DEV MODE: Set to true to unlock all pets automatically during development
+export const DEV_UNLOCK_ALL_PETS = true;
 
 // Unlock method types
 export const UNLOCK_METHODS = {
@@ -302,6 +314,230 @@ export const PET_DATABASE = {
     unlockRequirement: { anyTree: true, level: 80 },
     unlockDescription: 'Reach Level 80 in any skill tree',
   },
+
+  // ====================================
+  // NEW PETS - Generated with PixelLab
+  // ====================================
+
+  // COMMON TIER - New Companions
+  common_pixie: {
+    id: 'common_pixie',
+    name: 'Pixie',
+    tier: 'common',
+    culture: 'Celtic',
+    sprite: '/assets/pets/pet_pixie.png',
+    description: 'Tiny glowing fairy sprite with butterfly wings',
+    lore: 'Celtic pixies are nature spirits who guide lost travelers through forests. They bring creativity and inspiration to those they befriend.',
+    bonusType: 'creativity',
+    bonusAmount: 5,
+    bonusDescription: '+5% Journal XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'quest_novice' },
+    unlockDescription: 'Complete "Quest Novice" achievement',
+  },
+  common_foo_pup: {
+    id: 'common_foo_pup',
+    name: 'Foo Dog Pup',
+    tier: 'common',
+    culture: 'Chinese',
+    sprite: '/assets/pets/pet_foo_pup.png',
+    description: 'Baby Chinese guardian lion dog with fluffy golden mane',
+    lore: 'Guardian lions protect homes and temples from evil spirits. As pups, they are playful yet fiercely loyal to their companions.',
+    bonusType: 'focus',
+    bonusAmount: 5,
+    bonusDescription: '+5% Focus Session XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'deep_work_1' },
+    unlockDescription: 'Complete first deep work session',
+  },
+  common_will_o_wisp: {
+    id: 'common_will_o_wisp',
+    name: "Will-o'-Wisp",
+    tier: 'common',
+    culture: 'Celtic',
+    sprite: '/assets/pets/pet_will_o_wisp.png',
+    description: 'Floating ghostly flame spirit with an ethereal glow',
+    lore: 'These mysterious lights were once thought to lead travelers astray, but befriended wisps guide you toward your true path.',
+    bonusType: 'streak',
+    bonusAmount: 5,
+    bonusDescription: '+5% Streak Bonus',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'streak_starter' },
+    unlockDescription: '3-day streak',
+  },
+
+  // UNCOMMON TIER - New Companions
+  uncommon_thunderbird: {
+    id: 'uncommon_thunderbird',
+    name: 'Thunderbird Chick',
+    tier: 'uncommon',
+    culture: 'Native American',
+    sprite: '/assets/pets/pet_thunderbird.png',
+    description: 'Baby thunderbird eagle with lightning patterns on feathers',
+    lore: 'Sacred to many indigenous nations, thunderbirds control the weather. Their presence signals divine favor and powerful change.',
+    bonusType: 'productivity',
+    bonusAmount: 10,
+    bonusDescription: '+10% Deep Work XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'deep_work_10' },
+    unlockDescription: '10 hours of deep work',
+  },
+  uncommon_selkie: {
+    id: 'uncommon_selkie',
+    name: 'Selkie Pup',
+    tier: 'uncommon',
+    culture: 'Scottish',
+    sprite: '/assets/pets/pet_selkie.png',
+    description: 'Adorable seal pup with magical shimmer and human-like eyes',
+    lore: 'Selkies transform between seal and human form. They represent adaptability and the deep connections between different worlds.',
+    bonusType: 'adaptation',
+    bonusAmount: 10,
+    bonusDescription: '+10% Streak Recovery',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'two_weeks' },
+    unlockDescription: '14-day streak',
+  },
+  uncommon_carbuncle: {
+    id: 'uncommon_carbuncle',
+    name: 'Carbuncle',
+    tier: 'uncommon',
+    culture: 'Latin American',
+    sprite: '/assets/pets/pet_carbuncle.png',
+    description: 'Small blue rabbit-like creature with a glowing red gemstone on forehead',
+    lore: 'Carbuncles are treasure-finding creatures whose gem glows brighter near valuable discoveries. They symbolize finding hidden potential.',
+    bonusType: 'discovery',
+    bonusAmount: 10,
+    bonusDescription: '+10% Quest Reward XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'quest_apprentice' },
+    unlockDescription: 'Complete "Quest Apprentice" achievement',
+  },
+
+  // RARE TIER - New Companions
+  rare_qilin: {
+    id: 'rare_qilin',
+    name: 'Qilin',
+    tier: 'rare',
+    culture: 'Chinese',
+    sprite: '/assets/pets/pet_qilin.png',
+    description: 'Young qilin unicorn dragon hybrid with golden scales',
+    lore: 'Qilins appear only during prosperous times and to wise rulers. Their presence brings good fortune and signals great achievements.',
+    bonusType: 'prosperity',
+    bonusAmount: 15,
+    bonusDescription: '+15% Financial XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'one_month' },
+    unlockDescription: '30-day streak',
+  },
+  rare_basilisk: {
+    id: 'rare_basilisk',
+    name: 'Basilisk Hatchling',
+    tier: 'rare',
+    culture: 'European',
+    sprite: '/assets/pets/pet_basilisk.png',
+    description: 'Baby basilisk serpent king with emerald scales and hypnotic eyes',
+    lore: 'The King of Serpents, basilisks possess deadly gazes. As hatchlings, their power is channeled into intense focus and determination.',
+    bonusType: 'intensity',
+    bonusAmount: 15,
+    bonusDescription: '+15% Task Completion XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'task_slayer' },
+    unlockDescription: 'Complete 100 tasks',
+  },
+  rare_baku: {
+    id: 'rare_baku',
+    name: 'Baku',
+    tier: 'rare',
+    culture: 'Japanese',
+    sprite: '/assets/pets/pet_baku.png',
+    description: 'Dream-eating tapir spirit surrounded by purple dreamlike mist',
+    lore: 'Baku devour nightmares and bad dreams, leaving only peaceful sleep. They represent the power of rest and mental clarity.',
+    bonusType: 'recovery',
+    bonusAmount: 15,
+    bonusDescription: '+15% Sleep/Recovery XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'quest_master' },
+    unlockDescription: 'Complete "Quest Master" achievement',
+  },
+
+  // EPIC TIER - New Companions
+  epic_chimera: {
+    id: 'epic_chimera',
+    name: 'Chimera Cub',
+    tier: 'epic',
+    culture: 'Greek',
+    sprite: '/assets/pets/pet_chimera.png',
+    description: 'Baby chimera with lion head, goat head on back, and snake tail',
+    lore: 'The Chimera represents impossible combinations made real. Its cub embodies the power of embracing all aspects of yourself.',
+    bonusType: 'versatility',
+    bonusAmount: 20,
+    bonusDescription: '+20% Multi-module Bonus',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'boss_slayer' },
+    unlockDescription: 'Complete "Boss Slayer" achievement',
+  },
+  epic_garuda: {
+    id: 'epic_garuda',
+    name: 'Garuda',
+    tier: 'epic',
+    culture: 'Hindu',
+    sprite: '/assets/pets/pet_garuda.png',
+    description: 'Divine eagle-human hybrid with golden feathers and royal crown',
+    lore: 'Mount of Lord Vishnu, Garuda is the king of birds. He represents speed, power, and the ability to rise above all obstacles.',
+    bonusType: 'speed',
+    bonusAmount: 20,
+    bonusDescription: '+20% Daily Challenge XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'streak_60' },
+    unlockDescription: '60-day streak',
+  },
+  epic_sleipnir: {
+    id: 'epic_sleipnir',
+    name: 'Sleipnir Foal',
+    tier: 'epic',
+    culture: 'Norse',
+    sprite: '/assets/pets/pet_sleipnir.png',
+    description: "Young eight-legged horse with silver-grey coat and cosmic mane",
+    lore: "Odin's legendary steed can travel between worlds. Even as a foal, Sleipnir grants unmatched endurance and journeying prowess.",
+    bonusType: 'endurance',
+    bonusAmount: 20,
+    bonusDescription: '+20% Long Streak XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'streak_90' },
+    unlockDescription: '90-day streak',
+  },
+
+  // MYTHIC TIER - New Companions
+  mythic_quetzalcoatl: {
+    id: 'mythic_quetzalcoatl',
+    name: 'Quetzalcoatl',
+    tier: 'mythic',
+    culture: 'Aztec',
+    sprite: '/assets/pets/pet_quetzalcoatl.png',
+    description: 'Feathered serpent god with rainbow iridescent feathers and divine glow',
+    lore: 'The Plumed Serpent god of wind, air, and learning. Quetzalcoatl brought knowledge to humanity and represents wisdom incarnate.',
+    bonusType: 'wisdom',
+    bonusAmount: 25,
+    bonusDescription: '+25% Learning & Knowledge XP',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'books_52' },
+    unlockDescription: 'Read 52 books',
+  },
+  mythic_raiju: {
+    id: 'mythic_raiju',
+    name: 'Raijū',
+    tier: 'mythic',
+    culture: 'Japanese',
+    sprite: '/assets/pets/pet_raiju.png',
+    description: 'Lightning beast wolf-cat hybrid crackling with blue electricity',
+    lore: 'The lightning beast companion of Raijin, god of thunder. Raijū embodies raw power and the electric energy of peak performance.',
+    bonusType: 'power',
+    bonusAmount: 25,
+    bonusDescription: '+25% All XP on 100+ day streaks',
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'streak_legend' },
+    unlockDescription: '100-day streak',
+  },
 };
 
 // Tier colors and metadata
@@ -349,11 +585,33 @@ export const usePetStore = create(
       activePets: [], // Pets currently equipped
       maxSlots: 1, // Starts with 1 slot, unlocks more through progression
 
+      // Get effective owned pets (all pets in dev mode)
+      getEffectiveOwnedPets: () => {
+        if (DEV_UNLOCK_ALL_PETS) {
+          return Object.keys(PET_DATABASE);
+        }
+        return get().ownedPets;
+      },
+
       // Unlock a new pet
-      unlockPet: async (petId) => {
+      unlockPet: async (petId, showNotification = true) => {
         const { ownedPets } = get();
         if (!ownedPets.includes(petId) && PET_DATABASE[petId]) {
+          const pet = PET_DATABASE[petId];
           set({ ownedPets: [...ownedPets, petId] });
+
+          // Show unlock notification with pixel art sprite
+          if (showNotification) {
+            try {
+              const notificationStore = await getUnlockNotificationStore();
+              notificationStore.getState().addPetUnlock({
+                ...pet,
+                id: petId,
+              });
+            } catch (e) {
+              console.warn('Could not show pet unlock notification:', e);
+            }
+          }
 
           // Sync to database
           try {
@@ -365,7 +623,6 @@ export const usePetStore = create(
             }, { onConflict: 'user_id,pet_id' });
 
             // Log to timeline
-            const pet = PET_DATABASE[petId];
             await supabase.from('timeline').insert({
               user_id: DEV_USER_ID,
               module: 'companions',
@@ -392,7 +649,9 @@ export const usePetStore = create(
       equipPet: async (petId) => {
         const { activePets, maxSlots, ownedPets } = get();
 
-        if (!ownedPets.includes(petId)) return false;
+        // In dev mode, allow equipping any pet; otherwise check ownership
+        const canEquip = DEV_UNLOCK_ALL_PETS ? PET_DATABASE[petId] !== undefined : ownedPets.includes(petId);
+        if (!canEquip) return false;
 
         // If already active, unequip it
         if (activePets.includes(petId)) {
@@ -471,9 +730,9 @@ export const usePetStore = create(
 
       // Get collection stats
       getCollectionStats: () => {
-        const { ownedPets } = get();
+        const effectiveOwnedPets = get().getEffectiveOwnedPets();
         const totalPets = Object.keys(PET_DATABASE).length;
-        const ownedCount = ownedPets.length;
+        const ownedCount = effectiveOwnedPets.length;
 
         const byTier = {
           common: 0,
@@ -483,7 +742,7 @@ export const usePetStore = create(
           mythic: 0,
         };
 
-        ownedPets.forEach(petId => {
+        effectiveOwnedPets.forEach(petId => {
           const pet = PET_DATABASE[petId];
           if (pet) {
             byTier[pet.tier]++;
@@ -500,6 +759,9 @@ export const usePetStore = create(
 
       // Check if pet is unlocked
       isPetUnlocked: (petId) => {
+        if (DEV_UNLOCK_ALL_PETS) {
+          return PET_DATABASE[petId] !== undefined;
+        }
         return get().ownedPets.includes(petId);
       },
 

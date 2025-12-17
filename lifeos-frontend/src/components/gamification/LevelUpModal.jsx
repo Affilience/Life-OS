@@ -1,18 +1,22 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon, CheckCircleIcon, ArrowUpIcon, TrophyIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, CheckCircleIcon, ArrowUpIcon, TrophyIcon, GiftIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 import { feedback } from '../../services/microInteractions';
+import { getLevelTitle, getMilestoneForLevel, getHighestFrame, getLevelXPBonus, getPetSlots, getInventorySlots } from '../../data/levelProgression';
+import LevelTitle from './LevelTitle';
+import ProfileFrame from './ProfileFrame';
 
 /**
  * Level Up Modal - Celebration when reaching a new level
  *
- * Mode-specific display:
- * - Cosmic: Full celebration with particles, animations, and dramatic reveal
- * - Professional: Clean notification with progress indicator
- * - Minimal: Simple toast-style notification (or skip entirely)
+ * Features:
+ * - Level title progression display
+ * - Milestone rewards (credits, XP bonus, equipment, frames)
+ * - New slot unlocks (pets, inventory)
+ * - Mode-specific display (Cosmic, Professional, Minimal)
  */
-export default function LevelUpModal({ isOpen, onClose, data }) {
+export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }) {
   // Get gamification mode
   const mode = useGamificationModeStore((state) => state.mode);
   const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
@@ -40,6 +44,23 @@ export default function LevelUpModal({ isOpen, onClose, data }) {
     oldStage,
     unlocksAvailable,
   } = data;
+
+  // Get level progression info
+  const oldTitle = getLevelTitle(oldLevel);
+  const newTitle = getLevelTitle(newLevel);
+  const titleChanged = oldTitle.title !== newTitle.title;
+  const milestone = getMilestoneForLevel(newLevel);
+  const newFrame = getHighestFrame(newLevel);
+  const oldFrame = getHighestFrame(oldLevel);
+  const frameUnlocked = newFrame.id !== oldFrame.id && newFrame.id !== 'none';
+  const xpBonus = getLevelXPBonus(newLevel);
+  const xpBonusFormatted = `+${(xpBonus * 100).toFixed(1)}%`;
+  const newPetSlots = getPetSlots(newLevel);
+  const oldPetSlots = getPetSlots(oldLevel);
+  const petSlotUnlocked = newPetSlots > oldPetSlots;
+  const newInventorySlots = getInventorySlots(newLevel);
+  const oldInventorySlots = getInventorySlots(oldLevel);
+  const inventorySlotUnlocked = newInventorySlots > oldInventorySlots;
 
   // Mode-specific styling
   const getModalStyle = () => {
@@ -172,31 +193,122 @@ export default function LevelUpModal({ isOpen, onClose, data }) {
           </motion.div>
         </motion.div>
 
-        {/* Stage Transition (Evolution) */}
-        {stageTransition && (
+        {/* Title Change */}
+        {titleChanged && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.0 }}
-            className="mb-6 bg-purple-500/20 border border-purple-500/30 rounded-lg p-4"
+            className="mb-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-4"
           >
-            <p className="text-purple-400 font-semibold mb-1">🌟 {terms.evolution}!</p>
-            <p className="text-white text-lg">
-              {terms.stage} {oldStage} → {terms.stage} {newStage}
-            </p>
-            <p className="text-white/60 text-sm mt-1">Your avatar has evolved!</p>
+            <p className="text-purple-400 font-semibold mb-2">🎖️ New Title Achieved!</p>
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-white/50" style={{ color: oldTitle.color }}>
+                {oldTitle.icon} {oldTitle.title}
+              </span>
+              <span className="text-white/40">→</span>
+              <span className="font-bold" style={{ color: newTitle.color }}>
+                {newTitle.icon} {newTitle.title}
+              </span>
+            </div>
           </motion.div>
         )}
 
-        {/* Unlocks */}
+        {/* Milestone Rewards */}
+        {milestone && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1 }}
+            className="mb-4 bg-amber-500/20 border border-amber-500/30 rounded-lg p-4"
+          >
+            <p className="text-amber-400 font-semibold mb-3 flex items-center gap-2">
+              <GiftIcon className="w-5 h-5" />
+              Level {newLevel} Milestone Rewards!
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              {milestone.credits > 0 && (
+                <div className="flex items-center gap-2 text-yellow-400">
+                  <span>💰</span>
+                  <span>+{milestone.credits} Credits</span>
+                </div>
+              )}
+              {milestone.xpBonus > 0 && (
+                <div className="flex items-center gap-2 text-blue-400">
+                  <span>⚡</span>
+                  <span>+{milestone.xpBonus} Bonus XP</span>
+                </div>
+              )}
+              {milestone.equipment && (
+                <div className="flex items-center gap-2 text-purple-400">
+                  <span>⚔️</span>
+                  <span>New Equipment!</span>
+                </div>
+              )}
+              {milestone.frame && (
+                <div className="flex items-center gap-2 text-cyan-400">
+                  <span>🖼️</span>
+                  <span>{newFrame.name}</span>
+                </div>
+              )}
+              {milestone.petSlot && (
+                <div className="flex items-center gap-2 text-pink-400">
+                  <span>🐾</span>
+                  <span>+1 Pet Slot</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* XP Bonus Info */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+          className="mb-4 flex items-center justify-center gap-4 text-sm"
+        >
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg">
+            <SparklesIcon className="w-4 h-4 text-purple-400" />
+            <span className="text-white/70">Level Bonus:</span>
+            <span className="text-purple-400 font-semibold">{xpBonusFormatted} XP</span>
+          </div>
+        </motion.div>
+
+        {/* Slot Unlocks */}
+        {(petSlotUnlocked || inventorySlotUnlocked) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.3 }}
+            className="mb-4 bg-green-500/20 border border-green-500/30 rounded-lg p-3"
+          >
+            <div className="flex items-center justify-center gap-4 text-sm">
+              {petSlotUnlocked && (
+                <div className="flex items-center gap-2 text-green-400">
+                  <span>🐾</span>
+                  <span>Pet Slots: {oldPetSlots} → {newPetSlots}</span>
+                </div>
+              )}
+              {inventorySlotUnlocked && (
+                <div className="flex items-center gap-2 text-green-400">
+                  <span>🎒</span>
+                  <span>Inventory: {oldInventorySlots} → {newInventorySlots}</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Legacy Unlocks */}
         {unlocksAvailable && unlocksAvailable.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2 }}
-            className="bg-amber-500/20 border border-amber-500/30 rounded-lg p-4"
+            transition={{ delay: 1.4 }}
+            className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4"
           >
-            <p className="text-amber-400 font-semibold mb-2">🎁 New Unlocks Available!</p>
+            <p className="text-blue-400 font-semibold mb-2">🎁 Additional Unlocks!</p>
             <ul className="text-sm text-gray-300 space-y-1">
               {unlocksAvailable.map((unlock, i) => (
                 <li key={i}>• {unlock}</li>

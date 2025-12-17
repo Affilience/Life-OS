@@ -597,18 +597,22 @@ export async function triggerGamification(action, options = {}) {
     globalCelebrate.levelUp(levelAfter);
   }
 
-  // Achievement celebrations
+  // Achievement celebrations - use full-screen Duolingo-style celebration
   if (newAchievements.length > 0 && globalCelebrate) {
     newAchievements.forEach((achievement, index) => {
       setTimeout(() => {
-        globalCelebrate.achievement({
-          title: achievement.name || 'Achievement Unlocked',
-          description: achievement.description,
-          variant: achievement.tier === 'legendary' ? 'gold' :
-                   achievement.tier === 'epic' ? 'purple' :
-                   achievement.tier === 'rare' ? 'blue' : 'green',
+        globalCelebrate.achievementUnlocked({
+          achievement: {
+            id: achievement.id,
+            name: achievement.name || 'Achievement Unlocked',
+            description: achievement.description,
+            tier: achievement.tier || 'common',
+            rarity: achievement.tier || 'common',
+            xpReward: achievement.xpReward || 0,
+            icon: achievement.icon,
+          },
         });
-      }, index * 1500); // Stagger multiple achievements
+      }, index * 2000); // Stagger multiple achievements
     });
   }
 
@@ -641,7 +645,7 @@ export async function triggerGamification(action, options = {}) {
     });
   }
 
-  // Quest completion celebrations
+  // Quest completion celebrations (from auto-check)
   if (completedQuests && completedQuests.length > 0 && globalCelebrate) {
     const celebrationDelay = (newAchievements.length + newPets.length + extendedStreaks.length) * 1500;
     completedQuests.forEach((quest, index) => {
@@ -651,6 +655,35 @@ export async function triggerGamification(action, options = {}) {
         });
       }, celebrationDelay + index * 2000);
     });
+  }
+
+  // Direct quest completion celebration (when triggerGamification is called from questsStore)
+  // This handles the case where a quest was manually completed and we need to celebrate it
+  const isQuestCompletionAction = [
+    'questCompleted', 'weeklyQuestCompleted', 'monthlyQuestCompleted',
+    'crossModuleQuestCompleted', 'questChainCompleted', 'bossDefeated'
+  ].includes(action);
+
+  if (isQuestCompletionAction && globalCelebrate && (!completedQuests || completedQuests.length === 0)) {
+    const celebrationDelay = (newAchievements.length + newPets.length + extendedStreaks.length) * 1500;
+    setTimeout(() => {
+      // Determine quest type from action name
+      const questType = action === 'bossDefeated' ? 'boss' :
+                       action === 'questChainCompleted' ? 'chain' :
+                       action === 'crossModuleQuestCompleted' ? 'cross-module' :
+                       action === 'monthlyQuestCompleted' ? 'monthly' : 'weekly';
+
+      globalCelebrate.questCompleted({
+        quest: {
+          name: metadata.questName || metadata.name || 'Quest Complete',
+          title: metadata.questTitle || metadata.title || 'Quest Complete',
+          type: questType,
+          description: metadata.questDescription || metadata.description || '',
+          xpReward: xpOverride || XP_VALUES[action] || 25,
+          creditReward: metadata.creditReward || metadata.creditsReward || 0,
+        },
+      });
+    }, celebrationDelay);
   }
 
   // Daily task auto-completion celebrations

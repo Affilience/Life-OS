@@ -4,10 +4,14 @@ import { supabase, getCurrentUserId } from '../lib/supabase';
 import { AVATAR_TIERS, calculateStats } from '../data/avatarData';
 import { EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, EQUIPMENT_RARITY } from '../data/equipmentDatabase';
 
+// DEV MODE: Set to true to unlock all equipment automatically
+const DEV_UNLOCK_ALL = true;
+
 // Lazy store imports to avoid circular dependencies
 let achievementsStoreRef = null;
 let perkStoreRef = null;
 let gamificationStoreRef = null;
+let unlockNotificationStoreRef = null;
 
 const getAchievementsStore = async () => {
   if (!achievementsStoreRef) {
@@ -31,6 +35,14 @@ const getGamificationStore = async () => {
     gamificationStoreRef = module.default;
   }
   return gamificationStoreRef;
+};
+
+const getUnlockNotificationStore = async () => {
+  if (!unlockNotificationStoreRef) {
+    const module = await import('./unlockNotificationStore');
+    unlockNotificationStoreRef = module.useUnlockNotificationStore;
+  }
+  return unlockNotificationStoreRef;
 };
 
 // Default state for new users
@@ -295,10 +307,13 @@ export const useAvatarStore = create(
         if (!item) return false;
         if (item.slot !== slot) return false;
 
-        // Allow if unlocked OR if it's default equipment
-        const isDefault = item.unlockMethod === 'default';
-        const isUnlocked = get().unlockedEquipment.includes(itemId);
-        if (!isDefault && !isUnlocked) return false;
+        // DEV MODE: Allow equipping any item
+        if (!DEV_UNLOCK_ALL) {
+          // Allow if unlocked OR if it's default equipment
+          const isDefault = item.unlockMethod === 'default';
+          const isUnlocked = get().unlockedEquipment.includes(itemId);
+          if (!isDefault && !isUnlocked) return false;
+        }
 
         set(state => ({
           equipped: {
@@ -326,7 +341,7 @@ export const useAvatarStore = create(
       },
 
       // Unlock equipment
-      unlockEquipment: async (itemId) => {
+      unlockEquipment: async (itemId, showNotification = true) => {
         const item = EQUIPMENT_DATABASE[itemId];
         if (!item) return false;
         if (get().unlockedEquipment.includes(itemId)) return false;
@@ -334,6 +349,19 @@ export const useAvatarStore = create(
         set(state => ({
           unlockedEquipment: [...state.unlockedEquipment, itemId],
         }));
+
+        // Show unlock notification with pixel art sprite
+        if (showNotification) {
+          try {
+            const notificationStore = await getUnlockNotificationStore();
+            notificationStore.getState().addUnlock({
+              ...item,
+              id: itemId,
+            });
+          } catch (e) {
+            console.warn('Could not show unlock notification:', e);
+          }
+        }
 
         get().syncToSupabase();
         return true;
@@ -357,7 +385,12 @@ export const useAvatarStore = create(
       },
 
       // Check if a specific unlock requirement is met
-      checkUnlockRequirement: async (item, { level, prestige, stats, unlockedAchievements, perkState }) => {
+      checkUnlockRequirement: async (item, { level, prestige, stats, unlockedAchievements, perkState, moduleProgress, streaks, pvpStats, questsCompleted, loginStreak }) => {
+        // DEV MODE: Unlock everything
+        if (DEV_UNLOCK_ALL) {
+          return true;
+        }
+
         const req = item.unlockRequirement;
         const method = item.unlockMethod;
 
@@ -373,22 +406,29 @@ export const useAvatarStore = create(
 
         // Level-based unlocks
         if (method === 'level') {
-          // Check for prestige requirement
-          if (req.prestige) {
-            return prestige >= req.prestige;
-          }
-          return level >= req.level;
+          return level >= (req.level || 1);
+        }
+
+        // Prestige-based unlocks
+        if (method === 'prestige') {
+          return prestige >= (req.prestige || 1);
         }
 
         // Achievement-based unlocks
         if (method === 'achievement') {
-          // First check if the specific achievement is unlocked
           if (req.achievementId && unlockedAchievements?.includes(req.achievementId)) {
             return true;
           }
-          // Fallback to stat-based check
           if (req.fallbackStat && req.fallbackTarget) {
             return (stats[req.fallbackStat] || 0) >= req.fallbackTarget;
+          }
+          return false;
+        }
+
+        // Milestone-based unlocks (stat thresholds)
+        if (method === 'milestone') {
+          if (req.metric && req.target) {
+            return (stats[req.metric] || 0) >= req.target;
           }
           return false;
         }
@@ -398,31 +438,106 @@ export const useAvatarStore = create(
           const treeLevels = perkState?.treeLevels || {};
           const unlockedPerks = perkState?.unlockedPerks || [];
 
-          // Check for specific perk unlock (OR condition)
           if (req.orPerkId && unlockedPerks.includes(req.orPerkId)) {
             return true;
           }
-
-          // Check for specific tree level requirement
           if (req.tree && req.level) {
             const treeLevel = treeLevels[req.tree] || 0;
-            if (treeLevel >= req.level) {
-              return true;
-            }
+            if (treeLevel >= req.level) return true;
           }
-
-          // Check for any tree reaching a level
           if (req.anyTree && req.level) {
             return Object.values(treeLevels).some(lvl => lvl >= req.level);
           }
-
-          // Check for all trees reaching a level
           if (req.allTrees && req.level) {
             const trees = ['body', 'mind', 'spirit', 'wealth', 'social', 'craft'];
             return trees.every(tree => (treeLevels[tree] || 0) >= req.level);
           }
-
           return false;
+        }
+
+        // Perk-based unlocks
+        if (method === 'perk') {
+          const unlockedPerks = perkState?.unlockedPerks || [];
+          return req.perkId && unlockedPerks.includes(req.perkId);
+        }
+
+        // Module progress-based unlocks
+        if (method === 'module') {
+          const progress = moduleProgress?.[req.module] || {};
+          if (req.metric && req.target) {
+            return (progress[req.metric] || stats[req.metric] || 0) >= req.target;
+          }
+          return false;
+        }
+
+        // Streak-based unlocks
+        if (method === 'streak') {
+          if (req.module) {
+            const moduleStreak = streaks?.[req.module]?.current_streak || moduleProgress?.[req.module]?.streak || 0;
+            return moduleStreak >= (req.streakDays || 0);
+          }
+          // Any module streak
+          const anyStreak = Math.max(
+            ...Object.values(streaks || {}).map(s => s.current_streak || 0),
+            ...Object.values(moduleProgress || {}).map(m => m.streak || 0),
+            0
+          );
+          return anyStreak >= (req.streakDays || 0);
+        }
+
+        // PvP-based unlocks
+        if (method === 'pvp') {
+          if (req.wins) {
+            return (pvpStats?.total_wins || 0) >= req.wins;
+          }
+          if (req.rank) {
+            const rankOrder = ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'legend'];
+            const currentRankIndex = rankOrder.indexOf(pvpStats?.current_rank || 'bronze');
+            const requiredRankIndex = rankOrder.indexOf(req.rank);
+            return currentRankIndex >= requiredRankIndex;
+          }
+          return false;
+        }
+
+        // Social-based unlocks
+        if (method === 'social') {
+          if (req.friends) {
+            return (stats.friendsAdded || 0) >= req.friends;
+          }
+          if (req.challengesWon) {
+            return (stats.challengesWon || 0) >= req.challengesWon;
+          }
+          return false;
+        }
+
+        // Quest-based unlocks
+        if (method === 'quest') {
+          return questsCompleted?.includes(req.questId);
+        }
+
+        // Daily quest count unlocks
+        if (method === 'daily_quest') {
+          return (stats.dailyQuestsCompleted || 0) >= (req.count || 0);
+        }
+
+        // Weekly quest count unlocks
+        if (method === 'weekly_quest') {
+          return (stats.weeklyQuestsCompleted || 0) >= (req.count || 0);
+        }
+
+        // Daily login streak unlocks
+        if (method === 'daily_login') {
+          return (loginStreak || stats.loginStreak || 0) >= (req.days || 0);
+        }
+
+        // Secret/Discovery unlocks - handled separately
+        if (method === 'secret' || method === 'discovery') {
+          return false; // Must be unlocked through special triggers
+        }
+
+        // Seasonal/Nova/Founder/Beta - handled separately
+        if (method === 'seasonal' || method === 'nova' || method === 'founder' || method === 'beta') {
+          return false; // Must be unlocked through special events
         }
 
         return false;
@@ -430,7 +545,7 @@ export const useAvatarStore = create(
 
       // Check for equipment unlocks based on progress
       checkUnlocks: async () => {
-        const { unlockedEquipment, unlockEquipment, checkUnlockRequirement, level, prestige } = get();
+        const { unlockedEquipment, unlockEquipment, checkUnlockRequirement, level, prestige, moduleProgress } = get();
 
         // Import stores dynamically to avoid circular dependencies
         const [achievementsStore, perkStore] = await Promise.all([
@@ -444,6 +559,49 @@ export const useAvatarStore = create(
         const stats = achievementsState.stats || {};
         const unlockedAchievements = achievementsState.unlockedAchievements || [];
 
+        // Fetch additional data from Supabase
+        let streaks = {};
+        let pvpStats = {};
+        let questsCompleted = [];
+        let loginStreak = 0;
+
+        try {
+          const userId = await getCurrentUserId();
+          if (userId) {
+            // Fetch user streaks
+            const { data: streakData } = await supabase
+              .from('user_streaks')
+              .select('*')
+              .eq('user_id', userId);
+            if (streakData) {
+              streaks = streakData.reduce((acc, s) => ({ ...acc, [s.module]: s }), {});
+            }
+
+            // Fetch PvP stats
+            const { data: pvpData } = await supabase
+              .from('user_pvp_stats')
+              .select('*')
+              .eq('user_id', userId)
+              .single();
+            if (pvpData) pvpStats = pvpData;
+
+            // Fetch completed quests
+            const { data: questData } = await supabase
+              .from('user_quests')
+              .select('quest_id')
+              .eq('user_id', userId)
+              .eq('status', 'completed');
+            if (questData) {
+              questsCompleted = questData.map(q => q.quest_id);
+            }
+
+            // Get login streak from stats or user_profiles
+            loginStreak = stats.loginStreak || 0;
+          }
+        } catch (error) {
+          console.warn('[AvatarStore] Error fetching unlock data:', error);
+        }
+
         const newUnlocks = [];
 
         // Check each equipment's unlock condition
@@ -456,6 +614,11 @@ export const useAvatarStore = create(
             stats,
             unlockedAchievements,
             perkState,
+            moduleProgress,
+            streaks,
+            pvpStats,
+            questsCompleted,
+            loginStreak,
           });
 
           if (shouldUnlock) {
@@ -553,22 +716,50 @@ export const useAvatarStore = create(
           .sort((a, b) => a.price - b.price);
       },
 
+      // Get effective unlocked equipment (all items in dev mode)
+      getEffectiveUnlockedEquipment: () => {
+        if (DEV_UNLOCK_ALL) {
+          return Object.keys(EQUIPMENT_DATABASE);
+        }
+        return get().unlockedEquipment;
+      },
+
       // Get all locked equipment grouped by unlock method (for UI display)
       getLockedEquipmentByMethod: () => {
         const { unlockedEquipment } = get();
 
         const grouped = {
           level: [],
+          prestige: [],
           achievement: [],
+          milestone: [],
           skill_tree: [],
+          perk: [],
           bazaar: [],
+          module: [],
+          streak: [],
+          pvp: [],
+          social: [],
+          quest: [],
+          daily_quest: [],
+          weekly_quest: [],
+          daily_login: [],
+          discovery: [],
+          secret: [],
+          seasonal: [],
+          nova: [],
         };
 
         Object.entries(EQUIPMENT_DATABASE)
           .filter(([itemId, item]) => !unlockedEquipment.includes(itemId) && item.unlockMethod !== 'default')
           .forEach(([itemId, item]) => {
-            if (grouped[item.unlockMethod]) {
-              grouped[item.unlockMethod].push({ ...item, id: itemId });
+            const method = item.unlockMethod;
+            if (grouped[method]) {
+              grouped[method].push({ ...item, id: itemId });
+            } else {
+              // Unknown method, add to a general category
+              if (!grouped.other) grouped.other = [];
+              grouped.other.push({ ...item, id: itemId });
             }
           });
 

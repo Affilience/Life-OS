@@ -344,8 +344,11 @@ export default function AvatarRenderer({
     });
 
     // Load base sprite and all equipment sprites in parallel
+    let isCancelled = false;
     const loadAllImages = async () => {
       try {
+        // Check if cancelled before starting
+        if (isCancelled) return;
         // Always use stage 10 swordsman as base avatar
         const baseSpriteUrl = BASE_AVATAR_PATH;
 
@@ -368,6 +371,9 @@ export default function AvatarRenderer({
         ];
 
         const [baseImg, ...equipmentImages] = await Promise.all(loadPromises);
+
+        // Check if cancelled after loading (component might have unmounted)
+        if (isCancelled) return;
 
         // DEBUG: Log loaded images
         console.log('[AvatarRenderer] Base image loaded:', baseImg?.width, 'x', baseImg?.height);
@@ -462,6 +468,11 @@ export default function AvatarRenderer({
     };
 
     loadAllImages();
+
+    // Cleanup function to cancel async operations on unmount/re-render
+    return () => {
+      isCancelled = true;
+    };
   }, [currentFrame, level, prestige, equippedItems, visualEquipment, size, animate, showAvatarEffects, showParticleEffects]);
 
   return (

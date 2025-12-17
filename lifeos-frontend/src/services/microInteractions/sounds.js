@@ -326,6 +326,177 @@ export function streak() {
   playArpeggio([523.25, 659.25, 783.99, 1046.50, 1318.51], 0.1, 50);
 }
 
+// ============================================================================
+// COMBAT SOUNDS
+// ============================================================================
+
+/**
+ * Attack hit sound - punchy impact
+ */
+export function attackHit() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Impact thump
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(150, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.08);
+    gain1.gain.setValueAtTime(masterVolume * 0.6, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.1);
+
+    // High "slash" swoosh
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(800, ctx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.06);
+    gain2.gain.setValueAtTime(masterVolume * 0.15, ctx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime);
+    osc2.stop(ctx.currentTime + 0.08);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Critical hit sound - dramatic impact with sparkle
+ */
+export function criticalHit() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Big impact thump
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(200, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+    gain1.gain.setValueAtTime(masterVolume * 0.8, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.15);
+
+    // High "crit" sparkle
+    setTimeout(() => {
+      if (!soundsEnabled) return;
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1200, ctx.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + 0.1);
+      gain2.gain.setValueAtTime(masterVolume * 0.3, ctx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime);
+      osc2.stop(ctx.currentTime + 0.15);
+    }, 30);
+
+    // Mid punch
+    const osc3 = ctx.createOscillator();
+    const gain3 = ctx.createGain();
+    osc3.type = 'triangle';
+    osc3.frequency.setValueAtTime(400, ctx.currentTime);
+    osc3.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.08);
+    gain3.gain.setValueAtTime(masterVolume * 0.4, ctx.currentTime);
+    gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    osc3.connect(gain3);
+    gain3.connect(ctx.destination);
+    osc3.start(ctx.currentTime);
+    osc3.stop(ctx.currentTime + 0.1);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Boss attack sound - menacing incoming damage
+ */
+export function bossAttack() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Low menacing rumble
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(80, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.15);
+    gain1.gain.setValueAtTime(masterVolume * 0.5, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.2);
+
+    // Impact crunch
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(120, ctx.currentTime + 0.05);
+    osc2.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+    gain2.gain.setValueAtTime(0, ctx.currentTime);
+    gain2.gain.linearRampToValueAtTime(masterVolume * 0.25, ctx.currentTime + 0.06);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime + 0.05);
+    osc2.stop(ctx.currentTime + 0.15);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Battle start sound - epic entry
+ */
+export function battleStart() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Rising sweep
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(100, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.3);
+    gain1.gain.setValueAtTime(masterVolume * 0.4, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.6, ctx.currentTime + 0.15);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.35);
+
+    // Power chord hit
+    setTimeout(() => {
+      if (!soundsEnabled) return;
+      playChord([196, 246.94, 293.66], 0.25, 'triangle'); // G power chord
+    }, 250);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
 /**
  * Delete/undo sound
  */
@@ -407,6 +578,11 @@ export const sounds = {
   remove,
   toggleOn,
   toggleOff,
+  // Combat sounds
+  attackHit,
+  criticalHit,
+  bossAttack,
+  battleStart,
   setEnabled: setSoundsEnabled,
   isEnabled: getSoundsEnabled,
   setVolume,

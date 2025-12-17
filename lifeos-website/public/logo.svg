@@ -1,0 +1,53 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- LifeOS Logo - Geometric L with orbital ring -->
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main L shape -->
+  <path
+    id="logo-l"
+    d="M60 40 L60 140 L140 140"
+    fill="none"
+    stroke="url(#logoGradient)"
+    stroke-width="8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Orbital ring around the L -->
+  <ellipse
+    id="logo-orbit"
+    cx="100"
+    cy="100"
+    rx="70"
+    ry="30"
+    fill="none"
+    stroke="url(#logoGradient)"
+    stroke-width="3"
+    transform="rotate(-30 100 100)"
+  />
+
+  <!-- Accent dot on orbit -->
+  <circle
+    id="logo-dot"
+    cx="165"
+    cy="85"
+    r="6"
+    fill="#22d3ee"
+  />
+
+  <!-- Inner corner accent -->
+  <path
+    id="logo-accent"
+    d="M75 125 L75 115 L85 115"
+    fill="none"
+    stroke="#22d3ee"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

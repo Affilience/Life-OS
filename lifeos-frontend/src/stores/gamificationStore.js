@@ -5,6 +5,7 @@ import { DEV_USER_ID } from '../lib/dev-auth';
 import { calculateTotalStats, calculateStatBreakdown, getModuleXPMultiplier } from '../utils/statsSystem';
 import { useAvatarStore } from './avatarStore';
 import { calculateXPForLevel, calculateLevelFromTotalXP } from '../data/avatarEvolution';
+import { feedback, sounds } from '../services/microInteractions';
 
 // Lazy import unlock service to avoid circular dependencies
 let unlockServiceRef = null;
@@ -461,6 +462,14 @@ export const useGamificationStore = create(
           leveled_up: leveledUp,
           stage_transition: stageTransition,
         });
+
+        // Play feedback for XP gain and level up (sound + haptics + celebrations)
+        if (leveledUp) {
+          feedback.levelUp();
+        } else if (adjustedAmount >= 10) {
+          // Only play XP feedback for meaningful gains (avoid spam)
+          feedback.xpGain(adjustedAmount);
+        }
 
         // Trigger unlock service if leveled up (check for new pet/equipment unlocks)
         if (leveledUp) {

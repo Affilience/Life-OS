@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { DEV_USER_ID } from '../lib/dev-auth';
 import { triggerGamification } from '../hooks/useGamification';
+import { feedback } from '../services/microInteractions';
 
 /**
  * Custom Streaks Store
@@ -359,16 +360,26 @@ const useCustomStreaksStore = create(
             // Award XP for streak completion
             const finalStreak = newCurrentStreak + 1;
             let xpAmount = 10; // Base XP for daily streak
+            let isMilestone = false;
 
             // Bonus XP for streak milestones
-            if (finalStreak === 7) xpAmount = 25;
-            else if (finalStreak === 14) xpAmount = 35;
-            else if (finalStreak === 30) xpAmount = 50;
-            else if (finalStreak === 60) xpAmount = 75;
-            else if (finalStreak === 90) xpAmount = 100;
-            else if (finalStreak === 180) xpAmount = 150;
-            else if (finalStreak === 365) xpAmount = 250;
-            else if (finalStreak % 100 === 0) xpAmount = 100; // Every 100 days
+            if (finalStreak === 7) { xpAmount = 25; isMilestone = true; }
+            else if (finalStreak === 14) { xpAmount = 35; isMilestone = true; }
+            else if (finalStreak === 30) { xpAmount = 50; isMilestone = true; }
+            else if (finalStreak === 60) { xpAmount = 75; isMilestone = true; }
+            else if (finalStreak === 90) { xpAmount = 100; isMilestone = true; }
+            else if (finalStreak === 180) { xpAmount = 150; isMilestone = true; }
+            else if (finalStreak === 365) { xpAmount = 250; isMilestone = true; }
+            else if (finalStreak % 100 === 0) { xpAmount = 100; isMilestone = true; } // Every 100 days
+
+            // Play appropriate sound
+            if (isMilestone) {
+              // Play streak milestone celebration sound
+              feedback.streak();
+            } else {
+              // Play subtle completion sound for regular streak day
+              feedback.taskComplete();
+            }
 
             triggerGamification('streakDay', { xpOverride: xpAmount, module: 'habits', currentStreak: finalStreak });
           }

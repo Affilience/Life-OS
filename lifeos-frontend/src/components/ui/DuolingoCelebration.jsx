@@ -90,6 +90,10 @@ export function StreakExtendedCelebration({
       }, duration);
 
       return () => clearTimeout(timer);
+    } else {
+      // Reset animation state when show becomes false (manual dismiss)
+      setIsAnimating(false);
+      setShowConfetti(false);
     }
   }, [show, duration, newStreak, onComplete]);
 
@@ -240,6 +244,10 @@ export function QuestCompletedCelebration({
       }, duration);
 
       return () => clearTimeout(timer);
+    } else {
+      // Reset animation state when show becomes false (manual dismiss)
+      setIsAnimating(false);
+      setShowConfetti(false);
     }
   }, [show, duration, onComplete]);
 
@@ -430,6 +438,10 @@ export function AchievementUnlockedCelebration({
       }, duration);
 
       return () => clearTimeout(timer);
+    } else {
+      // Reset animation state when show becomes false (manual dismiss)
+      setIsAnimating(false);
+      setShowConfetti(false);
     }
   }, [show, duration, onComplete]);
 

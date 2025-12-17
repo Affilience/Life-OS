@@ -23,8 +23,12 @@ import {
   Brain,
   TrendingUp,
   Lock,
-  X
+  X,
+  Clock,
+  Target,
+  Flame
 } from 'lucide-react';
+import { WEAPON_ATTACKS } from '../../data/weaponAttacks';
 
 // Slot definitions for paper doll layout
 const PAPERDOLL_SLOTS = {
@@ -91,13 +95,16 @@ export default function EquipmentShowcase() {
   // Use avatarStore for equipment
   const {
     equipped,
-    unlockedEquipment,
+    getEffectiveUnlockedEquipment,
     equipItem,
     unequipItem,
     level,
     prestige,
     getHeroSpritePath,
   } = useAvatarStore();
+
+  // Get effective unlocked equipment (all items in dev mode)
+  const effectiveUnlocked = getEffectiveUnlockedEquipment();
 
   // Get level from gamification store (main source of truth for level)
   const { level: gamificationLevel } = useGamificationStore();
@@ -126,7 +133,7 @@ export default function EquipmentShowcase() {
   const availableEquipment = useMemo(() => {
     return Object.values(EQUIPMENT_DATABASE).filter(item => {
       // Show if unlocked OR if it's default equipment (default = always available)
-      const isUnlocked = unlockedEquipment.includes(item.id);
+      const isUnlocked = effectiveUnlocked.includes(item.id);
       const isDefault = item.unlockMethod === 'default';
       // Default equipment is always available regardless of level
       // Other equipment requires meeting the level requirement
@@ -134,7 +141,7 @@ export default function EquipmentShowcase() {
       const meetsLevel = item.levelRequired <= effectiveLevel;
       return isUnlocked && meetsLevel;
     });
-  }, [unlockedEquipment, effectiveLevel]);
+  }, [effectiveUnlocked, effectiveLevel]);
 
   // Get equipped item for a slot
   const getEquippedForSlot = (slotId) => {
@@ -250,56 +257,23 @@ export default function EquipmentShowcase() {
             />
           </div>
 
-          {/* Center: Character Avatar with Pets */}
+          {/* Center: Character Avatar with Pets in Orbital Arrangement */}
           <div className="flex flex-col items-center justify-center order-first md:order-2">
-            <div className="relative flex items-end justify-center gap-2">
-              {/* Left Pet (if any) */}
-              {activePets[0] && PET_DATABASE[activePets[0]] && (
-                <img
-                  src={PET_DATABASE[activePets[0]].sprite}
-                  alt={PET_DATABASE[activePets[0]].name}
-                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 pixelated self-end mb-2"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              )}
+            <div className="relative" style={{ width: '320px', height: '320px' }}>
+              {/* Pets in orbital arrangement around avatar */}
+              <PetOrbital pets={activePets} />
 
               {/* Main Avatar with Equipment - Uses AvatarRenderer for equipment overlay */}
-              <div className="relative" style={{ width: '256px', height: '256px', minWidth: '256px', minHeight: '256px' }}>
+              <div
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                style={{ width: '256px', height: '256px' }}
+              >
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl scale-150" />
                 <div className="relative z-10">
                   <AvatarRenderer size={256} animate={true} />
                 </div>
               </div>
-
-              {/* Right Pet (if any) */}
-              {activePets[1] && PET_DATABASE[activePets[1]] && (
-                <img
-                  src={PET_DATABASE[activePets[1]].sprite}
-                  alt={PET_DATABASE[activePets[1]].name}
-                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 pixelated self-end mb-2"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              )}
             </div>
-
-            {/* Additional Pets Row (3rd onwards) */}
-            {activePets.length > 2 && (
-              <div className="flex items-center justify-center gap-2 mt-2">
-                {activePets.slice(2).map((petId) => {
-                  const pet = PET_DATABASE[petId];
-                  if (!pet) return null;
-                  return (
-                    <img
-                      key={petId}
-                      src={pet.sprite}
-                      alt={pet.name}
-                      className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 pixelated"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                  );
-                })}
-              </div>
-            )}
           </div>
 
           {/* Right Column - Equipment Slots */}
@@ -382,6 +356,7 @@ export default function EquipmentShowcase() {
           slotName={PAPERDOLL_SLOTS[selectedSlot]?.name || selectedSlot}
           items={getAvailableItems(selectedSlot)}
           equipped={equipped}
+          selectedSlot={selectedSlot}
           filterRarity={filterRarity}
           setFilterRarity={setFilterRarity}
           onClose={() => setShowInventory(false)}
@@ -390,6 +365,91 @@ export default function EquipmentShowcase() {
         />
       )}
     </div>
+  );
+}
+
+// Pet Orbital Component - Arranges pets in a semicircle around the avatar
+function PetOrbital({ pets }) {
+  if (!pets || pets.length === 0) return null;
+
+  // Position pets in a semicircle below and around the avatar
+  // Positions are arranged in an arc from bottom-left to bottom-right
+  const getOrbitalPosition = (index, total) => {
+    // Spread pets across a 180-degree arc at the bottom
+    // Single pet: center bottom
+    // 2 pets: left and right sides
+    // 3+ pets: spread evenly in arc
+    const radius = 140; // Distance from center
+    const startAngle = 210; // Start from bottom-left (in degrees)
+    const endAngle = 330; // End at bottom-right
+
+    let angle;
+    if (total === 1) {
+      angle = 270; // Center bottom
+    } else if (total === 2) {
+      angle = index === 0 ? 225 : 315; // Left and right
+    } else {
+      // Spread evenly
+      const angleStep = (endAngle - startAngle) / (total - 1);
+      angle = startAngle + angleStep * index;
+    }
+
+    // Convert to radians and calculate position
+    const rad = (angle * Math.PI) / 180;
+    const x = Math.cos(rad) * radius;
+    const y = Math.sin(rad) * radius * 0.6; // Flatten the arc a bit for perspective
+
+    return {
+      x: 160 + x - 24, // Center offset + position - half pet width
+      y: 160 + y - 24, // Center offset + position - half pet height
+      scale: 1 - (index * 0.05), // Slight scale variation for depth
+      zIndex: total - index, // Front pets have higher z-index
+    };
+  };
+
+  return (
+    <>
+      {pets.map((petId, index) => {
+        const pet = PET_DATABASE[petId];
+        if (!pet) return null;
+
+        const pos = getOrbitalPosition(index, pets.length);
+
+        return (
+          <div
+            key={petId}
+            className="absolute transition-all duration-300 hover:scale-110 group"
+            style={{
+              left: `${pos.x}px`,
+              top: `${pos.y}px`,
+              zIndex: pos.zIndex,
+              transform: `scale(${pos.scale})`,
+            }}
+          >
+            {/* Pet glow effect */}
+            <div
+              className="absolute inset-0 rounded-full blur-md opacity-50 group-hover:opacity-80 transition-opacity"
+              style={{
+                background: `radial-gradient(circle, ${pet.rarity === 'legendary' ? '#f59e0b' : pet.rarity === 'epic' ? '#a855f7' : '#8b5cf6'} 0%, transparent 70%)`,
+                transform: 'scale(1.5)',
+              }}
+            />
+            {/* Pet sprite */}
+            <img
+              src={pet.sprite}
+              alt={pet.name}
+              className="w-12 h-12 md:w-14 md:h-14 pixelated relative z-10 drop-shadow-lg"
+              style={{ imageRendering: 'pixelated' }}
+              title={pet.name}
+            />
+            {/* Pet name tooltip on hover */}
+            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold text-white/80 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 px-2 py-0.5 rounded">
+              {pet.name}
+            </div>
+          </div>
+        );
+      })}
+    </>
   );
 }
 
@@ -547,6 +607,7 @@ function InventoryModal({
   slotName,
   items,
   equipped,
+  selectedSlot,
   filterRarity,
   setFilterRarity,
   onClose,
@@ -610,7 +671,10 @@ function InventoryModal({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {items.map(item => {
               const rarity = EQUIPMENT_RARITY[item.rarity];
-              const isEquipped = equipped[item.slot] === item.id;
+              // For rings, check the actual selected slot (ring1 or ring2), not item.slot
+              const isEquipped = (item.slot === 'ring')
+                ? equipped[selectedSlot] === item.id
+                : equipped[item.slot] === item.id;
 
               return (
                 <div
@@ -648,6 +712,36 @@ function InventoryModal({
                       {item.name}
                     </div>
                     <div className="text-xs text-white/60 mb-2">{rarity?.name || 'Unknown'}</div>
+
+                    {/* Weapon Attack Stats */}
+                    {item.slot === 'mainHand' && item.weaponType && WEAPON_ATTACKS[item.weaponType] && (
+                      <div className="mb-2 p-2 rounded-lg bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Flame className="w-3 h-3 text-orange-400" />
+                          <span className="text-[10px] font-bold text-orange-400">
+                            {WEAPON_ATTACKS[item.weaponType].attackName}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 text-[9px]">
+                          <div className="flex items-center gap-1 text-white/70">
+                            <Clock className="w-2.5 h-2.5" />
+                            <span>{WEAPON_ATTACKS[item.weaponType].cooldown}ms</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-white/70">
+                            <Sword className="w-2.5 h-2.5" />
+                            <span>×{WEAPON_ATTACKS[item.weaponType].damageMultiplier}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-yellow-400">
+                            <Target className="w-2.5 h-2.5" />
+                            <span>{Math.round(WEAPON_ATTACKS[item.weaponType].critChance * 100)}% crit</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-orange-300">
+                            <Zap className="w-2.5 h-2.5" />
+                            <span>×{WEAPON_ATTACKS[item.weaponType].critMultiplier} crit dmg</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Stats from item.stats object */}
                     <div className="space-y-1">

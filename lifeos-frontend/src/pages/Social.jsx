@@ -46,10 +46,12 @@ import CreateGuildModal from '../components/social/CreateGuildModal';
 import ActivityFeedItem from '../components/social/ActivityFeedItem';
 import JoinLeaderboardModal from '../components/social/JoinLeaderboardModal';
 import usePvpStore from '../stores/pvpStore';
+import usePvpArenaStore from '../stores/pvpArenaStore';
 import ActiveBattleCard from '../components/pvp/ActiveBattleCard';
 import PvPInviteModal from '../components/pvp/PvPInviteModal';
 import BattleView from '../components/pvp/BattleView';
 import LoadoutManager from '../components/pvp/LoadoutManager';
+import PvPArena from '../components/pvp/PvPArena';
 import { getRankInfo } from '../utils/pvpCalculations';
 
 export default function Social() {
@@ -63,14 +65,15 @@ export default function Social() {
   const [showJoinLeaderboardModal, setShowJoinLeaderboardModal] = useState(false);
   const [showPvPInviteModal, setShowPvPInviteModal] = useState(false);
   const [selectedBattle, setSelectedBattle] = useState(null);
-  const [pvpSubTab, setPvpSubTab] = useState('battles'); // battles, loadout, history
+  const [pvpSubTab, setPvpSubTab] = useState('arena'); // arena, battles, loadout, history
+  const [showArena, setShowArena] = useState(false);
 
   // Connect to gamification store for user's own stats
   const { level, totalXP, globalStreak, odoo } = useGamificationStore();
   const currentStreak = globalStreak?.current_streak || 0;
   const userId = odoo;
 
-  // Connect to PvP store
+  // Connect to PvP store (daily task-based)
   const {
     activeBattles,
     pendingInvites: pvpPendingInvites,
@@ -79,6 +82,14 @@ export default function Social() {
     initialize: initializePvp,
     fetchBattleHistory,
   } = usePvpStore();
+
+  // Connect to PvP Arena store (real-time combat)
+  const {
+    arenaStats,
+    inQueue,
+    isInMatch,
+    initialize: initializeArena,
+  } = usePvpArenaStore();
 
   const [pvpBattleHistory, setPvpBattleHistory] = useState([]);
 
@@ -122,8 +133,9 @@ export default function Social() {
   useEffect(() => {
     if (userId) {
       initializePvp(userId);
+      initializeArena(userId);
     }
-  }, [userId, initializePvp]);
+  }, [userId, initializePvp, initializeArena]);
 
   // Fetch PvP battle history when switching to history tab
   useEffect(() => {
@@ -337,50 +349,72 @@ export default function Social() {
                 />
               ) : (
                 <>
-                  {/* PvP Stats Overview */}
+                  {/* Real-Time Arena Quick Match Banner */}
+                  <button
+                    onClick={() => setShowArena(true)}
+                    className="w-full p-6 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-yellow-500/20 border border-red-500/30 rounded-2xl hover:from-red-500/30 hover:via-orange-500/30 hover:to-yellow-500/30 transition-all group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl shadow-lg shadow-red-500/30 group-hover:scale-110 transition-transform">
+                          <Swords className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                            Quick Match Arena
+                            <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+                          </h3>
+                          <p className="text-white/60">Real-time tap combat against other players. Use your gear and abilities!</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-6 h-6 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </button>
+
+                  {/* Arena Stats Overview */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {/* Rank Card */}
+                    {/* Arena Rank */}
                     <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 border border-red-500/20 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl">{getRankInfo(pvpUserStats?.rank_tier || 'bronze').icon}</span>
-                        <span className="text-xs text-white/50">Rank</span>
+                        <span className="text-xl">{getRankInfo(arenaStats?.rank_tier || 'bronze').icon}</span>
+                        <span className="text-xs text-white/50">Arena Rank</span>
                       </div>
-                      <p className="text-lg font-bold" style={{ color: getRankInfo(pvpUserStats?.rank_tier || 'bronze').color }}>
-                        {getRankInfo(pvpUserStats?.rank_tier || 'bronze').name}
+                      <p className="text-lg font-bold" style={{ color: getRankInfo(arenaStats?.rank_tier || 'bronze').color }}>
+                        {getRankInfo(arenaStats?.rank_tier || 'bronze').name}
                       </p>
-                      <p className="text-xs text-white/40">ELO: {pvpUserStats?.elo_rating || 1000}</p>
+                      <p className="text-xs text-white/40">ELO: {arenaStats?.arena_elo || 1000}</p>
                     </div>
 
-                    {/* Record */}
+                    {/* Arena Record */}
                     <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-1">
                         <Trophy className="w-4 h-4 text-yellow-400" />
-                        <span className="text-xs text-white/50">Record</span>
+                        <span className="text-xs text-white/50">Arena Record</span>
                       </div>
                       <p className="text-lg font-bold text-white">
-                        {pvpUserStats?.wins || 0}W - {pvpUserStats?.losses || 0}L
+                        {arenaStats?.wins || 0}W - {arenaStats?.losses || 0}L
                       </p>
-                      <p className="text-xs text-white/40">{pvpUserStats?.draws || 0} draws</p>
+                      <p className="text-xs text-white/40">{arenaStats?.total_matches || 0} total matches</p>
                     </div>
 
-                    {/* Win Streak */}
+                    {/* Arena Win Streak */}
                     <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-1">
                         <Flame className="w-4 h-4 text-orange-400" />
                         <span className="text-xs text-white/50">Win Streak</span>
                       </div>
-                      <p className="text-lg font-bold text-white">{pvpUserStats?.current_win_streak || 0}</p>
-                      <p className="text-xs text-white/40">Best: {pvpUserStats?.longest_win_streak || 0}</p>
+                      <p className="text-lg font-bold text-white">{arenaStats?.current_win_streak || 0}</p>
+                      <p className="text-xs text-white/40">Best: {arenaStats?.longest_win_streak || 0}</p>
                     </div>
 
-                    {/* Total Battles */}
+                    {/* Arena Combat Stats */}
                     <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-1">
-                        <Swords className="w-4 h-4 text-red-400" />
-                        <span className="text-xs text-white/50">Battles</span>
+                        <Target className="w-4 h-4 text-purple-400" />
+                        <span className="text-xs text-white/50">Total Taps</span>
                       </div>
-                      <p className="text-lg font-bold text-white">{pvpUserStats?.total_battles || 0}</p>
-                      <p className="text-xs text-white/40">{pvpUserStats?.total_xp_from_pvp || 0} XP earned</p>
+                      <p className="text-lg font-bold text-white">{(arenaStats?.total_taps || 0).toLocaleString()}</p>
+                      <p className="text-xs text-white/40">{(arenaStats?.total_damage_dealt || 0).toLocaleString()} damage</p>
                     </div>
                   </div>
 
@@ -388,17 +422,17 @@ export default function Social() {
                   {pvpPendingInvites.length > 0 && (
                     <button
                       onClick={() => setShowPvPInviteModal(true)}
-                      className="w-full p-4 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-xl flex items-center justify-between hover:from-red-500/30 hover:to-orange-500/30 transition-all"
+                      className="w-full p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-xl flex items-center justify-between hover:from-purple-500/30 hover:to-pink-500/30 transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-red-500/30 rounded-lg">
-                          <Swords className="w-5 h-5 text-red-400" />
+                        <div className="p-2 bg-purple-500/30 rounded-lg">
+                          <Users className="w-5 h-5 text-purple-400" />
                         </div>
                         <div className="text-left">
                           <p className="font-semibold text-white">
-                            {pvpPendingInvites.length} Battle Challenge{pvpPendingInvites.length > 1 ? 's' : ''}
+                            {pvpPendingInvites.length} Daily Battle Challenge{pvpPendingInvites.length > 1 ? 's' : ''}
                           </p>
-                          <p className="text-sm text-white/60">Click to view and respond</p>
+                          <p className="text-sm text-white/60">Task-based challenges from friends</p>
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-white/40" />
@@ -406,16 +440,17 @@ export default function Social() {
                   )}
 
                   {/* PvP Sub-tabs */}
-                  <div className="flex gap-2 bg-[#1a1724] p-1 rounded-xl w-fit">
+                  <div className="flex gap-2 bg-[#1a1724] p-1 rounded-xl w-fit overflow-x-auto">
                     {[
-                      { id: 'battles', label: 'Active Battles' },
+                      { id: 'arena', label: 'Arena Stats' },
+                      { id: 'battles', label: 'Daily Battles' },
                       { id: 'loadout', label: 'Loadout' },
                       { id: 'history', label: 'History' },
                     ].map((tab) => (
                       <button
                         key={tab.id}
                         onClick={() => setPvpSubTab(tab.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                           pvpSubTab === tab.id
                             ? 'bg-red-500/20 text-red-400'
                             : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -426,19 +461,94 @@ export default function Social() {
                     ))}
                   </div>
 
-                  {/* Active Battles */}
+                  {/* Arena Stats Tab */}
+                  {pvpSubTab === 'arena' && (
+                    <div className="space-y-4">
+                      {/* Enter Arena Button */}
+                      <button
+                        onClick={() => setShowArena(true)}
+                        className="w-full p-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/50"
+                      >
+                        <Swords className="w-6 h-6" />
+                        Enter Arena
+                      </button>
+
+                      {/* Arena Info */}
+                      <div className="bg-[#1a1724] border border-white/10 rounded-xl p-6">
+                        <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                          <Zap className="w-5 h-5 text-yellow-400" />
+                          How Arena Works
+                        </h4>
+                        <ul className="space-y-3 text-sm text-white/70">
+                          <li className="flex items-start gap-2">
+                            <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-xs text-red-400">1</span>
+                            </div>
+                            <span><strong className="text-white">Queue up</strong> for Casual or Ranked matches based on your level</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <div className="w-5 h-5 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-xs text-orange-400">2</span>
+                            </div>
+                            <span><strong className="text-white">Tap to attack!</strong> Your damage is based on your level and equipped gear</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-xs text-yellow-400">3</span>
+                            </div>
+                            <span><strong className="text-white">Use weapon abilities</strong> for massive damage with cooldowns</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-xs text-green-400">4</span>
+                            </div>
+                            <span><strong className="text-white">Win to earn</strong> XP, Credits, and climb the ranked ladder!</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      {/* Season Stats */}
+                      {arenaStats && arenaStats.total_matches > 0 && (
+                        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
+                          <h4 className="font-semibold text-white mb-3">Season Stats</h4>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-white/50">Win Rate</p>
+                              <p className="text-xl font-bold text-green-400">
+                                {arenaStats.total_matches > 0
+                                  ? Math.round((arenaStats.wins / arenaStats.total_matches) * 100)
+                                  : 0}%
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-white/50">Season High ELO</p>
+                              <p className="text-xl font-bold text-purple-400">{arenaStats.season_high_elo}</p>
+                            </div>
+                            <div>
+                              <p className="text-white/50">XP Earned</p>
+                              <p className="text-xl font-bold text-yellow-400">{arenaStats.total_xp_earned?.toLocaleString() || 0}</p>
+                            </div>
+                            <div>
+                              <p className="text-white/50">Credits Earned</p>
+                              <p className="text-xl font-bold text-amber-400">{arenaStats.total_credits_earned?.toLocaleString() || 0}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Active Daily Battles */}
                   {pvpSubTab === 'battles' && (
                     <div>
+                      <p className="text-sm text-white/50 mb-4">Multi-day task-based battles where completing tasks deals damage</p>
                       {activeBattles.length === 0 ? (
                         <div className="bg-[#1a1724] border border-white/10 rounded-xl p-8 text-center">
-                          <Swords className="w-12 h-12 text-red-400 mx-auto mb-3 opacity-60" />
-                          <h4 className="text-white font-medium mb-2">No Active Battles</h4>
+                          <Users className="w-12 h-12 text-purple-400 mx-auto mb-3 opacity-60" />
+                          <h4 className="text-white font-medium mb-2">No Active Daily Battles</h4>
                           <p className="text-white/50 text-sm mb-4">
-                            Challenge a friend to start battling! Your stats and equipment will determine your power.
+                            Challenge a friend to a multi-day battle! Complete tasks to deal damage.
                           </p>
-                          <button className="px-6 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-lg font-medium transition-colors">
-                            Find Opponent
-                          </button>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1094,6 +1204,9 @@ export default function Social() {
           invites={pvpPendingInvites}
           onClose={() => setShowPvPInviteModal(false)}
         />
+      )}
+      {showArena && (
+        <PvPArena onClose={() => setShowArena(false)} />
       )}
     </div>
   );

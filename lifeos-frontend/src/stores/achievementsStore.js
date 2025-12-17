@@ -9,6 +9,7 @@ import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { DEV_USER_ID } from '../lib/dev-auth';
 import { triggerGamification } from '../hooks/useGamification';
+import { feedback } from '../services/microInteractions';
 
 // Lazy import unlock service to avoid circular dependencies
 let unlockServiceRef = null;
@@ -1518,9 +1519,15 @@ export const ACHIEVEMENT_TEMPLATES = [
 const useAchievementsStore = create(
   persist(
     (set, get) => ({
-      // Initialize from Supabase
+      // Initialize from Supabase - MERGES with local data instead of overwriting
       initializeFromSupabase: async () => {
         try {
+          // Get current local state FIRST
+          const localState = get();
+          const localUnlocked = localState.unlockedAchievements || [];
+          const localProgress = localState.achievementProgress || {};
+          const localStats = localState.stats || {};
+
           // Load user discoveries (achievements)
           const { data: userDiscoveries, error: discoveriesError } = await supabase
             .from('user_discoveries')
@@ -1540,31 +1547,54 @@ const useAchievementsStore = create(
 
           if (progressError) throw progressError;
 
-          // Convert to local format
-          const unlockedAchievements = (userDiscoveries || []).map(ud => ({
+          // Convert Supabase data to local format
+          const supabaseUnlocked = (userDiscoveries || []).map(ud => ({
             achievementId: ud.discovery?.id || ud.discovery_id,
             unlockedAt: ud.earned_at,
             xpEarned: ud.discovery?.xp_reward || 0,
             creditsEarned: ud.discovery?.credits_reward || 0,
           }));
 
-          const achievementProgress = {};
+          const supabaseProgress = {};
           (progressData || []).forEach(p => {
-            achievementProgress[p.discovery_id] = p.current_progress;
+            supabaseProgress[p.discovery_id] = p.current_progress;
           });
 
-          // Calculate totals
-          const totalXP = unlockedAchievements.reduce((sum, a) => sum + (a.xpEarned || 0), 0);
-          const totalCredits = unlockedAchievements.reduce((sum, a) => sum + (a.creditsEarned || 0), 0);
+          // MERGE: Combine local and Supabase achievements (keep both, dedupe by achievementId)
+          const unlockedMap = new Map();
+          // Add local achievements first
+          localUnlocked.forEach(a => {
+            unlockedMap.set(a.achievementId, a);
+          });
+          // Supabase achievements override if they exist (they're the source of truth if synced)
+          supabaseUnlocked.forEach(a => {
+            unlockedMap.set(a.achievementId, a);
+          });
+          const mergedUnlocked = Array.from(unlockedMap.values());
+
+          // MERGE progress: take the higher value between local and Supabase
+          const mergedProgress = { ...localProgress };
+          Object.entries(supabaseProgress).forEach(([key, value]) => {
+            mergedProgress[key] = Math.max(mergedProgress[key] || 0, value);
+          });
+
+          // Calculate totals from merged data
+          const totalXP = mergedUnlocked.reduce((sum, a) => sum + (a.xpEarned || 0), 0);
+          const totalCredits = mergedUnlocked.reduce((sum, a) => sum + (a.creditsEarned || 0), 0);
 
           set({
-            unlockedAchievements,
-            achievementProgress,
+            unlockedAchievements: mergedUnlocked,
+            achievementProgress: mergedProgress,
             totalXPFromAchievements: totalXP,
             totalCreditsFromAchievements: totalCredits,
+            // Preserve local stats - don't overwrite from empty Supabase
+            stats: localStats,
           });
+
+          console.log(`[Achievements] Initialized: ${mergedUnlocked.length} unlocked (${localUnlocked.length} local, ${supabaseUnlocked.length} from Supabase)`);
         } catch (error) {
           console.error('Error initializing achievements from Supabase:', error);
+          // On error, keep local state - don't wipe it
         }
       },
 
@@ -1852,6 +1882,9 @@ const useAchievementsStore = create(
           // Trigger unified gamification system for achievement XP
           const totalXP = newUnlocks.reduce((sum, a) => sum + a.xpReward, 0);
           if (totalXP > 0) {
+            // Play achievement feedback (sound + haptic + celebration)
+            feedback.achievement();
+
             triggerGamification('achievementUnlocked', {
               xpOverride: totalXP,
               module: 'productivity', // Achievements are general progress

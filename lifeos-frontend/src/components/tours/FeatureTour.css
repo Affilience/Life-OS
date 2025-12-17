@@ -41,7 +41,16 @@
   border: 2px solid rgba(139, 92, 246, 0.8);
   background: rgba(139, 92, 246, 0.05);
   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), 0 0 30px rgba(139, 92, 246, 0.3);
-  /* Static glow - no animation for stability */
+  animation: spotlightPulse 2s ease-in-out infinite;
+}
+
+@keyframes spotlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), 0 0 30px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.25), 0 0 50px rgba(139, 92, 246, 0.4);
+  }
 }
 
 /* ============================================
@@ -277,6 +286,29 @@
   transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Progress dots (alternative to bar) */
+.tour-progress-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.tour-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.tour-progress-dot.active {
+  background: #8b5cf6;
+}
+
+.tour-progress-dot.current {
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+}
+
 .tour-nav-buttons {
   display: flex;
   gap: 10px;
@@ -397,6 +429,22 @@
 .tour-btn-primary:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Complete button special styling */
+.tour-btn-complete {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #7c3aed 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .tour-btn-secondary {

@@ -138,7 +138,7 @@ export default function MealCard({ meal }) {
       }}>
         {meal.items.map((item, index) => (
           <div
-            key={index}
+            key={`${item.name}-${item.calories}-${index}`}
             style={{
               display: 'flex',
               justifyContent: 'space-between',

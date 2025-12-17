@@ -12,7 +12,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Flame,
   Calendar,
   Link2,
   Circle,
@@ -26,6 +25,7 @@ import {
   X,
 } from 'lucide-react';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
+import { CosmicFlame } from '../../features/streaks/components/CosmicFlame';
 
 // Mode-specific styling
 const MODE_STYLES = {
@@ -34,12 +34,6 @@ const MODE_STYLES = {
     activeGradient: 'from-purple-500 to-pink-500',
     activeBg: 'bg-purple-500/20',
     borderColor: 'border-purple-500/30',
-  },
-  professional: {
-    accentColor: 'blue',
-    activeGradient: 'from-blue-500 to-cyan-500',
-    activeBg: 'bg-blue-500/20',
-    borderColor: 'border-blue-500/30',
   },
   minimal: {
     accentColor: 'emerald',
@@ -329,7 +323,7 @@ export function CircleProgressView({ streak, completions, goal = 30 }) {
   const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
 
   const circles = [
-    { label: 'Current', value: currentStreak, max: goal, icon: Flame },
+    { label: 'Current', value: currentStreak, max: goal, icon: 'flame', isFlame: true },
     { label: 'This Week', value: thisWeekCompletions, max: 7, icon: Calendar },
     { label: 'This Month', value: thisMonthCompletions, max: daysInMonth, icon: TrendingUp },
   ];
@@ -380,7 +374,11 @@ export function CircleProgressView({ streak, completions, goal = 30 }) {
             </div>
 
             <div className="flex items-center gap-1 text-xs text-white/60">
-              <Icon className="w-3 h-3" />
+              {circle.isFlame ? (
+                <CosmicFlame streak={circle.value} size="sm" animate={false} />
+              ) : (
+                <Icon className="w-3 h-3" />
+              )}
               {circle.label}
             </div>
           </div>
@@ -429,7 +427,6 @@ export function MiniHeatmapView({ completions, weeks = 12 }) {
   const getIntensityClass = (completed) => {
     if (!completed) return 'bg-white/5';
     if (mode === 'cosmic') return 'bg-purple-500';
-    if (mode === 'professional') return 'bg-blue-500';
     return 'bg-emerald-500';
   };
 
@@ -498,7 +495,9 @@ export function StatsOverviewView({ streak, completions }) {
       {/* Key stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className={`${colorClasses.bgLight} rounded-xl p-4 text-center`}>
-          <Flame className={`w-5 h-5 ${colorClasses.text} mx-auto mb-1`} />
+          <div className="flex justify-center mb-1">
+            <CosmicFlame streak={currentStreak} size="sm" />
+          </div>
           <div className="text-2xl font-bold text-white">{currentStreak}</div>
           <div className="text-xs text-white/50">Current Streak</div>
         </div>

@@ -19,6 +19,17 @@ const RARITY_COLORS = {
   legendary: '#f59e0b',
 };
 
+// Helper to get sprite path from equipment item
+// Handles both object format { path: '...' } and string format
+const getSpritePath = (item) => {
+  if (!item) return null;
+  if (item.sprite?.path) return item.sprite.path;
+  if (typeof item.sprite === 'string') return item.sprite;
+  // Fallback: construct path from slot and id
+  const slotFolder = item.slot === 'chest' ? 'chests' : `${item.slot}s`;
+  return `/assets/equipment/${slotFolder}/${item.id}.png`;
+};
+
 // Equipment slot icons and labels
 const SLOT_INFO = {
   helmet: { icon: '🪖', label: 'Helmets' },
@@ -34,14 +45,17 @@ const SLOT_INFO = {
 export default function InventorySection() {
   const [activeTab, setActiveTab] = useState('equipment');
   const { inventory, useInventoryItem } = useGamificationStore();
-  const { ownedCosmetics, activeCosmetics, setActiveCosmetic, unlockedEquipment, equipped, equipItem } = useAvatarStore();
+  const { ownedCosmetics, activeCosmetics, setActiveCosmetic, getEffectiveUnlockedEquipment, equipped, equipItem } = useAvatarStore();
   const { mode } = useGamificationModeStore();
   const [useConfirmItem, setUseConfirmItem] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
+  // Get effective unlocked equipment (all items in dev mode)
+  const effectiveUnlocked = getEffectiveUnlockedEquipment();
+
   // Get equipment details for unlocked items
   const ownedEquipmentItems = React.useMemo(() => {
-    return (unlockedEquipment || [])
+    return (effectiveUnlocked || [])
       .map(id => EQUIPMENT_DATABASE[id])
       .filter(Boolean)
       .sort((a, b) => {
@@ -51,7 +65,7 @@ export default function InventorySection() {
         if (rarityDiff !== 0) return rarityDiff;
         return (a.slot || '').localeCompare(b.slot || '');
       });
-  }, [unlockedEquipment]);
+  }, [effectiveUnlocked]);
 
   // Group equipment by slot
   const equipmentBySlot = React.useMemo(() => {
@@ -297,16 +311,24 @@ export default function InventorySection() {
                               className="w-10 h-10 rounded-lg flex items-center justify-center mb-2 mx-auto"
                               style={{ backgroundColor: `${rarityColor}20` }}
                             >
-                              {item.sprite ? (
+                              {getSpritePath(item) ? (
                                 <img
-                                  src={item.sprite}
+                                  src={getSpritePath(item)}
                                   alt={item.name}
                                   className="w-full h-full object-contain pixelated p-1"
                                   style={{ imageRendering: 'pixelated' }}
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
                                 />
-                              ) : (
-                                <span className="text-xl">{item.icon || slotMeta.icon}</span>
-                              )}
+                              ) : null}
+                              <span
+                                className="text-xl items-center justify-center"
+                                style={{ display: getSpritePath(item) ? 'none' : 'flex' }}
+                              >
+                                {item.icon || slotMeta.icon}
+                              </span>
                             </div>
 
                             {/* Item Name */}
@@ -392,16 +414,24 @@ export default function InventorySection() {
                       className="w-12 h-12 rounded-lg flex items-center justify-center mb-3 mx-auto"
                       style={{ backgroundColor: `${rarityColor}20` }}
                     >
-                      {item.sprite ? (
+                      {(item.sprite?.path || item.sprite) ? (
                         <img
-                          src={item.sprite}
+                          src={item.sprite?.path || item.sprite}
                           alt={item.name}
                           className="w-full h-full object-contain pixelated p-1"
                           style={{ imageRendering: 'pixelated' }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <span className="text-2xl">{item.icon}</span>
-                      )}
+                      ) : null}
+                      <span
+                        className="text-2xl items-center justify-center"
+                        style={{ display: (item.sprite?.path || item.sprite) ? 'none' : 'flex' }}
+                      >
+                        {item.icon}
+                      </span>
                     </div>
 
                     {/* Item Info */}
@@ -536,16 +566,24 @@ export default function InventorySection() {
                 className="w-20 h-20 rounded-xl mx-auto mb-4 flex items-center justify-center"
                 style={{ backgroundColor: `${getRarityColor(useConfirmItem.rarity)}20` }}
               >
-                {useConfirmItem.sprite ? (
+                {(useConfirmItem.sprite?.path || useConfirmItem.sprite) ? (
                   <img
-                    src={useConfirmItem.sprite}
+                    src={useConfirmItem.sprite?.path || useConfirmItem.sprite}
                     alt={useConfirmItem.name}
                     className="w-full h-full object-contain pixelated p-2"
                     style={{ imageRendering: 'pixelated' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
-                ) : (
-                  <span className="text-4xl">{useConfirmItem.icon}</span>
-                )}
+                ) : null}
+                <span
+                  className="text-4xl items-center justify-center"
+                  style={{ display: (useConfirmItem.sprite?.path || useConfirmItem.sprite) ? 'none' : 'flex' }}
+                >
+                  {useConfirmItem.icon}
+                </span>
               </div>
               <h3 className="text-xl font-bold text-text-primary mb-1">
                 {useConfirmItem.name}

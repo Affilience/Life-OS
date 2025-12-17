@@ -43,6 +43,9 @@ import { getStageByLevel, getNextStageMilestone } from '../data/avatarEvolution'
 import SkillPointAllocator from '../components/character/SkillPointAllocator';
 import StatBreakdown from '../components/character/StatBreakdown';
 import { Info } from 'lucide-react';
+import LevelTitle, { TitleProgressionCard } from '../components/gamification/LevelTitle';
+import useLevelProgressionStore from '../stores/levelProgressionStore';
+import { getLevelXPBonus, getPetSlots, getInventorySlots } from '../data/levelProgression';
 
 // Mode-specific styling
 const MODE_STYLES = {
@@ -231,12 +234,29 @@ export default function Character() {
   // Get skill points
   const { unallocatedPoints, initializeForLevel } = useSkillPointsStore();
 
+  // Get level progression data
+  const {
+    selectedFrame,
+    petSlots,
+    inventorySlots,
+    levelXPBonus,
+    initialize: initializeLevelProgression,
+    isInitialized: levelProgressionInitialized
+  } = useLevelProgressionStore();
+
   // Initialize skill points based on level
   useEffect(() => {
     if (level > 0) {
       initializeForLevel(level);
     }
   }, [level, initializeForLevel]);
+
+  // Initialize level progression store
+  useEffect(() => {
+    if (level > 0 && !levelProgressionInitialized) {
+      initializeLevelProgression(level);
+    }
+  }, [level, levelProgressionInitialized, initializeLevelProgression]);
 
   // Prefer socialProfile (database) over onboarding store (local)
   const displayName = socialProfile?.display_name || socialProfile?.username || profile.displayName || profile.username || 'Traveler';
@@ -249,7 +269,7 @@ export default function Character() {
   // Fetch social profile on mount
   useEffect(() => {
     fetchSocialProfile();
-  }, []);
+  }, [fetchSocialProfile]);
 
   // Initialize username input when editing starts
   const startEditingUsername = useCallback(() => {
@@ -273,12 +293,18 @@ export default function Character() {
 
     setUsernameStatus({ checking: true, available: null, error: null });
 
+    let isCancelled = false;
     const timeoutId = setTimeout(async () => {
       const result = await checkUsernameAvailable(usernameInput);
-      setUsernameStatus({ checking: false, available: result.available, error: result.error });
+      if (!isCancelled) {
+        setUsernameStatus({ checking: false, available: result.available, error: result.error });
+      }
     }, 500);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [usernameInput, isEditingUsername, socialProfile?.username, checkUsernameAvailable]);
 
   // Save username
@@ -380,7 +406,7 @@ export default function Character() {
               <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
                 {/* Left: Avatar & Character Info */}
                 <div className="flex flex-col items-center w-full lg:w-auto" data-tour="character-avatar">
-                  {/* Hero Avatar with Companions - Responsive size */}
+                  {/* Hero Avatar with Companions */}
                   <div className="w-full flex justify-center overflow-visible relative py-4" style={{ minHeight: '340px' }}>
                     <MediumAvatarWithPets
                       avatarSrc={currentAvatarSprite}
@@ -389,6 +415,11 @@ export default function Character() {
                       size={240}
                       className="mb-2 relative z-10"
                     />
+                  </div>
+
+                  {/* Level Title Badge */}
+                  <div className="mb-2">
+                    <LevelTitle level={currentLevel} size="md" showProgress={false} variant="badge" />
                   </div>
 
                   {/* Character Name & Stage */}
@@ -622,6 +653,54 @@ export default function Character() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Level Progression Benefits */}
+            {mode !== 'minimal' && (
+              <div className="bg-bg-1 border border-border rounded-2xl p-4 sm:p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary-400" />
+                    Level Progression Benefits
+                  </h3>
+                  <span className="text-xs text-text-muted">{terms.level} {currentLevel}</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {/* XP Bonus */}
+                  <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-3 text-center">
+                    <div className="text-2xl mb-1">⚡</div>
+                    <div className="text-lg font-bold text-green-400">+{(levelXPBonus * 100).toFixed(1)}%</div>
+                    <div className="text-[10px] text-text-muted">XP Bonus</div>
+                  </div>
+
+                  {/* Pet Slots */}
+                  <div className="bg-gradient-to-br from-pink-500/10 to-rose-500/10 border border-pink-500/20 rounded-xl p-3 text-center">
+                    <div className="text-2xl mb-1">🐾</div>
+                    <div className="text-lg font-bold text-pink-400">{petSlots}</div>
+                    <div className="text-[10px] text-text-muted">Pet Slots</div>
+                  </div>
+
+                  {/* Inventory Slots */}
+                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl p-3 text-center">
+                    <div className="text-2xl mb-1">🎒</div>
+                    <div className="text-lg font-bold text-blue-400">{inventorySlots}</div>
+                    <div className="text-[10px] text-text-muted">Inventory</div>
+                  </div>
+
+                  {/* Equipment Sets */}
+                  <div className="bg-gradient-to-br from-purple-500/10 to-violet-500/10 border border-purple-500/20 rounded-xl p-3 text-center">
+                    <div className="text-2xl mb-1">⚔️</div>
+                    <div className="text-lg font-bold text-purple-400">{Math.floor(currentLevel / 25) + 1}</div>
+                    <div className="text-[10px] text-text-muted">Gear Sets</div>
+                  </div>
+                </div>
+
+                {/* Title Progression Card */}
+                <div className="mt-4">
+                  <TitleProgressionCard level={currentLevel} />
                 </div>
               </div>
             )}

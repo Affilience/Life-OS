@@ -4,10 +4,14 @@
  */
 
 import React from 'react';
-import { Lock, TrendingUp, Trophy, Zap, Coins } from 'lucide-react';
+import {
+  Lock, TrendingUp, Trophy, Zap, Coins, Flame, Users, Target,
+  Calendar, Gift, Sparkles, Crown, BookOpen, Sword, Compass, Star
+} from 'lucide-react';
 
-// Unlock method colors and icons
+// Unlock method colors and icons - comprehensive list
 const UNLOCK_STYLES = {
+  // Progression-based
   level: {
     icon: TrendingUp,
     color: '#60a5fa', // blue
@@ -15,6 +19,15 @@ const UNLOCK_STYLES = {
     borderColor: 'rgba(96, 165, 250, 0.3)',
     label: 'Level Up',
   },
+  prestige: {
+    icon: Crown,
+    color: '#f59e0b', // amber
+    bgColor: 'rgba(245, 158, 11, 0.1)',
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    label: 'Prestige',
+  },
+
+  // Achievement-based
   achievement: {
     icon: Trophy,
     color: '#fbbf24', // yellow
@@ -22,20 +35,164 @@ const UNLOCK_STYLES = {
     borderColor: 'rgba(251, 191, 36, 0.3)',
     label: 'Achievement',
   },
+  milestone: {
+    icon: Target,
+    color: '#8b5cf6', // purple
+    bgColor: 'rgba(139, 92, 246, 0.1)',
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    label: 'Milestone',
+  },
+
+  // Skill tree / Perk-based
   skill_tree: {
     icon: Zap,
-    color: '#a78bfa', // purple
+    color: '#a78bfa', // violet
     bgColor: 'rgba(167, 139, 250, 0.1)',
     borderColor: 'rgba(167, 139, 250, 0.3)',
     label: 'Skill Tree',
   },
+  perk: {
+    icon: Sparkles,
+    color: '#c084fc', // purple
+    bgColor: 'rgba(192, 132, 252, 0.1)',
+    borderColor: 'rgba(192, 132, 252, 0.3)',
+    label: 'Perk',
+  },
+
+  // Economy-based
   bazaar: {
     icon: Coins,
     color: '#f97316', // orange
     bgColor: 'rgba(249, 115, 22, 0.1)',
     borderColor: 'rgba(249, 115, 22, 0.3)',
-    label: 'Shop',
+    label: 'Bazaar',
   },
+  crafting: {
+    icon: Zap,
+    color: '#78716c', // stone
+    bgColor: 'rgba(120, 113, 108, 0.1)',
+    borderColor: 'rgba(120, 113, 108, 0.3)',
+    label: 'Crafting',
+  },
+
+  // Module-based
+  module: {
+    icon: BookOpen,
+    color: '#3b82f6', // blue
+    bgColor: 'rgba(59, 130, 246, 0.1)',
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+    label: 'Module Progress',
+  },
+  streak: {
+    icon: Flame,
+    color: '#ef4444', // red
+    bgColor: 'rgba(239, 68, 68, 0.1)',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    label: 'Streak',
+  },
+
+  // Social-based
+  pvp: {
+    icon: Sword,
+    color: '#dc2626', // red
+    bgColor: 'rgba(220, 38, 38, 0.1)',
+    borderColor: 'rgba(220, 38, 38, 0.3)',
+    label: 'PvP',
+  },
+  social: {
+    icon: Users,
+    color: '#06b6d4', // cyan
+    bgColor: 'rgba(6, 182, 212, 0.1)',
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+    label: 'Social',
+  },
+  leaderboard: {
+    icon: Trophy,
+    color: '#fbbf24', // yellow
+    bgColor: 'rgba(251, 191, 36, 0.1)',
+    borderColor: 'rgba(251, 191, 36, 0.3)',
+    label: 'Leaderboard',
+  },
+
+  // Quest-based
+  quest: {
+    icon: Target,
+    color: '#8b5cf6', // purple
+    bgColor: 'rgba(139, 92, 246, 0.1)',
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    label: 'Quest',
+  },
+  daily_quest: {
+    icon: Calendar,
+    color: '#14b8a6', // teal
+    bgColor: 'rgba(20, 184, 166, 0.1)',
+    borderColor: 'rgba(20, 184, 166, 0.3)',
+    label: 'Daily Quest',
+  },
+  weekly_quest: {
+    icon: Calendar,
+    color: '#0ea5e9', // sky
+    bgColor: 'rgba(14, 165, 233, 0.1)',
+    borderColor: 'rgba(14, 165, 233, 0.3)',
+    label: 'Weekly Quest',
+  },
+
+  // Discovery-based
+  discovery: {
+    icon: Compass,
+    color: '#6366f1', // indigo
+    bgColor: 'rgba(99, 102, 241, 0.1)',
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    label: 'Discovery',
+  },
+  secret: {
+    icon: Lock,
+    color: '#4b5563', // gray
+    bgColor: 'rgba(75, 85, 99, 0.1)',
+    borderColor: 'rgba(75, 85, 99, 0.3)',
+    label: 'Secret',
+  },
+
+  // Time-based
+  seasonal: {
+    icon: Gift,
+    color: '#059669', // emerald
+    bgColor: 'rgba(5, 150, 105, 0.1)',
+    borderColor: 'rgba(5, 150, 105, 0.3)',
+    label: 'Seasonal',
+  },
+  daily_login: {
+    icon: Calendar,
+    color: '#0891b2', // cyan
+    bgColor: 'rgba(8, 145, 178, 0.1)',
+    borderColor: 'rgba(8, 145, 178, 0.3)',
+    label: 'Daily Login',
+  },
+
+  // Special
+  nova: {
+    icon: Sparkles,
+    color: '#d946ef', // fuchsia
+    bgColor: 'rgba(217, 70, 239, 0.1)',
+    borderColor: 'rgba(217, 70, 239, 0.3)',
+    label: 'Nova Gift',
+  },
+  founder: {
+    icon: Star,
+    color: '#fcd34d', // yellow
+    bgColor: 'rgba(252, 211, 77, 0.1)',
+    borderColor: 'rgba(252, 211, 77, 0.3)',
+    label: 'Founder',
+  },
+  beta: {
+    icon: Zap,
+    color: '#c084fc', // purple
+    bgColor: 'rgba(192, 132, 252, 0.1)',
+    borderColor: 'rgba(192, 132, 252, 0.3)',
+    label: 'Beta Tester',
+  },
+
+  // Default
   default: {
     icon: Lock,
     color: 'rgba(255, 255, 255, 0.5)',
@@ -206,18 +363,65 @@ function formatDefaultDescription(method, requirement) {
   switch (method) {
     case 'level':
       return `Reach Level ${requirement.level}`;
+    case 'prestige':
+      return `Reach Prestige ${requirement.prestige}`;
     case 'achievement':
-      return requirement.achievementId || 'Complete achievement';
+      return requirement.achievementName || requirement.achievementId || 'Complete achievement';
+    case 'milestone':
+      return `${requirement.target} ${requirement.metric?.replace(/([A-Z])/g, ' $1').toLowerCase() || 'progress'}`;
     case 'skill_tree':
       if (requirement.perkId) {
-        return `Unlock "${requirement.perkId}" perk`;
+        return `Unlock "${requirement.perkName || requirement.perkId}" perk`;
       }
       if (requirement.tree && requirement.level) {
-        return `${requirement.tree} tree Level ${requirement.level}`;
+        return `${requirement.tree.charAt(0).toUpperCase() + requirement.tree.slice(1)} tree Level ${requirement.level}`;
+      }
+      if (requirement.anyTree && requirement.level) {
+        return `Any tree Level ${requirement.level}`;
       }
       return 'Skill tree milestone';
+    case 'perk':
+      return `Unlock "${requirement.perkName || requirement.perkId}"`;
     case 'bazaar':
       return `${requirement.price} Credits`;
+    case 'crafting':
+      return 'Craft from materials';
+    case 'module':
+      const moduleName = requirement.module?.charAt(0).toUpperCase() + requirement.module?.slice(1) || 'Module';
+      return `${moduleName}: ${requirement.target} ${requirement.metric?.replace(/([A-Z])/g, ' $1').toLowerCase() || ''}`;
+    case 'streak':
+      const streakModule = requirement.module ? ` ${requirement.module}` : '';
+      return `${requirement.streakDays}-day${streakModule} streak`;
+    case 'pvp':
+      if (requirement.wins) return `Win ${requirement.wins} PvP battles`;
+      if (requirement.rank) return `Reach ${requirement.rank} rank`;
+      return 'PvP challenge';
+    case 'social':
+      if (requirement.friends) return `Add ${requirement.friends} friends`;
+      if (requirement.challengesWon) return `Win ${requirement.challengesWon} challenges`;
+      return 'Social activity';
+    case 'leaderboard':
+      return `Reach #${requirement.position || 'top'} on leaderboard`;
+    case 'quest':
+      return `Complete "${requirement.questName || requirement.questId}"`;
+    case 'daily_quest':
+      return `Complete ${requirement.count} daily quests`;
+    case 'weekly_quest':
+      return `Complete ${requirement.count} weekly quests`;
+    case 'discovery':
+      return requirement.hint || 'Discover through exploration';
+    case 'secret':
+      return '???';
+    case 'seasonal':
+      return requirement.eventName || 'Seasonal event';
+    case 'daily_login':
+      return `${requirement.days}-day login streak`;
+    case 'nova':
+      return 'Gift from Nova';
+    case 'founder':
+      return 'Founder exclusive';
+    case 'beta':
+      return 'Beta tester reward';
     default:
       return 'Locked';
   }

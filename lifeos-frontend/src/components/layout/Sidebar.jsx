@@ -3,9 +3,12 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Sparkles,
   X,
-  Menu
+  Menu,
+  User
 } from 'lucide-react';
 import { useGamificationModeStore, VISIBILITY } from '../../stores/gamificationModeStore';
+import { useNewOnboardingStore } from '../../stores/newOnboardingStore';
+import { useSocialStore } from '../../stores/socialStore';
 
 // Pixel art nav icons
 const NAV_ICONS = {
@@ -50,6 +53,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   const mode = useGamificationModeStore((state) => state.mode);
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
   const labels = MODE_LABELS[mode] || MODE_LABELS.cosmic;
+
+  // Get username from stores
+  const { profile } = useNewOnboardingStore();
+  const { socialProfile } = useSocialStore();
+  const displayName = socialProfile?.display_name || socialProfile?.username || profile?.displayName || profile?.username || null;
 
   // Build navigation items based on mode visibility
   const navigationItems = [
@@ -156,6 +164,24 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Footer */}
         <div className="p-4 border-t border-border-subtle">
+          {/* User Profile Section */}
+          {displayName && (
+            <Link
+              to="/character"
+              onClick={onClose}
+              className="
+                group flex items-center gap-3 px-3 py-2.5 rounded-md mb-2
+                text-sm font-medium text-fg-secondary
+                hover:bg-accent-mainSoft hover:text-fg-primary
+                transition-all duration-fast
+              "
+            >
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-secondary flex items-center justify-center flex-shrink-0">
+                <User size={14} className="text-white" />
+              </div>
+              <span className="truncate">{displayName}</span>
+            </Link>
+          )}
           <Link
             to="/settings"
             onClick={onClose}

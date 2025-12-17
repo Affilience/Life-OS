@@ -10,6 +10,7 @@ import {
   BarChart2,
   ShieldOff,
   Ban,
+  Skull,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import PageHeader from '../components/shared/PageHeader';
@@ -17,9 +18,11 @@ import Achievements from '../components/missions/Achievements';
 import StreaksView from '../components/missions/StreaksView';
 import PlanTomorrowTab from '../components/productivity/PlanTomorrowTab';
 import BadHabitsTracker from '../components/missions/BadHabitsTracker';
+import BossesTab from '../components/missions/BossesTab';
 import useQuestsStore from '../stores/questsStore';
 import useDailyTasksStore from '../stores/dailyTasksStore';
 import useBadHabitsStore from '../stores/badHabitsStore';
+import { useBossStore } from '../stores/bossStore';
 import { useGamificationModeStore, TERMINOLOGY } from '../stores/gamificationModeStore';
 import { HabitsSetup } from '../components/onboarding/setup';
 import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
@@ -99,8 +102,12 @@ const Missions = () => {
   // Get bad habits count for notification
   const badHabitsCount = useBadHabitsStore(state => state.habits.length);
 
+  // Get boss battle stats
+  const { battleStats } = useBossStore();
+
   const tabs = [
     { id: 'plan', label: 'Today', icon: ListTodo },
+    { id: 'bosses', label: 'Bosses', icon: Skull },
     { id: 'quit', label: 'Quit', icon: getQuitIcon() },
     { id: 'streaks', label: terms.streak + 's', icon: getStreakIcon() },
     { id: 'achievements', label: terms.achievement + 's', icon: getAchievementIcon() },
@@ -114,6 +121,8 @@ const Missions = () => {
     switch (activeTab) {
       case 'plan':
         return <div data-tour="plan-section"><PlanTomorrowTab /></div>;
+      case 'bosses':
+        return <div data-tour="bosses-section"><BossesTab /></div>;
       case 'quit':
         return <div data-tour="quit-section"><BadHabitsTracker /></div>;
       case 'achievements':

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { List, Grid, Calendar } from 'lucide-react';
+import { List, Grid, Calendar, CalendarDays } from 'lucide-react';
 import CosmicWeekView from '../components/calendar/CosmicWeekView';
 import CosmicDayView from '../components/calendar/CosmicDayView';
+import CosmicMonthView from '../components/calendar/CosmicMonthView';
 import { CalendarSetup } from '../components/onboarding/setup';
 import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
 import PageHeader from '../components/shared/PageHeader';
@@ -20,12 +21,15 @@ const CalendarNew = () => {
   const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('calendar');
 
   const tabs = [
+    { id: 'month', name: 'Month', icon: CalendarDays },
     { id: 'week', name: 'Week', icon: Grid },
     { id: 'day', name: 'Day', icon: List },
   ];
 
   const renderView = () => {
     switch (activeView) {
+      case 'month':
+        return <CosmicMonthView />;
       case 'week':
         return <CosmicWeekView />;
       case 'day':

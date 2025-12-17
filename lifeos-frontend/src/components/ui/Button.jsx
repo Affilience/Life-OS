@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { haptics } from '../../utils/haptics';
 
 /**
@@ -6,7 +7,7 @@ import { haptics } from '../../utils/haptics';
  *
  * Premium button with multiple variants and states.
  * Follows Cosmic minimal design system.
- * Includes haptic feedback on tap.
+ * Includes haptic feedback and smooth animations.
  */
 
 const Button = ({
@@ -46,7 +47,7 @@ const Button = ({
   };
   const baseStyles = `
     inline-flex items-center justify-center gap-2
-    font-medium transition-all duration-[150ms]
+    font-medium
     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50
     disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none
     ${fullWidth ? 'w-full' : ''}
@@ -56,56 +57,56 @@ const Button = ({
     // Primary: Main call-to-action (theme primary color)
     primary: `
       bg-primary-500 text-text-primary
-      hover:bg-primary-600 hover:shadow-glow hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-soft
+      hover:bg-primary-600 hover:shadow-glow
+      active:shadow-soft
     `,
     // Gradient: Premium primary action with gradient
     gradient: `
       bg-gradient-to-r from-primary-500 to-secondary text-text-primary
-      hover:from-primary-600 hover:to-secondary hover:shadow-glow hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-soft
+      hover:from-primary-600 hover:to-secondary hover:shadow-glow
+      active:shadow-soft
     `,
     // Secondary: Alternative action with dark background
     secondary: `
       bg-bg-1 text-text-primary border border-border
-      hover:bg-bg-2 hover:border-primary-500/20 hover:-translate-y-[1px] hover:shadow-soft
-      active:translate-y-[1px] active:shadow-soft
+      hover:bg-bg-2 hover:border-primary-500/20 hover:shadow-soft
+      active:shadow-soft
     `,
     // Outline: Primary outline style for secondary emphasis
     outline: `
       bg-primary-500/10 text-primary-400 border border-primary-500/30
-      hover:bg-primary-500/20 hover:border-primary-500/50 hover:-translate-y-[1px] hover:shadow-glowSoft
-      active:translate-y-[1px] active:bg-primary-500/25
+      hover:bg-primary-500/20 hover:border-primary-500/50 hover:shadow-glowSoft
+      active:bg-primary-500/25
     `,
     // Ghost: Minimal tertiary action
     ghost: `
       bg-transparent text-text-secondary border border-transparent
-      hover:bg-bg-2/80 hover:text-text-primary hover:border-border hover:-translate-y-[1px]
-      active:bg-bg-2 active:translate-y-[1px]
+      hover:bg-bg-2/80 hover:text-text-primary hover:border-border
+      active:bg-bg-2
     `,
     // Danger: Destructive actions
     danger: `
       bg-error text-text-primary
-      hover:bg-error/90 hover:shadow-glow hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-soft
+      hover:bg-error/90 hover:shadow-glow
+      active:shadow-soft
     `,
     // Danger Outline: Less prominent destructive action
     'danger-outline': `
       bg-error/10 text-error border border-error/30
-      hover:bg-error/20 hover:border-error/50 hover:-translate-y-[1px]
-      active:translate-y-[1px] active:bg-error/25
+      hover:bg-error/20 hover:border-error/50
+      active:bg-error/25
     `,
     // Success: Positive/confirmation actions
     success: `
       bg-success text-text-primary
-      hover:bg-success/90 hover:shadow-glow hover:-translate-y-[1px]
-      active:translate-y-[1px] active:shadow-soft
+      hover:bg-success/90 hover:shadow-glow
+      active:shadow-soft
     `,
     // Success Outline: Less prominent success action
     'success-outline': `
       bg-success/10 text-success border border-success/30
-      hover:bg-success/20 hover:border-success/50 hover:-translate-y-[1px]
-      active:translate-y-[1px] active:bg-success/25
+      hover:bg-success/20 hover:border-success/50
+      active:bg-success/25
     `,
   };
 
@@ -116,16 +117,23 @@ const Button = ({
   };
 
   return (
-    <button
+    <motion.button
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled}
       onClick={handleClick}
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98, y: 0 }}
+      transition={{
+        type: 'spring',
+        stiffness: 400,
+        damping: 17,
+      }}
       {...props}
     >
       {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
       {children}
       {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
-    </button>
+    </motion.button>
   );
 };
 

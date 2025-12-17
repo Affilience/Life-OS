@@ -6,7 +6,10 @@ import { useAvatarStore } from '../../../stores/avatarStore';
 import { usePetStore, PET_DATABASE } from '../../../stores/petStore';
 import { getStageByLevel } from '../../../data/avatarEvolution';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../../stores/gamificationModeStore';
+import { useNewOnboardingStore } from '../../../stores/newOnboardingStore';
+import { useSocialStore } from '../../../stores/socialStore';
 import AvatarRenderer from '../../avatar/AvatarRenderer';
+import LevelTitle from '../../gamification/LevelTitle';
 
 const HeroSectionWidget = memo(function HeroSectionWidget() {
   const navigate = useNavigate();
@@ -19,6 +22,13 @@ const HeroSectionWidget = memo(function HeroSectionWidget() {
   const getAvatarStageName = useGamificationModeStore((state) => state.getAvatarStageName);
   const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+
+  // Get username from onboarding store and social store
+  const { profile } = useNewOnboardingStore();
+  const { socialProfile } = useSocialStore();
+
+  // Prefer socialProfile (database) over onboarding store (local)
+  const displayName = socialProfile?.display_name || socialProfile?.username || profile?.displayName || profile?.username || 'Traveler';
 
   const xpPercentage = xpToNextLevel > 0 ? (currentXP / xpToNextLevel) * 100 : 0;
   const evolutionStage = getStageByLevel(level, prestige);
@@ -152,12 +162,14 @@ const HeroSectionWidget = memo(function HeroSectionWidget() {
     if (mode === 'cosmic') {
       return (
         <>
-          <div className="flex items-baseline gap-2 mb-1">
-            <h2 className="text-lg font-bold text-text-primary truncate">{stageName}</h2>
-            <span className="text-sm text-primary-400 font-semibold">Lv.{level}</span>
+          {/* Username */}
+          <h2 className="text-lg font-bold text-text-primary truncate mb-0.5">{displayName}</h2>
+          {/* Level Title Badge */}
+          <div className="mb-1.5">
+            <LevelTitle level={level} size="sm" showLevel={true} showTooltip={false} variant="badge" />
           </div>
           <p className="text-xs text-text-secondary mb-2 truncate">
-            {evolutionStage?.category || 'The Awakening'}
+            {stageName}
             {activePetsData.length > 0 && (
               <span className="ml-1 text-primary-400">
                 • {activePetsData.length === 1
@@ -171,9 +183,10 @@ const HeroSectionWidget = memo(function HeroSectionWidget() {
     } else if (mode === 'professional') {
       return (
         <>
-          <div className="flex items-baseline gap-2 mb-1">
-            <h2 className="text-lg font-bold text-text-primary truncate">{terms.level} {level}</h2>
-            <span className="text-sm text-primary-400 font-semibold">{stageName}</span>
+          {/* Username */}
+          <h2 className="text-lg font-bold text-text-primary truncate mb-0.5">{displayName}</h2>
+          <div className="mb-1.5">
+            <LevelTitle level={level} size="sm" showLevel={true} showTooltip={false} variant="inline" />
           </div>
           <p className="text-xs text-text-secondary mb-2 truncate">
             Progress toward next milestone
@@ -184,8 +197,10 @@ const HeroSectionWidget = memo(function HeroSectionWidget() {
       // Minimal
       return (
         <>
+          {/* Username */}
+          <h2 className="text-lg font-bold text-text-primary truncate mb-0.5">{displayName}</h2>
           <div className="flex items-baseline gap-2 mb-1">
-            <h2 className="text-lg font-bold text-text-primary truncate">Level {level}</h2>
+            <span className="text-sm text-text-secondary">Level {level}</span>
           </div>
           <p className="text-xs text-text-secondary mb-2 truncate">
             {currentXP} / {xpToNextLevel} points

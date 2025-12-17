@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import useDashboardStore from './dashboardStore';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 /**
  * New Onboarding Store
@@ -215,6 +216,103 @@ export const useNewOnboardingStore = create(
       // XP earned during onboarding
       xpEarned: 0,
 
+      // Sync status
+      _isSyncing: false,
+      _lastSyncedAt: null,
+      _syncError: null,
+
+      // ============================================
+      // SUPABASE SYNC
+      // ============================================
+
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        set({ _isSyncing: true, _syncError: null });
+
+        try {
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .select('display_name, character_gender, preferences, onboarding_completed')
+            .eq('id', userId)
+            .maybeSingle();
+
+          if (error) throw error;
+          if (!data) {
+            console.log('[Onboarding] No user profile found, using defaults');
+            set({ _isSyncing: false });
+            return;
+          }
+
+          // Map database fields to store state
+          const preferences = data.preferences || {};
+
+          set({
+            profile: {
+              username: data.display_name || '',
+              displayName: data.display_name || '',
+              gender: data.character_gender || null,
+            },
+            lifeGoals: preferences.life_goals || [],
+            dailyCommitment: preferences.daily_commitment || 15,
+            gamificationMode: preferences.gamification_mode || null,
+            isOnboardingComplete: data.onboarding_completed || false,
+            isOnboardingActive: !data.onboarding_completed,
+            currentStep: data.onboarding_completed ? ONBOARDING_STEPS.COMPLETED : ONBOARDING_STEPS.GAMIFICATION_MODE,
+            _lastSyncedAt: new Date().toISOString(),
+            _isSyncing: false,
+          });
+
+          console.log('[Onboarding] Loaded from Supabase:', {
+            displayName: data.display_name,
+            gender: data.character_gender,
+            goals: preferences.life_goals,
+            completed: data.onboarding_completed,
+          });
+        } catch (error) {
+          console.error('[Onboarding] Failed to initialize from Supabase:', error);
+          set({ _syncError: error.message, _isSyncing: false });
+        }
+      },
+
+      // Sync current state to Supabase
+      syncToSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        const state = get();
+        const nameToSave = state.profile.displayName || state.profile.username || '';
+
+        try {
+          // Note: character_gender is synced by avatarStore, not here
+          const { error } = await supabase
+            .from('user_profiles')
+            .update({
+              username: nameToSave,
+              display_name: nameToSave,
+              onboarding_completed: state.isOnboardingComplete,
+              preferences: {
+                life_goals: state.lifeGoals,
+                daily_commitment: state.dailyCommitment,
+                gamification_mode: state.gamificationMode,
+                module_setup: state.moduleSetup,
+              },
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+
+          if (error) throw error;
+
+          set({ _lastSyncedAt: new Date().toISOString(), _syncError: null });
+          console.log('[Onboarding] Synced to Supabase');
+        } catch (error) {
+          console.error('[Onboarding] Failed to sync to Supabase:', error);
+          set({ _syncError: error.message });
+        }
+      },
+
       // ============================================
       // ACTIONS
       // ============================================
@@ -377,7 +475,7 @@ export const useNewOnboardingStore = create(
       },
 
       // Complete onboarding
-      completeOnboarding: () => {
+      completeOnboarding: async () => {
         // Set up the default dashboard layout for new users
         // This ensures the dashboard tour has all the expected elements visible
         try {
@@ -394,10 +492,13 @@ export const useNewOnboardingStore = create(
           completedAt: new Date().toISOString(),
           novaState: 'celebrating',
         });
+
+        // Sync all onboarding data to Supabase
+        await get().syncToSupabase();
       },
 
       // Reset onboarding (for re-onboard feature)
-      resetOnboarding: () => {
+      resetOnboarding: async () => {
         set({
           currentStep: ONBOARDING_STEPS.GAMIFICATION_MODE,
           isOnboardingActive: true,
@@ -432,6 +533,22 @@ export const useNewOnboardingStore = create(
           skippedSteps: [],
           xpEarned: 0,
         });
+
+        // Reset onboarding status in Supabase
+        const userId = await getCurrentUserId();
+        if (userId) {
+          try {
+            await supabase
+              .from('user_profiles')
+              .update({
+                onboarding_completed: false,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', userId);
+          } catch (e) {
+            console.warn('[Onboarding] Could not reset onboarding in Supabase:', e);
+          }
+        }
       },
 
       // ============================================
@@ -553,3 +670,8 @@ export const useNewOnboardingStore = create(
 );
 
 export default useNewOnboardingStore;
+
+// Hook to initialize store from Supabase on app load
+export const initializeOnboardingStore = async () => {
+  await useNewOnboardingStore.getState().initializeFromSupabase();
+};

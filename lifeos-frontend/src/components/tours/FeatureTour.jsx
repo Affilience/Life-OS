@@ -8,11 +8,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, SkipForward, Play, RotateCcw } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, SkipForward, Play, RotateCcw, Sparkles } from 'lucide-react';
 import { useTourStore, ROUTE_TO_TOUR, TOUR_IDS } from '../../stores/tourStore';
 import { getTour, getTourStep, getTourStepCount, NOVA_STATES, POSITIONS } from './tourDefinitions';
 import useGamificationStore from '../../stores/gamificationStore';
 import useDashboardStore from '../../stores/dashboardStore';
+import { feedback } from '../../services/microInteractions';
 import './FeatureTour.css';
 
 /**
@@ -139,6 +140,31 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
 }
 
 /**
+ * Floating particle for ambient effect
+ */
+function FloatingParticle({ delay, duration, x, size = 4 }) {
+  return (
+    <motion.div
+      className="absolute rounded-full bg-purple-400/30"
+      style={{ width: size, height: size, left: x }}
+      initial={{ opacity: 0, y: 100, scale: 0 }}
+      animate={{
+        opacity: [0, 0.8, 0.8, 0],
+        y: [100, -50],
+        scale: [0, 1, 1, 0],
+        x: [0, Math.random() * 20 - 10],
+      }}
+      transition={{
+        duration,
+        delay,
+        repeat: Infinity,
+        ease: 'easeOut',
+      }}
+    />
+  );
+}
+
+/**
  * Tour Prompt Modal - Asks user if they want to take the tour
  */
 function TourPrompt({ tourId, onStart, onSkip, onDismiss }) {
@@ -148,6 +174,15 @@ function TourPrompt({ tourId, onStart, onSkip, onDismiss }) {
 
   if (!tour) return null;
 
+  // Generate floating particles
+  const particles = [...Array(8)].map((_, i) => ({
+    id: i,
+    delay: i * 0.3,
+    duration: 3 + Math.random() * 2,
+    x: `${10 + Math.random() * 80}%`,
+    size: 3 + Math.random() * 4,
+  }));
+
   return (
     <motion.div
       className="tour-prompt-backdrop"
@@ -155,41 +190,90 @@ function TourPrompt({ tourId, onStart, onSkip, onDismiss }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
+      {/* Floating particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {particles.map((p) => (
+          <FloatingParticle key={p.id} {...p} />
+        ))}
+      </div>
+
       <motion.div
         className="tour-prompt"
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        initial={{ scale: 0.8, opacity: 0, y: 30 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       >
-        <div className="tour-prompt-nova">
+        {/* Glow effect behind Nova */}
+        <motion.div
+          className="absolute top-8 left-1/2 -translate-x-1/2 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        <div className="tour-prompt-nova relative">
           <motion.img
             src={novaSprite}
             alt="Nova"
-            className="pixelated"
+            className="pixelated relative z-10"
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           />
+          {/* Sparkle effect */}
+          <motion.div
+            className="absolute -top-2 -right-2 text-yellow-400"
+            animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Sparkles size={20} />
+          </motion.div>
         </div>
+
         <div className="tour-prompt-content">
-          <h3>Want a Quick Tour?</h3>
-          <p>
+          <motion.h3
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Want a Quick Tour?
+          </motion.h3>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             Hi! I'm Nova, your guide. Want me to show you around the{' '}
             <strong>{tour.name}</strong>? It'll only take about{' '}
             <strong>{tour.estimatedTime}</strong>.
-          </p>
-          <div className="tour-prompt-actions">
-            <button className="tour-btn tour-btn-primary" onClick={onStart}>
+          </motion.p>
+          <motion.div
+            className="tour-prompt-actions"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <motion.button
+              className="tour-btn tour-btn-primary"
+              onClick={onStart}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Play size={16} />
               Start Tour
-            </button>
-            <button className="tour-btn tour-btn-secondary" onClick={onSkip}>
+            </motion.button>
+            <motion.button
+              className="tour-btn tour-btn-secondary"
+              onClick={onSkip}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <SkipForward size={16} />
               Skip This One
-            </button>
+            </motion.button>
             <button className="tour-btn tour-btn-ghost" onClick={onDismiss}>
               Don't Show Again
             </button>
-          </div>
+          </motion.div>
         </div>
       </motion.div>
     </motion.div>
@@ -210,39 +294,89 @@ function TourTooltip({ step, stepIndex, totalSteps, position, onNext, onPrev, on
     <motion.div
       className={`tour-tooltip tour-tooltip-${position.position || 'bottom'}`}
       style={{ top: position.top, left: position.left }}
-      initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: 15, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+      key={stepIndex} // Re-animate on step change
     >
       {/* Nova Avatar */}
       <div className="tour-tooltip-nova">
         <motion.div
           className={`nova-container nova-${expression.animation}`}
-          animate={expression.animation === 'bounce' ? { y: [0, -6, 0] } : {}}
-          transition={{ duration: 0.6, repeat: expression.animation === 'bounce' ? Infinity : 0 }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, type: 'spring' }}
         >
-          <img src={novaSprite} alt="Nova" className="pixelated" />
-          <span className="nova-expression">{expression.emoji}</span>
+          <motion.img
+            src={novaSprite}
+            alt="Nova"
+            className="pixelated"
+            animate={
+              expression.animation === 'bounce'
+                ? { y: [0, -6, 0] }
+                : expression.animation === 'glow'
+                  ? { filter: ['drop-shadow(0 0 12px rgba(139, 92, 246, 0.4))', 'drop-shadow(0 0 20px rgba(139, 92, 246, 0.8))', 'drop-shadow(0 0 12px rgba(139, 92, 246, 0.4))'] }
+                  : {}
+            }
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.span
+            className="nova-expression"
+            initial={{ scale: 0, rotate: -45 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.2, type: 'spring', stiffness: 500 }}
+          >
+            {expression.emoji}
+          </motion.span>
         </motion.div>
       </div>
 
       {/* Content */}
       <div className="tour-tooltip-content">
         <div className="tour-tooltip-header">
-          <h4>{step.title}</h4>
-          <button className="tour-close-btn" onClick={onSkip} title="Close tour">
+          <motion.h4
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            {step.title}
+          </motion.h4>
+          <motion.button
+            className="tour-close-btn"
+            onClick={onSkip}
+            title="Close tour"
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+          >
             <X size={16} />
-          </button>
+          </motion.button>
         </div>
-        <p>{step.content}</p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          {step.content}
+        </motion.p>
 
         {/* Action hint */}
         {step.action && (
-          <div className="tour-action-hint">
-            <span className="hint-icon">👆</span>
+          <motion.div
+            className="tour-action-hint"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <motion.span
+              className="hint-icon"
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+            >
+              👆
+            </motion.span>
             Try clicking on the highlighted area!
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -250,27 +384,60 @@ function TourTooltip({ step, stepIndex, totalSteps, position, onNext, onPrev, on
       <div className="tour-tooltip-footer">
         <div className="tour-progress">
           <span>{stepIndex + 1} / {totalSteps}</span>
-          <div className="tour-progress-bar">
-            <div
-              className="tour-progress-fill"
-              style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
-            />
+          {/* Step dots instead of bar for cleaner look */}
+          <div className="tour-progress-dots">
+            {[...Array(totalSteps)].map((_, i) => (
+              <motion.div
+                key={i}
+                className={`tour-progress-dot ${i <= stepIndex ? 'active' : ''} ${i === stepIndex ? 'current' : ''}`}
+                initial={false}
+                animate={{
+                  scale: i === stepIndex ? 1.3 : 1,
+                  backgroundColor: i <= stepIndex ? '#8b5cf6' : 'rgba(255,255,255,0.15)',
+                }}
+                transition={{ type: 'spring', stiffness: 500 }}
+              />
+            ))}
           </div>
         </div>
         <div className="tour-nav-buttons">
           {!isFirstStep && (
-            <button className="tour-nav-btn" onClick={onPrev}>
+            <motion.button
+              className="tour-nav-btn"
+              onClick={onPrev}
+              whileHover={{ scale: 1.05, x: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <ChevronLeft size={18} />
-            </button>
+            </motion.button>
           )}
           {isLastStep ? (
-            <button className="tour-btn tour-btn-primary" onClick={onComplete}>
+            <motion.button
+              className="tour-btn tour-btn-primary tour-btn-complete"
+              onClick={onComplete}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              animate={{
+                boxShadow: [
+                  '0 4px 16px rgba(139, 92, 246, 0.35)',
+                  '0 4px 24px rgba(139, 92, 246, 0.5)',
+                  '0 4px 16px rgba(139, 92, 246, 0.35)',
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Sparkles size={16} />
               Complete
-            </button>
+            </motion.button>
           ) : (
-            <button className="tour-nav-btn tour-nav-next" onClick={onNext}>
+            <motion.button
+              className="tour-nav-btn tour-nav-next"
+              onClick={onNext}
+              whileHover={{ scale: 1.05, x: 2 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <ChevronRight size={18} />
-            </button>
+            </motion.button>
           )}
         </div>
       </div>
@@ -554,6 +721,8 @@ export default function FeatureTour() {
   // Handle prompt actions
   const handleStartTour = () => {
     setShowPrompt(false);
+    // Play start sound
+    feedback.success();
     if (promptTourId) {
       startTour(promptTourId);
     }
@@ -561,11 +730,13 @@ export default function FeatureTour() {
 
   const handleSkipTour = () => {
     setShowPrompt(false);
+    feedback.click();
     skipTour();
   };
 
   const handleDismissPrompt = () => {
     setShowPrompt(false);
+    feedback.click();
     setToursEnabled(false);
     markTourPromptSeen();
   };
@@ -573,17 +744,23 @@ export default function FeatureTour() {
   // Handle step navigation
   const handleNext = () => {
     if (currentStepIndex < totalSteps - 1) {
+      // Play step transition sound
+      feedback.click();
       nextStep();
     }
   };
 
   const handlePrev = () => {
     if (currentStepIndex > 0) {
+      feedback.click();
       prevStep();
     }
   };
 
   const handleComplete = () => {
+    // Play completion celebration
+    feedback.achievement();
+
     // If completing the dashboard tour, mark onboarding setup as complete
     if (activeTour === TOUR_IDS.DASHBOARD) {
       try {
@@ -597,6 +774,7 @@ export default function FeatureTour() {
   };
 
   const handleSkip = () => {
+    feedback.click();
     skipTour();
   };
 

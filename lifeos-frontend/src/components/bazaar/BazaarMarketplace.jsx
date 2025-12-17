@@ -24,7 +24,7 @@ import { useGamificationStore, getRarityColor } from '../../stores/gamificationS
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 import { useAvatarStore } from '../../stores/avatarStore';
 import { usePetStore, PET_DATABASE, TIER_INFO } from '../../stores/petStore';
-import { EQUIPMENT_DATABASE } from '../../data/avatarData';
+import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
 import unlockService from '../../services/unlockService';
 
 // ============================================
@@ -48,6 +48,14 @@ const getSpritePath = (category, id) => {
 
   const pathFn = categoryMap[category];
   return pathFn ? pathFn(id) : null;
+};
+
+// Helper to get sprite from item (handles object { path: '...' } or string formats)
+const getItemSprite = (item) => {
+  if (!item) return null;
+  if (item.sprite?.path) return item.sprite.path;
+  if (typeof item.sprite === 'string') return item.sprite;
+  return null;
 };
 
 // ============================================
@@ -497,16 +505,24 @@ function ItemCard({ item, owned, canAfford, onPurchase, level, mode }) {
             className="w-12 h-12 p-1 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: `${rarityColor}20` }}
           >
-            {item.sprite ? (
+            {getItemSprite(item) ? (
               <img
-                src={item.sprite}
+                src={getItemSprite(item)}
                 alt={item.name}
                 className="w-full h-full object-contain pixelated"
                 style={{ imageRendering: 'pixelated' }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <span className="text-2xl">{item.icon}</span>
-            )}
+            ) : null}
+            <span
+              className="text-2xl items-center justify-center"
+              style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
+            >
+              {item.icon}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-white truncate">{item.name}</h4>
@@ -599,16 +615,24 @@ function PurchaseModal({ item, onConfirm, onCancel, credits }) {
             className="w-20 h-20 p-3 rounded-xl inline-flex items-center justify-center mb-3"
             style={{ backgroundColor: `${rarityColor}20` }}
           >
-            {item.sprite ? (
+            {getItemSprite(item) ? (
               <img
-                src={item.sprite}
+                src={getItemSprite(item)}
                 alt={item.name}
                 className="w-full h-full object-contain"
                 style={{ imageRendering: 'pixelated' }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <span className="text-5xl">{item.icon}</span>
-            )}
+            ) : null}
+            <span
+              className="text-5xl items-center justify-center"
+              style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
+            >
+              {item.icon}
+            </span>
           </div>
           <h3 className="text-xl font-bold text-white mb-1">{item.name}</h3>
           <p
@@ -702,16 +726,24 @@ function SuccessModal({ item, onClose }) {
             className="w-24 h-24 p-4 rounded-2xl animate-bounce flex items-center justify-center"
             style={{ backgroundColor: `${rarityColor}20` }}
           >
-            {item.sprite ? (
+            {getItemSprite(item) ? (
               <img
-                src={item.sprite}
+                src={getItemSprite(item)}
                 alt={item.name}
                 className="w-full h-full object-contain"
                 style={{ imageRendering: 'pixelated' }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <span className="text-6xl">{item.icon}</span>
-            )}
+            ) : null}
+            <span
+              className="text-6xl items-center justify-center"
+              style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
+            >
+              {item.icon}
+            </span>
           </div>
           <div className="absolute -top-2 -right-2 bg-green-500 text-white p-2 rounded-full">
             <Check className="w-5 h-5" />

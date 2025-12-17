@@ -5,9 +5,14 @@
  * Docs: https://platform.fatsecret.com/api/Default.aspx?screen=rapiauth2
  */
 
-const CLIENT_ID = 'c412aa48c3c84f4cad0a52405014ac30';
-const CLIENT_SECRET = '63c464beaf948089890e4808fe71297';
+const CLIENT_ID = import.meta.env.VITE_FATSECRET_CLIENT_ID;
+const CLIENT_SECRET = import.meta.env.VITE_FATSECRET_CLIENT_SECRET;
 const TOKEN_URL = 'https://oauth.fatsecret.com/connect/token';
+
+// Validate credentials are configured
+if (!CLIENT_ID || !CLIENT_SECRET) {
+  console.warn('FatSecret API credentials not configured. Set VITE_FATSECRET_CLIENT_ID and VITE_FATSECRET_CLIENT_SECRET in .env');
+}
 const API_BASE = 'https://platform.fatsecret.com/rest/server.api';
 
 let accessToken = null;

@@ -19,13 +19,17 @@ import {
   PiggyBank,
   FileText,
   CheckCircle2,
-  BarChart2
+  BarChart2,
+  Shield
 } from 'lucide-react';
 import useAchievementsStore, {
   ACHIEVEMENT_CATEGORIES,
   ACHIEVEMENT_RARITY
 } from '../../stores/achievementsStore';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
+import { ACHIEVEMENT_EQUIPMENT, ACHIEVEMENT_PETS } from '../../data/equipmentUnlocks';
+import { EQUIPMENT_DATABASE, EQUIPMENT_RARITY } from '../../data/equipmentDatabase';
+import { PET_DATABASE, TIER_INFO as PET_TIER_INFO } from '../../stores/petStore';
 
 // Mode-specific styling for the page
 const MODE_PAGE_STYLES = {
@@ -102,6 +106,31 @@ const RARITY_TIER_STYLES = {
     badgeBg: 'bg-[var(--achievement-diamond)]/20',
     badgeText: 'text-[var(--achievement-diamond)]'
   }
+};
+
+// Helper to get equipment rewards for an achievement
+const getEquipmentRewards = (achievementId) => {
+  const equipmentIds = ACHIEVEMENT_EQUIPMENT[achievementId] || [];
+  return equipmentIds
+    .map(id => EQUIPMENT_DATABASE[id])
+    .filter(Boolean);
+};
+
+// Helper to get pet rewards for an achievement
+const getPetRewards = (achievementId) => {
+  const petIds = ACHIEVEMENT_PETS[achievementId] || [];
+  return petIds
+    .map(id => PET_DATABASE[id])
+    .filter(Boolean);
+};
+
+// Helper to get sprite path from equipment item
+const getSpritePath = (item) => {
+  if (!item) return null;
+  if (item.sprite?.path) return item.sprite.path;
+  if (typeof item.sprite === 'string') return item.sprite;
+  const slotFolder = item.slot === 'chest' ? 'chests' : `${item.slot}s`;
+  return `/assets/equipment/${slotFolder}/${item.id}.png`;
 };
 
 export default function Achievements() {
@@ -399,7 +428,7 @@ export default function Achievements() {
 
               {/* Rewards */}
               <div className="flex items-center justify-between pt-4 border-t border-border">
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-sm flex-wrap">
                   <div className={`flex items-center gap-1 ${mode === 'minimal' ? 'text-emerald-400' : 'text-green-400'}`}>
                     <Trophy className="w-4 h-4" />
                     <span>+{achievement.xpReward} {terms.xp}</span>
@@ -408,6 +437,103 @@ export default function Achievements() {
                     <Zap className="w-4 h-4" />
                     <span>+{achievement.creditsReward}</span>
                   </div>
+
+                  {/* Equipment Rewards */}
+                  {(() => {
+                    const equipmentRewards = getEquipmentRewards(achievement.id);
+                    if (equipmentRewards.length === 0) return null;
+
+                    return equipmentRewards.map(equipment => {
+                      const rarityData = EQUIPMENT_RARITY[equipment.rarity] || EQUIPMENT_RARITY.common;
+                      const spritePath = getSpritePath(equipment);
+
+                      return (
+                        <div
+                          key={equipment.id}
+                          className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border"
+                          style={{
+                            backgroundColor: `${rarityData.color}15`,
+                            borderColor: `${rarityData.color}40`,
+                          }}
+                          title={`${equipment.name} (${equipment.rarity})`}
+                        >
+                          {spritePath ? (
+                            <img
+                              src={spritePath}
+                              alt={equipment.name}
+                              className="w-5 h-5 object-contain"
+                              style={{ imageRendering: 'pixelated' }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling?.style?.removeProperty('display');
+                              }}
+                            />
+                          ) : null}
+                          <Shield
+                            className="w-4 h-4"
+                            style={{
+                              color: rarityData.color,
+                              display: spritePath ? 'none' : 'block',
+                            }}
+                          />
+                          <span
+                            className="text-xs font-medium truncate max-w-[80px]"
+                            style={{ color: rarityData.color }}
+                          >
+                            {equipment.name}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+
+                  {/* Pet Rewards */}
+                  {(() => {
+                    const petRewards = getPetRewards(achievement.id);
+                    if (petRewards.length === 0) return null;
+
+                    return petRewards.map(pet => {
+                      const tierInfo = PET_TIER_INFO[pet.tier] || PET_TIER_INFO.common;
+
+                      return (
+                        <div
+                          key={pet.id}
+                          className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border"
+                          style={{
+                            backgroundColor: `${tierInfo.color}15`,
+                            borderColor: `${tierInfo.color}40`,
+                          }}
+                          title={`${pet.name} - ${pet.culture} (${pet.tier})`}
+                        >
+                          {pet.sprite ? (
+                            <img
+                              src={pet.sprite}
+                              alt={pet.name}
+                              className="w-5 h-5 object-contain"
+                              style={{ imageRendering: 'pixelated' }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling?.style?.removeProperty('display');
+                              }}
+                            />
+                          ) : null}
+                          <Heart
+                            className="w-4 h-4"
+                            style={{
+                              color: tierInfo.color,
+                              display: pet.sprite ? 'none' : 'block',
+                            }}
+                          />
+                          <span
+                            className="text-xs font-medium truncate max-w-[80px]"
+                            style={{ color: tierInfo.color }}
+                          >
+                            {pet.name}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
 
                 {achievement.unlocked && achievement.unlockedAt && (

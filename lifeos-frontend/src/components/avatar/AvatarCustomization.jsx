@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAvatarStore } from '../../stores/avatarStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
-import { EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, getEquipmentBySlot, EQUIPMENT_RARITY } from '../../data/avatarData';
+import { EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, getEquipmentBySlot, EQUIPMENT_RARITY } from '../../data/equipmentDatabase';
 import { calculateXPForLevel } from '../../data/avatarEvolution';
 import AvatarRenderer from './AvatarRenderer';
 import { X, Lock, Check, Star, TrendingUp } from 'lucide-react';
@@ -17,12 +17,15 @@ export default function AvatarCustomization({ onClose }) {
     xp,
     currentTier,
     equipped,
-    unlockedEquipment,
+    getEffectiveUnlockedEquipment,
     stats,
     equipItem,
     unequipItem,
     getCurrentTierData,
   } = useAvatarStore();
+
+  // Get effective unlocked equipment (all items in dev mode)
+  const effectiveUnlocked = getEffectiveUnlockedEquipment();
 
   // Get XP info from gamification store (uses exponential scaling)
   const { currentXP, xpToNextLevel } = useGamificationStore();
@@ -168,7 +171,7 @@ export default function AvatarCustomization({ onClose }) {
 
               <div className="equipment-items">
                 {slotEquipment.map(item => {
-                  const isUnlocked = unlockedEquipment.includes(item.id);
+                  const isUnlocked = effectiveUnlocked.includes(item.id);
                   const isEquipped = equipped[selectedSlot] === item.id;
                   const rarityData = EQUIPMENT_RARITY[item.rarity];
 

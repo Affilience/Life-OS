@@ -12,6 +12,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/Toast';
 import { CommandPalette } from './components/ui/CommandPalette';
 import { CelebrationProvider } from './components/ui/Celebration';
+import EquipmentUnlockToast from './components/gamification/EquipmentUnlockToast';
 import RealtimeProvider from './components/RealtimeProvider';
 import { ModeAwareRoute } from './components/layout/ModeAwareRoute';
 
@@ -21,7 +22,63 @@ import EnhancedOnboarding from './components/onboarding/EnhancedOnboarding';
 
 // Full Onboarding Flow (6-step improved experience with constellation picker)
 import ImprovedOnboarding from './components/onboarding/ImprovedOnboarding';
-import { useNewOnboardingStore } from './stores/newOnboardingStore';
+import { ImmersiveOnboarding } from './components/onboarding/cinematic';
+import { useNewOnboardingStore, initializeOnboardingStore } from './stores/newOnboardingStore';
+
+// Onboarding Page wrapper component
+const OnboardingPage = lazy(() => Promise.resolve({
+  default: function OnboardingPageWrapper() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { isOnboardingComplete, resetOnboarding } = useNewOnboardingStore();
+
+    // Check for force parameter to bypass redirect (for testing)
+    const searchParams = new URLSearchParams(location.search);
+    const forceShow = searchParams.get('force') === 'true';
+
+    // Reset onboarding if force parameter is present
+    React.useEffect(() => {
+      if (forceShow) {
+        resetOnboarding();
+      }
+    }, [forceShow, resetOnboarding]);
+
+    // If already complete and not forcing, redirect to dashboard
+    React.useEffect(() => {
+      if (isOnboardingComplete && !forceShow) {
+        navigate('/', { replace: true });
+      }
+    }, [isOnboardingComplete, forceShow, navigate]);
+
+    const handleComplete = () => {
+      navigate('/', { replace: true });
+    };
+
+    return <ImmersiveOnboarding />;
+  }
+}));
+
+// Helper function to check if onboarding is needed (called once at app init)
+function shouldShowOnboarding() {
+  try {
+    const stored = localStorage.getItem('lifeos-new-onboarding');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const isComplete = parsed?.state?.isOnboardingComplete === true;
+      const isActive = parsed?.state?.isOnboardingActive === true;
+      // Only show onboarding if not complete AND actively in onboarding
+      return !isComplete && isActive;
+    } else {
+      // No stored state means first time user
+      return true;
+    }
+  } catch {
+    return false;
+  }
+}
+
+// Import navigation hooks for OnboardingPage and redirect
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Supabase store initialization
 import { initializeAvatarStore } from './stores/avatarStore';
@@ -48,6 +105,7 @@ import { initializePerkStore } from './stores/perkStore';
 import { initializeSocialStore } from './stores/socialStore';
 import { initializeModuleMasteryStore } from './stores/moduleMasteryStore';
 import { initializeSkillPointsStore } from './stores/skillPointsStore';
+import { initializeBossStore } from './stores/bossStore';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -120,51 +178,10 @@ const EquipmentTest = lazy(() => import('./pages/EquipmentTest'));
 // }
 
 function App() {
+  // Legacy welcome modal state (kept for potential fallback)
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
-  // Get integrated onboarding state (legacy)
-  const { hasSeenWelcome } = useIntegratedOnboardingStore();
-
-  // Get new onboarding state
-  const { isOnboardingComplete: newOnboardingComplete, isOnboardingActive } = useNewOnboardingStore();
-
-  // Check localStorage directly for initial state to avoid hydration race condition
-  const [showNewOnboarding, setShowNewOnboarding] = useState(() => {
-    try {
-      const stored = localStorage.getItem('lifeos-new-onboarding');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // Check if onboarding is complete in persisted state
-        // Zustand persist stores: { state: {...}, version: number }
-        const isComplete = parsed?.state?.isOnboardingComplete === true;
-        const isNotActive = parsed?.state?.isOnboardingActive === false;
-
-        // If explicitly marked complete OR explicitly not active, don't show
-        if (isComplete || isNotActive) {
-          return false;
-        }
-      }
-      return true; // No stored state or not complete, show onboarding
-    } catch {
-      return true; // Error reading, show onboarding
-    }
-  });
-
-  // Sync with store state after hydration
-  useEffect(() => {
-    // Hide onboarding if store says complete or not active
-    if ((newOnboardingComplete || !isOnboardingActive) && showNewOnboarding) {
-      setShowNewOnboarding(false);
-    }
-  }, [newOnboardingComplete, isOnboardingActive, showNewOnboarding]);
-
-  // Legacy: Show welcome modal if user hasn't seen it (fallback)
-  // DISABLED: New onboarding system replaces the old EnhancedOnboarding
-  // useEffect(() => {
-  //   if (!hasSeenWelcome && hasSeenIntro && newOnboardingComplete) {
-  //     setShowWelcomeModal(true);
-  //   }
-  // }, [hasSeenWelcome, hasSeenIntro, newOnboardingComplete]);
+  // Note: Onboarding now uses route-based approach (/onboarding) instead of overlay
 
   // Enable dark mode and initialize native services on app load
   useEffect(() => {
@@ -202,6 +219,8 @@ function App() {
           initializeSocialStore(),
           initializeModuleMasteryStore(),
           initializeSkillPointsStore(),
+          initializeOnboardingStore(),
+          initializeBossStore(),
         ]);
         // Initialize perk store after other stores (needs stats data)
         initializePerkStore();
@@ -223,7 +242,10 @@ function App() {
               {/* DEVELOPMENT: Auth route disabled */}
               {/* <Route path="/auth" element={<Auth />} /> */}
 
-              {/* DEVELOPMENT: All routes unprotected - direct access */}
+              {/* Onboarding route - outside MainLayout for full-screen experience */}
+              <Route path="/onboarding" element={<OnboardingPage />} />
+
+              {/* Main app routes */}
               <Route path="/*" element={
                 <MainLayout>
                 <Routes>
@@ -302,20 +324,19 @@ function App() {
                     <EquipmentTest />
                   } />
                 </Routes>
-              </MainLayout>
-            } />
+                </MainLayout>
+              } />
           </Routes>
           </Suspense>
           {/* Command Palette - Cmd+K (must be inside Router) */}
           <CommandPalette />
 
-          {/* Full Onboarding Flow - shown on first visit */}
-          {showNewOnboarding && (
-            <ImprovedOnboarding onComplete={() => setShowNewOnboarding(false)} />
-          )}
+          {/* Equipment Unlock Notifications - shows pixel art when gear unlocks */}
+          <EquipmentUnlockToast />
 
-          {/* Enhanced Onboarding - legacy fallback if new onboarding was completed */}
-          {showWelcomeModal && !showNewOnboarding && (
+
+          {/* Enhanced Onboarding - legacy fallback */}
+          {showWelcomeModal && (
             <EnhancedOnboarding onComplete={() => setShowWelcomeModal(false)} />
           )}
         </Router>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { triggerGamification } from '../hooks/useGamification';
 
 /**
  * Feature Tour Store
@@ -8,6 +9,23 @@ import { persist } from 'zustand/middleware';
  * Tours help users discover functionality on each page through
  * contextual spotlights and explanations from Nova.
  */
+
+// XP rewards for completing tours
+const TOUR_XP_REWARDS = {
+  dashboard: 25,
+  productivity: 20,
+  health: 20,
+  character: 15,
+  quests: 15,
+  financial: 20,
+  knowledge: 15,
+  calendar: 15,
+  journal: 15,
+  skills: 15,
+  purpose: 15,
+  social: 15,
+  settings: 10,
+};
 
 // Tour IDs - each page/feature can have its own tour
 export const TOUR_IDS = {
@@ -163,6 +181,14 @@ export const useTourStore = create(
         if (activeTour && !completedTours.includes(activeTour)) {
           set({
             completedTours: [...completedTours, activeTour],
+          });
+
+          // Award XP for completing the tour
+          const xpReward = TOUR_XP_REWARDS[activeTour] || 15;
+          triggerGamification('tourCompleted', {
+            xpOverride: xpReward,
+            module: 'productivity',
+            tourName: activeTour,
           });
         }
 

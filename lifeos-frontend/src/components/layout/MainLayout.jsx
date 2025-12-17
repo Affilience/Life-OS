@@ -1,7 +1,10 @@
 import React, { useState, lazy, Suspense, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import useIntegratedOnboardingStore from '../../stores/integratedOnboardingStore';
+import FloatingSprites from '../ui/FloatingSprites';
 
 // Lazy load NovaWidget - defer AI companion until after initial render
 const NovaWidget = lazy(() => import('../nova/NovaWidget'));
@@ -22,6 +25,7 @@ const FeatureTour = lazy(() => import('../tours/FeatureTour'));
  */
 
 const MainLayout = ({ children }) => {
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNova, setShowNova] = useState(false);
   const [storeHydrated, setStoreHydrated] = useState(false);
@@ -64,6 +68,9 @@ const MainLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-bg-0 text-text-primary">
+      {/* Floating pixel art sprites - subtle background decoration */}
+      <FloatingSprites count={5} opacity={0.06} />
+
       {/* Sidebar (drawer on mobile, fixed on desktop) */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

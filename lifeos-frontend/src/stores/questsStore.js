@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import { DEV_USER_ID } from '../lib/dev-auth';
 import { triggerGamification } from '../hooks/useGamification';
 import useAchievementsStore from './achievementsStore';
+import { feedback } from '../services/microInteractions';
 
 // =============================================================================
 // QUEST REQUIREMENT TO STATS MAPPING
@@ -113,7 +114,6 @@ export const QUEST_TYPES = {
   weekly: { label: 'Weekly', baseXP: 200, baseCredits: 100, icon: '📆' },
   monthly: { label: 'Monthly Epic', baseXP: 1000, baseCredits: 500, icon: '🏆' },
   chain: { label: 'Quest Chain', baseXP: 150, baseCredits: 75, icon: '⛓️' },
-  crossModule: { label: 'Cross-Module', baseXP: 300, baseCredits: 150, icon: '🌐' },
   boss: { label: 'Boss Battle', baseXP: 500, baseCredits: 250, icon: '🐉' },
 };
 
@@ -376,61 +376,6 @@ export const MONTHLY_QUEST_TEMPLATES = [
   },
 ];
 
-// Cross-Module Quest Templates
-export const CROSS_MODULE_QUEST_TEMPLATES = [
-  {
-    id: 'morning_routine',
-    title: 'Perfect Morning Routine',
-    description: 'Complete morning workout, journal entry, and 30min reading before 10am',
-    icon: '🌅',
-    modules: ['health', 'journal', 'knowledge'],
-    difficulty: 'hard',
-    requirements: [
-      { module: 'health', type: 'morning_workout', before: '10:00' },
-      { module: 'journal', type: 'morning_entry', before: '10:00' },
-      { module: 'knowledge', type: 'reading_minutes', count: 30, before: '10:00' },
-    ],
-    xpReward: 500,
-    creditsReward: 250,
-    repeatable: 'daily',
-  },
-  {
-    id: 'balanced_day',
-    title: 'Balanced Day',
-    description: 'Log deep work, workout, reading, and expense tracking in one day',
-    icon: '⚖️',
-    modules: ['productivity', 'health', 'knowledge', 'financial'],
-    difficulty: 'normal',
-    requirements: [
-      { module: 'productivity', type: 'deep_work_hours', count: 2 },
-      { module: 'health', type: 'workout', count: 1 },
-      { module: 'knowledge', type: 'reading_minutes', count: 30 },
-      { module: 'financial', type: 'expense_logged', count: 1 },
-    ],
-    xpReward: 400,
-    creditsReward: 200,
-    repeatable: 'daily',
-  },
-  {
-    id: 'weekly_mastery',
-    title: 'Weekly Life Mastery',
-    description: 'Hit all weekly goals across modules',
-    icon: '👑',
-    modules: ['productivity', 'health', 'knowledge', 'journal', 'financial'],
-    difficulty: 'epic',
-    requirements: [
-      { module: 'productivity', type: 'deep_work_hours', count: 20 },
-      { module: 'health', type: 'workouts', count: 5 },
-      { module: 'knowledge', type: 'reading_hours', count: 7 },
-      { module: 'journal', type: 'journal_entries', count: 7 },
-      { module: 'financial', type: 'budget_review', count: 1 },
-    ],
-    xpReward: 1500,
-    creditsReward: 750,
-    repeatable: 'weekly',
-  },
-];
-
 // Boss Battle Templates
 export const BOSS_BATTLE_TEMPLATES = [
   {
@@ -538,7 +483,6 @@ const useQuestsStore = create(
       // Active quests by type
       weeklyQuests: {}, // { weekKey: [quests] }
       monthlyQuests: {}, // { monthKey: [quests] }
-      crossModuleQuests: [], // Active cross-module quests
 
       // Quest chains progress
       questChains: {}, // { chainId: { started: bool, currentStep: number, completedSteps: [], startedAt, completedAt } }
@@ -638,9 +582,16 @@ const useQuestsStore = create(
 
         // Sync to database and trigger unified gamification when quest is completed
         if (isNowComplete) {
+          // Play quest completion sound
+          feedback.success();
+
           triggerGamification('weeklyQuestCompleted', {
             xpOverride: quest.xpReward,
             module: quest.module || 'productivity',
+            questName: quest.name,
+            questTitle: quest.title || quest.name,
+            questDescription: quest.description,
+            creditReward: quest.creditsReward || 0,
           });
 
           syncQuestCompletionToSupabase({
@@ -732,9 +683,16 @@ const useQuestsStore = create(
 
         // Sync to database and trigger unified gamification when quest is completed
         if (isNowComplete) {
+          // Play epic quest completion sound for monthly quests
+          feedback.achievement();
+
           triggerGamification('monthlyQuestCompleted', {
             xpOverride: quest.xpReward,
             module: quest.module || 'productivity',
+            questName: quest.name,
+            questTitle: quest.title || quest.name,
+            questDescription: quest.description,
+            creditReward: quest.creditsReward || 0,
           });
 
           syncQuestCompletionToSupabase({
@@ -825,9 +783,16 @@ const useQuestsStore = create(
 
           // Trigger unified gamification if entire chain is complete
           if (isStepComplete && updatedChain.completedSteps.length === template.totalSteps) {
+            // Play epic achievement sound for completing a quest chain
+            feedback.achievement();
+
             triggerGamification('questChainCompleted', {
               xpOverride: template.rewards.xp,
               module: template.module || 'productivity',
+              questName: template.name,
+              questTitle: template.title || template.name,
+              questDescription: template.description || `Completed ${template.totalSteps}-step quest chain!`,
+              creditReward: template.rewards.credits || 0,
             });
           }
 
@@ -864,90 +829,6 @@ const useQuestsStore = create(
               ? (userProgress.completedSteps.length / template.totalSteps) * 100
               : 0,
             isComplete: userProgress.completedSteps.length === template.totalSteps,
-          };
-        });
-      },
-
-      // ============================================================
-      // CROSS-MODULE QUESTS
-      // ============================================================
-
-      activateCrossModuleQuest: (questId) => {
-        const template = CROSS_MODULE_QUEST_TEMPLATES.find(q => q.id === questId);
-        if (!template) return false;
-
-        const newQuest = {
-          ...template,
-          id: `cross-${Date.now()}-${questId}`,
-          templateId: questId,
-          progress: template.requirements.map(() => 0),
-          requirementsMet: template.requirements.map(() => false),
-          completed: false,
-          startedAt: new Date().toISOString(),
-          completedAt: null,
-        };
-
-        set(state => ({
-          crossModuleQuests: [...state.crossModuleQuests, newQuest],
-        }));
-
-        return true;
-      },
-
-      getCrossModuleQuests: () => {
-        return get().crossModuleQuests;
-      },
-
-      updateCrossModuleQuestProgress: (questId, requirementIndex, progress) => {
-        set(state => {
-          const quests = state.crossModuleQuests;
-          const questIndex = quests.findIndex(q => q.id === questId);
-
-          if (questIndex === -1) return state;
-
-          const quest = quests[questIndex];
-          const requirement = quest.requirements[requirementIndex];
-          const target = requirement.count || 1;
-
-          const newProgress = [...quest.progress];
-          newProgress[requirementIndex] = progress;
-
-          const newRequirementsMet = [...quest.requirementsMet];
-          newRequirementsMet[requirementIndex] = progress >= target;
-
-          const isNowComplete = newRequirementsMet.every(Boolean) && !quest.completed;
-
-          const updatedQuest = {
-            ...quest,
-            progress: newProgress,
-            requirementsMet: newRequirementsMet,
-            completed: newRequirementsMet.every(Boolean),
-            completedAt: isNowComplete ? new Date().toISOString() : quest.completedAt,
-          };
-
-          const updatedQuests = [...quests];
-          updatedQuests[questIndex] = updatedQuest;
-
-          // Trigger unified gamification if cross-module quest is complete
-          if (isNowComplete) {
-            triggerGamification('crossModuleQuestCompleted', {
-              xpOverride: quest.xpReward,
-              module: 'productivity', // Cross-module quests are overall productivity
-            });
-          }
-
-          return {
-            crossModuleQuests: updatedQuests,
-            questStats: isNowComplete ? {
-              ...state.questStats,
-              totalQuestsCompleted: state.questStats.totalQuestsCompleted + 1,
-              totalXPEarned: state.questStats.totalXPEarned + quest.xpReward,
-              totalCreditsEarned: state.questStats.totalCreditsEarned + quest.creditsReward,
-            } : state.questStats,
-            completedQuests: isNowComplete ? [
-              ...state.completedQuests,
-              { questId: quest.templateId, type: 'crossModule', completedAt: new Date().toISOString(), xpEarned: quest.xpReward, creditsEarned: quest.creditsReward }
-            ] : state.completedQuests,
           };
         });
       },
@@ -1012,6 +893,9 @@ const useQuestsStore = create(
           const updatedBattles = [...battles];
 
           if (isDefeated) {
+            // Play epic level up sound for defeating a boss!
+            feedback.levelUp();
+
             // Trigger unified gamification for defeating boss
             triggerGamification('bossDefeated', {
               xpOverride: battle.xpReward,
@@ -1243,24 +1127,6 @@ const useQuestsStore = create(
           }
         });
 
-        // Check cross-module quests
-        const crossModuleQuests = get().crossModuleQuests;
-        crossModuleQuests.forEach(quest => {
-          if (quest.completed) return;
-
-          quest.requirements.forEach((requirement, index) => {
-            if (quest.requirementsMet[index]) return;
-
-            const currentProgress = getStatValue(requirement.type, requirement);
-            if (currentProgress === null) return;
-
-            const target = requirement.count || 1;
-            if (currentProgress >= target && quest.progress[index] < target) {
-              get().updateCrossModuleQuestProgress(quest.id, index, currentProgress);
-            }
-          });
-        });
-
         // Check boss battles
         const activeBossBattles = get().activeBossBattles;
         activeBossBattles.forEach(battle => {
@@ -1300,7 +1166,6 @@ const useQuestsStore = create(
       getQuestSummary: () => {
         const weeklyQuests = get().getWeeklyQuests();
         const monthlyQuests = get().getMonthlyQuests();
-        const crossModuleQuests = get().getCrossModuleQuests();
         const bossBattles = get().getActiveBossBattles();
         const chains = get().getAllQuestChains();
 
@@ -1314,10 +1179,6 @@ const useQuestsStore = create(
             total: monthlyQuests.length,
             completed: monthlyQuests.filter(q => q.completed).length,
             inProgress: monthlyQuests.filter(q => !q.completed && q.progress > 0).length,
-          },
-          crossModule: {
-            active: crossModuleQuests.filter(q => !q.completed).length,
-            completed: crossModuleQuests.filter(q => q.completed).length,
           },
           bossBattles: {
             active: bossBattles.length,
@@ -1336,7 +1197,6 @@ const useQuestsStore = create(
       partialize: (state) => ({
         weeklyQuests: state.weeklyQuests,
         monthlyQuests: state.monthlyQuests,
-        crossModuleQuests: state.crossModuleQuests,
         questChains: state.questChains,
         activeBossBattles: state.activeBossBattles,
         completedBossBattles: state.completedBossBattles,

@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase';
 import { DEV_USER_ID } from '../lib/dev-auth';
 import { triggerGamification } from '../hooks/useGamification';
 import useAchievementsStore from './achievementsStore';
+import { feedback } from '../services/microInteractions';
 
 // Helper to get date string in YYYY-MM-DD format
 const getDateString = (date = new Date()) => {
@@ -371,6 +372,9 @@ const useDailyTasksStore = create(
 
         // Award XP if completed
         if (nowCompleted) {
+          // Play satisfying completion feedback (sound + haptic + celebration)
+          feedback.taskComplete();
+
           const xpAmount = PRIORITY_LEVELS[task.priority]?.xp || 10;
           // Trigger gamification system to update XP across all stores
           triggerGamification('taskCompleted', {

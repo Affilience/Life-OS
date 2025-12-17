@@ -317,12 +317,24 @@ function LockedSlot({ slotNumber }) {
   );
 }
 
+// Tier order for sorting (common first, mythic last)
+const TIER_ORDER = ['common', 'uncommon', 'rare', 'epic', 'mythic'];
+
 // Pet Codex Modal
 function PetCodexModal({ onClose, filterTier, setFilterTier, selectedPet, setSelectedPet, forceShowSprites = false }) {
   const { isPetUnlocked, equipPet, isPetActive } = usePetStore();
 
-  // Get all pets grouped by tier
-  const petsByTier = Object.values(PET_DATABASE).reduce((acc, pet) => {
+  // Get all pets sorted by tier (rarity order)
+  const allPetsSorted = Object.values(PET_DATABASE).sort((a, b) => {
+    const tierAIndex = TIER_ORDER.indexOf(a.tier);
+    const tierBIndex = TIER_ORDER.indexOf(b.tier);
+    if (tierAIndex !== tierBIndex) return tierAIndex - tierBIndex;
+    // Within same tier, sort alphabetically by name
+    return a.name.localeCompare(b.name);
+  });
+
+  // Get all pets grouped by tier (also sorted)
+  const petsByTier = allPetsSorted.reduce((acc, pet) => {
     if (!acc[pet.tier]) acc[pet.tier] = [];
     acc[pet.tier].push(pet);
     return acc;
@@ -330,7 +342,7 @@ function PetCodexModal({ onClose, filterTier, setFilterTier, selectedPet, setSel
 
   const displayPets =
     filterTier === 'all'
-      ? Object.values(PET_DATABASE)
+      ? allPetsSorted
       : petsByTier[filterTier] || [];
 
   return (

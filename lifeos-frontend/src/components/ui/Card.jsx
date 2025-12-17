@@ -1,10 +1,12 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 /**
  * Cosmic Card Component
  *
  * Premium surface component for grouping content.
  * Supports hover effects, padding variants, module-specific glows, and subtle cosmic styling.
+ * Enhanced with smooth framer-motion animations.
  *
  * Hover variants:
  * - false: No hover effect
@@ -24,6 +26,7 @@ const Card = ({
   module = null,
   className = '',
   onClick,
+  animate = true, // Enable/disable animations
   ...props
 }) => {
   // Module-specific hover classes
@@ -76,17 +79,36 @@ const Card = ({
     lg: 'p-8',
   };
 
+  const MotionComponent = animate ? motion.div : 'div';
+
+  const animationProps = animate && hover ? {
+    whileHover: {
+      scale: 1.02,
+      y: -4,
+      transition: {
+        type: 'spring',
+        stiffness: 300,
+        damping: 20,
+      }
+    },
+    whileTap: {
+      scale: 0.98,
+      y: 0,
+    },
+  } : {};
+
   return (
-    <div
+    <MotionComponent
       className={`${baseStyles} ${hoverClass} ${glowStyles} ${paddingVariants[padding]} ${className}`}
       onClick={onClick}
       tabIndex={hover ? 0 : undefined}
       role={hover ? 'button' : undefined}
       onKeyDown={hover && onClick ? (e) => e.key === 'Enter' && onClick(e) : undefined}
+      {...animationProps}
       {...props}
     >
       {children}
-    </div>
+    </MotionComponent>
   );
 };
 
