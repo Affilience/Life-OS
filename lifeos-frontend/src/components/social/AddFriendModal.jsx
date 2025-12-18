@@ -127,13 +127,13 @@ export default function AddFriendModal({ isOpen, onClose }) {
           )}
 
           {searchResults.map((user) => {
-            const isSent = sentTo.includes(user.user_id) ||
-                          sentRequests.some(r => r.addressee?.user_id === user.user_id);
-            const isSending = sendingTo === user.user_id;
+            const isSent = sentTo.includes(user.id) ||
+                          sentRequests.some(r => r.addressee?.id === user.id);
+            const isSending = sendingTo === user.id;
 
             return (
               <div
-                key={user.user_id}
+                key={user.id}
                 className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
               >
                 <div className="flex items-center gap-3">
@@ -160,7 +160,7 @@ export default function AddFriendModal({ isOpen, onClose }) {
                 </div>
 
                 <button
-                  onClick={() => handleSendRequest(user.user_id)}
+                  onClick={() => handleSendRequest(user.id)}
                   disabled={isSent || isSending}
                   className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all ${
                     isSent
