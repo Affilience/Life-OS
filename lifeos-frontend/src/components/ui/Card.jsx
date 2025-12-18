@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 
 /**
@@ -112,8 +112,11 @@ const Card = ({
   );
 };
 
+// Memoize Card for better performance in lists
+const MemoizedCard = memo(Card);
+
 // Card.Header subcomponent
-Card.Header = ({ children, className = '', ...props }) => {
+MemoizedCard.Header = memo(({ children, className = '', ...props }) => {
   return (
     <div
       className={`pb-4 mb-4 border-b border-border-subtle ${className}`}
@@ -122,6 +125,6 @@ Card.Header = ({ children, className = '', ...props }) => {
       {children}
     </div>
   );
-};
+});
 
-export default Card;
+export default MemoizedCard;

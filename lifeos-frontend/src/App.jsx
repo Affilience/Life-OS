@@ -106,6 +106,7 @@ import { initializeSocialStore } from './stores/socialStore';
 import { initializeModuleMasteryStore } from './stores/moduleMasteryStore';
 import { initializeSkillPointsStore } from './stores/skillPointsStore';
 import { initializeBossStore } from './stores/bossStore';
+import { initializeCustomStreaksStore } from './stores/customStreaksStore';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -221,9 +222,10 @@ function App() {
           initializeSkillPointsStore(),
           initializeOnboardingStore(),
           initializeBossStore(),
+          initializeCustomStreaksStore(),
         ]);
         // Initialize perk store after other stores (needs stats data)
-        initializePerkStore();
+        await initializePerkStore();
       } catch (error) {
         console.error('Failed to initialize stores from Supabase:', error);
       }

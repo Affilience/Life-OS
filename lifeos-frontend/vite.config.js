@@ -3,7 +3,12 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      // Optimize JSX transform
+      jsxRuntime: 'automatic',
+    }),
+  ],
 
   // Important: Use relative paths for Capacitor iOS/Android builds
   base: './',
@@ -27,7 +32,7 @@ export default defineConfig({
             return 'lucide';
           }
 
-          // D3 - charts and visualizations
+          // D3 - charts and visualizations (lazy loaded)
           if (id.includes('node_modules/d3')) {
             return 'd3-vendor';
           }
@@ -35,12 +40,6 @@ export default defineConfig({
           // Recharts - dashboard charts
           if (id.includes('node_modules/recharts')) {
             return 'recharts-vendor';
-          }
-
-          // Markdown - knowledge base
-          if (id.includes('node_modules/react-markdown') ||
-              id.includes('node_modules/remark')) {
-            return 'markdown-vendor';
           }
 
           // Framer Motion - animations
@@ -53,16 +52,14 @@ export default defineConfig({
             return 'date-vendor';
           }
 
-          // Zustand - state management (small, keep in main)
           // Query client
           if (id.includes('node_modules/@tanstack')) {
             return 'query-vendor';
           }
 
-          // Particles - effects
-          if (id.includes('node_modules/@tsparticles') ||
-              id.includes('node_modules/tsparticles')) {
-            return 'particles-vendor';
+          // Canvas confetti - celebrations (lazy)
+          if (id.includes('node_modules/canvas-confetti')) {
+            return 'confetti-vendor';
           }
 
           // Supabase client
@@ -70,15 +67,10 @@ export default defineConfig({
             return 'supabase-vendor';
           }
 
-          // AI SDKs
+          // AI SDKs (lazy - only loaded for Nova)
           if (id.includes('node_modules/@anthropic-ai') ||
               id.includes('node_modules/openai')) {
             return 'ai-vendor';
-          }
-
-          // Lottie animations
-          if (id.includes('node_modules/lottie')) {
-            return 'lottie-vendor';
           }
 
           // Grid layout
@@ -87,8 +79,29 @@ export default defineConfig({
               id.includes('node_modules/react-draggable')) {
             return 'grid-vendor';
           }
+
+          // Anime.js - animations
+          if (id.includes('node_modules/animejs') ||
+              id.includes('node_modules/anime')) {
+            return 'anime-vendor';
+          }
+
+          // GSAP - advanced animations
+          if (id.includes('node_modules/gsap')) {
+            return 'gsap-vendor';
+          }
+
+          // UUID - utilities
+          if (id.includes('node_modules/uuid')) {
+            return 'utils-vendor';
+          }
         }
-      }
+      },
+      // Better tree-shaking
+      treeshake: {
+        moduleSideEffects: false,
+        propertyReadSideEffects: false,
+      },
     },
     // Increase chunk size warning limit for large vendor chunks
     chunkSizeWarningLimit: 500,
@@ -98,9 +111,18 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug']
-      }
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        passes: 2, // Multiple passes for better compression
+      },
+      mangle: {
+        safari10: true, // Fix Safari 10/11 bugs
+      },
+      format: {
+        comments: false, // Remove all comments
+      },
     },
+    // Enable CSS minification
+    cssMinify: true,
     // Target modern browsers for smaller bundles
     target: 'es2020',
     // Enable source maps for debugging (can disable in prod)
@@ -114,10 +136,16 @@ export default defineConfig({
       'react-router-dom',
       'lucide-react',
       'zustand',
-      'date-fns'
+      'date-fns',
+      'framer-motion'
     ],
     // Exclude heavy deps that are lazy loaded
-    exclude: ['d3']
+    exclude: ['d3', 'recharts']
+  },
+  // Enable tree-shaking for better dead code elimination
+  esbuild: {
+    treeShaking: true,
+    legalComments: 'none',
   },
   // Enable CSS code splitting
   css: {

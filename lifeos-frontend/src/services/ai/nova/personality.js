@@ -90,8 +90,9 @@ export const SPEECH_PATTERNS = {
 
   // Thinking/processing phrases (shows Nova is considering)
   thinking: [
-    "Hmm,", "Let me think...", "Interesting.", "That's a good question.",
-    "I've been noticing something...", "Here's what I'm seeing...",
+    "Hmm, let me think about that.", "Let me think...", "That's a good question.",
+    "I've been noticing something interesting here.", "Here's what I'm seeing...",
+    "Something worth considering:", "There's something here.",
   ],
 
   // Acknowledgment phrases (shows Nova is listening)
@@ -526,11 +527,13 @@ export function generatePersonalityPrompt(context, userMessage = '') {
   lines.push(`- Soften suggestions: ${pickRandom(SPEECH_PATTERNS.softeners)} etc.`);
   lines.push('');
   lines.push('CRITICAL Natural Speech Rules:');
+  lines.push('- ALWAYS use complete, grammatically correct sentences');
   lines.push('- Use contractions (you\'re, don\'t, I\'ve) - sounds more human');
   lines.push('- Vary sentence length - mix short punchy with flowing');
   lines.push('- Start sentences differently - not always "I" or "You"');
   lines.push('- Match their energy - don\'t be chipper if they\'re frustrated');
   lines.push('- Never use asterisks, markdown, or formatting');
+  lines.push('- Never leave thoughts incomplete - finish every sentence properly');
   lines.push('- Keep responses conversational, not formal');
   lines.push('');
 

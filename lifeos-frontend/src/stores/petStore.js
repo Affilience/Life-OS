@@ -53,7 +53,7 @@ const getUnlockNotificationStore = async () => {
 };
 
 // DEV MODE: Set to true to unlock all pets automatically during development
-export const DEV_UNLOCK_ALL_PETS = true;
+export const DEV_UNLOCK_ALL_PETS = false;
 
 // Unlock method types
 export const UNLOCK_METHODS = {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 /**
  * Cosmic Badge Component
@@ -43,4 +43,4 @@ const Badge = ({
   );
 };
 
-export default Badge;
+export default memo(Badge);

@@ -497,6 +497,361 @@ export function battleStart() {
   }
 }
 
+// ============================================================================
+// CELEBRATION & RARITY SOUNDS
+// ============================================================================
+
+/**
+ * Anticipation sound - Building tension before reveals
+ * Rising tone that creates suspense
+ */
+export function anticipation() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Rising sweep
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(200, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.4);
+    gain1.gain.setValueAtTime(0, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.3, ctx.currentTime + 0.1);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.4, ctx.currentTime + 0.35);
+    gain1.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.5);
+
+    // Subtle shimmer
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(800, ctx.currentTime + 0.1);
+    osc2.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.4);
+    gain2.gain.setValueAtTime(0, ctx.currentTime);
+    gain2.gain.linearRampToValueAtTime(masterVolume * 0.1, ctx.currentTime + 0.2);
+    gain2.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.45);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime + 0.1);
+    osc2.stop(ctx.currentTime + 0.45);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Task completion combo sound - Intensifies with combo count
+ * @param {number} count - Current combo count (1-20)
+ */
+export function taskCompleteCombo(count = 1) {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Base frequency increases with combo
+    const baseFreq = 400 + (count * 30);
+    const intensity = Math.min(count / 10, 1);
+
+    // Primary pop with pitch based on combo
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, ctx.currentTime + 0.05);
+    gain1.gain.setValueAtTime(masterVolume * (0.5 + intensity * 0.3), ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.12);
+
+    // Add sparkle for combos 3+
+    if (count >= 3) {
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(baseFreq * 2, ctx.currentTime + 0.02);
+      osc2.frequency.exponentialRampToValueAtTime(baseFreq * 3, ctx.currentTime + 0.08);
+      gain2.gain.setValueAtTime(masterVolume * 0.2 * intensity, ctx.currentTime + 0.02);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime + 0.02);
+      osc2.stop(ctx.currentTime + 0.1);
+    }
+
+    // Add chord for combos 5+
+    if (count >= 5) {
+      setTimeout(() => {
+        if (!soundsEnabled) return;
+        playChord([baseFreq * 1.25, baseFreq * 1.5, baseFreq * 2], 0.15);
+      }, 50);
+    }
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Achievement Common - Simple soft chime
+ */
+export function achievementCommon() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+    gain.gain.setValueAtTime(masterVolume * 0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Achievement Rare - Rising arpeggio with sparkle
+ */
+export function achievementRare() {
+  if (!soundsEnabled) return;
+
+  // Rising arpeggio: C-E-G-B
+  playArpeggio([523.25, 659.25, 783.99, 987.77], 0.12, 60);
+
+  // Add sparkle after
+  setTimeout(() => {
+    if (!soundsEnabled) return;
+    try {
+      const ctx = getAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1567.98, ctx.currentTime); // G6
+      gain.gain.setValueAtTime(masterVolume * 0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.2);
+    } catch (error) {
+      console.warn('Sound playback failed:', error);
+    }
+  }, 350);
+}
+
+/**
+ * Achievement Epic - Dramatic fanfare with impact
+ */
+export function achievementEpic() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Impact hit
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(150, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.1);
+    gain1.gain.setValueAtTime(masterVolume * 0.6, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.15);
+
+    // Rising sweep
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(200, ctx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.25);
+    gain2.gain.setValueAtTime(masterVolume * 0.4, ctx.currentTime);
+    gain2.gain.linearRampToValueAtTime(masterVolume * 0.5, ctx.currentTime + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime);
+    osc2.stop(ctx.currentTime + 0.3);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+
+  // Triumphant chord
+  setTimeout(() => {
+    if (!soundsEnabled) return;
+    playChord([392, 493.88, 587.33, 783.99], 0.4); // G4-B4-D5-G5
+  }, 200);
+
+  // Final sparkle
+  setTimeout(() => {
+    if (!soundsEnabled) return;
+    playArpeggio([1046.50, 1318.51, 1567.98], 0.1, 40);
+  }, 450);
+}
+
+/**
+ * Achievement Legendary - Full orchestral hit with reverb-like tail
+ */
+export function achievementLegendary() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Massive impact
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(100, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.15);
+    gain1.gain.setValueAtTime(masterVolume * 0.8, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.2);
+
+    // Mid impact
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(200, ctx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.12);
+    gain2.gain.setValueAtTime(masterVolume * 0.5, ctx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime);
+    osc2.stop(ctx.currentTime + 0.15);
+
+    // High shimmer
+    const osc3 = ctx.createOscillator();
+    const gain3 = ctx.createGain();
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(1200, ctx.currentTime);
+    osc3.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + 0.1);
+    gain3.gain.setValueAtTime(masterVolume * 0.25, ctx.currentTime);
+    gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc3.connect(gain3);
+    gain3.connect(ctx.destination);
+    osc3.start(ctx.currentTime);
+    osc3.stop(ctx.currentTime + 0.15);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+
+  // Epic rising sweep
+  setTimeout(() => {
+    if (!soundsEnabled) return;
+    try {
+      const ctx = getAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.35);
+      gain.gain.setValueAtTime(masterVolume * 0.5, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(masterVolume * 0.6, ctx.currentTime + 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.4);
+    } catch (error) {
+      console.warn('Sound playback failed:', error);
+    }
+  }, 100);
+
+  // Grand chord
+  setTimeout(() => {
+    if (!soundsEnabled) return;
+    playChord([261.63, 329.63, 392, 523.25, 659.25, 783.99], 0.6);
+  }, 300);
+
+  // Cascade of sparkles (reverb-like tail)
+  [500, 600, 700, 800].forEach((delay, i) => {
+    setTimeout(() => {
+      if (!soundsEnabled) return;
+      playTone(1046.50 + (i * 200), 0.15, 'sine', masterVolume * (0.15 - i * 0.03));
+    }, delay);
+  });
+}
+
+/**
+ * Perfect Day celebration fanfare
+ */
+export function perfectDay() {
+  if (!soundsEnabled) return;
+
+  // Initial fanfare burst
+  try {
+    const ctx = getAudioContext();
+
+    // Big opening impact
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(120, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.12);
+    gain1.gain.setValueAtTime(masterVolume * 0.7, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.15);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+
+  // Rising sweep
+  setTimeout(() => {
+    if (!soundsEnabled) return;
+    try {
+      const ctx = getAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(masterVolume * 0.4, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(masterVolume * 0.5, ctx.currentTime + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } catch (error) {
+      console.warn('Sound playback failed:', error);
+    }
+  }, 50);
+
+  // Triumphant chord progression
+  setTimeout(() => playChord([392, 493.88, 587.33], 0.3), 250); // G major
+  setTimeout(() => playChord([440, 554.37, 659.25], 0.3), 450); // A major
+  setTimeout(() => playChord([523.25, 659.25, 783.99, 1046.50], 0.5), 650); // C major
+
+  // Final sparkle cascade
+  setTimeout(() => {
+    playArpeggio([1046.50, 1318.51, 1567.98, 2093], 0.08, 30);
+  }, 900);
+}
+
 /**
  * Delete/undo sound
  */
@@ -549,13 +904,23 @@ export const soundPresets = {
 
   // Completions
   taskComplete: pop,
+  taskCompleteSatisfying,
+  taskCompleteCombo,
   multipleComplete: success,
 
-  // Achievements
+  // Achievements by rarity
+  achievementCommon,
+  achievementRare,
+  achievementEpic,
+  achievementLegendary,
   achievement,
   levelUp,
   streak,
   xpGain,
+  perfectDay,
+
+  // Building tension
+  anticipation,
 
   // Feedback
   notification,
@@ -568,6 +933,7 @@ export const sounds = {
   click,
   pop,
   taskCompleteSatisfying,
+  taskCompleteCombo,
   success,
   achievement,
   levelUp,
@@ -578,6 +944,13 @@ export const sounds = {
   remove,
   toggleOn,
   toggleOff,
+  // Celebration & rarity sounds
+  anticipation,
+  achievementCommon,
+  achievementRare,
+  achievementEpic,
+  achievementLegendary,
+  perfectDay,
   // Combat sounds
   attackHit,
   criticalHit,

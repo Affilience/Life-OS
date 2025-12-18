@@ -13,6 +13,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERK_TREES } from '../data/perkTrees';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 // Lazy import unlock service to avoid circular dependencies
 let unlockServiceRef = null;
@@ -316,6 +317,123 @@ function calculateActiveEffects(unlockedPerksByTree) {
 const usePerkStore = create(
   persist(
     (set, get) => ({
+      // Loading state for Supabase sync
+      isLoading: false,
+      isSynced: false,
+
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        set({ isLoading: true });
+        try {
+          const userId = await getCurrentUserId();
+          if (!userId) {
+            console.warn('No user ID found, using localStorage only');
+            set({ isLoading: false });
+            return;
+          }
+
+          // Load user's perks from database
+          const { data: userPerks, error } = await supabase
+            .from('user_perks')
+            .select('*')
+            .eq('user_id', userId);
+
+          if (error) throw error;
+
+          if (userPerks && userPerks.length > 0) {
+            // Convert database records to our format
+            const unlockedPerksByTree = {
+              body: [],
+              mind: [],
+              spirit: [],
+              wealth: [],
+              social: [],
+              craft: [],
+            };
+
+            userPerks.forEach(up => {
+              // perk_id stores the full perk ID like 'body_foundation'
+              const perkId = up.perk_id;
+              // Extract tree from perk ID (e.g., 'body' from 'body_foundation')
+              const tree = perkId.split('_')[0];
+              if (unlockedPerksByTree[tree]) {
+                unlockedPerksByTree[tree].push(perkId);
+              }
+            });
+
+            // Load stat levels from user_stats if available
+            const { data: userStats, error: statsError } = await supabase
+              .from('user_stats')
+              .select('*')
+              .eq('user_id', userId)
+              .single();
+
+            const newStatLevels = { ...DEFAULT_STATS };
+            if (userStats && !statsError) {
+              if (userStats.body) newStatLevels.body = userStats.body;
+              if (userStats.mind) newStatLevels.mind = userStats.mind;
+              if (userStats.spirit) newStatLevels.spirit = userStats.spirit;
+              if (userStats.wealth) newStatLevels.wealth = userStats.wealth;
+              if (userStats.social) newStatLevels.social = userStats.social;
+              if (userStats.craft) newStatLevels.craft = userStats.craft;
+            }
+
+            const activeEffects = calculateActiveEffects(unlockedPerksByTree);
+
+            set({
+              unlockedPerksByTree,
+              statLevels: newStatLevels,
+              activeEffects,
+              isSynced: true,
+              isLoading: false,
+            });
+          } else {
+            set({ isSynced: true, isLoading: false });
+          }
+        } catch (error) {
+          console.error('Error initializing perks from Supabase:', error);
+          set({ isLoading: false });
+        }
+      },
+
+      // Save a newly unlocked perk to Supabase
+      savePerkToSupabase: async (perkId, treeId) => {
+        try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
+          await supabase.from('user_perks').upsert({
+            user_id: userId,
+            perk_id: perkId,
+            tree_name: treeId,
+            current_rank: 1,
+            is_active: true,
+            unlocked_at: new Date().toISOString(),
+          }, { onConflict: 'user_id,perk_id' });
+
+          // Log to timeline
+          const tree = PERK_TREES[treeId];
+          const perk = tree?.perks?.find(p => p.id === perkId);
+          if (perk) {
+            await supabase.from('timeline').insert({
+              user_id: userId,
+              module: 'perks',
+              entry_type: 'perk_unlocked',
+              title: `Perk Unlocked: ${perk.name}`,
+              description: perk.description || `Unlocked ${perk.name} in ${tree.name} tree`,
+              metadata: {
+                perk_id: perkId,
+                tree_id: treeId,
+                perk_name: perk.name,
+                effect: perk.effect,
+              },
+            });
+          }
+        } catch (error) {
+          console.error('Error saving perk to Supabase:', error);
+        }
+      },
+
       // User's stat levels (1-100)
       statLevels: { ...DEFAULT_STATS },
 
@@ -403,11 +521,14 @@ const usePerkStore = create(
           lastCalculated: Date.now(),
         });
 
-        // Trigger unlock service for newly unlocked perks
+        // Trigger unlock service and save to Supabase for newly unlocked perks
         if (newlyUnlockedPerks.length > 0) {
           (async () => {
             const unlockService = await getUnlockService();
             for (const { perkId, treeId, treeLevel } of newlyUnlockedPerks) {
+              // Save to Supabase
+              await get().savePerkToSupabase(perkId, treeId);
+              // Trigger unlock notifications
               await unlockService.onPerkUnlock(perkId, treeId, treeLevel);
             }
           })();
@@ -667,10 +788,17 @@ const usePerkStore = create(
   )
 );
 
-// Export initialization function
-export const initializePerkStore = (stats) => {
+// Export initialization function - loads from Supabase first, then applies any provided stats
+export const initializePerkStore = async (stats) => {
   const store = usePerkStore.getState();
-  store.initializeFromStats(stats);
+
+  // First, load from Supabase
+  await store.initializeFromSupabase();
+
+  // Then apply any additional stats if provided
+  if (stats) {
+    store.initializeFromStats(stats);
+  }
 };
 
 export default usePerkStore;

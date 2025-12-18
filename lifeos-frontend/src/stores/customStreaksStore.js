@@ -700,4 +700,9 @@ const useCustomStreaksStore = create(
   )
 );
 
+// Export initialization function for App.jsx
+export const initializeCustomStreaksStore = async () => {
+  return useCustomStreaksStore.getState().initialize();
+};
+
 export default useCustomStreaksStore;

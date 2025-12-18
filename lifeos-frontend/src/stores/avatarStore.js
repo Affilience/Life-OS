@@ -5,7 +5,7 @@ import { AVATAR_TIERS, calculateStats } from '../data/avatarData';
 import { EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, EQUIPMENT_RARITY } from '../data/equipmentDatabase';
 
 // DEV MODE: Set to true to unlock all equipment automatically
-const DEV_UNLOCK_ALL = true;
+const DEV_UNLOCK_ALL = false;
 
 // Lazy store imports to avoid circular dependencies
 let achievementsStoreRef = null;

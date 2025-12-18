@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { haptics } from '../../utils/haptics';
 
@@ -137,4 +137,4 @@ const Button = ({
   );
 };
 
-export default Button;
+export default memo(Button);

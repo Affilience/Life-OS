@@ -5,6 +5,8 @@
  * - Haptics (touch feedback)
  * - Celebrations (confetti, particles)
  * - Sounds (audio feedback)
+ * - Celebration Tiers (intensity levels)
+ * - Combo System (rapid completion tracking)
  *
  * Usage:
  *   import { feedback } from '@/services/microInteractions';
@@ -19,10 +21,30 @@
 export { haptics, hapticPresets } from './haptics';
 export { celebrations, celebrationPresets } from './celebrations';
 export { sounds, soundPresets } from './sounds';
+export {
+  CELEBRATION_TIERS,
+  celebrate,
+  celebrateXP,
+  celebrateAchievement,
+  celebrateStreak,
+  celebrateLevelUp,
+  celebrateCombo,
+  getTierConfig,
+  getTierForContext,
+} from './celebrationTiers';
+export {
+  registerCompletion,
+  getComboState,
+  subscribeToCombo,
+  forceResetCombo,
+  getComboConfig,
+} from './comboSystem';
 
 import { haptics, hapticPresets } from './haptics';
 import { celebrations, celebrationPresets } from './celebrations';
 import { sounds, soundPresets } from './sounds';
+import { celebrate, getTierForContext, CELEBRATION_TIERS } from './celebrationTiers';
+import { registerCompletion, getComboState } from './comboSystem';
 
 // ============================================================================
 // UNIFIED FEEDBACK PRESETS
@@ -147,12 +169,33 @@ export const feedback = {
   // -------------------------------------------------------------------------
 
   /**
-   * Achievement unlocked (full celebration)
+   * Achievement unlocked with rarity-based celebration
+   * @param {string} rarity - 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
    */
-  achievement: () => {
+  achievement: (rarity = 'rare') => {
     hapticPresets.achievement();
-    sounds.achievement();
-    celebrationPresets.achievementUnlock();
+
+    // Play rarity-appropriate sound
+    switch (rarity) {
+      case 'legendary':
+        sounds.achievementLegendary();
+        break;
+      case 'epic':
+        sounds.achievementEpic();
+        break;
+      case 'rare':
+        sounds.achievementRare();
+        break;
+      case 'uncommon':
+        sounds.success();
+        break;
+      default:
+        sounds.achievementCommon();
+    }
+
+    // Tier-based celebration
+    const tier = getTierForContext({ type: 'achievement', rarity });
+    celebrate(tier, { skipSound: true, skipHaptic: true });
   },
 
   /**
@@ -160,16 +203,27 @@ export const feedback = {
    */
   achievementUnlock: () => {
     haptics.notification('success');
-    sounds.success();
+    sounds.achievementCommon();
   },
 
   /**
-   * Level up
+   * Achievement unlocked by rarity (alias for components using achievementByRarity)
    */
-  levelUp: () => {
+  achievementByRarity: (rarity) => {
+    feedback.achievement(rarity);
+  },
+
+  /**
+   * Level up with level-based celebration intensity
+   * @param {number} level - The new level reached
+   */
+  levelUp: (level = 1) => {
     hapticPresets.levelUp();
     sounds.levelUp();
-    celebrationPresets.levelUp();
+
+    // Use level-appropriate celebration tier
+    const tier = getTierForContext({ type: 'level', value: level });
+    celebrate(tier, { skipSound: true, skipHaptic: true });
   },
 
   /**
@@ -327,6 +381,92 @@ export const feedback = {
     haptics.notification('success');
     sounds.levelUp();
     celebrations.fireworks({ duration: 4000 });
+  },
+
+  // -------------------------------------------------------------------------
+  // COMBO SYSTEM
+  // -------------------------------------------------------------------------
+
+  /**
+   * Task complete with combo tracking
+   * Tracks rapid completions and escalates celebrations
+   * @param {Object} options - Options for task completion
+   * @param {Object} options.position - {x, y} click position
+   * @param {Function} options.onCombo - Callback when combo increments
+   */
+  taskCompleteWithCombo: (options = {}) => {
+    const { position = null, onCombo } = options;
+
+    // Register with combo system
+    const comboState = registerCompletion({
+      position,
+      onCombo,
+      skipCelebration: false,
+    });
+
+    // Play sound based on combo count
+    if (comboState.count >= 5) {
+      sounds.taskCompleteCombo?.(comboState.count);
+    } else if (comboState.count >= 2) {
+      sounds.taskCompleteCombo?.(comboState.count);
+    } else {
+      sounds.taskCompleteSatisfying();
+    }
+
+    // Haptic based on combo
+    if (comboState.count >= 5) {
+      haptics.notification('success');
+    } else if (comboState.count >= 2) {
+      haptics.impact('medium');
+    } else {
+      hapticPresets.taskComplete();
+    }
+
+    return comboState;
+  },
+
+  /**
+   * Get current combo state
+   */
+  getCombo: () => {
+    return getComboState();
+  },
+
+  // -------------------------------------------------------------------------
+  // PERFECT DAY
+  // -------------------------------------------------------------------------
+
+  /**
+   * Perfect Day celebration (all daily tasks completed)
+   * @param {Object} stats - Stats to display
+   */
+  perfectDay: (stats = {}) => {
+    haptics.notification('success');
+    sounds.perfectDay?.();
+    celebrations.fireworks({ duration: 4000 });
+  },
+
+  // -------------------------------------------------------------------------
+  // ANTICIPATION
+  // -------------------------------------------------------------------------
+
+  /**
+   * Play anticipation sound (before reveals)
+   */
+  anticipation: () => {
+    sounds.anticipation?.();
+  },
+
+  // -------------------------------------------------------------------------
+  // UI CLICK (simple, no celebration)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Simple click feedback for UI elements
+   */
+  click: () => {
+    haptics.impact('light');
+    sounds.click();
   },
 };
 

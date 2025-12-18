@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 /**
  * ONYXOS Progress Bar Component
@@ -47,4 +47,4 @@ const Progress = ({
   );
 };
 
-export default Progress;
+export default memo(Progress);
