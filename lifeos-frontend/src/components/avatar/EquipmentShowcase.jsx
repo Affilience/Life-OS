@@ -375,9 +375,9 @@ function PetOrbital({ pets }) {
 
     let angle;
     if (total === 1) {
-      angle = 90; // Center bottom
+      angle = 50; // Bottom right
     } else if (total === 2) {
-      angle = index === 0 ? 120 : 60; // Left and right of bottom
+      angle = index === 0 ? 120 : 50; // Left and right of bottom
     } else {
       // Spread evenly across the arc
       const angleStep = (startAngle - endAngle) / (total - 1);
