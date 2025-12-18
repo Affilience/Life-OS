@@ -1,6 +1,57 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
+// All zustand persist storage keys - cleared on sign out AND sign up for fresh user experience
+const STORAGE_KEYS = [
+  // Core stores
+  'achievements-storage',
+  'avatar-storage',
+  'custom-streaks-storage',
+  'daily-tasks-storage',
+  'financial-storage',
+  'gamification-mode-storage',
+  'gamification-storage',
+  'level-progression-storage',
+  'module-mastery-storage',
+  'pet-storage',
+  'productivity-storage',
+  'quests-storage',
+  'resolution-storage',
+  'skill-points-storage',
+  // LifeOS prefixed stores
+  'lifeos-bad-habits',
+  'lifeos-boss-battles',
+  'lifeos-calendar',
+  'lifeos-content',
+  'lifeos-dashboard-settings',
+  'lifeos-health',
+  'lifeos-knowledge',
+  'lifeos-perks-storage',
+  'lifeos-purpose',
+  'lifeos-quotes',
+  'lifeos-settings-storage',
+  'lifeos-skills-storage',
+  'lifeos-social',
+  'lifeos-theme-store',
+  'lifeos-workout',
+  // Onboarding and tours - CRITICAL for fresh user experience
+  'lifeos-new-onboarding',
+  'lifeos-integrated-onboarding',
+  'lifeos-onboarding',
+  'lifeos-tours',
+];
+
+/**
+ * Clear all localStorage for a fresh start
+ */
+function clearAllStorage() {
+  console.log('[Auth] Clearing all local storage for fresh start...');
+  STORAGE_KEYS.forEach(key => {
+    localStorage.removeItem(key);
+  });
+  console.log('[Auth] Local storage cleared');
+}
+
 /**
  * Initialize all required data for a new user
  * This ensures the user has all necessary records across all tables
@@ -173,6 +224,9 @@ export function useSignUp() {
 
       if (error) throw error;
 
+      // Clear all localStorage for fresh start (removes previous user's cached data)
+      clearAllStorage();
+
       // Initialize all user data for new signups
       if (data.user) {
         await initializeNewUser(
@@ -221,46 +275,6 @@ export function useSignIn() {
   return { signIn, loading, error };
 }
 
-// All zustand persist storage keys - cleared on sign out for fresh user experience
-const STORAGE_KEYS = [
-  // Core stores
-  'achievements-storage',
-  'avatar-storage',
-  'custom-streaks-storage',
-  'daily-tasks-storage',
-  'financial-storage',
-  'gamification-mode-storage',
-  'gamification-storage',
-  'level-progression-storage',
-  'module-mastery-storage',
-  'pet-storage',
-  'productivity-storage',
-  'quests-storage',
-  'resolution-storage',
-  'skill-points-storage',
-  // LifeOS prefixed stores
-  'lifeos-bad-habits',
-  'lifeos-boss-battles',
-  'lifeos-calendar',
-  'lifeos-content',
-  'lifeos-dashboard-settings',
-  'lifeos-health',
-  'lifeos-knowledge',
-  'lifeos-perks-storage',
-  'lifeos-purpose',
-  'lifeos-quotes',
-  'lifeos-settings-storage',
-  'lifeos-skills-storage',
-  'lifeos-social',
-  'lifeos-theme-store',
-  'lifeos-workout',
-  // Onboarding and tours - CRITICAL for fresh user experience
-  'lifeos-new-onboarding',
-  'lifeos-integrated-onboarding',
-  'lifeos-onboarding',
-  'lifeos-tours',
-];
-
 export function useSignOut() {
   const [loading, setLoading] = useState(false);
 
@@ -270,12 +284,8 @@ export function useSignOut() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // Clear all zustand persist localStorage to prevent data leakage between users
-      console.log('[Auth] Clearing local storage for sign out...');
-      STORAGE_KEYS.forEach(key => {
-        localStorage.removeItem(key);
-      });
-      console.log('[Auth] Local storage cleared');
+      // Clear all localStorage to prevent data leakage between users
+      clearAllStorage();
     } catch (err) {
       console.error('Sign out error:', err);
     } finally {
