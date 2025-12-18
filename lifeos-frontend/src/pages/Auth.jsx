@@ -39,8 +39,8 @@ export default function Auth() {
         if (data.user.identities?.length === 0) {
           setMessage('Check your email to confirm your account!');
         } else {
-          // Auto-login on signup (if email confirmation disabled)
-          navigate('/', { replace: true });
+          // New signup - go directly to onboarding
+          navigate('/onboarding', { replace: true });
         }
       }
     } else {
@@ -48,6 +48,7 @@ export default function Auth() {
       if (error) {
         setMessage(error.message);
       } else {
+        // Existing user sign in - go to dashboard (App will redirect to onboarding if needed)
         navigate('/', { replace: true });
       }
     }
