@@ -1,8 +1,7 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// DEVELOPMENT: Auth disabled
-// import { useAuth } from './hooks/useAuth';
+import { useAuth } from './hooks/useAuth';
 import MainLayout from './components/layout/MainLayout';
 
 // Capacitor native services
@@ -123,8 +122,8 @@ const queryClient = new QueryClient({
 // Legacy Onboarding (kept for reference, but using integrated approach now)
 // const NovaOnboarding = lazy(() => import('./components/onboarding/NovaOnboarding'));
 
-// DEVELOPMENT: Auth page disabled
-// const Auth = lazy(() => import('./pages/Auth'));
+// Auth page for login/signup
+const Auth = lazy(() => import('./pages/Auth'));
 
 // Lazy load all page components
 const Dashboard = lazy(() => import('./pages/DashboardNew'));
@@ -163,20 +162,20 @@ const Social = lazy(() => import('./pages/Social'));
 const AICompanion = lazy(() => import('./pages/AICompanion'));
 const EquipmentTest = lazy(() => import('./pages/EquipmentTest'));
 
-// DEVELOPMENT: Protected Route disabled - direct access to all pages
-// function ProtectedRoute({ children }) {
-//   const { user, loading } = useAuth();
-//
-//   if (loading) {
-//     return <LoadingSpinner />;
-//   }
-//
-//   if (!user) {
-//     return <Navigate to="/auth" replace />;
-//   }
-//
-//   return children;
-// }
+// Protected Route - requires authentication
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return children;
+}
 
 function App() {
   // Legacy welcome modal state (kept for potential fallback)
@@ -253,14 +252,19 @@ function App() {
         <Router>
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
-              {/* DEVELOPMENT: Auth route disabled */}
-              {/* <Route path="/auth" element={<Auth />} /> */}
+              {/* Auth route - login/signup */}
+              <Route path="/auth" element={<Auth />} />
 
               {/* Onboarding route - outside MainLayout for full-screen experience */}
-              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/onboarding" element={
+                <ProtectedRoute>
+                  <OnboardingPage />
+                </ProtectedRoute>
+              } />
 
-              {/* Main app routes */}
+              {/* Main app routes - protected */}
               <Route path="/*" element={
+                <ProtectedRoute>
                 <MainLayout>
                 <Routes>
                   {/* Main mobile navigation - 5 tabs: Home, Modules, Character, Social, Quests, Settings */}
@@ -339,6 +343,7 @@ function App() {
                   } />
                 </Routes>
                 </MainLayout>
+                </ProtectedRoute>
               } />
           </Routes>
           </Suspense>

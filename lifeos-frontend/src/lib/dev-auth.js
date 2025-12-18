@@ -19,6 +19,11 @@ export function getDevUser() {
   return DEV_USER;
 }
 
+/**
+ * Dev mode is DISABLED by default to enable multi-user auth
+ * Set VITE_USE_DEV_AUTH=true in .env.local to bypass auth for solo development
+ */
 export function isDevMode() {
-  return import.meta.env.DEV || import.meta.env.VITE_USE_DEV_AUTH === 'true';
+  // Only enable dev mode if explicitly requested via env var
+  return import.meta.env.VITE_USE_DEV_AUTH === 'true';
 }

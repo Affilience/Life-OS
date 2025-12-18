@@ -53,6 +53,8 @@ import {
   getMicroInteractionSettings,
   setMicroInteractionSettings,
 } from '../services/microInteractions';
+import { useSignOut } from '../hooks/useAuth';
+import { LogOut } from 'lucide-react';
 
 const SETTINGS_SECTIONS = [
   {
@@ -1050,11 +1052,20 @@ function FeatureToursSettingsPanel() {
 
 export default function Settings() {
   const [expandedSection, setExpandedSection] = useState(null);
+  const { signOut, loading: signOutLoading } = useSignOut();
 
   // Initialize settings store on mount
   useEffect(() => {
     initializeSettingsStore();
   }, []);
+
+  const handleSignOut = async () => {
+    const confirmed = window.confirm('Are you sure you want to sign out?');
+    if (confirmed) {
+      await signOut();
+      window.location.href = '/auth';
+    }
+  };
 
   const toggleSection = (sectionId) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
@@ -1202,6 +1213,18 @@ export default function Settings() {
             })}
           </div>
         </div>
+
+        {/* Sign Out Button */}
+        <button
+          onClick={handleSignOut}
+          disabled={signOutLoading}
+          className="w-full bg-bg-1 border border-border hover:border-red-500/50 rounded-xl p-4 flex items-center justify-center gap-3 transition-all group"
+        >
+          <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-300" />
+          <span className="text-red-400 font-medium group-hover:text-red-300">
+            {signOutLoading ? 'Signing Out...' : 'Sign Out'}
+          </span>
+        </button>
 
         {/* Version Info */}
         <div className="text-center text-sm text-text-muted pt-4">
