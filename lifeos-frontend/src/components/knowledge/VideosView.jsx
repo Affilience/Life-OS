@@ -19,7 +19,7 @@ const STATUS_TABS = [
 ];
 
 export default function VideosView() {
-  const { media } = useKnowledgeStore();
+  const { media, setActiveView } = useKnowledgeStore();
   const [activeTab, setActiveTab] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,6 +103,7 @@ export default function VideosView() {
         {STATUS_TABS.map(tab => (
           <button
             key={tab.id}
+            type="button"
             className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
@@ -154,7 +155,7 @@ export default function VideosView() {
             <p>Add some videos to your library</p>
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="media-grid videos-grid">
+          <div className="media-grid videos-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
             {filteredVideos.map(video => {
               const statusColor = getStatusColor(video.status);
               return (
@@ -167,9 +168,14 @@ export default function VideosView() {
                         <Video size={32} />
                       </div>
                     )}
-                    <button className="play-overlay">
-                      <Play size={32} fill="white" />
-                    </button>
+                    {video.url && (
+                      <button
+                        className="play-overlay"
+                        onClick={() => window.open(video.url, '_blank')}
+                      >
+                        <Play size={32} fill="white" />
+                      </button>
+                    )}
                     {video.duration && (
                       <span className="duration-badge">{video.duration}</span>
                     )}
@@ -177,6 +183,25 @@ export default function VideosView() {
                   <div className="media-card-info">
                     <h4 className="card-title">{video.title}</h4>
                     <p className="card-author">{video.creator}</p>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 mt-3">
+                      {video.url && (
+                        <button
+                          onClick={() => window.open(video.url, '_blank')}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-lg transition-all"
+                        >
+                          <Play size={14} fill="white" />
+                          Play
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setActiveView('media-detail', video.id)}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-all"
+                      >
+                        <ExternalLink size={14} />
+                        Notes
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -214,14 +239,22 @@ export default function VideosView() {
                     </div>
                   </div>
                   <div className="list-item-actions">
-                    <button className="action-btn play">
-                      <Play size={18} />
-                    </button>
                     {video.url && (
-                      <a href={video.url} target="_blank" rel="noopener noreferrer" className="action-btn">
-                        <ExternalLink size={18} />
-                      </a>
+                      <button
+                        className="action-btn play"
+                        onClick={() => window.open(video.url, '_blank')}
+                        title="Play video"
+                      >
+                        <Play size={18} />
+                      </button>
                     )}
+                    <button
+                      className="action-btn"
+                      onClick={() => setActiveView('media-detail', video.id)}
+                      title="View notes"
+                    >
+                      <ExternalLink size={18} />
+                    </button>
                   </div>
                 </div>
               );

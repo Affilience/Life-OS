@@ -11,6 +11,7 @@ import { BOSS_DATABASE, calculatePlayerStats, getBossForLevel } from '../data/bo
 import { EQUIPMENT_DATABASE } from '../data/equipmentDatabase';
 import { getWeaponAttack, calculateAttackDamage, rollCritical, WEAPON_ATTACKS } from '../data/weaponAttacks';
 import { triggerGamification } from '../hooks/useGamification';
+import { useGamificationStore } from './gamificationStore';
 import { feedback, haptics, sounds } from '../services/microInteractions';
 
 // Helper to get current user ID
@@ -243,20 +244,25 @@ export const useBossStore = create(
       // ============================================
 
       playerAttack: () => {
-        const { currentBattle, isBattleActive, weaponAttack, lastAttackTime } = get();
+        const { currentBattle, isBattleActive, weaponAttack, lastAttackTime, playerStats } = get();
         if (!isBattleActive || !currentBattle) return { blocked: true, reason: 'no_battle' };
 
         const now = Date.now();
         const weapon = weaponAttack || WEAPON_ATTACKS.unarmed;
-        const cooldownRemaining = Math.max(0, (lastAttackTime + weapon.cooldown) - now);
+
+        // Apply cooldown reduction from Intelligence
+        const cooldownReduction = playerStats?.cooldownReduction || 0;
+        const effectiveCooldown = Math.floor(weapon.cooldown * (1 - cooldownReduction));
+        const cooldownRemaining = Math.max(0, (lastAttackTime + effectiveCooldown) - now);
 
         // Check cooldown
         if (cooldownRemaining > 0) {
           return { blocked: true, reason: 'cooldown', remaining: cooldownRemaining };
         }
 
-        // Roll for critical hit
-        const isCrit = rollCritical(weapon);
+        // Roll for critical hit (add player's crit bonus from Intelligence)
+        const playerCritBonus = playerStats?.critChance ? (playerStats.critChance - 0.05) : 0; // Subtract base 5%
+        const isCrit = rollCritical(weapon, playerCritBonus);
 
         // Calculate damage with weapon multiplier
         const baseDamage = currentBattle.playerDamage;
@@ -299,18 +305,22 @@ export const useBossStore = create(
 
       // Check if player can attack (cooldown ready)
       canAttack: () => {
-        const { weaponAttack, lastAttackTime, isBattleActive } = get();
+        const { weaponAttack, lastAttackTime, isBattleActive, playerStats } = get();
         if (!isBattleActive) return false;
         const weapon = weaponAttack || WEAPON_ATTACKS.unarmed;
-        return Date.now() >= lastAttackTime + weapon.cooldown;
+        const cooldownReduction = playerStats?.cooldownReduction || 0;
+        const effectiveCooldown = Math.floor(weapon.cooldown * (1 - cooldownReduction));
+        return Date.now() >= lastAttackTime + effectiveCooldown;
       },
 
       // Get current cooldown progress (0-1)
       getCooldownProgress: () => {
-        const { weaponAttack, lastAttackTime } = get();
+        const { weaponAttack, lastAttackTime, playerStats } = get();
         const weapon = weaponAttack || WEAPON_ATTACKS.unarmed;
+        const cooldownReduction = playerStats?.cooldownReduction || 0;
+        const effectiveCooldown = Math.floor(weapon.cooldown * (1 - cooldownReduction));
         const elapsed = Date.now() - lastAttackTime;
-        return Math.min(1, elapsed / weapon.cooldown);
+        return Math.min(1, elapsed / effectiveCooldown);
       },
 
       // ============================================
@@ -421,18 +431,39 @@ export const useBossStore = create(
           // Award XP and credits on victory
           if (isVictory) {
             feedback.levelUp();
+            // Apply Wisdom XP multiplier from playerStats
+            const xpMultiplier = playerStats?.xpMultiplier || 1;
+            const baseXp = currentBattle.boss.xpReward;
+            const bonusXp = Math.floor(baseXp * (xpMultiplier - 1));
+            const totalXp = baseXp + bonusXp;
+
+            // Award XP via gamification system
             triggerGamification('bossDefeated', {
-              xpOverride: currentBattle.boss.xpReward,
+              xpOverride: totalXp,
               module: 'productivity',
+              questName: `Defeated ${currentBattle.boss.name}`,
+              creditsReward: currentBattle.boss.creditsReward,
             });
+
+            // Award cosmic credits
+            const creditsReward = currentBattle.boss.creditsReward;
+            if (creditsReward > 0) {
+              const gamificationStore = useGamificationStore.getState();
+              await gamificationStore.addCredits(creditsReward, 'boss_defeat');
+              console.log(`[BossStore] Awarded ${creditsReward} cosmic credits for defeating ${currentBattle.boss.name}`);
+            }
           }
 
           // Add to recent battles
+          const xpMultiplier = playerStats?.xpMultiplier || 1;
+          const finalXpReward = Math.floor(currentBattle.boss.xpReward * xpMultiplier);
+
           const completedBattle = {
             ...currentBattle,
             status,
             battleDuration,
             endedAt: new Date().toISOString(),
+            xpMultiplier, // Store for display
           };
 
           set({
@@ -446,7 +477,9 @@ export const useBossStore = create(
           });
 
           return { success: true, isVictory, rewards: isVictory ? {
-            xp: currentBattle.boss.xpReward,
+            xp: finalXpReward,
+            baseXp: currentBattle.boss.xpReward,
+            xpMultiplier,
             credits: currentBattle.boss.creditsReward,
           } : null };
         } catch (error) {

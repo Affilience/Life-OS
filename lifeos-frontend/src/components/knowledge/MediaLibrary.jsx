@@ -142,25 +142,25 @@ export default function MediaLibrary() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {sortedMedia.map((item) => (
             <div
               key={item.id}
-              onClick={() => handleMediaClick(item.id)}
-              className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-lg overflow-hidden hover:border-cyan-500/30 transition-all duration-200 cursor-pointer group"
+              className="bg-[#12101a]/40 backdrop-blur-sm border border-white/10/50 rounded-xl overflow-hidden hover:border-cyan-500/30 transition-all duration-200 group"
             >
-              {/* Thumbnail */}
+              {/* Thumbnail - Larger size */}
               <div className="relative aspect-video bg-[#12101a]">
                 {item.thumbnailUrl ? (
                   <img
                     src={item.thumbnailUrl}
                     alt={item.title}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
                     <svg
-                      className="w-12 h-12 text-zinc-700"
+                      className="w-16 h-16 text-zinc-700"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -209,53 +209,86 @@ export default function MediaLibrary() {
                   </div>
                 )}
 
-                {/* Play Overlay */}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <svg
-                    className="w-16 h-16 text-white drop-shadow-lg"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+                {/* Play Button Overlay - Only shows on hover, clicking opens the URL */}
+                {item.url && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(item.url, '_blank');
+                    }}
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   >
-                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                  </svg>
-                </div>
+                    <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 hover:scale-110 transition-all">
+                      <svg
+                        className="w-10 h-10 text-white drop-shadow-lg ml-1"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                      </svg>
+                    </div>
+                  </button>
+                )}
 
                 {/* Duration Badge */}
-                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-medium text-white">
-                  {item.duration}
-                </div>
+                {item.duration && (
+                  <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-sm font-medium text-white">
+                    {item.duration}
+                  </div>
+                )}
 
                 {/* Type Badge */}
-                <div className="absolute top-2 left-2 px-2 py-1 bg-cyan-500/80 backdrop-blur-sm rounded text-xs font-medium text-white capitalize">
+                <div className="absolute top-3 left-3 px-3 py-1 bg-cyan-500/80 backdrop-blur-sm rounded-lg text-sm font-medium text-white capitalize">
                   {item.type}
                 </div>
               </div>
 
               {/* Content */}
-              <div className="p-4">
-                <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2 group-hover:text-cyan-300 transition-colors">
+              <div className="p-5">
+                <h3 className="text-base font-semibold text-white mb-1 line-clamp-2">
                   {item.title}
                 </h3>
-                <p className="text-xs text-white/50 mb-3">{item.creator}</p>
+                <p className="text-sm text-white/50 mb-4">{item.creator}</p>
 
-                <div className="flex items-center justify-between text-xs text-zinc-600">
-                  <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                  {item.notes && (typeof item.notes === 'string' ? item.notes.length > 0 : item.notes?.length > 0) && (
-                    <div className="flex items-center gap-1">
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                        />
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3">
+                  {item.url && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(item.url, '_blank');
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg transition-all duration-150 hover:shadow-lg hover:shadow-purple-500/25"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
                       </svg>
-                      <span>Notes</span>
+                      {item.type === 'article' ? 'Read' : 'Play'}
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMediaClick(item.id);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1a1724] hover:bg-[#252232] text-white/80 hover:text-white font-medium rounded-lg border border-white/10 transition-all duration-150"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Notes
+                  </button>
+                </div>
+
+                {/* Meta info */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-xs text-zinc-600">
+                  <span>Added {new Date(item.createdAt).toLocaleDateString()}</span>
+                  {(item.textNotes || (typeof item.notes === 'string' && item.notes.length > 0)) && (
+                    <div className="flex items-center gap-1 text-cyan-500">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Has notes</span>
                     </div>
                   )}
                 </div>

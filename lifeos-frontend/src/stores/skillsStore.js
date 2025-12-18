@@ -137,6 +137,8 @@ const syncSkillToSupabase = async (skill, action = 'upsert') => {
       color: skill.color || null,
       status: 'active',
       started_at: skill.createdAt,
+      goals: skill.goals || [],
+      milestones: skill.milestones || [],
     };
 
     await supabase.from('skills').upsert(dbSkill, { onConflict: 'id' });
@@ -209,7 +211,7 @@ const useSkillsStore = create(
                 xpEarned: calculateXpFromMinutes(log.duration_minutes),
               }));
 
-            // Preserve local goals and milestones from current state
+            // Load goals and milestones from database, fall back to localStorage
             const existingSkill = currentSkills.find(s => s.id === skill.id);
 
             return {
@@ -222,8 +224,8 @@ const useSkillsStore = create(
               icon: skill.icon || '✨',
               createdAt: skill.started_at || skill.created_at,
               sessions,
-              goals: existingSkill?.goals || [], // Preserve local goals
-              milestones: existingSkill?.milestones || [], // Preserve local milestones
+              goals: skill.goals || existingSkill?.goals || [], // Load from DB, fall back to local
+              milestones: skill.milestones || existingSkill?.milestones || [], // Load from DB, fall back to local
             };
           });
 
@@ -420,6 +422,12 @@ const useSkillsStore = create(
               : skill
           ),
         }));
+
+        // Sync to Supabase
+        const updatedSkill = get().skills.find(s => s.id === skillId);
+        if (updatedSkill) {
+          syncSkillToSupabase(updatedSkill);
+        }
       },
 
       // Toggle goal completion
@@ -442,6 +450,12 @@ const useSkillsStore = create(
           ),
         }));
 
+        // Sync to Supabase
+        const updatedSkill = get().skills.find(s => s.id === skillId);
+        if (updatedSkill) {
+          syncSkillToSupabase(updatedSkill);
+        }
+
         // Award XP only when completing a goal (not uncompleting)
         if (isCompleting) {
           triggerGamification('goalCompleted', { xpOverride: 20, module: 'skills' });
@@ -457,6 +471,12 @@ const useSkillsStore = create(
               : skill
           ),
         }));
+
+        // Sync to Supabase
+        const updatedSkill = get().skills.find(s => s.id === skillId);
+        if (updatedSkill) {
+          syncSkillToSupabase(updatedSkill);
+        }
       },
     }),
     {

@@ -19,9 +19,19 @@ export default function QuickCapture() {
   const getMenuPosition = () => {
     if (!buttonRef.current) return { top: 100, left: 100 };
     const rect = buttonRef.current.getBoundingClientRect();
+    const menuWidth = 256; // w-64 = 16rem = 256px
+    const viewportWidth = window.innerWidth;
+
+    // Check if menu would overflow right edge
+    let left = rect.left;
+    if (rect.left + menuWidth > viewportWidth - 16) {
+      // Align to right edge of button instead
+      left = rect.right - menuWidth;
+    }
+
     return {
       top: rect.bottom + 8,
-      left: rect.left,
+      left: Math.max(16, left), // Ensure at least 16px from left edge
     };
   };
 

@@ -231,6 +231,9 @@ export const useGamificationStore = create(
             achievementsData,
             constellationsData,
             perksData,
+            inventoryData,
+            activeBoostsData,
+            moduleMasteryData,
           ] = await Promise.all([
             // 1. User progress (level, stage, XP, stats)
             supabase
@@ -285,14 +288,31 @@ export const useGamificationStore = create(
               .select('*')
               .eq('user_id', userId),
 
-            // 8. Unlocked perks
+            // 8. Unlocked perks (no join - perk definitions are in frontend)
             supabase
               .from('user_perks')
-              .select(`
-                *,
-                perks (*)
-              `)
+              .select('*')
               .eq('user_id', userId),
+
+            // 9. Inventory (consumable items)
+            supabase
+              .from('user_inventory')
+              .select('*')
+              .eq('user_id', userId),
+
+            // 10. Active boosts (cleanup expired first)
+            supabase
+              .from('user_active_boosts')
+              .select('*')
+              .eq('user_id', userId)
+              .gt('expires_at', new Date().toISOString()),
+
+            // 11. Module mastery (module XP)
+            supabase
+              .from('user_module_mastery')
+              .select('*')
+              .eq('user_id', userId)
+              .maybeSingle(),
           ]);
 
           // Process user progress
@@ -375,11 +395,57 @@ export const useGamificationStore = create(
 
           // Process perks
           const perks = perksData.data || [];
-          const activePerks = perks.filter(p => p.is_active);
+          const activePerksList = perks.filter(p => p.is_active);
           set({
             unlockedPerks: perks,
-            activePerks,
+            activePerks: activePerksList,
           });
+
+          // Process inventory
+          const inventoryItems = (inventoryData.data || []).map(item => ({
+            id: `${item.item_id}_${new Date(item.created_at).getTime()}`,
+            itemId: item.item_id,
+            name: item.item_name,
+            description: item.item_description,
+            icon: item.item_icon,
+            sprite: item.item_sprite,
+            effect: item.effect,
+            rarity: item.item_rarity,
+            purchasedAt: item.purchased_at,
+            quantity: item.quantity,
+          }));
+          set({ inventory: inventoryItems });
+
+          // Process active boosts
+          const boosts = (activeBoostsData.data || []).map(boost => ({
+            type: boost.boost_type,
+            amount: parseFloat(boost.amount),
+            expiresAt: new Date(boost.expires_at).getTime(),
+          }));
+          set({ activeBoosts: boosts });
+
+          // Also load shields from progress
+          if (progress?.shields_remaining) {
+            set({ shieldsRemaining: progress.shields_remaining });
+          }
+
+          // Process module mastery (module XP)
+          const mastery = moduleMasteryData.data;
+          if (mastery) {
+            set({
+              moduleXP: {
+                productivity: Number(mastery.productivity_lifetime_xp) || 0,
+                fitness: Number(mastery.health_lifetime_xp) || 0,
+                health: Number(mastery.health_lifetime_xp) || 0,
+                knowledge: Number(mastery.knowledge_lifetime_xp) || 0,
+                journal: Number(mastery.journal_lifetime_xp) || 0,
+                finance: Number(mastery.financial_lifetime_xp) || 0,
+                financial: Number(mastery.financial_lifetime_xp) || 0,
+                calendar: Number(mastery.productivity_lifetime_xp) || 0,
+                skills: Number(mastery.skills_lifetime_xp) || 0,
+              },
+            });
+          }
 
           set({
             isInitialized: true,
@@ -445,14 +511,16 @@ export const useGamificationStore = create(
         // Update database
         await supabase
           .from('user_module_progress')
-          .update({
+          .upsert({
+            user_id: userId,
+            module_id: 'cosmic_evolution',
             level: newLevel,
-            xp: newTotalXP,
+            current_xp: newCurrentXP,
+            total_xp_earned: newTotalXP,
+            xp_to_next_level: newXPToNext,
             current_stage: get().currentStage,
             updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', userId)
-          .eq('module_id', 'cosmic_evolution');
+          }, { onConflict: 'user_id,module_id' });
 
         // Log event
         get().logEvent('xp_gained', source, {
@@ -492,15 +560,41 @@ export const useGamificationStore = create(
        * Add module-specific XP (for constellations)
        */
       addModuleXP: async (module, amount) => {
-        const current = get().moduleXP[module] || 0;
+        const { userId, moduleXP } = get();
+        const current = moduleXP[module] || 0;
         const newAmount = current + amount;
 
         set({
           moduleXP: {
-            ...get().moduleXP,
+            ...moduleXP,
             [module]: newAmount,
           },
         });
+
+        // Persist to user_module_mastery table
+        // Map module names to column names
+        const moduleColumnMap = {
+          productivity: 'productivity_lifetime_xp',
+          fitness: 'health_lifetime_xp',
+          health: 'health_lifetime_xp',
+          knowledge: 'knowledge_lifetime_xp',
+          journal: 'journal_lifetime_xp',
+          finance: 'financial_lifetime_xp',
+          financial: 'financial_lifetime_xp',
+          calendar: 'productivity_lifetime_xp', // Calendar counts as productivity
+          skills: 'skills_lifetime_xp',
+        };
+
+        const columnName = moduleColumnMap[module];
+        if (columnName && userId) {
+          await supabase
+            .from('user_module_mastery')
+            .upsert({
+              user_id: userId,
+              [columnName]: newAmount,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+        }
 
         // Check for constellation star unlocks
         get().checkConstellationProgress(module);
@@ -694,8 +788,8 @@ export const useGamificationStore = create(
       /**
        * Add item to inventory
        */
-      addToInventory: (item) => {
-        const { inventory } = get();
+      addToInventory: async (item) => {
+        const { userId, inventory } = get();
 
         // Check if item already exists in inventory (stack consumables)
         const existingIndex = inventory.findIndex(i => i.itemId === item.id);
@@ -708,6 +802,16 @@ export const useGamificationStore = create(
             quantity: newInventory[existingIndex].quantity + 1,
           };
           set({ inventory: newInventory });
+
+          // Update database
+          await supabase
+            .from('user_inventory')
+            .update({
+              quantity: newInventory[existingIndex].quantity,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', userId)
+            .eq('item_id', item.id);
         } else {
           // Add new item
           const inventoryItem = {
@@ -723,6 +827,21 @@ export const useGamificationStore = create(
             quantity: 1,
           };
           set({ inventory: [...inventory, inventoryItem] });
+
+          // Insert into database
+          await supabase
+            .from('user_inventory')
+            .upsert({
+              user_id: userId,
+              item_id: item.id,
+              item_name: item.name,
+              item_description: item.description,
+              item_icon: item.icon,
+              item_sprite: item.sprite,
+              item_rarity: item.rarity,
+              effect: item.effect,
+              quantity: 1,
+            }, { onConflict: 'user_id,item_id' });
         }
 
         return { success: true };
@@ -731,8 +850,8 @@ export const useGamificationStore = create(
       /**
        * Use item from inventory
        */
-      useInventoryItem: (itemId) => {
-        const { inventory, activeBoosts, shieldsRemaining } = get();
+      useInventoryItem: async (itemId) => {
+        const { userId, inventory, activeBoosts, shieldsRemaining } = get();
 
         const itemIndex = inventory.findIndex(i => i.itemId === itemId);
         if (itemIndex < 0) {
@@ -746,16 +865,32 @@ export const useGamificationStore = create(
           if (item.effect.type === 'xp') {
             get().addXP(item.effect.amount, 'consumable');
           } else if (item.effect.type === 'shield') {
-            set({ shieldsRemaining: shieldsRemaining + item.effect.amount });
+            const newShields = shieldsRemaining + item.effect.amount;
+            set({ shieldsRemaining: newShields });
+            // Persist shields to database
+            await supabase
+              .from('user_module_progress')
+              .update({ shields_remaining: newShields })
+              .eq('user_id', userId)
+              .eq('module_id', 'cosmic_evolution');
           } else if (item.effect.type === 'xp_multiplier') {
             // Store active boost with expiration in store state
-            const boostExpiry = Date.now() + (item.effect.duration * 60 * 60 * 1000);
+            const boostExpiry = new Date(Date.now() + (item.effect.duration * 60 * 60 * 1000));
             const newActiveBoosts = [...activeBoosts, {
               type: 'xp_multiplier',
               amount: item.effect.amount,
-              expiresAt: boostExpiry,
+              expiresAt: boostExpiry.getTime(),
             }];
             set({ activeBoosts: newActiveBoosts });
+            // Persist boost to database
+            await supabase
+              .from('user_active_boosts')
+              .insert({
+                user_id: userId,
+                boost_type: 'xp_multiplier',
+                amount: item.effect.amount,
+                expires_at: boostExpiry.toISOString(),
+              });
           }
         }
 
@@ -766,8 +901,20 @@ export const useGamificationStore = create(
             ...item,
             quantity: item.quantity - 1,
           };
+          // Update database
+          await supabase
+            .from('user_inventory')
+            .update({ quantity: item.quantity - 1, updated_at: new Date().toISOString() })
+            .eq('user_id', userId)
+            .eq('item_id', itemId);
         } else {
           newInventory.splice(itemIndex, 1);
+          // Remove from database
+          await supabase
+            .from('user_inventory')
+            .delete()
+            .eq('user_id', userId)
+            .eq('item_id', itemId);
         }
 
         set({ inventory: newInventory });

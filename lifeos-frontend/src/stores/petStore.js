@@ -555,16 +555,31 @@ export const usePetStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
-          // Load user's pets
-          const { data: userPets, error: petsError } = await supabase
-            .from('user_pets')
-            .select(`
-              *,
-              pet:pets (*)
-            `)
-            .eq('user_id', DEV_USER_ID);
+          // Load user's pets and profile (for max_pet_slots)
+          const [petsResult, profileResult] = await Promise.all([
+            supabase
+              .from('user_pets')
+              .select(`
+                *,
+                pet:pets (*)
+              `)
+              .eq('user_id', DEV_USER_ID),
+            supabase
+              .from('user_profiles')
+              .select('max_pet_slots')
+              .eq('id', DEV_USER_ID)
+              .maybeSingle(),
+          ]);
+
+          const { data: userPets, error: petsError } = petsResult;
+          const { data: profile } = profileResult;
 
           if (petsError) throw petsError;
+
+          // Load max slots from profile
+          if (profile?.max_pet_slots) {
+            set({ maxSlots: profile.max_pet_slots });
+          }
 
           if (userPets && userPets.length > 0) {
             const ownedPets = userPets.map(up => up.pet?.name?.toLowerCase().replace(/\s+/g, '_') || up.pet_id);
@@ -701,10 +716,22 @@ export const usePetStore = create(
       },
 
       // Unlock additional pet slots
-      unlockSlot: () => {
+      unlockSlot: async () => {
         const { maxSlots } = get();
         if (maxSlots < 6) {
-          set({ maxSlots: maxSlots + 1 });
+          const newMaxSlots = maxSlots + 1;
+          set({ maxSlots: newMaxSlots });
+
+          // Sync to Supabase
+          try {
+            await supabase
+              .from('user_profiles')
+              .update({ max_pet_slots: newMaxSlots })
+              .eq('id', DEV_USER_ID);
+          } catch (error) {
+            console.error('Error syncing pet slots to Supabase:', error);
+          }
+
           return true;
         }
         return false;

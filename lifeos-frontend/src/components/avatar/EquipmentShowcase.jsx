@@ -130,18 +130,14 @@ export default function EquipmentShowcase() {
   const [showInventory, setShowInventory] = useState(false);
 
   // Get all available equipment from EQUIPMENT_DATABASE
+  // Only filter by unlocked status - once unlocked, items are always available
   const availableEquipment = useMemo(() => {
     return Object.values(EQUIPMENT_DATABASE).filter(item => {
-      // Show if unlocked OR if it's default equipment (default = always available)
+      // Only show items that are in the unlocked list
       const isUnlocked = effectiveUnlocked.includes(item.id);
-      const isDefault = item.unlockMethod === 'default';
-      // Default equipment is always available regardless of level
-      // Other equipment requires meeting the level requirement
-      if (isDefault) return true;
-      const meetsLevel = item.levelRequired <= effectiveLevel;
-      return isUnlocked && meetsLevel;
+      return isUnlocked;
     });
-  }, [effectiveUnlocked, effectiveLevel]);
+  }, [effectiveUnlocked]);
 
   // Get equipped item for a slot
   const getEquippedForSlot = (slotId) => {
@@ -162,14 +158,16 @@ export default function EquipmentShowcase() {
     const item = EQUIPMENT_DATABASE[itemId];
     if (!item) return;
 
-    const currentEquipped = equipped[item.slot];
+    // For rings, use the selectedSlot (ring1 or ring2) instead of item.slot (ring)
+    const targetSlot = (item.slot === 'ring' && selectedSlot) ? selectedSlot : item.slot;
+    const currentEquipped = equipped[targetSlot];
 
     if (currentEquipped === itemId) {
       // Unequip if clicking on already equipped item
-      await unequipItem(item.slot);
+      await unequipItem(targetSlot);
     } else {
       // Equip the new item
-      await equipItem(item.slot, itemId);
+      await equipItem(targetSlot, itemId);
     }
 
     setShowInventory(false);
@@ -260,19 +258,13 @@ export default function EquipmentShowcase() {
           {/* Center: Character Avatar with Pets in Orbital Arrangement */}
           <div className="flex flex-col items-center justify-center order-first md:order-2">
             <div className="relative" style={{ width: '320px', height: '320px' }}>
-              {/* Pets in orbital arrangement around avatar */}
-              <PetOrbital pets={activePets} />
-
               {/* Main Avatar with Equipment - Uses AvatarRenderer for equipment overlay */}
-              <div
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{ width: '256px', height: '256px' }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl scale-150" />
-                <div className="relative z-10">
-                  <AvatarRenderer size={256} animate={true} />
-                </div>
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <AvatarRenderer size={256} animate={true} />
               </div>
+
+              {/* Pets in orbital arrangement around avatar - rendered AFTER so they appear on top */}
+              <PetOrbital pets={activePets} />
             </div>
           </div>
 
@@ -373,25 +365,23 @@ function PetOrbital({ pets }) {
   if (!pets || pets.length === 0) return null;
 
   // Position pets in a semicircle below and around the avatar
-  // Positions are arranged in an arc from bottom-left to bottom-right
+  // CSS coordinates: Y increases downward, so we use angles where sin() is positive for bottom
   const getOrbitalPosition = (index, total) => {
-    // Spread pets across a 180-degree arc at the bottom
-    // Single pet: center bottom
-    // 2 pets: left and right sides
-    // 3+ pets: spread evenly in arc
     const radius = 140; // Distance from center
-    const startAngle = 210; // Start from bottom-left (in degrees)
-    const endAngle = 330; // End at bottom-right
+    // In CSS coordinates: 90° = bottom, 0° = right, 180° = left
+    // Arc from bottom-left (135°) to bottom-right (45°)
+    const startAngle = 135; // Bottom-left
+    const endAngle = 45; // Bottom-right
 
     let angle;
     if (total === 1) {
-      angle = 270; // Center bottom
+      angle = 90; // Center bottom
     } else if (total === 2) {
-      angle = index === 0 ? 225 : 315; // Left and right
+      angle = index === 0 ? 120 : 60; // Left and right of bottom
     } else {
-      // Spread evenly
-      const angleStep = (endAngle - startAngle) / (total - 1);
-      angle = startAngle + angleStep * index;
+      // Spread evenly across the arc
+      const angleStep = (startAngle - endAngle) / (total - 1);
+      angle = startAngle - angleStep * index;
     }
 
     // Convert to radians and calculate position
@@ -403,7 +393,7 @@ function PetOrbital({ pets }) {
       x: 160 + x - 24, // Center offset + position - half pet width
       y: 160 + y - 24, // Center offset + position - half pet height
       scale: 1 - (index * 0.05), // Slight scale variation for depth
-      zIndex: total - index, // Front pets have higher z-index
+      zIndex: 100 + (total - index), // Ensure pets are above avatar
     };
   };
 

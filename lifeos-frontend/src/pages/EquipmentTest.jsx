@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 // All equipment files from the actual asset folders
 const EQUIPMENT_FILES = {
@@ -65,6 +66,8 @@ export default function EquipmentTest() {
   const [loadedEquipment, setLoadedEquipment] = useState({});
   const [selectedEquipment, setSelectedEquipment] = useState({});
   const [loadingStatus, setLoadingStatus] = useState('Loading...');
+  const [syncStatus, setSyncStatus] = useState(''); // Cloud sync status
+  const [lastSyncTime, setLastSyncTime] = useState(null);
 
   // Saved positions: { itemName: { x, y, scale } }
   // For shields, save both: shields/basic_left and shields/basic_right
@@ -80,8 +83,111 @@ export default function EquipmentTest() {
   // Current working positions (for live adjustment)
   const [currentPositions, setCurrentPositions] = useState({});
 
+  // ============================================
+  // SUPABASE GLOBAL POSITIONS SYNC
+  // These positions apply to ALL users
+  // ============================================
+
+  // Load global positions from Supabase on mount
+  useEffect(() => {
+    const loadFromCloud = async () => {
+      try {
+        setSyncStatus('Loading global positions...');
+
+        const { data, error } = await supabase
+          .from('equipment_default_positions')
+          .select('position_key, x, y, scale');
+
+        if (error) {
+          console.error('[EquipmentTest] Failed to load from cloud:', error);
+          setSyncStatus('Cloud load failed - using local');
+          return;
+        }
+
+        if (data && data.length > 0) {
+          // Convert array to object format
+          const cloudPositions = {};
+          data.forEach(row => {
+            cloudPositions[row.position_key] = {
+              x: parseFloat(row.x),
+              y: parseFloat(row.y),
+              scale: parseFloat(row.scale)
+            };
+          });
+
+          console.log('[EquipmentTest] Loaded global positions:', Object.keys(cloudPositions).length);
+          setSavedPositions(cloudPositions);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudPositions));
+          setSyncStatus(`✓ Loaded ${Object.keys(cloudPositions).length} global positions`);
+          setLastSyncTime(new Date());
+        } else {
+          // No cloud data - check if we have local data to upload
+          const localData = localStorage.getItem(STORAGE_KEY);
+          if (localData) {
+            const localPositions = JSON.parse(localData);
+            if (Object.keys(localPositions).length > 0) {
+              setSyncStatus('Local data found - click "Sync to Cloud" to upload as global defaults');
+            } else {
+              setSyncStatus('No saved positions yet');
+            }
+          } else {
+            setSyncStatus('No saved positions yet');
+          }
+        }
+      } catch (err) {
+        console.error('[EquipmentTest] Cloud sync error:', err);
+        setSyncStatus('Sync error - using local');
+      }
+    };
+
+    loadFromCloud();
+  }, []);
+
+  // Save to Supabase global positions table
+  const syncToCloud = useCallback(async (positions) => {
+    try {
+      setSyncStatus('Saving global positions...');
+
+      // Upsert each position to the global table
+      const upsertData = Object.entries(positions).map(([key, pos]) => ({
+        position_key: key,
+        x: pos.x,
+        y: pos.y,
+        scale: pos.scale,
+        updated_at: new Date().toISOString(),
+      }));
+
+      const { error } = await supabase
+        .from('equipment_default_positions')
+        .upsert(upsertData, {
+          onConflict: 'position_key'
+        });
+
+      if (error) {
+        console.error('[EquipmentTest] Failed to save to cloud:', error);
+        setSyncStatus('⚠ Cloud save failed - saved locally');
+        return false;
+      }
+
+      console.log('[EquipmentTest] Saved global positions:', Object.keys(positions).length);
+      setSyncStatus(`✓ Saved ${Object.keys(positions).length} GLOBAL positions (applies to all users!)`);
+      setLastSyncTime(new Date());
+      return true;
+    } catch (err) {
+      console.error('[EquipmentTest] Cloud sync error:', err);
+      setSyncStatus('⚠ Sync error - saved locally');
+      return false;
+    }
+  }, []);
+
   // For shields: which hand position are we currently editing?
   const [editingShieldHand, setEditingShieldHand] = useState('left');
+
+  // Drag state for canvas interaction
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragTarget, setDragTarget] = useState(null); // { folder, item, startX, startY, startPosX, startPosY }
+  const [hoverTarget, setHoverTarget] = useState(null); // { folder, item } - for hover highlight
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Auto-detect which hand the equipped weapon is in based on X position
   // Right hand ≈ x:60 (viewer's left), Left hand ≈ x:90 (viewer's right)
@@ -171,6 +277,114 @@ export default function EquipmentTest() {
     return currentPositions[key] || savedPositions[key] || DEFAULT_POSITIONS[folder] || DEFAULT_POSITIONS.weapons_right;
   };
 
+  // ============================================
+  // CANVAS DRAG & DROP
+  // ============================================
+
+  // Find which equipment piece is at a given canvas position
+  const findEquipmentAtPosition = (canvasX, canvasY) => {
+    // Check each selected equipment in reverse layer order (top items first)
+    const reversedLayers = [...LAYER_ORDER].reverse();
+
+    for (const folder of reversedLayers) {
+      const item = selectedEquipment[folder];
+      if (!item) continue;
+
+      const equipment = loadedEquipment[folder]?.[item];
+      if (!equipment) continue;
+
+      const pos = getPosition(folder, item);
+      const width = equipment.width * pos.scale;
+      const height = equipment.height * pos.scale;
+
+      // Check if click is within this equipment's bounds
+      if (canvasX >= pos.x && canvasX <= pos.x + width &&
+          canvasY >= pos.y && canvasY <= pos.y + height) {
+        return { folder, item, pos, width, height };
+      }
+    }
+    return null;
+  };
+
+  // Handle mouse down on canvas
+  const handleCanvasMouseDown = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = 256 / rect.width;
+    const scaleY = 256 / rect.height;
+    const canvasX = (e.clientX - rect.left) * scaleX;
+    const canvasY = (e.clientY - rect.top) * scaleY;
+
+    const target = findEquipmentAtPosition(canvasX, canvasY);
+    if (target) {
+      setIsDragging(true);
+      setDragTarget({
+        folder: target.folder,
+        item: target.item,
+        startX: canvasX,
+        startY: canvasY,
+        startPosX: target.pos.x,
+        startPosY: target.pos.y,
+      });
+      e.preventDefault();
+    }
+  };
+
+  // Handle mouse move on canvas
+  const handleCanvasMouseMove = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = 256 / rect.width;
+    const scaleY = 256 / rect.height;
+    const canvasX = (e.clientX - rect.left) * scaleX;
+    const canvasY = (e.clientY - rect.top) * scaleY;
+
+    setMousePos({ x: Math.round(canvasX), y: Math.round(canvasY) });
+
+    if (isDragging && dragTarget) {
+      const deltaX = canvasX - dragTarget.startX;
+      const deltaY = canvasY - dragTarget.startY;
+
+      const newX = Math.round(dragTarget.startPosX + deltaX);
+      const newY = Math.round(dragTarget.startPosY + deltaY);
+
+      // Update position
+      let key = `${dragTarget.folder}/${dragTarget.item}`;
+      if (dragTarget.folder === 'shields') {
+        key = `${key}_${editingShieldHand}`;
+      }
+
+      const currentPos = getPosition(dragTarget.folder, dragTarget.item,
+        dragTarget.folder === 'shields' ? editingShieldHand : null);
+
+      setCurrentPositions(prev => ({
+        ...prev,
+        [key]: { ...currentPos, x: newX, y: newY }
+      }));
+    } else {
+      // Not dragging - check for hover
+      const hover = findEquipmentAtPosition(canvasX, canvasY);
+      setHoverTarget(hover ? { folder: hover.folder, item: hover.item } : null);
+    }
+  };
+
+  // Handle mouse up
+  const handleCanvasMouseUp = () => {
+    setIsDragging(false);
+    setDragTarget(null);
+  };
+
+  // Handle mouse leave
+  const handleCanvasMouseLeave = () => {
+    setIsDragging(false);
+    setDragTarget(null);
+    setHoverTarget(null);
+  };
+
   // Render canvas
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -202,6 +416,24 @@ export default function EquipmentTest() {
           const width = equipment.width * pos.scale;
           const height = equipment.height * pos.scale;
           ctx.drawImage(equipment, pos.x, pos.y, width, height);
+
+          // Draw selection highlight if dragging or hovering this cape
+          const isDragTarget = dragTarget && dragTarget.folder === folder && dragTarget.item === selectedItem;
+          const isHoverTarget = !isDragTarget && hoverTarget && hoverTarget.folder === folder && hoverTarget.item === selectedItem;
+
+          if (isDragTarget) {
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.strokeRect(pos.x - 2, pos.y - 2, width + 4, height + 4);
+            ctx.setLineDash([]);
+          } else if (isHoverTarget) {
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.7;
+            ctx.strokeRect(pos.x - 1, pos.y - 1, width + 2, height + 2);
+            ctx.globalAlpha = 1;
+          }
         }
       }
     });
@@ -233,9 +465,27 @@ export default function EquipmentTest() {
       const width = equipment.width * pos.scale;
       const height = equipment.height * pos.scale;
       ctx.drawImage(equipment, pos.x, pos.y, width, height);
+
+      // Draw selection highlight if dragging or hovering this item
+      const isDragTarget = dragTarget && dragTarget.folder === folder && dragTarget.item === selectedItem;
+      const isHoverTarget = !isDragTarget && hoverTarget && hoverTarget.folder === folder && hoverTarget.item === selectedItem;
+
+      if (isDragTarget) {
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(pos.x - 2, pos.y - 2, width + 4, height + 4);
+        ctx.setLineDash([]);
+      } else if (isHoverTarget) {
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.7;
+        ctx.strokeRect(pos.x - 1, pos.y - 1, width + 2, height + 2);
+        ctx.globalAlpha = 1;
+      }
     });
 
-  }, [baseAvatar, loadedEquipment, selectedEquipment, currentPositions, savedPositions]);
+  }, [baseAvatar, loadedEquipment, selectedEquipment, currentPositions, savedPositions, dragTarget, hoverTarget]);
 
   const toggleEquipment = (folder, item) => {
     setSelectedEquipment(prev => {
@@ -268,7 +518,7 @@ export default function EquipmentTest() {
     }));
   };
 
-  const savePosition = (folder, item) => {
+  const savePosition = async (folder, item) => {
     let key = `${folder}/${item}`;
     let displayHand = '';
 
@@ -282,17 +532,32 @@ export default function EquipmentTest() {
     const newSaved = { ...savedPositions, [key]: pos };
     setSavedPositions(newSaved);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSaved));
-    alert(`Saved position for ${item}${displayHand}!`);
+
+    // Auto-sync to cloud
+    await syncToCloud(newSaved);
   };
 
-  const saveAllPositions = () => {
+  const saveAllPositions = async () => {
     const allPositions = { ...savedPositions };
     Object.entries(currentPositions).forEach(([key, pos]) => {
       allPositions[key] = pos;
     });
     setSavedPositions(allPositions);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allPositions));
-    alert(`Saved ${Object.keys(allPositions).length} positions!`);
+
+    // Auto-sync to cloud
+    const success = await syncToCloud(allPositions);
+    if (success) {
+      alert(`✓ Saved ${Object.keys(allPositions).length} positions to cloud!`);
+    } else {
+      alert(`Saved ${Object.keys(allPositions).length} positions locally. Cloud sync may have failed.`);
+    }
+  };
+
+  // Manual cloud sync button
+  const forceCloudSync = async () => {
+    const allPositions = { ...savedPositions, ...currentPositions };
+    await syncToCloud(allPositions);
   };
 
   const exportPositions = () => {
@@ -310,12 +575,19 @@ export default function EquipmentTest() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const imported = JSON.parse(event.target.result);
         setSavedPositions(imported);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
-        alert(`Imported ${Object.keys(imported).length} positions!`);
+
+        // Auto-sync imported positions to cloud
+        const success = await syncToCloud(imported);
+        if (success) {
+          alert(`✓ Imported and synced ${Object.keys(imported).length} positions to cloud!`);
+        } else {
+          alert(`Imported ${Object.keys(imported).length} positions locally. Cloud sync may have failed.`);
+        }
       } catch {
         alert('Invalid JSON file');
       }
@@ -331,8 +603,19 @@ export default function EquipmentTest() {
   return (
     <div className="min-h-screen bg-slate-900 p-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-2">Equipment Position Editor</h1>
-        <p className="text-slate-400 mb-4 text-sm">{loadingStatus}</p>
+        <h1 className="text-2xl font-bold text-white mb-2">🌍 Global Equipment Position Editor</h1>
+        <p className="text-amber-400 text-sm mb-2">⚠️ Changes here apply to ALL users!</p>
+        <div className="flex items-center gap-4 mb-4">
+          <p className="text-slate-400 text-sm">{loadingStatus}</p>
+          <span className="text-xs px-2 py-1 rounded bg-slate-800 text-slate-300">
+            ☁️ {syncStatus}
+          </span>
+          {lastSyncTime && (
+            <span className="text-xs text-slate-500">
+              Last sync: {lastSyncTime.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
 
         <div className="flex gap-6">
           {/* Left Panel: Avatar Preview & Controls */}
@@ -347,8 +630,31 @@ export default function EquipmentTest() {
                 width={256}
                 height={256}
                 className="rounded-lg border border-slate-600 w-full"
-                style={{ imageRendering: 'pixelated' }}
+                style={{
+                  imageRendering: 'pixelated',
+                  cursor: isDragging ? 'grabbing' : 'grab'
+                }}
+                onMouseDown={handleCanvasMouseDown}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseUp={handleCanvasMouseUp}
+                onMouseLeave={handleCanvasMouseLeave}
               />
+
+              {/* Mouse position indicator */}
+              <div className="mt-1 flex justify-between text-xs text-slate-500">
+                <span>Mouse: ({mousePos.x}, {mousePos.y})</span>
+                {dragTarget ? (
+                  <span className="text-green-400">
+                    ✋ Dragging: {dragTarget.folder}/{dragTarget.item}
+                  </span>
+                ) : hoverTarget ? (
+                  <span className="text-blue-400">
+                    👆 {hoverTarget.folder}/{hoverTarget.item}
+                  </span>
+                ) : (
+                  <span className="text-slate-600">Drag equipment to move</span>
+                )}
+              </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
@@ -361,7 +667,13 @@ export default function EquipmentTest() {
                   onClick={saveAllPositions}
                   className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-500"
                 >
-                  Save All
+                  💾 Save All
+                </button>
+                <button
+                  onClick={forceCloudSync}
+                  className="px-3 py-1 bg-cyan-600 text-white rounded text-xs hover:bg-cyan-500"
+                >
+                  ☁️ Sync to Cloud
                 </button>
                 <button
                   onClick={exportPositions}
@@ -461,11 +773,17 @@ export default function EquipmentTest() {
               )}
             </div>
 
-            {/* Saved Positions Count */}
-            <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-              <span className="text-slate-400 text-xs">
-                {Object.keys(savedPositions).length} positions saved
-              </span>
+            {/* Saved Positions Count & Cloud Status */}
+            <div className="bg-amber-900/30 border border-amber-600/50 rounded-lg p-3 text-center space-y-1">
+              <div className="text-amber-300 text-xs font-semibold">
+                🌍 {Object.keys(savedPositions).length} GLOBAL positions
+              </div>
+              <div className="text-xs text-cyan-400">
+                ☁️ Saved to Supabase database
+              </div>
+              <div className="text-xs text-amber-200">
+                These apply to ALL users who equip this gear!
+              </div>
             </div>
           </div>
 

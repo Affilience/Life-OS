@@ -184,6 +184,18 @@ function App() {
 
   // Note: Onboarding now uses route-based approach (/onboarding) instead of overlay
 
+  // Redirect to onboarding for first-time users
+  useEffect(() => {
+    // Check if we should show onboarding (first-time user or incomplete onboarding)
+    if (shouldShowOnboarding()) {
+      // Only redirect if not already on onboarding page
+      if (!window.location.pathname.includes('/onboarding')) {
+        console.log('🎯 First-time user detected, redirecting to onboarding...');
+        window.location.href = '/onboarding';
+      }
+    }
+  }, []);
+
   // Enable dark mode and initialize native services on app load
   useEffect(() => {
     document.documentElement.classList.add('dark');

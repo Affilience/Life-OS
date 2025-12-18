@@ -64,6 +64,22 @@ export const useHealthStore = create(
       _lastSyncedAt: null,
       _syncError: null,
 
+      // Sync meal plans to Supabase
+      syncMealPlansToSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        try {
+          const state = get();
+          await supabase
+            .from('user_profiles')
+            .update({ meal_plans: state.mealPlans })
+            .eq('id', userId);
+        } catch (error) {
+          console.error('Error syncing meal plans to Supabase:', error);
+        }
+      },
+
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         const userId = await getCurrentUserId();
@@ -72,10 +88,10 @@ export const useHealthStore = create(
         set({ _isSyncing: true, _syncError: null });
 
         try {
-          // Fetch user health settings
+          // Fetch user health settings AND meal plans
           const { data: profile } = await supabase
             .from('user_profiles')
-            .select('health_settings')
+            .select('health_settings, meal_plans')
             .eq('id', userId)
             .maybeSingle();
 
@@ -88,6 +104,11 @@ export const useHealthStore = create(
               waterContainerMl: settings.waterContainerMl || 500,
               waterGoalMl: settings.dailyGoals?.water || 2000,
             });
+          }
+
+          // Load meal plans from profile
+          if (profile?.meal_plans) {
+            set({ mealPlans: profile.meal_plans });
           }
 
           // Fetch meals (nutrition logs)
@@ -686,6 +707,8 @@ export const useHealthStore = create(
             },
           };
         });
+        // Sync to Supabase
+        get().syncMealPlansToSupabase();
       },
 
       removeMealFromPlan: (weekKey, day, mealType) => {
@@ -704,6 +727,8 @@ export const useHealthStore = create(
             },
           };
         });
+        // Sync to Supabase
+        get().syncMealPlansToSupabase();
       },
 
       copyMealPlanToWeek: (fromWeekKey, toWeekKey) => {
@@ -718,6 +743,9 @@ export const useHealthStore = create(
         }));
 
         triggerGamification('eventCreated', { xpOverride: 5, module: 'health' }); // Meal plan copied
+
+        // Sync to Supabase
+        get().syncMealPlansToSupabase();
       },
 
       // ============ SUPPLEMENT ACTIONS ============

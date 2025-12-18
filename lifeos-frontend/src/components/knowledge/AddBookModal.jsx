@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 
 // Debounce helper
@@ -235,11 +236,11 @@ export default function AddBookModal({ isOpen, onClose }) {
     { id: 'percent', label: 'Percent' },
   ];
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-xl shadow-2xl overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/10/50 bg-[#12101a]/50">
+        <div className="px-6 py-4 border-b border-white/10/50 bg-[#12101a]/50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-white">Add Book</h2>
             <button
@@ -428,26 +429,28 @@ export default function AddBookModal({ isOpen, onClose }) {
             <div className="flex gap-4">
               {/* Cover Preview */}
               <div className="flex-shrink-0">
-                <div className="w-24 h-36 bg-[#1a1724]/50 border border-white/15/50 rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="w-24 h-36 bg-[#1a1724]/50 border border-white/15/50 rounded-lg overflow-hidden relative">
                   {formData.coverImage || coverPreview ? (
                     <img
                       src={formData.coverImage || coverPreview}
                       alt="Book cover"
-                      className="w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
                       onError={(e) => {
                         e.target.style.display = 'none';
                         e.target.nextSibling.style.display = 'flex';
                       }}
                     />
                   ) : (
-                    <div className="text-center text-zinc-600">
-                      <svg className="w-8 h-8 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                      <span className="text-xs">No cover</span>
+                    <div className="absolute inset-0 flex items-center justify-center text-center text-zinc-600">
+                      <div>
+                        <svg className="w-8 h-8 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <span className="text-xs">No cover</span>
+                      </div>
                     </div>
                   )}
-                  <div className="hidden w-full h-full items-center justify-center text-zinc-600">
+                  <div className="hidden absolute inset-0 items-center justify-center text-zinc-600">
                     <span className="text-xs">Failed</span>
                   </div>
                 </div>
@@ -516,6 +519,7 @@ export default function AddBookModal({ isOpen, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

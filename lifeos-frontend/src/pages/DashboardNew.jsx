@@ -255,39 +255,39 @@ export default function DashboardNew() {
           compactType="vertical"
           preventCollision={false}
         >
-          {visibleWidgets.map((widgetId, index) => {
-            const WidgetComponent = WIDGET_COMPONENTS[widgetId];
-            const widgetConfig = DASHBOARD_WIDGETS[widgetId];
+          {visibleWidgets
+            .filter(widgetId => WIDGET_COMPONENTS[widgetId])
+            .map((widgetId, index) => {
+              const WidgetComponent = WIDGET_COMPONENTS[widgetId];
+              const widgetConfig = DASHBOARD_WIDGETS[widgetId];
 
-            if (!WidgetComponent) return null;
+              // Find existing layout entry or create default
+              const existingLayout = (layouts.lg || []).find(item => item.i === widgetId);
+              const defaultW = Math.min(widgetConfig?.minW || 2, 4);
+              const defaultH = widgetConfig?.minH || 2;
+              // Ensure minW doesn't exceed 1 for responsive layouts (sm has 1 col)
+              const minW = 1;
 
-            // Find existing layout entry or create default
-            const existingLayout = (layouts.lg || []).find(item => item.i === widgetId);
-            const defaultW = Math.min(widgetConfig?.minW || 2, 4);
-            const defaultH = widgetConfig?.minH || 2;
-            // Ensure minW doesn't exceed 1 for responsive layouts (sm has 1 col)
-            const minW = 1;
-
-            return (
-              <div
-                key={widgetId}
-                data-grid={{
-                  // Provide default x, y, w, h values to prevent undefined errors
-                  x: existingLayout?.x ?? 0,
-                  y: existingLayout?.y ?? (index * defaultH),
-                  w: existingLayout?.w ?? defaultW,
-                  h: existingLayout?.h ?? defaultH,
-                  minW,
-                  minH: widgetConfig?.minH || 1,
-                  maxH: widgetConfig?.maxH || 10,
-                }}
-              >
-                <WidgetWrapper widgetId={widgetId}>
-                  <WidgetComponent />
-                </WidgetWrapper>
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={widgetId}
+                  data-grid={{
+                    // Provide default x, y, w, h values to prevent undefined errors
+                    x: existingLayout?.x ?? 0,
+                    y: existingLayout?.y ?? (index * defaultH),
+                    w: existingLayout?.w ?? defaultW,
+                    h: existingLayout?.h ?? defaultH,
+                    minW,
+                    minH: widgetConfig?.minH || 1,
+                    maxH: widgetConfig?.maxH || 10,
+                  }}
+                >
+                  <WidgetWrapper widgetId={widgetId}>
+                    <WidgetComponent />
+                  </WidgetWrapper>
+                </div>
+              );
+            })}
         </ResponsiveGridLayout>
 
         {/* Empty State */}

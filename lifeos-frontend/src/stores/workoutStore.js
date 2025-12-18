@@ -265,20 +265,60 @@ export const useWorkoutStore = create(
       customExercises: {}, // User-created custom exercises { id: exerciseData }
       cardioWorkouts: [], // Separate array for cardio sessions
 
+      // Sync workout metadata to Supabase
+      syncWorkoutMetadataToSupabase: async () => {
+        try {
+          const state = get();
+          await supabase
+            .from('user_profiles')
+            .update({
+              workout_custom_templates: state.customTemplates,
+              workout_custom_exercises: state.customExercises,
+              workout_exercise_history: state.exerciseHistory,
+              workout_personal_records: state.personalRecords,
+              workout_cardio_records: state.cardioRecords,
+            })
+            .eq('id', DEV_USER_ID);
+        } catch (error) {
+          console.error('Error syncing workout metadata to Supabase:', error);
+        }
+      },
+
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
-          // Load workouts with exercises
-          const { data: workoutsData, error: workoutsError } = await supabase
-            .from('health_workouts')
-            .select(`
-              *,
-              health_exercises (*)
-            `)
-            .eq('user_id', DEV_USER_ID)
-            .order('workout_date', { ascending: false });
+          // Load workouts with exercises AND user profile workout metadata
+          const [workoutsResult, profileResult] = await Promise.all([
+            supabase
+              .from('health_workouts')
+              .select(`
+                *,
+                health_exercises (*)
+              `)
+              .eq('user_id', DEV_USER_ID)
+              .order('workout_date', { ascending: false }),
+            supabase
+              .from('user_profiles')
+              .select('workout_custom_templates, workout_custom_exercises, workout_exercise_history, workout_personal_records, workout_cardio_records')
+              .eq('id', DEV_USER_ID)
+              .maybeSingle(),
+          ]);
+
+          const { data: workoutsData, error: workoutsError } = workoutsResult;
+          const { data: profileData } = profileResult;
 
           if (workoutsError) throw workoutsError;
+
+          // Set workout metadata from profile
+          if (profileData) {
+            set({
+              customTemplates: profileData.workout_custom_templates || [],
+              customExercises: profileData.workout_custom_exercises || {},
+              exerciseHistory: profileData.workout_exercise_history || {},
+              personalRecords: profileData.workout_personal_records || {},
+              cardioRecords: profileData.workout_cardio_records || {},
+            });
+          }
 
           // Separate strength workouts from cardio
           const strengthWorkouts = [];
@@ -525,6 +565,8 @@ export const useWorkoutStore = create(
               },
             },
           });
+          // Sync PR to Supabase
+          get().syncWorkoutMetadataToSupabase();
         }
 
         set({
@@ -659,8 +701,11 @@ export const useWorkoutStore = create(
           currentExerciseIndex: 0,
         });
 
-        // Sync to Supabase
+        // Sync workout to Supabase
         syncWorkoutToSupabase(completedWorkout);
+
+        // Sync workout metadata (exercise history, personal records)
+        get().syncWorkoutMetadataToSupabase();
 
         return completedWorkout;
       },
@@ -750,6 +795,9 @@ export const useWorkoutStore = create(
         // Award XP for creating a workout template
         triggerGamification('workoutTemplateCreated', { xpOverride: 15, module: 'health' });
 
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
+
         return newTemplate;
       },
 
@@ -762,6 +810,8 @@ export const useWorkoutStore = create(
               : t
           ),
         }));
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
       },
 
       // Delete a custom template
@@ -769,6 +819,8 @@ export const useWorkoutStore = create(
         set((state) => ({
           customTemplates: state.customTemplates.filter(t => t.id !== templateId),
         }));
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
       },
 
       // Duplicate a template (built-in or custom) as a new custom template
@@ -797,6 +849,9 @@ export const useWorkoutStore = create(
         set({
           customTemplates: [...state.customTemplates, newTemplate],
         });
+
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
 
         return newTemplate;
       },
@@ -830,6 +885,9 @@ export const useWorkoutStore = create(
           customTemplates: [...state.customTemplates, newTemplate],
         });
 
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
+
         return newTemplate;
       },
 
@@ -842,6 +900,8 @@ export const useWorkoutStore = create(
               : t
           ),
         }));
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
       },
 
       // Get all templates (built-in + custom), sorted by usage
@@ -1015,8 +1075,11 @@ export const useWorkoutStore = create(
           cardioRecords: updatedRecords,
         });
 
-        // Sync to Supabase
+        // Sync cardio workout to Supabase
         syncCardioToSupabase(newCardioWorkout);
+
+        // Sync cardio records metadata
+        get().syncWorkoutMetadataToSupabase();
 
         return { workout: newCardioWorkout, xpEarned, prs };
       },
@@ -1181,6 +1244,9 @@ export const useWorkoutStore = create(
           },
         });
 
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
+
         return newExercise;
       },
 
@@ -1202,6 +1268,9 @@ export const useWorkoutStore = create(
           },
         });
 
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
+
         return updatedExercise;
       },
 
@@ -1210,6 +1279,9 @@ export const useWorkoutStore = create(
         const state = get();
         const { [exerciseId]: deleted, ...remaining } = state.customExercises;
         set({ customExercises: remaining });
+
+        // Sync to Supabase
+        get().syncWorkoutMetadataToSupabase();
       },
 
       // Get all exercises (built-in + custom)

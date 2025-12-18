@@ -45,7 +45,7 @@ const getUnlockNotificationStore = async () => {
   return unlockNotificationStoreRef;
 };
 
-// Default state for new users
+// Default state for new users - start with NO equipment, must unlock everything
 const DEFAULT_STATE = {
   level: 1,
   xp: 0,
@@ -55,12 +55,12 @@ const DEFAULT_STATE = {
   totalXPEarned: 0,
   characterGender: 'male',
   equipped: {
-    helmet: 'helmet_cloth_cap',
-    chest: 'chest_cloth_tunic',
+    helmet: null,
+    chest: null,
     legs: null,
-    mainHand: 'weapon_training_sword',
-    offHand: 'shield_wooden_buckler',
-    cape: 'cape_traveler',
+    mainHand: null,
+    offHand: null,
+    cape: null,
     ring1: null,
     ring2: null,
     amulet: null,
@@ -93,18 +93,12 @@ const DEFAULT_STATE = {
     title: null,      // e.g., 'title_pioneer'
     frame: null,      // e.g., 'frame_golden'
   },
-  unlockedEquipment: [
-    'helmet_basic',
-    'chest_basic',
-    'weapon_basic_sword',
-    'shield_basic',
-    'cape_basic',
-  ],
+  unlockedEquipment: [], // Start with nothing - all equipment must be earned!
   stats: {
-    defense: 3,
+    defense: 0,
     strength: 0,
-    vitality: 1,
-    intelligence: 1,
+    vitality: 0,
+    intelligence: 0,
     wisdom: 0,
   },
   moduleProgress: {
@@ -176,6 +170,8 @@ export const useAvatarStore = create(
               dyes: data.dye_colors || DEFAULT_STATE.dyes,
               unlockedEquipment: data.unlocked_equipment || DEFAULT_STATE.unlockedEquipment,
               moduleProgress: data.module_progress || DEFAULT_STATE.moduleProgress,
+              ownedCosmetics: data.owned_cosmetics || DEFAULT_STATE.ownedCosmetics,
+              activeCosmetics: data.active_cosmetics || DEFAULT_STATE.activeCosmetics,
               _lastSyncedAt: new Date().toISOString(),
               _isSyncing: false,
             });
@@ -212,6 +208,8 @@ export const useAvatarStore = create(
               dye_colors: state.dyes,
               unlocked_equipment: state.unlockedEquipment,
               module_progress: state.moduleProgress,
+              owned_cosmetics: state.ownedCosmetics,
+              active_cosmetics: state.activeCosmetics,
               updated_at: new Date().toISOString(),
             })
             .eq('id', userId);
@@ -305,7 +303,15 @@ export const useAvatarStore = create(
       equipItem: async (slot, itemId) => {
         const item = EQUIPMENT_DATABASE[itemId];
         if (!item) return false;
-        if (item.slot !== slot) return false;
+
+        // Handle ring slots - rings can go in ring1 or ring2
+        const isRingSlot = slot === 'ring1' || slot === 'ring2';
+        const isRingItem = item.slot === 'ring';
+        if (isRingSlot && isRingItem) {
+          // Allow ring items in ring1/ring2 slots
+        } else if (item.slot !== slot) {
+          return false;
+        }
 
         // DEV MODE: Allow equipping any item
         if (!DEV_UNLOCK_ALL) {
@@ -394,9 +400,20 @@ export const useAvatarStore = create(
         const req = item.unlockRequirement;
         const method = item.unlockMethod;
 
-        // Default items are always unlocked
+        // 'default' items with unlock requirements must meet those requirements
+        // 'default' items without requirements unlock at their levelRequired
         if (method === 'default') {
-          return true;
+          // If there's a specific unlock requirement, check it
+          if (req) {
+            // Module-based requirement (e.g., { module: 'fitness', metric: 'workouts', value: 10 })
+            if (req.module && req.metric && req.value !== undefined) {
+              const moduleStats = moduleProgress?.[req.module] || {};
+              const metricValue = moduleStats[req.metric] || stats?.[req.metric] || 0;
+              return metricValue >= req.value;
+            }
+          }
+          // Otherwise, unlock based on level requirement
+          return level >= (item.levelRequired || 1);
         }
 
         // Bazaar items are never auto-unlocked - must be purchased
@@ -582,7 +599,7 @@ export const useAvatarStore = create(
               .from('user_pvp_stats')
               .select('*')
               .eq('user_id', userId)
-              .single();
+              .maybeSingle();
             if (pvpData) pvpStats = pvpData;
 
             // Fetch completed quests
@@ -930,15 +947,17 @@ export const useAvatarStore = create(
       // ============================================
 
       // Add a cosmetic to owned list
-      addOwnedCosmetic: (cosmeticId) => {
+      addOwnedCosmetic: async (cosmeticId) => {
         const { ownedCosmetics } = get();
         if (!ownedCosmetics.includes(cosmeticId)) {
           set({ ownedCosmetics: [...ownedCosmetics, cosmeticId] });
+          // Sync to Supabase
+          get().syncToSupabase();
         }
       },
 
       // Set active cosmetic (title or frame)
-      setActiveCosmetic: (type, cosmeticId) => {
+      setActiveCosmetic: async (type, cosmeticId) => {
         const { activeCosmetics, ownedCosmetics } = get();
         // Only allow setting if owned (or null to unequip)
         if (cosmeticId === null || ownedCosmetics.includes(cosmeticId)) {
@@ -948,6 +967,8 @@ export const useAvatarStore = create(
               [type]: cosmeticId,
             },
           });
+          // Sync to Supabase
+          get().syncToSupabase();
         }
       },
 

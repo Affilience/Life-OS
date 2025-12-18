@@ -13,6 +13,16 @@ export default defineConfig({
   // Important: Use relative paths for Capacitor iOS/Android builds
   base: './',
 
+  // Resolve module compatibility issues
+  resolve: {
+    alias: {
+      'lodash': 'lodash-es',
+      // Force recharts to use root react-is instead of its nested copy
+      'react-is': 'react-is',
+    },
+    dedupe: ['react', 'react-dom', 'react-is'],
+  },
+
   build: {
     // Output directory (must match capacitor.config.ts webDir)
     outDir: 'dist',
@@ -134,13 +144,13 @@ export default defineConfig({
       'react',
       'react-dom',
       'react-router-dom',
+      'react-is',
       'lucide-react',
       'zustand',
       'date-fns',
-      'framer-motion'
+      'framer-motion',
+      'recharts'
     ],
-    // Exclude heavy deps that are lazy loaded
-    exclude: ['d3', 'recharts']
   },
   // Enable tree-shaking for better dead code elimination
   esbuild: {

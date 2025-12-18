@@ -603,28 +603,57 @@ export default function FeatureTour() {
 
   // Check for auto-start tour when route changes
   useEffect(() => {
-    if (!toursEnabled) return;
-
     const tourId = ROUTE_TO_TOUR[location.pathname];
-    if (!tourId) return;
+    console.log('[FeatureTour] Route check:', {
+      pathname: location.pathname,
+      tourId,
+      toursEnabled,
+      isActive,
+      shouldAutoStart: tourId ? shouldAutoStartTour(location.pathname) : 'no tourId',
+    });
+
+    if (!toursEnabled) {
+      console.log('[FeatureTour] Tours disabled, skipping');
+      return;
+    }
+
+    if (!tourId) {
+      console.log('[FeatureTour] No tour for this route');
+      return;
+    }
 
     // Don't prompt if there's an active tour
-    if (isActive) return;
+    if (isActive) {
+      console.log('[FeatureTour] Tour already active, skipping');
+      return;
+    }
 
     // Check if should auto-start
     if (shouldAutoStartTour(location.pathname)) {
+      console.log('[FeatureTour] Will show tour prompt in 1 second');
       // Small delay to let the page render
       const timeout = setTimeout(() => {
+        console.log('[FeatureTour] Showing tour prompt for:', tourId);
         setPromptTourId(tourId);
         setShowPrompt(true);
       }, 1000);
 
       return () => clearTimeout(timeout);
+    } else {
+      console.log('[FeatureTour] Tour already completed or skipped');
     }
   }, [location.pathname, toursEnabled, isActive, shouldAutoStartTour]);
 
   // Find and track the target element
   useEffect(() => {
+    console.log('[FeatureTour] Element tracking:', {
+      isActive,
+      isPaused,
+      currentStep: currentStep?.id,
+      activeTour,
+      currentStepIndex,
+    });
+
     if (!isActive || isPaused || !currentStep) {
       setTargetRect(null);
       setTooltipPosition(null);
@@ -632,6 +661,7 @@ export default function FeatureTour() {
     }
 
     const { target, position } = currentStep;
+    console.log('[FeatureTour] Finding element:', { target, position });
 
     // Center position (no target)
     if (!target || position === 'center') {
@@ -640,10 +670,34 @@ export default function FeatureTour() {
       return;
     }
 
+    // Track elements we've modified for cleanup
+    let modifiedElements = [];
+
     // Find the target element
     const findTarget = () => {
       const element = document.querySelector(target);
       if (element) {
+        // Raise the target element above the overlay so it can be clicked
+        element.style.position = element.style.position || 'relative';
+        element.style.zIndex = '10000';
+        element.style.pointerEvents = 'auto';
+        modifiedElements.push({ el: element, originalZIndex: element.style.zIndex, originalPointerEvents: element.style.pointerEvents });
+
+        // Also raise any ancestors that might have z-index creating a stacking context
+        let parent = element.parentElement;
+        while (parent && parent !== document.body) {
+          const computedStyle = window.getComputedStyle(parent);
+          const zIndex = computedStyle.zIndex;
+          const position = computedStyle.position;
+          // If parent has a z-index and positioned, it creates a stacking context
+          if (zIndex !== 'auto' && position !== 'static') {
+            const originalZ = parent.style.zIndex;
+            parent.style.zIndex = '9999';
+            modifiedElements.push({ el: parent, originalZIndex: originalZ });
+          }
+          parent = parent.parentElement;
+        }
+
         const rect = element.getBoundingClientRect();
         setTargetRect(rect);
         setTooltipPosition(calculateTooltipPosition(rect, position));
@@ -686,6 +740,14 @@ export default function FeatureTour() {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleResize, true);
       if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current);
+      // Reset all modified elements when step changes
+      modifiedElements.forEach(({ el, originalZIndex, originalPointerEvents }) => {
+        el.style.zIndex = originalZIndex || '';
+        if (originalPointerEvents !== undefined) {
+          el.style.pointerEvents = originalPointerEvents || '';
+        }
+      });
+      modifiedElements = [];
     };
   }, [isActive, isPaused, currentStep, currentStepIndex]);
 
@@ -720,11 +782,19 @@ export default function FeatureTour() {
 
   // Handle prompt actions
   const handleStartTour = () => {
+    console.log('[FeatureTour] Start Tour clicked, promptTourId:', promptTourId);
     setShowPrompt(false);
     // Play start sound
-    feedback.success();
+    try {
+      feedback.buttonPress();
+    } catch (e) {
+      console.error('[FeatureTour] Error playing feedback:', e);
+    }
     if (promptTourId) {
+      console.log('[FeatureTour] Starting tour:', promptTourId);
       startTour(promptTourId);
+    } else {
+      console.error('[FeatureTour] No promptTourId to start!');
     }
   };
 
@@ -806,6 +876,17 @@ export default function FeatureTour() {
       targetElement.removeEventListener('click', handleTargetClick);
     };
   }, [isActive, currentStep, nextStep]);
+
+  // Debug: log render conditions
+  console.log('[FeatureTour] Render conditions:', {
+    showPrompt,
+    promptTourId,
+    isActive,
+    isPaused,
+    hasCurrentStep: !!currentStep,
+    hasTooltipPosition: !!tooltipPosition,
+    willRenderTour: isActive && !isPaused && currentStep && tooltipPosition,
+  });
 
   return (
     <>

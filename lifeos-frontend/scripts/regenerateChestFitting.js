@@ -1,5 +1,6 @@
 /**
- * Regenerate chest armor pieces - cuts off at shoulders, no neck
+ * Regenerate chest armor to fit avatar body shape
+ * Focus on overlay design that matches character sprite proportions
  */
 
 import fs from 'fs';
@@ -14,23 +15,19 @@ const API_URL = 'https://api.pixellab.ai/v1/generate-image-pixflux';
 
 const ITEMS = [
   {
-    filename: 'reinforced_breastplate',
-    description: `pixel art breastplate, steel chest armor piece, front view, ONLY shows chest and shoulder area, completely flat at top edge with NO neck hole NO collar NO neck opening, armor stops at shoulder line, flat 2D sprite overlay, single black outline, RPG equipment icon style, isolated armor piece floating`,
-  },
-  {
     filename: 'armor_plate',
-    description: `pixel art plate armor chestpiece, polished metal breastplate, front view, ONLY chest and shoulders visible, flat straight edge at top NO neck NO collar NO opening at top, armor ends at shoulder level, flat 2D game sprite, single black outline, medieval knight equipment, isolated floating armor piece`,
+    description: `pixel art steel plate armor overlay for RPG character sprite, front-facing torso armor, fits on small pixel character body, wide at shoulders tapering to waist, metallic silver with rivets, designed as equipment layer overlay, NO neck area just chest and shoulders, retro 16-bit SNES RPG style, black pixel outline, transparent background`,
   },
   {
     filename: 'cloth_tunic',
-    description: `pixel art brown cloth tunic, simple fabric shirt, front view, ONLY torso visible, flat edge at top at shoulder level NO neckline NO collar NO v-neck, shirt ends at shoulders, flat 2D game sprite overlay, single black outline, RPG starter equipment, isolated floating clothing piece`,
+    description: `pixel art brown cloth tunic overlay for RPG character sprite, front-facing simple shirt, fits on small pixel character body, loose fabric draping on torso, wide at shoulders narrowing at waist, designed as equipment layer overlay, NO neckline just body coverage, retro 16-bit SNES RPG style like Chrono Trigger, black pixel outline, transparent background`,
   },
 ];
 
 async function generate(item) {
   console.log(`Regenerating ${item.filename}...`);
 
-  const negativeDescription = `neck, neckline, collar, v-neck, neck hole, neck opening, 3D, depth, hollow, dark hole, head, face, arms, legs, full body, person, background, realistic`;
+  const negativeDescription = `neck, neckhole, collar, neckline, 3D render, 3D effect, depth shading, realistic, full character, head, face, legs, arms, mannequin, person wearing, dark interior, hollow`;
 
   try {
     const response = await fetch(API_URL, {
@@ -43,7 +40,7 @@ async function generate(item) {
         description: item.description,
         negative_description: negativeDescription,
         image_size: { width: 64, height: 64 },
-        text_guidance_scale: 10,
+        text_guidance_scale: 9,
         no_background: true,
       }),
     });
@@ -74,7 +71,6 @@ async function generate(item) {
 async function main() {
   for (const item of ITEMS) {
     await generate(item);
-    // Wait between requests to avoid rate limiting
     await new Promise(r => setTimeout(r, 4000));
   }
   console.log('\nDone!');

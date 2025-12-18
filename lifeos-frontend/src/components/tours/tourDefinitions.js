@@ -110,31 +110,28 @@ export const TOURS = {
         position: POSITIONS.TOP,
       },
       {
-        id: 'edit-dashboard',
-        target: '[data-tour="edit-dashboard-btn"]',
-        title: 'Customize Your Dashboard',
-        content: "Click here to enter Edit Mode! You can drag widgets to rearrange them, resize them by dragging corners, and remove widgets you don't need.",
-        novaState: NOVA_STATES.EXCITED,
-        position: POSITIONS.BOTTOM,
-        action: 'click',
-      },
-      {
-        id: 'add-widgets',
-        target: '[data-tour="add-widget-btn"]',
-        title: 'Add More Widgets',
-        content: "Want more on your dashboard? Tap this button to browse all available widgets and add the ones you want!",
-        novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.LEFT,
-        action: 'click',
-      },
-      {
         id: 'settings',
         target: '[data-tour="settings-btn"]',
         title: 'Settings & Preferences',
         content: "Head to Settings to customize your experience - change themes, adjust notifications, manage your profile, and more!",
         novaState: NOVA_STATES.THOUGHTFUL,
         position: POSITIONS.BOTTOM,
-        action: 'click',
+      },
+      {
+        id: 'edit-dashboard',
+        target: '[data-tour="edit-dashboard-btn"]',
+        title: 'Customize Your Dashboard',
+        content: "Click here to enter Edit Mode! You can drag widgets to rearrange them, resize them by dragging corners, and remove widgets you don't need.",
+        novaState: NOVA_STATES.EXCITED,
+        position: POSITIONS.BOTTOM,
+      },
+      {
+        id: 'add-widgets',
+        target: '[data-tour="add-widget-btn"]',
+        title: 'Add More Widgets',
+        content: "Want more on your dashboard? Tap this button to browse all available widgets and add the ones you want! When done, click the X to exit edit mode.",
+        novaState: NOVA_STATES.HAPPY,
+        position: POSITIONS.LEFT,
       },
       {
         id: 'complete',
@@ -176,12 +173,11 @@ export const TOURS = {
       },
       {
         id: 'add-task',
-        target: '[data-tour="add-task-btn"]',
+        target: null, // No specific target, use centered message
         title: 'Quick Task Entry',
-        content: "Click here to add a quick task. Set a priority, category, and estimated time. Great for capturing things you need to do right away!",
+        content: "You can add tasks directly from the dashboard! Set a priority, category, and estimated time. Great for capturing things you need to do right away.",
         novaState: NOVA_STATES.ENCOURAGING,
-        position: POSITIONS.BOTTOM,
-        action: 'click',
+        position: 'center',
       },
       {
         id: 'projects-intro',
@@ -290,11 +286,11 @@ export const TOURS = {
       },
       {
         id: 'dashboard-section',
-        target: '[data-tour="health-dashboard-section"]',
+        target: null, // Full section, use centered message
         title: 'Health Dashboard',
         content: "This dashboard shows your nutrition progress, recent workouts, personal records, and health trends all in one place!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.BOTTOM,
+        position: 'center',
       },
       {
         id: 'workouts-tab',
@@ -307,19 +303,19 @@ export const TOURS = {
       },
       {
         id: 'workouts-section',
-        target: '[data-tour="health-workouts-section"]',
+        target: null, // Full section, use centered message
         title: 'Strength Training',
         content: "Track your strength workouts here. You can use workout templates or create custom routines. The app tracks your personal records automatically!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'workout-templates',
-        target: '[data-tour="workout-templates"]',
+        target: null, // Full section, use centered message
         title: 'Workout Templates',
         content: "Use templates for quick logging! Choose from built-in templates like Push/Pull/Legs or create your own custom routines.",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.BOTTOM,
+        position: 'center',
       },
       {
         id: 'start-workout',
@@ -341,11 +337,11 @@ export const TOURS = {
       },
       {
         id: 'nutrition-section',
-        target: '[data-tour="health-nutrition-section"]',
+        target: null, // Full section, use centered message
         title: 'Meal Tracking',
         content: "Track everything you eat here. Log meals with detailed nutritional info, or use the quick-add feature for simple entries.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'log-meal',
@@ -367,11 +363,11 @@ export const TOURS = {
       },
       {
         id: 'cardio-section',
-        target: '[data-tour="health-cardio-section"]',
+        target: null, // Full section, use centered message
         title: 'Cardio Tracking',
         content: "Log your cardio sessions here - distance, duration, heart rate, and more. Track your progress over time and set new personal bests!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'complete',
@@ -423,69 +419,33 @@ export const TOURS = {
         id: 'equipment-tab',
         target: '[data-tour="character-tab-equipment"]',
         title: 'Equipment Tab',
-        content: "Click the Equipment tab to see all the gear you can unlock! Each piece provides stat bonuses and changes your avatar's appearance.",
+        content: "The Equipment tab shows all the gear you can unlock! Each piece provides stat bonuses and changes your avatar's appearance.",
         novaState: NOVA_STATES.ENCOURAGING,
-        position: POSITIONS.BOTTOM,
-        action: 'click',
-      },
-      {
-        id: 'equipment-section',
-        target: '[data-tour="equipment-section"]',
-        title: 'Your Equipment',
-        content: "Here you can see all available equipment slots - weapons, armor, accessories, and more. Unlock new gear by leveling up and completing achievements!",
-        novaState: NOVA_STATES.EXCITED,
         position: POSITIONS.BOTTOM,
       },
       {
         id: 'skills-tab',
         target: '[data-tour="character-tab-skills"]',
         title: 'Skill Tree Tab',
-        content: "Click the Skill Tree tab to see the perk system! You can unlock powerful abilities that boost your progress.",
+        content: "The Skill Tree tab has the perk system! Spend perk points on powerful abilities that give bonuses like extra XP, streak protection, and bonus rewards.",
         novaState: NOVA_STATES.ENCOURAGING,
         position: POSITIONS.BOTTOM,
-        action: 'click',
-      },
-      {
-        id: 'perks-section',
-        target: '[data-tour="perks-section"]',
-        title: 'Perk Tree',
-        content: "This Skyrim-inspired perk tree lets you spend perk points on special abilities. Perks give bonuses like extra XP, streak protection, and bonus rewards!",
-        novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
       },
       {
         id: 'pets-tab',
         target: '[data-tour="character-tab-pets"]',
         title: 'Companions Tab',
-        content: "Click the Companions tab to meet your mythological pets! Each companion provides unique bonuses.",
+        content: "The Companions tab shows your mythological pets! Collect creatures from different cultures - each gives XP bonuses. Equip up to 3 at once!",
         novaState: NOVA_STATES.ENCOURAGING,
         position: POSITIONS.BOTTOM,
-        action: 'click',
-      },
-      {
-        id: 'pets-section',
-        target: '[data-tour="pets-section"]',
-        title: 'Your Companions',
-        content: "Collect mythological creatures from different cultures! Each pet gives XP bonuses - equip up to 3 at once. Unlock more by leveling up and completing achievements.",
-        novaState: NOVA_STATES.EXCITED,
-        position: POSITIONS.TOP,
       },
       {
         id: 'bazaar-tab',
         target: '[data-tour="character-tab-bazaar"]',
         title: 'Bazaar Tab',
-        content: "Click the Bazaar tab to visit the shop! Spend your Cosmic Credits on cosmetics, boosters, and special items.",
+        content: "The Bazaar is your shop! Spend Cosmic Credits on avatar cosmetics, XP boosters, loot boxes, and special items. Earn credits by completing quests and achievements!",
         novaState: NOVA_STATES.ENCOURAGING,
         position: POSITIONS.BOTTOM,
-        action: 'click',
-      },
-      {
-        id: 'bazaar-section',
-        target: '[data-tour="bazaar-section"]',
-        title: 'The Bazaar',
-        content: "Welcome to the Bazaar! Here you can spend Cosmic Credits on avatar cosmetics, XP boosters, loot boxes, and special items. Earn credits by completing quests and achievements!",
-        novaState: NOVA_STATES.EXCITED,
-        position: POSITIONS.TOP,
       },
       {
         id: 'complete',
@@ -536,11 +496,11 @@ export const TOURS = {
       },
       {
         id: 'plan-section',
-        target: '[data-tour="plan-section"]',
+        target: null, // Full section, use centered message
         title: 'Daily Planning',
         content: "Plan today's tasks and tomorrow's schedule here. You can add tasks, set priorities, and drag to reorder. Completing tasks earns XP and maintains your streak!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'quit-tab',
@@ -553,11 +513,11 @@ export const TOURS = {
       },
       {
         id: 'quit-section',
-        target: '[data-tour="quit-section"]',
+        target: null, // Full section, use centered message
         title: 'Breaking Bad Habits',
         content: "Track habits you want to quit - like reducing screen time or stopping nail biting. Log when you resist the urge and watch your streak grow!",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'streaks-tab',
@@ -570,11 +530,11 @@ export const TOURS = {
       },
       {
         id: 'streaks-section',
-        target: '[data-tour="streaks-section"]',
+        target: null, // Full section, use centered message
         title: 'Your Streaks',
         content: "View all your active streaks across the app - workouts, journal entries, tasks, and more. Longer streaks unlock special bonuses and achievements!",
         novaState: NOVA_STATES.EXCITED,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'achievements-tab',
@@ -587,17 +547,34 @@ export const TOURS = {
       },
       {
         id: 'achievements-section',
-        target: '[data-tour="achievements-section"]',
+        target: null, // Full section, use centered message
         title: 'Achievements',
         content: "Unlock achievements by hitting milestones - like 100 workouts, 50 journal entries, or reaching level 50. Each achievement gives XP and Cosmic Credits!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
+      },
+      {
+        id: 'bosses-tab',
+        target: '[data-tour="quests-tab-bosses"]',
+        title: 'Boss Battles Tab',
+        content: "Click the Bosses tab to face epic challenges! Defeat powerful bosses by completing tasks and earn legendary rewards.",
+        novaState: NOVA_STATES.ENCOURAGING,
+        position: POSITIONS.BOTTOM,
+        action: 'click',
+      },
+      {
+        id: 'bosses-section',
+        target: null, // Full section, use centered message
+        title: 'Epic Boss Battles',
+        content: "Face off against mighty bosses! Each boss has a health bar you deplete by completing tasks. Defeat them before the timer runs out to earn XP, credits, and exclusive equipment!",
+        novaState: NOVA_STATES.EXCITED,
+        position: 'center',
       },
       {
         id: 'complete',
         target: null,
         title: 'Quest Accepted!',
-        content: "You're all set! Plan your days, break bad habits, maintain streaks, and collect achievements. Every small win compounds into massive progress!",
+        content: "You're all set! Plan your days, break bad habits, maintain streaks, collect achievements, and battle bosses. Every small win compounds into massive progress!",
         novaState: NOVA_STATES.PROUD,
         position: 'center',
       },
@@ -790,11 +767,11 @@ export const TOURS = {
       },
       {
         id: 'library-section',
-        target: '[data-tour="library-section"]',
+        target: null, // Full section, use centered message
         title: 'Your Library',
         content: "This is your content library! Add books, podcasts, videos, and courses. Track your progress and mark items as completed.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'library-sidebar',
@@ -824,11 +801,11 @@ export const TOURS = {
       },
       {
         id: 'notes-writer',
-        target: '[data-tour="notes-writer"]',
+        target: null, // Full section, use centered message
         title: 'Quick Notes',
         content: "Write quick notes here! Add a title, choose a category (Personal, Work, Ideas, Research, Meetings), and jot down your thoughts.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'complete',
@@ -870,36 +847,35 @@ export const TOURS = {
       },
       {
         id: 'month-view',
-        target: '[data-tour="month-view"]',
+        target: null, // Use centered message
         title: 'Month Overview',
         content: "The Month view shows your entire month at a glance. Click any day to see its time blocks, and track your monthly deep work hours and completion rate!",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'month-stats',
-        target: '[data-tour="month-stats"]',
+        target: null, // Use centered message
         title: 'Monthly Statistics',
         content: "Track your monthly progress - total blocks, deep work hours, completed tasks, and your overall completion rate. Great for spotting patterns!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.BOTTOM,
+        position: 'center',
       },
       {
         id: 'time-blocks',
-        target: '[data-tour="time-blocks"]',
+        target: null, // Use centered message
         title: 'Time Blocking',
         content: "Create time blocks for focused work. When you complete a block, mark it done to earn XP and track your actual vs. planned time.",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'add-block',
-        target: '[data-tour="add-block-btn"]',
+        target: null, // Use centered message
         title: 'Adding Time Blocks',
         content: "Click to create a new time block, or click directly on any empty time slot in Day view. Set the activity, duration, and category!",
         novaState: NOVA_STATES.ENCOURAGING,
-        position: POSITIONS.BOTTOM,
-        action: 'click',
+        position: 'center',
       },
       {
         id: 'complete',
@@ -933,11 +909,11 @@ export const TOURS = {
       },
       {
         id: 'journal-book',
-        target: '[data-tour="journal-book"]',
+        target: null, // Full journal book, use centered message
         title: 'Your Personal Journal',
         content: "This is your journal book! Flip through entries like a real book - oldest entries at the front, newest at the back. Use the arrows to navigate pages.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.BOTTOM,
+        position: 'center',
       },
       {
         id: 'customize-cover',
@@ -1225,11 +1201,11 @@ export const TOURS = {
       },
       {
         id: 'leaderboards-section',
-        target: '[data-tour="social-leaderboards-section"]',
+        target: null, // Full section, use centered message
         title: 'Compete & Climb',
         content: "Opt-in to appear on leaderboards, then compete with the community. Filter by All-Time XP, Weekly XP, or Streaks. A little competition keeps things fun!",
         novaState: NOVA_STATES.EXCITED,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'guilds-tab',
@@ -1242,11 +1218,11 @@ export const TOURS = {
       },
       {
         id: 'guilds-section',
-        target: '[data-tour="social-guilds-section"]',
+        target: null, // Full section, use centered message
         title: 'Team Up',
         content: "Join an existing guild or create your own. Guild members can see each other's progress, share achievements, and compete as a team on leaderboards!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'friends-tab',
@@ -1259,11 +1235,11 @@ export const TOURS = {
       },
       {
         id: 'friends-section',
-        target: '[data-tour="social-friends-section"]',
+        target: null, // Full section, use centered message
         title: 'Your Friends',
         content: "See all your friends, their levels, and online status. Accept or decline friend requests here too!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'add-friend',
@@ -1285,11 +1261,11 @@ export const TOURS = {
       },
       {
         id: 'challenges-section',
-        target: '[data-tour="social-challenges-section"]',
+        target: null, // Full section, use centered message
         title: 'Challenge System',
         content: "Join community challenges or create head-to-head battles with friends. Challenges have specific goals like 'Complete 10 workouts this week' with XP rewards!",
         novaState: NOVA_STATES.EXCITED,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'create-challenge',

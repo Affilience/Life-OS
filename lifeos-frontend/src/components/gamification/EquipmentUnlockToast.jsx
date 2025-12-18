@@ -9,6 +9,7 @@
  */
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Sparkles, X, Shield, Sword, Crown, Heart, Star, ChevronRight } from 'lucide-react';
 import { useUnlockNotificationStore, UNLOCK_TYPES } from '../../stores/unlockNotificationStore';
@@ -181,6 +182,7 @@ const getSpritePath = (item) => {
 };
 
 export default function EquipmentUnlockToast() {
+  const navigate = useNavigate();
   const { current, dismiss } = useUnlockNotificationStore();
   const mode = useGamificationModeStore((state) => state.mode);
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
@@ -597,8 +599,9 @@ export default function EquipmentUnlockToast() {
                       onClick={() => {
                         feedback.click?.();
                         dismiss();
-                        // Navigate to character page or open equip modal
-                        // This would be handled by the parent component
+                        // Navigate to character page with appropriate tab
+                        const tab = isPet ? 'pets' : 'equipment';
+                        navigate(`/character?tab=${tab}`);
                       }}
                       className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all"
                       style={{

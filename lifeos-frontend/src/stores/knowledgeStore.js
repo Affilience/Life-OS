@@ -102,7 +102,7 @@ const initializeFromSupabase = async (set, get) => {
     const mapDbStatusToLocal = (status) => {
       const statusMap = {
         'want': 'want-to-watch',
-        'in_progress': 'watching',
+        'in_progress': 'in-progress',
         'completed': 'completed',
         'abandoned': 'abandoned',
       };
@@ -184,10 +184,18 @@ const syncNoteToSupabase = async (note, action = 'upsert') => {
     if (!userId) return;
 
     if (action === 'delete') {
-      await supabase.from('knowledge_notes').update({ archived: true }).eq('id', note.id).eq('user_id', userId);
+      // Only delete if it's a UUID (was synced to Supabase)
+      if (note.id && !note.id.startsWith('note-')) {
+        await supabase.from('knowledge_notes').update({ archived: true }).eq('id', note.id).eq('user_id', userId);
+      }
     } else {
+      // Generate a proper UUID for new items, or use existing UUID
+      const dbId = note.id && !note.id.startsWith('note-')
+        ? note.id
+        : crypto.randomUUID();
+
       await supabase.from('knowledge_notes').upsert({
-        id: note.id,
+        id: dbId,
         user_id: userId,
         title: note.title,
         content: note.content,
@@ -198,6 +206,12 @@ const syncNoteToSupabase = async (note, action = 'upsert') => {
         is_favorite: note.isFavorite || false,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
+
+      // Update local state with the proper UUID if it was a temp id
+      if (note.id && note.id.startsWith('note-')) {
+        const store = useKnowledgeStore.getState();
+        store.updateNoteId(note.id, dbId);
+      }
     }
   } catch (error) {
     console.error('Error syncing note to Supabase:', error);
@@ -210,10 +224,18 @@ const syncBookToSupabase = async (book, action = 'upsert') => {
     if (!userId) return;
 
     if (action === 'delete') {
-      await supabase.from('knowledge_books').delete().eq('id', book.id).eq('user_id', userId);
+      // Only delete if it's a UUID (was synced to Supabase)
+      if (book.id && !book.id.startsWith('book-')) {
+        await supabase.from('knowledge_books').delete().eq('id', book.id).eq('user_id', userId);
+      }
     } else {
+      // Generate a proper UUID for new items, or use existing UUID
+      const dbId = book.id && !book.id.startsWith('book-')
+        ? book.id
+        : crypto.randomUUID();
+
       await supabase.from('knowledge_books').upsert({
-        id: book.id,
+        id: dbId,
         user_id: userId,
         title: book.title,
         author: book.author,
@@ -232,6 +254,12 @@ const syncBookToSupabase = async (book, action = 'upsert') => {
         metadata: book.metadata || {},
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
+
+      // Update local state with the proper UUID if it was a temp id
+      if (book.id && book.id.startsWith('book-')) {
+        const store = useKnowledgeStore.getState();
+        store.updateBookId(book.id, dbId);
+      }
     }
   } catch (error) {
     console.error('Error syncing book to Supabase:', error);
@@ -318,10 +346,18 @@ const syncTagToSupabase = async (tag, action = 'upsert') => {
     if (!userId) return;
 
     if (action === 'delete') {
-      await supabase.from('knowledge_tags').delete().eq('name', tag.name).eq('user_id', userId);
+      // Only delete if it's a UUID (was synced to Supabase)
+      if (tag.id && !tag.id.startsWith('tag-')) {
+        await supabase.from('knowledge_tags').delete().eq('name', tag.name).eq('user_id', userId);
+      }
     } else {
+      // Generate a proper UUID for new items, or use existing UUID
+      const dbId = tag.id && !tag.id.startsWith('tag-')
+        ? tag.id
+        : crypto.randomUUID();
+
       await supabase.from('knowledge_tags').upsert({
-        id: tag.id,
+        id: dbId,
         user_id: userId,
         name: tag.name,
         color: tag.color,
@@ -339,10 +375,18 @@ const syncCollectionToSupabase = async (collection, action = 'upsert') => {
     if (!userId) return;
 
     if (action === 'delete') {
-      await supabase.from('knowledge_collections').delete().eq('id', collection.id).eq('user_id', userId);
+      // Only delete if it's a UUID (was synced to Supabase)
+      if (collection.id && !collection.id.startsWith('collection-')) {
+        await supabase.from('knowledge_collections').delete().eq('id', collection.id).eq('user_id', userId);
+      }
     } else {
+      // Generate a proper UUID for new items, or use existing UUID
+      const dbId = collection.id && !collection.id.startsWith('collection-')
+        ? collection.id
+        : crypto.randomUUID();
+
       await supabase.from('knowledge_collections').upsert({
-        id: collection.id,
+        id: dbId,
         user_id: userId,
         name: collection.name,
         description: collection.description,
@@ -363,10 +407,18 @@ const syncProjectToSupabase = async (project, action = 'upsert') => {
     if (!userId) return;
 
     if (action === 'delete') {
-      await supabase.from('knowledge_projects').delete().eq('id', project.id).eq('user_id', userId);
+      // Only delete if it's a UUID (was synced to Supabase)
+      if (project.id && !project.id.startsWith('project-')) {
+        await supabase.from('knowledge_projects').delete().eq('id', project.id).eq('user_id', userId);
+      }
     } else {
+      // Generate a proper UUID for new items, or use existing UUID
+      const dbId = project.id && !project.id.startsWith('project-')
+        ? project.id
+        : crypto.randomUUID();
+
       await supabase.from('knowledge_projects').upsert({
-        id: project.id,
+        id: dbId,
         user_id: userId,
         title: project.title,
         goal: project.goal,
@@ -526,6 +578,18 @@ export const useKnowledgeStore = create(
       },
 
       /**
+       * Update note ID (used when syncing temp ID to database UUID)
+       */
+      updateNoteId: (oldId, newId) => {
+        set((state) => ({
+          notes: state.notes.map((note) =>
+            note.id === oldId ? { ...note, id: newId } : note
+          ),
+          activeItemId: state.activeItemId === oldId ? newId : state.activeItemId,
+        }));
+      },
+
+      /**
        * Add tag to a note
        */
       addTagToNote: (noteId, tag) => {
@@ -654,6 +718,18 @@ export const useKnowledgeStore = create(
               ? { ...note, linkedTo: [...note.linkedTo, bookId] }
               : note
           ),
+        }));
+      },
+
+      /**
+       * Update book ID (used when syncing temp ID to database UUID)
+       */
+      updateBookId: (oldId, newId) => {
+        set((state) => ({
+          books: state.books.map((book) =>
+            book.id === oldId ? { ...book, id: newId } : book
+          ),
+          activeItemId: state.activeItemId === oldId ? newId : state.activeItemId,
         }));
       },
 

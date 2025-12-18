@@ -1,7 +1,3 @@
-/**
- * Regenerate chest armor pieces - cuts off at shoulders, no neck
- */
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,23 +10,19 @@ const API_URL = 'https://api.pixellab.ai/v1/generate-image-pixflux';
 
 const ITEMS = [
   {
-    filename: 'reinforced_breastplate',
-    description: `pixel art breastplate, steel chest armor piece, front view, ONLY shows chest and shoulder area, completely flat at top edge with NO neck hole NO collar NO neck opening, armor stops at shoulder line, flat 2D sprite overlay, single black outline, RPG equipment icon style, isolated armor piece floating`,
-  },
-  {
     filename: 'armor_plate',
-    description: `pixel art plate armor chestpiece, polished metal breastplate, front view, ONLY chest and shoulders visible, flat straight edge at top NO neck NO collar NO opening at top, armor ends at shoulder level, flat 2D game sprite, single black outline, medieval knight equipment, isolated floating armor piece`,
+    description: `pixel art metal breastplate chest armor, steel plate armor torso piece, front view, shaped like a vest to overlay on character sprite, wide shoulders narrow waist, solid metal with rivets, 16-bit SNES Final Fantasy style equipment sprite, single black outline, NO neck opening NO collar, transparent background`,
   },
   {
     filename: 'cloth_tunic',
-    description: `pixel art brown cloth tunic, simple fabric shirt, front view, ONLY torso visible, flat edge at top at shoulder level NO neckline NO collar NO v-neck, shirt ends at shoulders, flat 2D game sprite overlay, single black outline, RPG starter equipment, isolated floating clothing piece`,
+    description: `pixel art simple brown tunic shirt, cloth fabric torso clothing, front view, shaped like a vest to overlay on character sprite, wide shoulders narrow waist, plain brown fabric with slight shading, 16-bit SNES Chrono Trigger style equipment sprite, single black outline, NO neckline NO collar, transparent background`,
   },
 ];
 
 async function generate(item) {
   console.log(`Regenerating ${item.filename}...`);
 
-  const negativeDescription = `neck, neckline, collar, v-neck, neck hole, neck opening, 3D, depth, hollow, dark hole, head, face, arms, legs, full body, person, background, realistic`;
+  const negativeDescription = `neck, neckhole, collar, neckline, v-neck, 3D, depth, hollow interior, dark hole, head, face, legs, arms, full body, person, mannequin, realistic, modern`;
 
   try {
     const response = await fetch(API_URL, {
@@ -74,7 +66,6 @@ async function generate(item) {
 async function main() {
   for (const item of ITEMS) {
     await generate(item);
-    // Wait between requests to avoid rate limiting
     await new Promise(r => setTimeout(r, 4000));
   }
   console.log('\nDone!');

@@ -358,32 +358,60 @@ function StatsDemo({ isActive }: { isActive: boolean }) {
 }
 
 // ============================================
-// Skills Constellation Demo
+// Skills Constellation Demo - Skyrim-style BODY tree
 // ============================================
 function SkillsDemo({ isActive }: { isActive: boolean }) {
-  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const SKILLS = [
-    { id: 'focus', x: 50, y: 15, color: '#fbbf24', unlocked: true, name: 'Focus', progress: 45 },
-    { id: 'logic', x: 20, y: 35, color: '#3b82f6', unlocked: true, name: 'Logic', progress: 30 },
-    { id: 'creative', x: 80, y: 35, color: '#8b5cf6', unlocked: true, name: 'Creative', progress: 60 },
-    { id: 'core', x: 50, y: 55, color: '#ec4899', unlocked: true, name: 'Core', progress: 100 },
-    { id: 'learn', x: 15, y: 70, color: '#06b6d4', unlocked: true, name: 'Learning', progress: 20 },
-    { id: 'master', x: 85, y: 70, color: '#6b7280', unlocked: false, name: 'Mastery', progress: 0 },
+  // Simplified BODY tree constellation - Warrior/Atlas humanoid shape
+  const SKILL_NODES = [
+    // Base/Foundation
+    { id: 'foundation', x: 50, y: 85, name: 'Foundation', tier: 'novice', unlocked: true, description: '+10% XP from activities' },
+    // Legs (stance)
+    { id: 'endurance', x: 35, y: 92, name: 'Endurance', tier: 'novice', unlocked: true, description: 'Cardio gives +20% XP' },
+    { id: 'strength', x: 65, y: 92, name: 'Strength', tier: 'novice', unlocked: true, description: 'Training gives +20% XP' },
+    // Core
+    { id: 'nutrition', x: 50, y: 70, name: 'Nutrition', tier: 'novice', unlocked: true, description: 'Meal logging bonus' },
+    { id: 'recovery', x: 50, y: 55, name: 'Recovery', tier: 'adept', unlocked: true, description: 'Sleep tracking XP' },
+    // Arms spread
+    { id: 'cardio_master', x: 15, y: 45, name: 'Cardio II', tier: 'adept', unlocked: false, description: '+40% cardio XP' },
+    { id: 'strength_master', x: 85, y: 45, name: 'Strength II', tier: 'adept', unlocked: false, description: '+40% strength XP' },
+    // Heart/Connection
+    { id: 'mind_body', x: 50, y: 40, name: 'Mind-Body', tier: 'adept', unlocked: false, description: 'Yoga gives +50% XP' },
+    // Neck/Consistency
+    { id: 'consistency', x: 50, y: 28, name: 'Consistency', tier: 'expert', unlocked: false, description: '+5% XP per streak day' },
+    // Head
+    { id: 'peak', x: 50, y: 15, name: 'Peak Form', tier: 'expert', unlocked: false, description: '+50% all activities' },
+    // Crown (master)
+    { id: 'superhuman', x: 50, y: 2, name: 'Superhuman', tier: 'master', unlocked: false, description: 'Triple XP ultimate' },
   ];
 
   const CONNECTIONS = [
-    { from: 'focus', to: 'logic' },
-    { from: 'focus', to: 'creative' },
-    { from: 'focus', to: 'core', dashed: true },
-    { from: 'logic', to: 'core', dashed: true },
-    { from: 'creative', to: 'core', dashed: true },
-    { from: 'logic', to: 'learn' },
-    { from: 'creative', to: 'master' },
+    { from: 'foundation', to: 'endurance' },
+    { from: 'foundation', to: 'strength' },
+    { from: 'foundation', to: 'nutrition' },
+    { from: 'nutrition', to: 'recovery' },
+    { from: 'recovery', to: 'cardio_master', dashed: true },
+    { from: 'recovery', to: 'strength_master', dashed: true },
+    { from: 'recovery', to: 'mind_body' },
+    { from: 'endurance', to: 'cardio_master' },
+    { from: 'strength', to: 'strength_master' },
+    { from: 'cardio_master', to: 'consistency', dashed: true },
+    { from: 'strength_master', to: 'consistency', dashed: true },
+    { from: 'mind_body', to: 'consistency' },
+    { from: 'consistency', to: 'peak' },
+    { from: 'peak', to: 'superhuman' },
   ];
 
-  const getSkill = (id: string) => SKILLS.find(s => s.id === id);
+  const TIER_COLORS: Record<string, string> = {
+    novice: '#94a3b8',
+    adept: '#3b82f6',
+    expert: '#a855f7',
+    master: '#f59e0b',
+  };
+
+  const getNode = (id: string) => SKILL_NODES.find(n => n.id === id);
 
   useEffect(() => {
     if (isActive && svgRef.current) {
@@ -400,36 +428,53 @@ function SkillsDemo({ isActive }: { isActive: boolean }) {
           strokeDashoffset: [length, 0],
           opacity: [0, 0.6],
           duration: 600,
-          delay: i * 50,
+          delay: i * 40,
           ease: 'outQuad',
         });
       });
     }
   }, [isActive]);
 
+  const selected = selectedNode ? getNode(selectedNode) : null;
+  const unlockedCount = SKILL_NODES.filter(n => n.unlocked).length;
+
   return (
     <div className="flex flex-col items-center gap-2 h-full">
+      {/* Tree Name */}
+      <div className="text-center">
+        <p className="text-lg font-bold tracking-widest" style={{ color: '#d97757', textShadow: '0 0 20px #d97757' }}>BODY</p>
+        <p className="text-xs text-white/40 -mt-1">Warrior Constellation</p>
+      </div>
+
       {/* SVG Constellation */}
-      <svg ref={svgRef} viewBox="0 0 100 85" className="w-full max-w-[260px] h-auto">
+      <svg ref={svgRef} viewBox="0 0 100 100" className="w-full max-w-[220px] h-auto">
         <defs>
-          <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.6" />
+          <linearGradient id="bodyLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#d97757" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.6" />
           </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="1" result="blur" />
+          <filter id="nodeGlow2">
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <radialGradient id="centerGlow2">
+            <stop offset="0%" stopColor="#d97757" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#d97757" stopOpacity="0" />
+          </radialGradient>
         </defs>
+
+        {/* Background nebula */}
+        <ellipse cx="50" cy="50" rx="40" ry="45" fill="url(#centerGlow2)" />
 
         {/* Connections */}
         {CONNECTIONS.map((conn, i) => {
-          const from = getSkill(conn.from);
-          const to = getSkill(conn.to);
+          const from = getNode(conn.from);
+          const to = getNode(conn.to);
           if (!from || !to) return null;
+          const isActive = from.unlocked && to.unlocked;
           return (
             <line
               key={i}
@@ -437,72 +482,83 @@ function SkillsDemo({ isActive }: { isActive: boolean }) {
               y1={from.y}
               x2={to.x}
               y2={to.y}
-              stroke="url(#lineGrad)"
-              strokeWidth={conn.dashed ? 0.5 : 0.8}
-              strokeDasharray={conn.dashed ? '2,2' : undefined}
+              stroke={isActive ? '#d97757' : 'url(#bodyLineGrad)'}
+              strokeWidth={isActive ? 1.2 : 0.8}
+              strokeDasharray={conn.dashed && !isActive ? '2,2' : undefined}
               opacity={0}
             />
           );
         })}
 
-        {/* Stars */}
-        {SKILLS.map(skill => (
-          <g
-            key={skill.id}
-            onClick={() => setSelectedSkill(selectedSkill === skill.id ? null : skill.id)}
-            style={{ cursor: 'pointer' }}
-          >
-            {skill.unlocked && (
-              <circle cx={skill.x} cy={skill.y} r={6} fill={skill.color} opacity={0.15}>
-                <animate attributeName="opacity" values="0.1;0.25;0.1" dur="2s" repeatCount="indefinite" />
-              </circle>
-            )}
-            <circle
-              cx={skill.x}
-              cy={skill.y}
-              r={skill.unlocked ? 3 : 2.5}
-              fill={skill.unlocked ? skill.color : 'rgba(255,255,255,0.2)'}
-              filter={skill.unlocked ? 'url(#glow)' : undefined}
-            />
-            {selectedSkill === skill.id && (
-              <circle cx={skill.x} cy={skill.y} r={5} fill="none" stroke={skill.color} strokeWidth="0.5" opacity={0.8}>
-                <animate attributeName="r" values="5;7;5" dur="1s" repeatCount="indefinite" />
-              </circle>
-            )}
-          </g>
-        ))}
+        {/* Nodes */}
+        {SKILL_NODES.map(node => {
+          const isSelected = selectedNode === node.id;
+          const tierColor = TIER_COLORS[node.tier];
+          const nodeSize = node.tier === 'master' ? 4.5 : node.tier === 'expert' ? 3.5 : 3;
+
+          return (
+            <g
+              key={node.id}
+              onClick={() => setSelectedNode(isSelected ? null : node.id)}
+              style={{ cursor: 'pointer' }}
+            >
+              {/* Glow for unlocked */}
+              {node.unlocked && (
+                <>
+                  <circle cx={node.x} cy={node.y} r={nodeSize * 2.5} fill={tierColor} opacity={0.15}>
+                    <animate attributeName="opacity" values="0.1;0.25;0.1" dur="2.5s" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx={node.x} cy={node.y} r={nodeSize * 1.5} fill={tierColor} opacity={0.3} />
+                </>
+              )}
+              {/* Main node */}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={nodeSize}
+                fill={node.unlocked ? tierColor : 'rgba(255,255,255,0.15)'}
+                stroke={node.unlocked ? 'white' : 'rgba(255,255,255,0.3)'}
+                strokeWidth={node.tier === 'master' ? 1 : 0.5}
+                filter={node.unlocked ? 'url(#nodeGlow2)' : undefined}
+              />
+              {/* Locked indicator */}
+              {!node.unlocked && (
+                <text x={node.x} y={node.y + 1.2} textAnchor="middle" fontSize="3" fill="rgba(255,255,255,0.4)">?</text>
+              )}
+              {/* Selection ring */}
+              {isSelected && (
+                <circle cx={node.x} cy={node.y} r={nodeSize + 3} fill="none" stroke={tierColor} strokeWidth="0.5" opacity={0.8}>
+                  <animate attributeName="r" values={`${nodeSize + 3};${nodeSize + 5};${nodeSize + 3}`} dur="1s" repeatCount="indefinite" />
+                </circle>
+              )}
+            </g>
+          );
+        })}
       </svg>
 
       {/* Info Panel */}
-      {selectedSkill ? (
+      {selected ? (
         <motion.div
-          className="w-full max-w-[240px] p-3 bg-white/5 border border-white/10 rounded-xl"
+          className="w-full max-w-[220px] p-2.5 bg-white/5 border border-white/10 rounded-xl"
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-3 h-3 rounded-full" style={{ background: getSkill(selectedSkill)?.color }} />
-            <span className="font-bold text-white">{getSkill(selectedSkill)?.name}</span>
+            <div className="w-2.5 h-2.5 rounded-full" style={{ background: TIER_COLORS[selected.tier] }} />
+            <span className="font-bold text-white text-sm flex-1">{selected.name}</span>
+            <span className="text-[10px] font-semibold" style={{ color: TIER_COLORS[selected.tier] }}>{selected.tier.toUpperCase()}</span>
           </div>
-          {getSkill(selectedSkill)?.unlocked && (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${getSkill(selectedSkill)?.progress}%`, background: getSkill(selectedSkill)?.color }}
-                />
-              </div>
-              <span className="text-xs text-white/50">{getSkill(selectedSkill)?.progress}%</span>
-            </div>
-          )}
+          <p className="text-xs text-white/60">{selected.description}</p>
+          {!selected.unlocked && <p className="text-[10px] text-white/40 italic mt-1">Unlock by leveling BODY</p>}
         </motion.div>
       ) : (
-        <p className="text-xs text-white/40 italic">Tap a star to see skill info</p>
+        <p className="text-xs text-white/40 italic">Tap a star to see perk info</p>
       )}
 
-      <p className="text-xs text-white/40 mt-auto">
-        Unlocked: {SKILLS.filter(s => s.unlocked).length}/{SKILLS.length} skills
-      </p>
+      <div className="text-center mt-auto">
+        <p className="text-xs text-white/40">{unlockedCount}/{SKILL_NODES.length} perks unlocked</p>
+        <p className="text-[10px] text-white/30">6 constellation trees total</p>
+      </div>
     </div>
   );
 }

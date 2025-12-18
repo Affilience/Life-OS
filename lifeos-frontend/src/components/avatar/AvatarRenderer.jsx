@@ -10,6 +10,7 @@ import {
 } from '../../utils/equipmentRenderer';
 import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
+import { supabase } from '../../lib/supabase';
 import { User } from 'lucide-react';
 import './AvatarRenderer.css';
 
@@ -18,6 +19,62 @@ const imageCache = new Map();
 
 // Storage key for saved equipment positions (same as EquipmentTest page)
 const POSITIONS_STORAGE_KEY = 'lifeos-equipment-positions';
+
+// Global positions cache (loaded from Supabase once)
+let globalPositionsCache = null;
+let globalPositionsLoading = false;
+let globalPositionsListeners = [];
+
+// Load global positions from Supabase (cached)
+async function loadGlobalPositions() {
+  // Return cached if available
+  if (globalPositionsCache !== null) {
+    return globalPositionsCache;
+  }
+
+  // If already loading, wait for it
+  if (globalPositionsLoading) {
+    return new Promise(resolve => {
+      globalPositionsListeners.push(resolve);
+    });
+  }
+
+  globalPositionsLoading = true;
+
+  try {
+    const { data, error } = await supabase
+      .from('equipment_default_positions')
+      .select('position_key, x, y, scale');
+
+    if (error) {
+      console.error('[AvatarRenderer] Failed to load global positions:', error);
+      globalPositionsCache = {};
+    } else if (data && data.length > 0) {
+      globalPositionsCache = {};
+      data.forEach(row => {
+        globalPositionsCache[row.position_key] = {
+          x: parseFloat(row.x),
+          y: parseFloat(row.y),
+          scale: parseFloat(row.scale)
+        };
+      });
+      console.log('[AvatarRenderer] Loaded global positions:', Object.keys(globalPositionsCache).length);
+    } else {
+      globalPositionsCache = {};
+    }
+  } catch (err) {
+    console.error('[AvatarRenderer] Error loading global positions:', err);
+    globalPositionsCache = {};
+  }
+
+  globalPositionsLoading = false;
+
+  // Notify all waiting listeners
+  globalPositionsListeners.forEach(resolve => resolve(globalPositionsCache));
+  globalPositionsListeners = [];
+
+  return globalPositionsCache;
+}
 
 // Helper to load an image with caching
 function loadImage(src) {
@@ -35,8 +92,8 @@ function loadImage(src) {
   });
 }
 
-// Get saved positions from localStorage
-function getSavedPositions() {
+// Get saved positions from localStorage (fallback only)
+function getLocalPositions() {
   try {
     const saved = localStorage.getItem(POSITIONS_STORAGE_KEY);
     return saved ? JSON.parse(saved) : {};
@@ -77,6 +134,14 @@ export default function AvatarRenderer({
 }) {
   const canvasRef = useRef(null);
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [globalPositions, setGlobalPositions] = useState({});
+
+  // Load global positions from Supabase on mount
+  useEffect(() => {
+    loadGlobalPositions().then(positions => {
+      setGlobalPositions(positions);
+    });
+  }, []);
 
   // Get gamification mode settings
   const { mode, isVisible, getTerm } = useGamificationModeStore();
@@ -136,8 +201,6 @@ export default function AvatarRenderer({
 
   // Render sprite - preload ALL images first, then render synchronously
   useEffect(() => {
-    console.log('[AvatarRenderer] useEffect triggered, visualEquipment:', visualEquipment);
-
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -169,9 +232,10 @@ export default function AvatarRenderer({
       backpack: null,
     };
 
-    // Get saved positions from localStorage
-    const savedPositions = getSavedPositions();
-    console.log('[AvatarRenderer] Available saved positions:', Object.keys(savedPositions));
+    // Get positions: Global (Supabase) > Local (localStorage) > Defaults
+    const localPositions = getLocalPositions();
+    const savedPositions = { ...localPositions, ...globalPositions };
+    const savedKeys = Object.keys(savedPositions);
 
     // Helper to extract base name from ID (remove prefix like "weapon_", "shield_", etc.)
     const getBaseName = (id, prefix) => {
@@ -204,9 +268,6 @@ export default function AvatarRenderer({
 
     const weaponHand = getWeaponHand();
     const shieldHand = weaponHand === 'right' ? 'left' : 'right';
-
-    // Debug logging for weapon/shield hand positioning
-    console.log('[AvatarRenderer] Weapon hand:', weaponHand, '| Shield hand:', shieldHand);
 
     // Build list of equipment to render with their sprite paths
     // Use the same path construction as EquipmentTest: /assets/equipment/${folder}/${baseName}.png
@@ -245,7 +306,6 @@ export default function AvatarRenderer({
           spritePath = `/assets/equipment/${folder}/${baseName}.png`;
         }
         positionKey = `weapons/${baseName}`;
-        console.log('[AvatarRenderer] Weapon lookup:', { id: item.id, baseName, positionKey, found: !!savedPositions[positionKey] });
       } else if (slot === 'offHand') {
         folder = 'shields';
         if (item.sprite?.path) {
@@ -256,7 +316,6 @@ export default function AvatarRenderer({
           spritePath = `/assets/equipment/${folder}/${baseName}.png`;
         }
         positionKey = `shields/${baseName}_${shieldHand}`;
-        console.log('[AvatarRenderer] Shield lookup:', { id: item.id, baseName, positionKey, shieldHand, found: !!savedPositions[positionKey] });
       } else if (slot === 'helmet') {
         folder = 'helmets';
         if (item.sprite?.path) {
@@ -313,6 +372,15 @@ export default function AvatarRenderer({
           ? `weapons_${weaponHand}`
           : folder;
       const defaultPos = DEFAULT_POSITIONS[defaultKey] || { x: 0, y: 0, scale: 1 };
+
+      // Debug: Show position lookup result
+      console.log(`[AvatarRenderer] Position lookup for ${slot}:`, {
+        positionKey,
+        foundSaved: !!savedPos,
+        savedPos: savedPos || 'NOT FOUND - using default',
+        defaultPos,
+        availableKeys: savedKeys.filter(k => k.startsWith(folder))
+      });
 
       let position;
 
@@ -473,7 +541,7 @@ export default function AvatarRenderer({
     return () => {
       isCancelled = true;
     };
-  }, [currentFrame, level, prestige, equippedItems, visualEquipment, size, animate, showAvatarEffects, showParticleEffects]);
+  }, [currentFrame, level, prestige, equippedItems, visualEquipment, size, animate, showAvatarEffects, showParticleEffects, globalPositions]);
 
   return (
     <div className={`avatar-renderer ${className}`}>

@@ -10,6 +10,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 // Mode definitions (simplified to 2 modes: full RPG or minimal data view)
 export const GAMIFICATION_MODES = {
@@ -332,10 +333,79 @@ export const useGamificationModeStore = create(
       // Individual visibility overrides (for granular control)
       visibilityOverrides: {},
 
+      // Sync status
+      _isSyncing: false,
+
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        try {
+          const { data } = await supabase
+            .from('user_profiles')
+            .select('preferences')
+            .eq('id', userId)
+            .maybeSingle();
+
+          if (data?.preferences?.gamificationMode) {
+            const modePrefs = data.preferences.gamificationMode;
+            set({
+              mode: modePrefs.mode || 'cosmic',
+              visibilityOverrides: modePrefs.visibilityOverrides || {},
+            });
+          }
+        } catch (error) {
+          console.error('Error loading gamification mode from Supabase:', error);
+        }
+      },
+
+      // Sync to Supabase
+      syncToSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        const state = get();
+        if (state._isSyncing) return;
+
+        set({ _isSyncing: true });
+
+        try {
+          // Get existing preferences to merge
+          const { data: existing } = await supabase
+            .from('user_profiles')
+            .select('preferences')
+            .eq('id', userId)
+            .maybeSingle();
+
+          const existingPrefs = existing?.preferences || {};
+
+          await supabase
+            .from('user_profiles')
+            .update({
+              preferences: {
+                ...existingPrefs,
+                gamificationMode: {
+                  mode: state.mode,
+                  visibilityOverrides: state.visibilityOverrides,
+                },
+              },
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+        } catch (error) {
+          console.error('Error syncing gamification mode to Supabase:', error);
+        } finally {
+          set({ _isSyncing: false });
+        }
+      },
+
       // Actions
       setMode: (newMode) => {
         if (GAMIFICATION_MODES[newMode]) {
           set({ mode: newMode, visibilityOverrides: {} });
+          // Sync to Supabase
+          get().syncToSupabase();
         }
       },
 
@@ -352,6 +422,8 @@ export const useGamificationModeStore = create(
             [key]: !currentValue,
           },
         });
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // Set specific visibility
@@ -362,11 +434,15 @@ export const useGamificationModeStore = create(
             [key]: value,
           },
         });
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // Reset visibility to mode defaults
       resetVisibility: () => {
         set({ visibilityOverrides: {} });
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // Get term based on current mode
@@ -455,4 +531,9 @@ export const useGamificationVisibility = (key) => {
 // Hook for getting current mode
 export const useGamificationMode = () => {
   return useGamificationModeStore((state) => state.mode);
+};
+
+// Initialize gamification mode store from Supabase
+export const initializeGamificationModeStore = async () => {
+  await useGamificationModeStore.getState().initializeFromSupabase();
 };

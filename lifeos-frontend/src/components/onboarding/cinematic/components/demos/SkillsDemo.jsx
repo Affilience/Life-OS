@@ -1,56 +1,81 @@
 /**
- * Skills Demo
+ * Skills Demo - Skyrim-style Constellation
  *
- * Interactive skill constellation preview.
- * - SVG constellation with animated drawing
- * - Tap stars to see skill info
- * - Locked vs unlocked states
+ * Interactive skill constellation using actual perk tree data.
+ * Shows the BODY tree constellation as a preview of the skill system.
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { animate } from 'animejs';
 import { feedback } from '../../../../../services/microInteractions';
 
-const SKILL_STARS = [
-  { id: 'focus', x: 50, y: 12, color: '#fbbf24', unlocked: true, name: 'Focus', description: 'Productivity mastery', progress: 45 },
-  { id: 'logic', x: 22, y: 32, color: '#3b82f6', unlocked: true, name: 'Logic', description: 'Analytical thinking', progress: 30 },
-  { id: 'creative', x: 78, y: 32, color: '#8b5cf6', unlocked: true, name: 'Creative', description: 'Innovation & ideas', progress: 60 },
-  { id: 'core', x: 50, y: 50, color: '#ec4899', unlocked: true, name: 'Core', description: 'Life foundation', progress: 100 },
-  { id: 'learn', x: 15, y: 58, color: '#06b6d4', unlocked: true, name: 'Learning', description: 'Knowledge growth', progress: 20 },
-  { id: 'master', x: 85, y: 58, color: '#6b7280', unlocked: false, name: 'Mastery', description: 'Ultimate skill', progress: 0 },
-  { id: 'hidden1', x: 28, y: 78, color: '#6b7280', unlocked: false, name: '???', description: 'Complete Learn to unlock', progress: 0 },
-  { id: 'hidden2', x: 72, y: 78, color: '#6b7280', unlocked: false, name: '???', description: 'Complete Master to unlock', progress: 0 },
-  { id: 'final', x: 50, y: 90, color: '#6b7280', unlocked: false, name: '???', description: 'The final skill', progress: 0 },
+// Simplified BODY tree constellation data (from perkTrees.js)
+// Warrior/Atlas figure - humanoid shape with spread arms and legs
+const SKILL_NODES = [
+  // Base/Foundation
+  { id: 'foundation', x: 50, y: 85, name: 'Foundation', tier: 'novice', unlocked: true, description: '+10% XP from activities' },
+  // Legs (stance)
+  { id: 'endurance', x: 35, y: 92, name: 'Endurance', tier: 'novice', unlocked: true, description: 'Cardio gives +20% XP' },
+  { id: 'strength', x: 65, y: 92, name: 'Strength', tier: 'novice', unlocked: true, description: 'Training gives +20% XP' },
+  // Core
+  { id: 'nutrition', x: 50, y: 70, name: 'Nutrition', tier: 'novice', unlocked: true, description: 'Meal logging bonus' },
+  { id: 'recovery', x: 50, y: 55, name: 'Recovery', tier: 'adept', unlocked: true, description: 'Sleep tracking XP' },
+  // Arms spread
+  { id: 'cardio_master', x: 15, y: 45, name: 'Cardio II', tier: 'adept', unlocked: false, description: '+40% cardio XP' },
+  { id: 'strength_master', x: 85, y: 45, name: 'Strength II', tier: 'adept', unlocked: false, description: '+40% strength XP' },
+  // Heart/Connection
+  { id: 'mind_body', x: 50, y: 40, name: 'Mind-Body', tier: 'adept', unlocked: false, description: 'Yoga gives +50% XP' },
+  // Neck/Consistency
+  { id: 'consistency', x: 50, y: 28, name: 'Consistency', tier: 'expert', unlocked: false, description: '+5% XP per streak day' },
+  // Head
+  { id: 'peak', x: 50, y: 15, name: 'Peak Form', tier: 'expert', unlocked: false, description: '+50% all activities' },
+  // Crown (master)
+  { id: 'superhuman', x: 50, y: 2, name: 'Superhuman', tier: 'master', unlocked: false, description: 'Triple XP ultimate' },
 ];
 
 const CONNECTIONS = [
-  // Outer ring
-  { from: 'focus', to: 'logic' },
-  { from: 'focus', to: 'creative' },
-  { from: 'logic', to: 'learn' },
-  { from: 'creative', to: 'master' },
-  { from: 'learn', to: 'hidden1' },
-  { from: 'master', to: 'hidden2' },
-  { from: 'hidden1', to: 'final' },
-  { from: 'hidden2', to: 'final' },
-  // Inner connections to core
-  { from: 'focus', to: 'core', dashed: true },
-  { from: 'logic', to: 'core', dashed: true },
-  { from: 'creative', to: 'core', dashed: true },
-  { from: 'learn', to: 'core', dashed: true },
-  { from: 'master', to: 'core', dashed: true },
+  // Base to legs
+  { from: 'foundation', to: 'endurance' },
+  { from: 'foundation', to: 'strength' },
+  // Base to core
+  { from: 'foundation', to: 'nutrition' },
+  // Core progression
+  { from: 'nutrition', to: 'recovery' },
+  // Arms from recovery
+  { from: 'recovery', to: 'cardio_master', dashed: true },
+  { from: 'recovery', to: 'strength_master', dashed: true },
+  // Heart connection
+  { from: 'recovery', to: 'mind_body' },
+  // Legs to arms (adept tier)
+  { from: 'endurance', to: 'cardio_master' },
+  { from: 'strength', to: 'strength_master' },
+  // Arms to head path
+  { from: 'cardio_master', to: 'consistency', dashed: true },
+  { from: 'strength_master', to: 'consistency', dashed: true },
+  { from: 'mind_body', to: 'consistency' },
+  // Head progression
+  { from: 'consistency', to: 'peak' },
+  // Crown
+  { from: 'peak', to: 'superhuman' },
 ];
 
+const TIER_COLORS = {
+  novice: '#94a3b8',
+  adept: '#3b82f6',
+  expert: '#a855f7',
+  master: '#f59e0b',
+};
+
 export default function SkillsDemo({ isActive, onInteract }) {
-  const [selectedStar, setSelectedStar] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
   const [hasAnimated, setHasAnimated] = useState(false);
 
   const svgRef = useRef(null);
   const linesRef = useRef([]);
-  const starsRef = useRef({});
+  const nodesRef = useRef({});
 
-  // Get star position by ID
-  const getStarById = (id) => SKILL_STARS.find((s) => s.id === id);
+  // Get node by ID
+  const getNodeById = (id) => SKILL_NODES.find((n) => n.id === id);
 
   // Initial animation
   useEffect(() => {
@@ -71,20 +96,20 @@ export default function SkillsDemo({ isActive, onInteract }) {
         strokeDashoffset: [length, 0],
         opacity: [0, 0.6],
         duration: 600,
-        delay: index * 50,
+        delay: index * 40,
         ease: 'outQuad',
       });
     });
 
-    // Animate stars appearing
-    Object.values(starsRef.current).forEach((star, index) => {
-      if (!star) return;
+    // Animate nodes appearing
+    Object.values(nodesRef.current).forEach((node, index) => {
+      if (!node) return;
 
-      animate(star, {
+      animate(node, {
         scale: [0, 1],
         opacity: [0, 1],
         duration: 400,
-        delay: 600 + index * 80,
+        delay: 500 + index * 60,
         ease: 'outBack',
       });
     });
@@ -92,27 +117,33 @@ export default function SkillsDemo({ isActive, onInteract }) {
     setHasAnimated(true);
   }, [isActive, hasAnimated]);
 
-  // Handle star click
-  const handleStarClick = useCallback((star) => {
+  // Handle node click
+  const handleNodeClick = useCallback((node) => {
     onInteract?.();
     feedback.buttonPress();
-    setSelectedStar(selectedStar?.id === star.id ? null : star);
+    setSelectedNode(selectedNode?.id === node.id ? null : node);
 
-    // Pulse animation on clicked star
-    const starEl = starsRef.current[star.id];
-    if (starEl) {
-      animate(starEl, {
-        scale: [1, 1.3, 1],
+    // Pulse animation on clicked node
+    const nodeEl = nodesRef.current[node.id];
+    if (nodeEl) {
+      animate(nodeEl, {
+        scale: [1, 1.4, 1],
         duration: 400,
         ease: 'outBack',
       });
     }
-  }, [selectedStar, onInteract]);
+  }, [selectedNode, onInteract]);
 
-  const unlockedCount = SKILL_STARS.filter((s) => s.unlocked).length;
+  const unlockedCount = SKILL_NODES.filter((n) => n.unlocked).length;
 
   return (
     <div className="skills-demo">
+      {/* Tree Name */}
+      <div className="tree-header">
+        <span className="tree-name" style={{ color: '#d97757' }}>BODY</span>
+        <span className="tree-subtitle">Warrior Constellation</span>
+      </div>
+
       {/* SVG Constellation */}
       <svg
         ref={svgRef}
@@ -122,36 +153,45 @@ export default function SkillsDemo({ isActive, onInteract }) {
       >
         {/* Gradient definitions */}
         <defs>
-          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.6" />
+          <linearGradient id="bodyLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#d97757" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.6" />
           </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="1" result="coloredBlur" />
+          <filter id="nodeGlow">
+            <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <radialGradient id="centerGlow">
+            <stop offset="0%" stopColor="#d97757" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#d97757" stopOpacity="0" />
+          </radialGradient>
         </defs>
 
-        {/* Background dust */}
-        {[...Array(15)].map((_, i) => (
+        {/* Background nebula glow */}
+        <ellipse cx="50" cy="50" rx="40" ry="45" fill="url(#centerGlow)" />
+
+        {/* Background stars */}
+        {useMemo(() => [...Array(20)].map((_, i) => (
           <circle
-            key={`dust-${i}`}
-            cx={10 + Math.random() * 80}
-            cy={10 + Math.random() * 80}
-            r={0.3 + Math.random() * 0.4}
+            key={`star-${i}`}
+            cx={5 + Math.random() * 90}
+            cy={5 + Math.random() * 90}
+            r={0.2 + Math.random() * 0.3}
             fill="white"
-            opacity={0.1 + Math.random() * 0.2}
+            opacity={0.15 + Math.random() * 0.25}
           />
-        ))}
+        )), [])}
 
         {/* Connection lines */}
         {CONNECTIONS.map((conn, index) => {
-          const from = getStarById(conn.from);
-          const to = getStarById(conn.to);
+          const from = getNodeById(conn.from);
+          const to = getNodeById(conn.to);
           if (!from || !to) return null;
+
+          const isActive = from.unlocked && to.unlocked;
 
           return (
             <line
@@ -161,129 +201,130 @@ export default function SkillsDemo({ isActive, onInteract }) {
               y1={from.y}
               x2={to.x}
               y2={to.y}
-              stroke="url(#lineGradient)"
-              strokeWidth={conn.dashed ? 0.5 : 0.8}
-              strokeDasharray={conn.dashed ? '2,2' : undefined}
+              stroke={isActive ? '#d97757' : 'url(#bodyLineGradient)'}
+              strokeWidth={isActive ? 1.2 : 0.8}
+              strokeDasharray={conn.dashed && !isActive ? '2,2' : undefined}
               opacity={0}
             />
           );
         })}
 
-        {/* Stars */}
-        {SKILL_STARS.map((star) => (
-          <g
-            key={star.id}
-            ref={(el) => (starsRef.current[star.id] = el)}
-            style={{ cursor: 'pointer', opacity: 0, transformOrigin: `${star.x}px ${star.y}px` }}
-            onClick={() => handleStarClick(star)}
-          >
-            {/* Glow for unlocked stars */}
-            {star.unlocked && (
-              <>
+        {/* Skill nodes */}
+        {SKILL_NODES.map((node) => {
+          const isSelected = selectedNode?.id === node.id;
+          const tierColor = TIER_COLORS[node.tier];
+          const nodeSize = node.tier === 'master' ? 4.5 : node.tier === 'expert' ? 3.5 : 3;
+
+          return (
+            <g
+              key={node.id}
+              ref={(el) => (nodesRef.current[node.id] = el)}
+              style={{ cursor: 'pointer', opacity: 0, transformOrigin: `${node.x}px ${node.y}px` }}
+              onClick={() => handleNodeClick(node)}
+            >
+              {/* Glow for unlocked nodes */}
+              {node.unlocked && (
+                <>
+                  <circle
+                    cx={node.x}
+                    cy={node.y}
+                    r={nodeSize * 2.5}
+                    fill={tierColor}
+                    opacity={0.15}
+                  >
+                    <animate
+                      attributeName="opacity"
+                      values="0.1;0.25;0.1"
+                      dur="2.5s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+                  <circle
+                    cx={node.x}
+                    cy={node.y}
+                    r={nodeSize * 1.5}
+                    fill={tierColor}
+                    opacity={0.3}
+                  />
+                </>
+              )}
+
+              {/* Main node */}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={nodeSize}
+                fill={node.unlocked ? tierColor : 'rgba(255,255,255,0.15)'}
+                stroke={node.unlocked ? 'white' : 'rgba(255,255,255,0.3)'}
+                strokeWidth={node.tier === 'master' ? 1 : 0.5}
+                filter={node.unlocked ? 'url(#nodeGlow)' : undefined}
+              />
+
+              {/* Locked level indicator */}
+              {!node.unlocked && (
+                <text
+                  x={node.x}
+                  y={node.y + 1.2}
+                  textAnchor="middle"
+                  fontSize="3"
+                  fill="rgba(255,255,255,0.4)"
+                >
+                  ?
+                </text>
+              )}
+
+              {/* Selection ring */}
+              {isSelected && (
                 <circle
-                  cx={star.x}
-                  cy={star.y}
-                  r={8}
-                  fill={star.color}
-                  opacity={0.15}
+                  cx={node.x}
+                  cy={node.y}
+                  r={nodeSize + 3}
+                  fill="none"
+                  stroke={tierColor}
+                  strokeWidth="0.5"
+                  opacity={0.8}
                 >
                   <animate
-                    attributeName="opacity"
-                    values="0.1;0.25;0.1"
-                    dur="2s"
+                    attributeName="r"
+                    values={`${nodeSize + 3};${nodeSize + 5};${nodeSize + 3}`}
+                    dur="1s"
                     repeatCount="indefinite"
                   />
                 </circle>
-                <circle
-                  cx={star.x}
-                  cy={star.y}
-                  r={4.5}
-                  fill={star.color}
-                  opacity={0.3}
-                />
-              </>
-            )}
-
-            {/* Main star */}
-            <circle
-              cx={star.x}
-              cy={star.y}
-              r={star.unlocked ? 3 : 2.5}
-              fill={star.unlocked ? star.color : 'rgba(255,255,255,0.2)'}
-              filter={star.unlocked ? 'url(#glow)' : undefined}
-            />
-
-            {/* Locked indicator */}
-            {!star.unlocked && (
-              <text
-                x={star.x}
-                y={star.y + 1}
-                textAnchor="middle"
-                fontSize="3"
-                fill="rgba(255,255,255,0.4)"
-              >
-                ?
-              </text>
-            )}
-
-            {/* Selection ring */}
-            {selectedStar?.id === star.id && (
-              <circle
-                cx={star.x}
-                cy={star.y}
-                r={6}
-                fill="none"
-                stroke={star.color}
-                strokeWidth="0.5"
-                opacity={0.8}
-              >
-                <animate
-                  attributeName="r"
-                  values="6;8;6"
-                  dur="1s"
-                  repeatCount="indefinite"
-                />
-              </circle>
-            )}
-          </g>
-        ))}
+              )}
+            </g>
+          );
+        })}
       </svg>
 
       {/* Info panel */}
-      {selectedStar ? (
+      {selectedNode ? (
         <div className="skills-info">
           <div className="skills-info-header">
             <div
               className="skills-info-dot"
-              style={{ background: selectedStar.color }}
+              style={{ background: TIER_COLORS[selectedNode.tier] }}
             />
-            <span className="skills-info-name">{selectedStar.name}</span>
+            <span className="skills-info-name">{selectedNode.name}</span>
+            <span className="skills-info-tier" style={{ color: TIER_COLORS[selectedNode.tier] }}>
+              {selectedNode.tier.toUpperCase()}
+            </span>
           </div>
-          <p className="skills-info-desc">{selectedStar.description}</p>
-          {selectedStar.unlocked && (
-            <div className="skills-info-progress">
-              <div className="skills-info-progress-bar">
-                <div
-                  className="skills-info-progress-fill"
-                  style={{
-                    width: `${selectedStar.progress}%`,
-                    background: selectedStar.color,
-                  }}
-                />
-              </div>
-              <span>{selectedStar.progress}%</span>
-            </div>
+          <p className="skills-info-desc">{selectedNode.description}</p>
+          {!selectedNode.unlocked && (
+            <p className="skills-info-locked">Unlock by leveling up BODY stat</p>
           )}
         </div>
       ) : (
         <div className="skills-info placeholder">
-          <p>Tap a star to see skill info</p>
+          <p>Tap a star to see perk info</p>
         </div>
       )}
 
       {/* Stats */}
       <div className="skills-stats">
-        Unlocked: {unlockedCount}/{SKILL_STARS.length} skills
+        <span>{unlockedCount}/{SKILL_NODES.length} perks unlocked</span>
+        <span className="skills-stats-hint">6 constellation trees total</span>
       </div>
 
       <style>{`
@@ -291,25 +332,45 @@ export default function SkillsDemo({ isActive, onInteract }) {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.5rem;
           height: 100%;
+        }
+
+        .tree-header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.1rem;
+        }
+
+        .tree-name {
+          font-size: 1.1rem;
+          font-weight: 800;
+          letter-spacing: 0.15em;
+          text-shadow: 0 0 20px currentColor;
+        }
+
+        .tree-subtitle {
+          font-size: 0.65rem;
+          color: rgba(255, 255, 255, 0.4);
+          font-style: italic;
         }
 
         .skills-svg {
           width: 100%;
-          max-width: 260px;
+          max-width: 240px;
           height: auto;
           aspect-ratio: 1;
         }
 
         .skills-info {
           width: 100%;
-          max-width: 280px;
-          padding: 0.75rem 1rem;
+          max-width: 260px;
+          padding: 0.6rem 0.8rem;
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          min-height: 60px;
+          border-radius: 10px;
+          min-height: 50px;
         }
 
         .skills-info.placeholder {
@@ -320,64 +381,61 @@ export default function SkillsDemo({ isActive, onInteract }) {
 
         .skills-info.placeholder p {
           color: rgba(255, 255, 255, 0.4);
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           font-style: italic;
         }
 
         .skills-info-header {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          margin-bottom: 0.25rem;
+          gap: 0.4rem;
+          margin-bottom: 0.2rem;
         }
 
         .skills-info-dot {
-          width: 10px;
-          height: 10px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
         }
 
         .skills-info-name {
           font-weight: 700;
           color: white;
-          font-size: 1rem;
+          font-size: 0.9rem;
+          flex: 1;
+        }
+
+        .skills-info-tier {
+          font-size: 0.6rem;
+          font-weight: 600;
+          letter-spacing: 0.05em;
         }
 
         .skills-info-desc {
           color: rgba(255, 255, 255, 0.6);
-          font-size: 0.8rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .skills-info-progress {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .skills-info-progress-bar {
-          flex: 1;
-          height: 4px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 2px;
-          overflow: hidden;
-        }
-
-        .skills-info-progress-fill {
-          height: 100%;
-          border-radius: 2px;
-          transition: width 0.3s ease;
-        }
-
-        .skills-info-progress span {
           font-size: 0.75rem;
-          color: rgba(255, 255, 255, 0.6);
-          min-width: 30px;
+          margin: 0;
+        }
+
+        .skills-info-locked {
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 0.65rem;
+          font-style: italic;
+          margin: 0.3rem 0 0;
         }
 
         .skills-stats {
-          font-size: 0.75rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.1rem;
+          font-size: 0.7rem;
           color: rgba(255, 255, 255, 0.5);
+        }
+
+        .skills-stats-hint {
+          font-size: 0.6rem;
+          color: rgba(255, 255, 255, 0.3);
         }
       `}</style>
     </div>

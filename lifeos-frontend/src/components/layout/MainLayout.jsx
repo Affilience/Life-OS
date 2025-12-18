@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import useIntegratedOnboardingStore from '../../stores/integratedOnboardingStore';
+import { useNewOnboardingStore } from '../../stores/newOnboardingStore';
 import FloatingSprites from '../ui/FloatingSprites';
 
 // Lazy load NovaWidget - defer AI companion until after initial render
@@ -13,7 +14,10 @@ const NovaWidget = lazy(() => import('../nova/NovaWidget'));
 const NovaGuide = lazy(() => import('../onboarding/NovaGuide'));
 
 // Lazy load FeatureTour for Nova-guided tours
-const FeatureTour = lazy(() => import('../tours/FeatureTour'));
+const FeatureTour = lazy(() => import('../tours/FeatureTour').catch(err => {
+  console.error('[MainLayout] Failed to load FeatureTour:', err);
+  return { default: () => null };
+}));
 
 /**
  * LifeOS MainLayout (AppShell)
@@ -30,8 +34,14 @@ const MainLayout = ({ children }) => {
   const [showNova, setShowNova] = useState(false);
   const [storeHydrated, setStoreHydrated] = useState(false);
 
-  // Get onboarding state
-  const { hasSeenWelcome, isOnboardingComplete, showNovaGuide } = useIntegratedOnboardingStore();
+  // Get onboarding state from both stores
+  // integratedOnboardingStore: legacy in-app onboarding
+  // newOnboardingStore: ImmersiveOnboarding cinematic flow
+  const { hasSeenWelcome, isOnboardingComplete: integratedComplete, showNovaGuide } = useIntegratedOnboardingStore();
+  const { isOnboardingComplete: newOnboardingComplete, isOnboardingActive } = useNewOnboardingStore();
+
+  // User has completed onboarding if EITHER store says complete
+  const isFullyOnboarded = integratedComplete || newOnboardingComplete;
 
   // Wait for store hydration before deciding which Nova component to show
   // This prevents flashing between NovaGuide and NovaWidget
@@ -44,17 +54,17 @@ const MainLayout = ({ children }) => {
       // Lock in the onboarding state at hydration time
       if (initialOnboardingState.current === null) {
         initialOnboardingState.current = {
-          isOnboarding: hasSeenWelcome && !isOnboardingComplete,
+          isOnboarding: hasSeenWelcome && !isFullyOnboarded,
           showNovaGuide
         };
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [hasSeenWelcome, isOnboardingComplete, showNovaGuide]);
+  }, [hasSeenWelcome, isFullyOnboarded, showNovaGuide]);
 
   // Use locked-in state or current state after hydration
   const isOnboarding = storeHydrated
-    ? (initialOnboardingState.current?.isOnboarding ?? (hasSeenWelcome && !isOnboardingComplete))
+    ? (initialOnboardingState.current?.isOnboarding ?? (hasSeenWelcome && !isFullyOnboarded))
     : false;
   const shouldShowNovaGuide = storeHydrated
     ? (initialOnboardingState.current?.showNovaGuide ?? showNovaGuide)
@@ -65,6 +75,20 @@ const MainLayout = ({ children }) => {
     const timer = setTimeout(() => setShowNova(true), 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Debug: Log FeatureTour condition
+  useEffect(() => {
+    if (storeHydrated) {
+      console.log('[MainLayout] FeatureTour conditions:', {
+        storeHydrated,
+        isFullyOnboarded,
+        integratedComplete,
+        newOnboardingComplete,
+        isOnboardingActive,
+        willShowTour: storeHydrated && isFullyOnboarded,
+      });
+    }
+  }, [storeHydrated, isFullyOnboarded, integratedComplete, newOnboardingComplete, isOnboardingActive]);
 
   return (
     <div className="min-h-screen bg-bg-0 text-text-primary">
@@ -95,7 +119,8 @@ const MainLayout = ({ children }) => {
       )}
 
       {/* Nova-guided Feature Tours - shows after onboarding is complete */}
-      {storeHydrated && !isOnboarding && (
+      {/* Debug: Log when condition should allow FeatureTour */}
+      {storeHydrated && isFullyOnboarded && (
         <Suspense fallback={null}>
           <FeatureTour />
         </Suspense>

@@ -81,7 +81,7 @@ export default function LogPracticeModal({ skill, onClose, onSuccess }) {
   // Success animation overlay
   if (showSuccess) {
     return (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
         <div className="bg-[#12101a] border border-green-500/30 rounded-2xl max-w-md w-full p-8 shadow-2xl text-center">
           <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-500/20 border-2 border-green-500 flex items-center justify-center animate-bounce">
             <Check className="w-10 h-10 text-green-400" />
@@ -104,7 +104,7 @@ export default function LogPracticeModal({ skill, onClose, onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
       <div className="bg-[#12101a] border border-slate-700 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-slate-700/50 p-5">

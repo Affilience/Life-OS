@@ -25,10 +25,10 @@ async function generateClothTunic() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        description: 'minimal flat pixel art tunic icon, solid brown fill with black outline only, no shading no details no buttons, simple T-shirt silhouette shape, zelda NES inventory item style, 64x64',
-        negative_description: '3d, shading, shadows, highlights, depth, lighting, gradient, buttons, details, folds, wrinkles, texture, realistic, modern',
+        description: 'pixel art cloth tunic torso overlay, simple brown fabric shirt, medieval peasant tunic, designed to overlay on humanoid character sprite, cuts off at neck cleanly, flat 2D sprite, front-facing, single color black outline, RPG game asset, torso armor overlay piece, fits standard pixel art character proportions',
+        negative_description: '3D effect, hollow inside, dark interior, full body, head, face, hood, high collar, legs, arms, background, photorealistic, blurry, low quality, person wearing it, armor, metal, icon style, inventory item',
         image_size: { width: 64, height: 64 },
-        text_guidance_scale: 15,
+        text_guidance_scale: 8.5,
         no_background: true,
       }),
     });

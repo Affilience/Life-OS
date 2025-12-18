@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 
 // Extract video ID from YouTube URL
@@ -86,6 +87,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
     url: '',
     duration: '',
     thumbnailUrl: '',
+    status: 'want-to-watch',
   });
   const [errors, setErrors] = useState({});
   const [isFetchingThumbnail, setIsFetchingThumbnail] = useState(false);
@@ -193,6 +195,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
       url: formData.url.trim(),
       duration: formData.duration.trim(),
       thumbnailUrl: formData.thumbnailUrl.trim() || null,
+      status: formData.status,
       notes: '',
     });
 
@@ -212,6 +215,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
       url: '',
       duration: '',
       thumbnailUrl: '',
+      status: 'want-to-watch',
     });
     setErrors({});
     setThumbnailPreview(null);
@@ -231,11 +235,17 @@ export default function AddMediaModal({ isOpen, onClose }) {
     { id: 'course', label: 'Course', icon: '📚' },
   ];
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-xl shadow-2xl overflow-hidden">
+  const statusOptions = [
+    { id: 'want-to-watch', label: 'Watch Later', icon: '📋' },
+    { id: 'in-progress', label: 'Watching', icon: '▶️' },
+    { id: 'completed', label: 'Watched', icon: '✓' },
+  ];
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/10/50 bg-[#12101a]/50">
+        <div className="px-6 py-4 border-b border-white/10/50 bg-[#12101a]/50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-white">Add Media</h2>
             <button
@@ -271,6 +281,35 @@ export default function AddMediaModal({ isOpen, onClose }) {
                 >
                   <div className="text-2xl mb-1">{type.icon}</div>
                   <div className="text-xs font-medium">{type.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Status Selection */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-3">Status</label>
+            <div className="grid grid-cols-3 gap-2">
+              {statusOptions.map((status) => (
+                <button
+                  key={status.id}
+                  type="button"
+                  onClick={() => handleChange('status', status.id)}
+                  className={`
+                    p-3 rounded-lg border-2 transition-all duration-150
+                    ${
+                      formData.status === status.id
+                        ? status.id === 'completed'
+                          ? 'bg-green-500/20 border-green-500/50 text-green-300'
+                          : status.id === 'in-progress'
+                          ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                          : 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300'
+                        : 'bg-[#1a1724]/30 border-white/15/50 text-white/60 hover:border-zinc-600 hover:text-zinc-200'
+                    }
+                  `}
+                >
+                  <div className="text-xl mb-1">{status.icon}</div>
+                  <div className="text-xs font-medium">{status.label}</div>
                 </button>
               ))}
             </div>
@@ -478,6 +517,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

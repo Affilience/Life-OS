@@ -12,6 +12,7 @@ import {
   Clock,
   Calendar,
   Brain,
+  Video,
 } from 'lucide-react';
 
 // Import stores for real data
@@ -30,6 +31,7 @@ const ACTIVITY_CONFIG = {
   expense: { icon: Wallet, color: 'text-emerald-400', xp: 10 },
   session: { icon: Brain, color: 'text-cyan-400', xp: 25 },
   timeblock: { icon: Calendar, color: 'text-indigo-400', xp: 15 },
+  media: { icon: Video, color: 'text-purple-400', xp: 20 },
 };
 
 function formatTimeAgo(date) {
@@ -50,7 +52,7 @@ export default function RecentActivityWidget() {
   // Connect to stores
   const { tasksByDate } = useDailyTasksStore();
   const { workouts } = useWorkoutStore();
-  const { notes, ideas } = useKnowledgeStore();
+  const { notes, ideas, media } = useKnowledgeStore();
   const { transactions } = useFinancialStore();
   const { sessions: productivitySessions } = useProductivityStore();
 
@@ -92,6 +94,19 @@ export default function RecentActivityWidget() {
       });
     });
 
+    // Recent media (videos, podcasts, articles)
+    (media || []).slice(0, 5).forEach(item => {
+      const typeLabel = item.type === 'video' || item.type === 'youtube' ? 'Video' :
+                       item.type === 'podcast' ? 'Podcast' :
+                       item.type === 'article' ? 'Article' : 'Media';
+      allActivities.push({
+        id: `media-${item.id}`,
+        type: 'media',
+        title: `${typeLabel}: ${item.title || 'Untitled'}`,
+        timestamp: item.createdAt || item.updatedAt,
+      });
+    });
+
     // Recent transactions
     (transactions || []).slice(0, 5).forEach(txn => {
       allActivities.push({
@@ -121,7 +136,7 @@ export default function RecentActivityWidget() {
         ...activity,
         ...ACTIVITY_CONFIG[activity.type],
       }));
-  }, [tasksByDate, workouts, notes, transactions, productivitySessions]);
+  }, [tasksByDate, workouts, notes, media, transactions, productivitySessions]);
 
   return (
     <div className="h-full flex flex-col">

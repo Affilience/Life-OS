@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { triggerGamification } from '../hooks/useGamification';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 /**
  * Feature Tour Store
@@ -94,6 +95,83 @@ export const useTourStore = create(
       tooltipPosition: null,      // { top, left, placement } for tooltip
 
       // ============================================
+      // SUPABASE SYNC
+      // ============================================
+
+      // Sync status
+      _isSyncing: false,
+
+      // Initialize from Supabase
+      initializeFromSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        try {
+          const { data } = await supabase
+            .from('user_profiles')
+            .select('preferences')
+            .eq('id', userId)
+            .maybeSingle();
+
+          if (data?.preferences?.tours) {
+            const tourPrefs = data.preferences.tours;
+            set({
+              completedTours: tourPrefs.completedTours || [],
+              skippedTours: tourPrefs.skippedTours || [],
+              tourProgress: tourPrefs.tourProgress || {},
+              toursEnabled: tourPrefs.toursEnabled ?? true,
+              hasSeenTourPrompt: tourPrefs.hasSeenTourPrompt ?? false,
+            });
+          }
+        } catch (error) {
+          console.error('Error loading tours from Supabase:', error);
+        }
+      },
+
+      // Sync to Supabase
+      syncToSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        const state = get();
+        if (state._isSyncing) return;
+
+        set({ _isSyncing: true });
+
+        try {
+          // Get existing preferences to merge
+          const { data: existing } = await supabase
+            .from('user_profiles')
+            .select('preferences')
+            .eq('id', userId)
+            .maybeSingle();
+
+          const existingPrefs = existing?.preferences || {};
+
+          await supabase
+            .from('user_profiles')
+            .update({
+              preferences: {
+                ...existingPrefs,
+                tours: {
+                  completedTours: state.completedTours,
+                  skippedTours: state.skippedTours,
+                  tourProgress: state.tourProgress,
+                  toursEnabled: state.toursEnabled,
+                  hasSeenTourPrompt: state.hasSeenTourPrompt,
+                },
+              },
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+        } catch (error) {
+          console.error('Error syncing tours to Supabase:', error);
+        } finally {
+          set({ _isSyncing: false });
+        }
+      },
+
+      // ============================================
       // ACTIONS
       // ============================================
 
@@ -170,6 +248,9 @@ export const useTourStore = create(
           highlightedElement: null,
           tooltipPosition: null,
         });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       /**
@@ -206,6 +287,9 @@ export const useTourStore = create(
           tourProgress: newProgress,
           novaState: 'proud',
         });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       /**
@@ -250,6 +334,9 @@ export const useTourStore = create(
             [tourId]: undefined,
           },
         });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       /**
@@ -262,6 +349,9 @@ export const useTourStore = create(
           tourProgress: {},
           hasSeenTourPrompt: false,
         });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       /**
@@ -289,6 +379,9 @@ export const useTourStore = create(
        */
       setToursEnabled: (enabled) => {
         set({ toursEnabled: enabled });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       /**
@@ -296,6 +389,9 @@ export const useTourStore = create(
        */
       markTourPromptSeen: () => {
         set({ hasSeenTourPrompt: true });
+
+        // Sync to Supabase
+        get().syncToSupabase();
       },
 
       // ============================================
@@ -377,5 +473,11 @@ export const useTourStore = create(
     }
   )
 );
+
+// Initialize tour store from Supabase
+export const initializeTourStore = async () => {
+  const store = useTourStore.getState();
+  await store.initializeFromSupabase();
+};
 
 export default useTourStore;

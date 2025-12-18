@@ -10,10 +10,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { animate, stagger } from 'animejs';
 import { feedback } from '../../../../../services/microInteractions';
+import { useAvatarStore } from '../../../../../stores/avatarStore';
 
+// Map demo items to actual equipment database IDs
 const BAZAAR_ITEMS = [
   {
     id: 'sword_novice',
+    equipmentId: 'weapon_sword_novice', // Actual ID in equipment database
     name: 'Novice Blade',
     price: 50,
     icon: '/assets/equipment/weapons/sword_novice.png',
@@ -23,19 +26,21 @@ const BAZAAR_ITEMS = [
   },
   {
     id: 'shield_basic',
+    equipmentId: 'shield_wooden_buckler', // Actual ID in equipment database
     name: 'Basic Shield',
     price: 75,
-    icon: '/assets/equipment/shields/shield_basic.png',
+    icon: '/assets/equipment/shields/wooden_buckler.png',
     emoji: '🛡️',
     rarity: 'uncommon',
     color: '#22c55e',
   },
   {
-    id: 'potion_health',
-    name: 'Health Potion',
+    id: 'helmet_cloth',
+    equipmentId: 'helmet_cloth_cap', // Actual ID in equipment database
+    name: 'Cloth Cap',
     price: 25,
-    icon: '/assets/bazaar/consumables/potion_health.png',
-    emoji: '🧪',
+    icon: '/assets/equipment/helmets/cloth_cap.png',
+    emoji: '🎩',
     rarity: 'common',
     color: '#9ca3af',
   },
@@ -50,6 +55,9 @@ export default function BazaarDemo({ isActive, onInteract }) {
   const [showBonus, setShowBonus] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
   const [flyingItem, setFlyingItem] = useState(null);
+
+  // Get avatar store functions to save purchases
+  const unlockEquipment = useAvatarStore(state => state.unlockEquipment);
 
   const containerRef = useRef(null);
   const creditsRef = useRef(null);
@@ -134,7 +142,7 @@ export default function BazaarDemo({ isActive, onInteract }) {
     }
 
     // Update credits with animation
-    setTimeout(() => {
+    setTimeout(async () => {
       const newCredits = credits - item.price;
       setCredits(newCredits);
 
@@ -158,9 +166,19 @@ export default function BazaarDemo({ isActive, onInteract }) {
       setPurchased((prev) => new Set([...prev, item.id]));
       setFlyingItem(null);
 
+      // Actually save the purchase to inventory!
+      if (item.equipmentId) {
+        try {
+          await unlockEquipment(item.equipmentId, false); // false = don't show notification during onboarding
+          console.log(`[BazaarDemo] Unlocked equipment: ${item.equipmentId}`);
+        } catch (err) {
+          console.error('[BazaarDemo] Failed to unlock equipment:', err);
+        }
+      }
+
       feedback.taskComplete();
     }, 400);
-  }, [credits, displayCredits, purchased, onInteract]);
+  }, [credits, displayCredits, purchased, onInteract, unlockEquipment]);
 
   const canAfford = (price) => credits >= price && !purchased.has;
 

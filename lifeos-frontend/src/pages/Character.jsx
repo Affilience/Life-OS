@@ -22,7 +22,7 @@ import {
   ArrowUpCircle
 } from 'lucide-react';
 import PageHeader from '../components/shared/PageHeader';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStats } from '../hooks/useStats';
 import { STAT_CONFIG } from '../utils/statsSystem';
 import EquipmentShowcase from '../components/avatar/EquipmentShowcase';
@@ -200,8 +200,26 @@ export default function Character() {
   // Get tabs based on current mode and visibility settings
   const tabs = useMemo(() => getTabs(mode, isVisible), [mode, isVisible]);
 
-  // Initialize activeTab to first available tab
-  const [activeTab, setActiveTab] = useState(() => tabs[0]?.id || 'avatar');
+  // Read tab from URL query params
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+
+  // Initialize activeTab to URL param or first available tab
+  const [activeTab, setActiveTab] = useState(() => {
+    // Check if URL param tab is valid
+    const validTabIds = getTabs(mode, isVisible).map(t => t.id);
+    if (tabFromUrl && validTabIds.includes(tabFromUrl)) {
+      return tabFromUrl;
+    }
+    return tabs[0]?.id || 'avatar';
+  });
+
+  // Update activeTab when URL param changes
+  useEffect(() => {
+    if (tabFromUrl && tabs.some(t => t.id === tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl, tabs]);
 
   // Use unified stats system
   const {

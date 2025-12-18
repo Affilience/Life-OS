@@ -246,6 +246,7 @@ export function calculatePlayerStats(level, equippedItems = {}, activePet = null
   // Base stats
   let baseHealth = 100;
   let baseDamage = 10;
+  const baseCritChance = 0.05; // 5% base crit chance
 
   // Level scaling
   const healthFromLevel = level * 10;
@@ -255,6 +256,8 @@ export function calculatePlayerStats(level, equippedItems = {}, activePet = null
   let vitality = 0;
   let defense = 0;
   let strength = 0;
+  let intelligence = 0;
+  let wisdom = 0;
 
   Object.values(equippedItems).forEach(itemId => {
     if (!itemId) return;
@@ -264,6 +267,8 @@ export function calculatePlayerStats(level, equippedItems = {}, activePet = null
     vitality += item.stats.vitality || 0;
     defense += item.stats.defense || 0;
     strength += item.stats.strength || 0;
+    intelligence += item.stats.intelligence || 0;
+    wisdom += item.stats.wisdom || 0;
   });
 
   // Pet bonuses (flat percentage)
@@ -288,9 +293,30 @@ export function calculatePlayerStats(level, equippedItems = {}, activePet = null
   const maxHealth = Math.floor(rawHealth * (1 + petHealthBonus));
   const damage = Math.floor(rawDamage * (1 + petDamageBonus));
 
+  // Intelligence: +0.5% crit chance per point (caps at 50% total)
+  const critChanceFromInt = intelligence * 0.005;
+  const critChance = Math.min(0.5, baseCritChance + critChanceFromInt);
+
+  // Wisdom: +1% XP bonus per point
+  const xpMultiplier = 1 + (wisdom * 0.01);
+
+  // Intelligence also reduces cooldowns: -0.5% per point (caps at 30% reduction)
+  const cooldownReduction = Math.min(0.3, intelligence * 0.005);
+
   return {
     maxHealth,
     damage,
+    critChance,
+    xpMultiplier,
+    cooldownReduction,
+    // Raw stats for display
+    stats: {
+      strength,
+      vitality,
+      defense,
+      intelligence,
+      wisdom,
+    },
     // Breakdown for UI
     breakdown: {
       baseHealth,
@@ -301,6 +327,10 @@ export function calculatePlayerStats(level, equippedItems = {}, activePet = null
       damageFromLevel,
       damageFromStats,
       petDamageBonus: Math.floor(rawDamage * petDamageBonus),
+      baseCritChance,
+      critChanceFromInt,
+      xpMultiplier,
+      cooldownReduction,
     },
   };
 }

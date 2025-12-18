@@ -366,7 +366,7 @@ const usePerkStore = create(
               .from('user_stats')
               .select('*')
               .eq('user_id', userId)
-              .single();
+              .maybeSingle();
 
             const newStatLevels = { ...DEFAULT_STATS };
             if (userStats && !statsError) {
@@ -463,7 +463,7 @@ const usePerkStore = create(
       /**
        * Update a stat level and recalculate unlocked perks
        */
-      setStatLevel: (stat, level) => {
+      setStatLevel: async (stat, level) => {
         const newStatLevels = {
           ...get().statLevels,
           [stat]: Math.max(1, Math.min(100, level)),
@@ -471,6 +471,29 @@ const usePerkStore = create(
 
         set({ statLevels: newStatLevels });
         get().recalculatePerks();
+
+        // Sync to Supabase
+        get().syncStatLevelToSupabase(stat, newStatLevels[stat]);
+      },
+
+      /**
+       * Sync stat level to Supabase user_stats table
+       */
+      syncStatLevelToSupabase: async (stat, level) => {
+        try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
+          await supabase
+            .from('user_stats')
+            .upsert({
+              user_id: userId,
+              [stat]: level,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+        } catch (error) {
+          console.error('Error syncing stat level to Supabase:', error);
+        }
       },
 
       /**

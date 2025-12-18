@@ -5,14 +5,14 @@
 
 import { create } from 'zustand';
 import { Quest, QuestStore } from './QuestTypes';
-import { loadToday, saveToday } from './QuestService.mock';
+import { loadToday, saveToday } from './QuestService';
 
 export const useQuestStore = create<QuestStore>((set, get) => ({
   quests: [],
 
   add: (questPartial) => {
     const newQuest: Quest = {
-      id: `quest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: crypto.randomUUID(),
       title: questPartial.title || 'Untitled Quest',
       kind: questPartial.kind || 'custom',
       xp: questPartial.xp || 50,
@@ -106,3 +106,11 @@ function getDefaultDueTime(): string {
   const today = now.toISOString().split('T')[0];
   return `${today}T21:00:00`;
 }
+
+/**
+ * Initialize quest store from Supabase
+ */
+export const initializeQuestStore = async () => {
+  const store = useQuestStore.getState();
+  await store.hydrate();
+};

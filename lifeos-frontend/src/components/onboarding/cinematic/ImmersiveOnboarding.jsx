@@ -435,12 +435,12 @@ export default function ImmersiveOnboarding() {
         @media (max-width: 768px) {
           .immersive-progress {
             right: 0.5rem;
-            gap: 6px;
+            gap: 4px;
           }
 
           .progress-dot {
-            width: 5px;
-            height: 5px;
+            width: 3px;
+            height: 3px;
           }
 
           .immersive-skip {
@@ -453,17 +453,17 @@ export default function ImmersiveOnboarding() {
 
         @media (max-width: 480px) {
           .immersive-progress {
-            right: 0.35rem;
-            gap: 5px;
+            right: 0.25rem;
+            gap: 3px;
           }
 
           .progress-dot {
-            width: 4px;
-            height: 4px;
+            width: 2px;
+            height: 2px;
           }
 
           .progress-dot.active .dot-inner {
-            box-shadow: 0 0 4px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 2px rgba(139, 92, 246, 0.4);
           }
 
           .immersive-skip {

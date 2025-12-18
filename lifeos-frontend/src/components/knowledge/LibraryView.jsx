@@ -342,6 +342,7 @@ export default function LibraryView() {
           {tabs.map(tab => (
             <button
               key={tab.id}
+              type="button"
               className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >

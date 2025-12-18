@@ -209,8 +209,10 @@ export function calculateAttackDamage(baseDamage, weaponAttack, isCrit = false) 
 }
 
 // Check if attack is a critical hit
-export function rollCritical(weaponAttack) {
-  return Math.random() < weaponAttack.critChance;
+// playerCritBonus is the additional crit chance from Intelligence stat
+export function rollCritical(weaponAttack, playerCritBonus = 0) {
+  const totalCritChance = Math.min(0.75, weaponAttack.critChance + playerCritBonus); // Cap at 75%
+  return Math.random() < totalCritChance;
 }
 
 // Animation configurations for each attack type
