@@ -249,56 +249,77 @@
 
 .timer-controls {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
 .control-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 500;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: all 200ms ease;
 }
 
 .control-btn.pause-resume {
-  background: rgba(139, 92, 246, 0.1);
-  border-color: rgba(139, 92, 246, 0.2);
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
+  border-color: rgba(139, 92, 246, 0.4);
   color: #a78bfa;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
 }
 
 .control-btn.pause-resume:hover {
-  background: rgba(139, 92, 246, 0.2);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+  border-color: rgba(139, 92, 246, 0.6);
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.3);
+}
+
+.control-btn.pause-resume:active {
+  transform: scale(0.95);
 }
 
 .control-btn.end {
   background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.3);
   color: #5af29c;
 }
 
 .control-btn.end:hover {
   background: rgba(16, 185, 129, 0.2);
-  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+}
+
+.control-btn.end:active {
+  transform: scale(0.95);
 }
 
 .control-btn.cancel {
+  width: 44px;
+  height: 44px;
   background: transparent;
   border-color: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.60);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .control-btn.cancel:hover {
-  border-color: rgba(255, 101, 132, 0.3);
-  color: #ff6584;
-  transform: translateY(-2px);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.05);
+}
+
+.control-btn.cancel:active {
+  transform: scale(0.95);
 }
 
 /* Recent Sessions */
@@ -478,6 +499,7 @@
   -webkit-appearance: none;
   width: 20px;
   height: 20px;
+  margin-top: -6px; /* Center 20px thumb on 8px track: (8-20)/2 = -6 */
   border-radius: 50%;
   background: white;
   cursor: pointer;

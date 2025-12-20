@@ -205,9 +205,9 @@ const PageHeader = ({
   // Elevated variant - glass card with glowing title (premium feel)
   if (variant === 'elevated') {
     return (
-      <div className={`mb-4 ${className}`}>
+      <div className={`mb-4 overflow-visible ${className}`}>
         <div
-          className="relative rounded-xl overflow-hidden"
+          className="relative rounded-xl overflow-visible"
           style={{
             background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%)',
             backdropFilter: 'blur(8px)',
@@ -226,7 +226,7 @@ const PageHeader = ({
           />
 
           {/* Inner content */}
-          <div className="relative px-4 py-3 flex items-center justify-between">
+          <div className="relative px-4 py-3 flex items-center justify-between overflow-visible">
             <div className="flex items-center gap-3">
               {Icon && (
                 <div
@@ -256,7 +256,7 @@ const PageHeader = ({
               </div>
             </div>
             {actions && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-visible">
                 {actions}
               </div>
             )}

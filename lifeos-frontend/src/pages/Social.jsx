@@ -88,7 +88,9 @@ export default function Social() {
     arenaStats,
     inQueue,
     isInMatch,
+    matchHistory: arenaMatchHistory,
     initialize: initializeArena,
+    fetchMatchHistory: fetchArenaMatchHistory,
   } = usePvpArenaStore();
 
   const [pvpBattleHistory, setPvpBattleHistory] = useState([]);
@@ -140,9 +142,11 @@ export default function Social() {
   // Fetch PvP battle history when switching to history tab
   useEffect(() => {
     if (activeTab === 'pvp' && pvpSubTab === 'history' && userId) {
+      // Fetch both daily battles and arena matches
       fetchBattleHistory(userId).then(setPvpBattleHistory);
+      fetchArenaMatchHistory(userId);
     }
-  }, [activeTab, pvpSubTab, userId]);
+  }, [activeTab, pvpSubTab, userId, fetchArenaMatchHistory]);
 
   // User stats from real data
   const userStats = {
@@ -572,64 +576,150 @@ export default function Social() {
 
                   {/* Battle History */}
                   {pvpSubTab === 'history' && (
-                    <div className="space-y-3">
-                      {pvpBattleHistory.length === 0 ? (
+                    <div className="space-y-4">
+                      {/* Arena Match History */}
+                      {arenaMatchHistory.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-white/50 mb-2 flex items-center gap-2">
+                            <Swords className="w-4 h-4" />
+                            Arena Matches
+                          </h4>
+                          <div className="space-y-2">
+                            {arenaMatchHistory.map((match) => {
+                              const isPlayer1 = match.player1_id === userId;
+                              const won = match.winner_id === userId;
+                              const opponentName = match.opponentProfile?.display_name || 'Unknown';
+
+                              return (
+                                <div
+                                  key={match.id}
+                                  className={`p-4 rounded-xl border ${
+                                    won
+                                      ? 'bg-green-500/10 border-green-500/30'
+                                      : 'bg-red-500/10 border-red-500/30'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className={`p-2 rounded-lg ${won ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                                        {won ? (
+                                          <Trophy className="w-5 h-5 text-green-400" />
+                                        ) : (
+                                          <Shield className="w-5 h-5 text-red-400" />
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {match.opponentProfile?.avatar_url ? (
+                                          <img
+                                            src={match.opponentProfile.avatar_url}
+                                            alt={opponentName}
+                                            className="w-8 h-8 rounded-full object-cover"
+                                          />
+                                        ) : (
+                                          <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                                            <span className="text-sm font-bold text-red-400">
+                                              {opponentName[0]?.toUpperCase() || '?'}
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div>
+                                          <p className={`font-semibold ${won ? 'text-green-400' : 'text-red-400'}`}>
+                                            {won ? 'Victory' : 'Defeat'}
+                                          </p>
+                                          <p className="text-sm text-white/50">
+                                            vs {opponentName}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm text-white/60 capitalize">{match.match_type} Arena</p>
+                                      <p className="text-xs text-white/40">
+                                        {match.ended_at ? new Date(match.ended_at).toLocaleDateString() : '-'}
+                                      </p>
+                                      {match.winner_xp && (
+                                        <p className="text-xs text-purple-400 mt-1">
+                                          +{won ? match.winner_xp : match.loser_xp} XP
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Daily Battle History */}
+                      {pvpBattleHistory.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-white/50 mb-2 flex items-center gap-2">
+                            <Target className="w-4 h-4" />
+                            Daily Battles
+                          </h4>
+                          <div className="space-y-2">
+                            {pvpBattleHistory.map((battle) => {
+                              const isPlayer1 = battle.player1_id === userId;
+                              const won = battle.winner_id === userId;
+                              const isDraw = !battle.winner_id;
+
+                              return (
+                                <div
+                                  key={battle.id}
+                                  className={`p-4 rounded-xl border ${
+                                    isDraw
+                                      ? 'bg-[#1a1724] border-white/10'
+                                      : won
+                                      ? 'bg-green-500/10 border-green-500/30'
+                                      : 'bg-red-500/10 border-red-500/30'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className={`p-2 rounded-lg ${
+                                        isDraw ? 'bg-white/10' : won ? 'bg-green-500/20' : 'bg-red-500/20'
+                                      }`}>
+                                        {isDraw ? (
+                                          <Users className="w-5 h-5 text-white/60" />
+                                        ) : won ? (
+                                          <Trophy className="w-5 h-5 text-green-400" />
+                                        ) : (
+                                          <Shield className="w-5 h-5 text-red-400" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <p className={`font-semibold ${
+                                          isDraw ? 'text-white/70' : won ? 'text-green-400' : 'text-red-400'
+                                        }`}>
+                                          {isDraw ? 'Draw' : won ? 'Victory' : 'Defeat'}
+                                        </p>
+                                        <p className="text-sm text-white/50">
+                                          vs Player {(isPlayer1 ? battle.player2_id : battle.player1_id)?.slice(0, 8)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm text-white/60 capitalize">{battle.battle_type}</p>
+                                      <p className="text-xs text-white/40">
+                                        {new Date(battle.updated_at).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Empty State */}
+                      {arenaMatchHistory.length === 0 && pvpBattleHistory.length === 0 && (
                         <div className="bg-[#1a1724] border border-white/10 rounded-xl p-8 text-center">
                           <Clock className="w-12 h-12 text-white/40 mx-auto mb-3" />
                           <h4 className="text-white font-medium mb-2">No Battle History</h4>
                           <p className="text-white/50 text-sm">Complete battles to see them here</p>
                         </div>
-                      ) : (
-                        pvpBattleHistory.map((battle) => {
-                          const isPlayer1 = battle.player1_id === userId;
-                          const won = battle.winner_id === userId;
-                          const isDraw = !battle.winner_id;
-
-                          return (
-                            <div
-                              key={battle.id}
-                              className={`p-4 rounded-xl border ${
-                                isDraw
-                                  ? 'bg-[#1a1724] border-white/10'
-                                  : won
-                                  ? 'bg-green-500/10 border-green-500/30'
-                                  : 'bg-red-500/10 border-red-500/30'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className={`p-2 rounded-lg ${
-                                    isDraw ? 'bg-white/10' : won ? 'bg-green-500/20' : 'bg-red-500/20'
-                                  }`}>
-                                    {isDraw ? (
-                                      <Users className="w-5 h-5 text-white/60" />
-                                    ) : won ? (
-                                      <Trophy className="w-5 h-5 text-green-400" />
-                                    ) : (
-                                      <Shield className="w-5 h-5 text-red-400" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <p className={`font-semibold ${
-                                      isDraw ? 'text-white/70' : won ? 'text-green-400' : 'text-red-400'
-                                    }`}>
-                                      {isDraw ? 'Draw' : won ? 'Victory' : 'Defeat'}
-                                    </p>
-                                    <p className="text-sm text-white/50">
-                                      vs Player {(isPlayer1 ? battle.player2_id : battle.player1_id)?.slice(0, 8)}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-sm text-white/60 capitalize">{battle.battle_type}</p>
-                                  <p className="text-xs text-white/40">
-                                    {new Date(battle.updated_at).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
                       )}
                     </div>
                   )}

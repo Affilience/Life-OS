@@ -498,6 +498,314 @@ export function battleStart() {
 }
 
 // ============================================================================
+// ABILITY SOUNDS
+// ============================================================================
+
+/**
+ * Power attack sound - Heavy physical ability (swords, axes, hammers)
+ */
+export function powerAttack() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Heavy whoosh buildup
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(100, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.15);
+    osc1.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.25);
+    gain1.gain.setValueAtTime(0, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.3, ctx.currentTime + 0.05);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.5, ctx.currentTime + 0.15);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.3);
+
+    // Big impact
+    setTimeout(() => {
+      if (!soundsEnabled) return;
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(180, ctx.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.15);
+      gain2.gain.setValueAtTime(masterVolume * 0.8, ctx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime);
+      osc2.stop(ctx.currentTime + 0.2);
+    }, 150);
+
+    // Metal ring
+    setTimeout(() => {
+      if (!soundsEnabled) return;
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
+      osc3.type = 'triangle';
+      osc3.frequency.setValueAtTime(2000, ctx.currentTime);
+      osc3.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+      gain3.gain.setValueAtTime(masterVolume * 0.2, ctx.currentTime);
+      gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc3.connect(gain3);
+      gain3.connect(ctx.destination);
+      osc3.start(ctx.currentTime);
+      osc3.stop(ctx.currentTime + 0.15);
+    }, 180);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Magic burst sound - For magical abilities (staff, wand, scepter, tome)
+ */
+export function magicBurst() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Magical shimmer buildup
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(400, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.2);
+    gain1.gain.setValueAtTime(0, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.4, ctx.currentTime + 0.1);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.3);
+
+    // High frequency sparkle
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(2000, ctx.currentTime + 0.05);
+    osc2.frequency.exponentialRampToValueAtTime(3000, ctx.currentTime + 0.15);
+    gain2.gain.setValueAtTime(0, ctx.currentTime);
+    gain2.gain.linearRampToValueAtTime(masterVolume * 0.15, ctx.currentTime + 0.1);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime + 0.05);
+    osc2.stop(ctx.currentTime + 0.25);
+
+    // Bass burst for impact
+    setTimeout(() => {
+      if (!soundsEnabled) return;
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(120, ctx.currentTime);
+      osc3.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.1);
+      gain3.gain.setValueAtTime(masterVolume * 0.5, ctx.currentTime);
+      gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc3.connect(gain3);
+      gain3.connect(ctx.destination);
+      osc3.start(ctx.currentTime);
+      osc3.stop(ctx.currentTime + 0.15);
+    }, 150);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Chain lightning sound - Electric crackling
+ */
+export function chainLightning() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Create multiple "zap" sounds in quick succession
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        if (!soundsEnabled) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800 + (i * 200), ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(masterVolume * 0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.1);
+      }, i * 80);
+    }
+
+    // Base crackle
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'square';
+    osc1.frequency.setValueAtTime(100, ctx.currentTime);
+    osc1.frequency.setValueAtTime(150, ctx.currentTime + 0.05);
+    osc1.frequency.setValueAtTime(80, ctx.currentTime + 0.1);
+    gain1.gain.setValueAtTime(masterVolume * 0.15, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.25);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Meteor/summon sound - Deep rumble with impact
+ */
+export function meteorImpact() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Descending whistle (meteor falling)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(1500, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.4);
+    gain1.gain.setValueAtTime(0, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.4, ctx.currentTime + 0.1);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.5, ctx.currentTime + 0.35);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.45);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.45);
+
+    // Big impact explosion
+    setTimeout(() => {
+      if (!soundsEnabled) return;
+      // Low boom
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(80, ctx.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.2);
+      gain2.gain.setValueAtTime(masterVolume * 0.9, ctx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime);
+      osc2.stop(ctx.currentTime + 0.3);
+
+      // Mid crunch
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
+      osc3.type = 'triangle';
+      osc3.frequency.setValueAtTime(300, ctx.currentTime);
+      osc3.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
+      gain3.gain.setValueAtTime(masterVolume * 0.4, ctx.currentTime);
+      gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc3.connect(gain3);
+      gain3.connect(ctx.destination);
+      osc3.start(ctx.currentTime);
+      osc3.stop(ctx.currentTime + 0.15);
+    }, 350);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Soul drain sound - Eerie draining effect
+ */
+export function soulDrain() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Eerie descending tone
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(600, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.5);
+    gain1.gain.setValueAtTime(0, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.35, ctx.currentTime + 0.1);
+    gain1.gain.linearRampToValueAtTime(masterVolume * 0.2, ctx.currentTime + 0.4);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.6);
+
+    // Dark undertone
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(100, ctx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.4);
+    gain2.gain.setValueAtTime(masterVolume * 0.3, ctx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime);
+    osc2.stop(ctx.currentTime + 0.5);
+
+    // Heal confirmation (after drain)
+    setTimeout(() => {
+      if (!soundsEnabled) return;
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(400, ctx.currentTime);
+      osc3.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+      gain3.gain.setValueAtTime(masterVolume * 0.25, ctx.currentTime);
+      gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc3.connect(gain3);
+      gain3.connect(ctx.destination);
+      osc3.start(ctx.currentTime);
+      osc3.stop(ctx.currentTime + 0.2);
+    }, 400);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+/**
+ * Ability ready notification - Subtle chime
+ */
+export function abilityReady() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(masterVolume * 0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.15);
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+}
+
+// ============================================================================
 // CELEBRATION & RARITY SOUNDS
 // ============================================================================
 
@@ -956,6 +1264,13 @@ export const sounds = {
   criticalHit,
   bossAttack,
   battleStart,
+  // Ability sounds
+  powerAttack,
+  magicBurst,
+  chainLightning,
+  meteorImpact,
+  soulDrain,
+  abilityReady,
   setEnabled: setSoundsEnabled,
   isEnabled: getSoundsEnabled,
   setVolume,

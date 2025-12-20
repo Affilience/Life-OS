@@ -477,6 +477,7 @@ export async function triggerGamification(action, options = {}) {
 
   // Track state before changes for celebration detection
   const levelBefore = avatarStore.level;
+  const tierBefore = avatarStore.currentTier || 1;
   const achievementCountBefore = achievementsStore.achievements?.length || 0;
   const petsCountBefore = petStore.ownedPets?.length || 0;
 
@@ -592,9 +593,27 @@ export async function triggerGamification(action, options = {}) {
   // 9. Trigger celebrations for new unlocks
   const levelAfter = avatarStore.level;
 
-  // Level up celebration
+  // Level up celebration with full data
   if (levelAfter > levelBefore && globalCelebrate) {
-    globalCelebrate.levelUp(levelAfter);
+    // Award skill points on level up
+    let skillPointsAwarded = 0;
+    try {
+      const { useSkillPointsStore } = await import('../stores/skillPointsStore');
+      const result = await useSkillPointsStore.getState().awardLevelUpPoints();
+      skillPointsAwarded = result?.pointsAwarded || 0;
+    } catch (e) {
+      console.warn('[Gamification] Skill points award failed:', e);
+    }
+
+    // Trigger level up modal with full data
+    globalCelebrate.levelUp({
+      newLevel: levelAfter,
+      oldLevel: levelBefore,
+      skillPointsAwarded,
+      stageTransition: avatarStore.currentTier !== tierBefore,
+      newStage: avatarStore.currentTier,
+      oldStage: tierBefore,
+    });
   }
 
   // Achievement celebrations - use full-screen Duolingo-style celebration

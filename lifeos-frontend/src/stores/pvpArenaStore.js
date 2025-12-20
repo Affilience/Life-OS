@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { calculatePlayerStats } from '../data/bossDatabase';
 import { EQUIPMENT_DATABASE } from '../data/equipmentDatabase';
+import { useGamificationStore } from './gamificationStore';
 
 const usePvpArenaStore = create((set, get) => ({
   // === STATE ===
@@ -21,6 +22,10 @@ const usePvpArenaStore = create((set, get) => ({
   isInMatch: false,
   matchResult: null,
 
+  // Player profiles for display
+  myProfile: null,
+  opponentProfile: null,
+
   // Player states during match
   myHealth: 0,
   myMaxHealth: 0,
@@ -33,6 +38,9 @@ const usePvpArenaStore = create((set, get) => ({
 
   // Arena stats
   arenaStats: null,
+
+  // Match history
+  matchHistory: [],
 
   // UI state
   isLoading: false,
@@ -77,6 +85,88 @@ const usePvpArenaStore = create((set, get) => ({
       }
     } catch (error) {
       console.error('Arena initialization error:', error);
+    }
+  },
+
+  // === PROFILE FETCHING ===
+
+  fetchPlayerProfile: async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url, current_level')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+  },
+
+  fetchMatchProfiles: async (match, myUserId) => {
+    const isPlayer1 = match.player1_id === myUserId;
+    const opponentId = isPlayer1 ? match.player2_id : match.player1_id;
+
+    const [myProfile, opponentProfile] = await Promise.all([
+      get().fetchPlayerProfile(myUserId),
+      get().fetchPlayerProfile(opponentId),
+    ]);
+
+    set({ myProfile, opponentProfile });
+    return { myProfile, opponentProfile };
+  },
+
+  // === MATCH HISTORY ===
+
+  fetchMatchHistory: async (userId, limit = 20) => {
+    try {
+      const { data, error } = await supabase
+        .from('pvp_arena_matches')
+        .select('*')
+        .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+        .eq('status', 'completed')
+        .order('ended_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      // Fetch profiles for all opponents in history
+      const opponentIds = data?.map(match =>
+        match.player1_id === userId ? match.player2_id : match.player1_id
+      ).filter((id, index, arr) => arr.indexOf(id) === index) || [];
+
+      let profileMap = {};
+      if (opponentIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', opponentIds);
+
+        if (profiles) {
+          profileMap = profiles.reduce((acc, p) => {
+            acc[p.user_id] = p;
+            return acc;
+          }, {});
+        }
+      }
+
+      // Attach opponent profiles to matches
+      const matchesWithProfiles = data?.map(match => ({
+        ...match,
+        opponentProfile: profileMap[match.player1_id === userId ? match.player2_id : match.player1_id] || null,
+      })) || [];
+
+      set({ matchHistory: matchesWithProfiles });
+      return matchesWithProfiles;
+    } catch (error) {
+      console.error('Error fetching match history:', error);
+      return [];
     }
   },
 
@@ -162,6 +252,9 @@ const usePvpArenaStore = create((set, get) => ({
           isLoading: false,
         });
 
+        // Fetch player profiles for display
+        get().fetchMatchProfiles(match, userId);
+
         get().subscribeToMatch(match.channel_id, userId);
       } else {
         // Added to queue, waiting for opponent
@@ -239,6 +332,9 @@ const usePvpArenaStore = create((set, get) => ({
                 myDamageDealt: 0,
                 opponentDamageDealt: 0,
               });
+
+              // Fetch player profiles for display
+              get().fetchMatchProfiles(match, userId);
 
               get().unsubscribeFromQueue();
               get().subscribeToMatch(match.channel_id, userId);
@@ -442,6 +538,30 @@ const usePvpArenaStore = create((set, get) => ({
         .delete()
         .in('user_id', [currentMatch.player1_id, currentMatch.player2_id]);
 
+      // Get current user ID to determine if we're the winner
+      const { data: authData } = await supabase.auth.getUser();
+      const currentUserId = authData?.user?.id;
+
+      // Award XP and credits to the current user via gamificationStore
+      if (currentUserId) {
+        const gamificationStore = useGamificationStore.getState();
+        const isCurrentUserWinner = winnerId === currentUserId;
+        const xpReward = isCurrentUserWinner ? winnerXp : loserXp;
+        const creditReward = isCurrentUserWinner ? winnerCredits : loserCredits;
+
+        try {
+          if (gamificationStore.addXP) {
+            await gamificationStore.addXP(xpReward, 'pvp_arena');
+          }
+          if (gamificationStore.addCredits) {
+            await gamificationStore.addCredits(creditReward, 'pvp_arena');
+          }
+          console.log(`[PvP Arena] Awarded ${xpReward} XP and ${creditReward} credits to user`);
+        } catch (rewardError) {
+          console.error('[PvP Arena] Error awarding rewards:', rewardError);
+        }
+      }
+
       set({
         matchResult: {
           winnerId,
@@ -517,6 +637,8 @@ const usePvpArenaStore = create((set, get) => ({
       opponentTaps: 0,
       myDamageDealt: 0,
       opponentDamageDealt: 0,
+      myProfile: null,
+      opponentProfile: null,
     });
   },
 
@@ -530,6 +652,8 @@ const usePvpArenaStore = create((set, get) => ({
       matchChannel: null,
       isInMatch: false,
       matchResult: null,
+      myProfile: null,
+      opponentProfile: null,
       myHealth: 0,
       myMaxHealth: 0,
       opponentHealth: 0,
@@ -539,6 +663,7 @@ const usePvpArenaStore = create((set, get) => ({
       myDamageDealt: 0,
       opponentDamageDealt: 0,
       arenaStats: null,
+      matchHistory: [],
       isLoading: false,
       error: null,
     });

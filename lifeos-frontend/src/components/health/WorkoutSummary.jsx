@@ -107,7 +107,7 @@ export default function WorkoutSummary({ workout, onClose, onShare }) {
             <Dumbbell className="w-6 h-6" />
             <div className="stat-content">
               <span className="stat-value">{totalVolume.toLocaleString()}</span>
-              <span className="stat-label">Total Volume (lbs)</span>
+              <span className="stat-label">Total Volume (kg)</span>
             </div>
           </div>
 
@@ -192,7 +192,7 @@ export default function WorkoutSummary({ workout, onClose, onShare }) {
                 return (
                   <div key={ex.exerciseId} className="pr-item">
                     <span className="pr-exercise">{ex.exerciseId}</span>
-                    <span className="pr-weight">{prSet.weight} lbs × {prSet.reps}</span>
+                    <span className="pr-weight">{prSet.weight} kg × {prSet.reps}</span>
                   </div>
                 );
               })}

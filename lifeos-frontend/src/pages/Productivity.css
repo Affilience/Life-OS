@@ -1026,6 +1026,7 @@
   appearance: none;
   width: 24px;
   height: 24px;
+  margin-top: -8px; /* Center 24px thumb on 8px track: (8-24)/2 = -8 */
   background: linear-gradient(
     135deg,
     var(--color-productivity-400),

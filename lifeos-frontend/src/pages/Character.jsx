@@ -18,8 +18,7 @@ import {
   X,
   Loader2,
   Edit3,
-  UserCircle,
-  ArrowUpCircle
+  UserCircle
 } from 'lucide-react';
 import PageHeader from '../components/shared/PageHeader';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -519,47 +518,7 @@ export default function Character() {
                     )}
                   </div>
 
-                  <p className="text-sm text-primary-400 mb-1">{currentStageName}</p>
-                  <p className="text-xs text-text-muted mb-3">
-                    {mode === 'cosmic' ? `Stage ${currentStage.levelRequired}` : `Stage ${currentStage.levelRequired}`} • {terms.level} {currentLevel}
-                  </p>
 
-                  {/* Gender Toggle */}
-                  {visibility.showAvatar && (
-                    <div className="flex items-center gap-1 bg-bg-0 border border-border rounded-lg p-1">
-                      <button
-                        onClick={() => setCharacterGender('male')}
-                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                          characterGender === 'male'
-                            ? `${styles.genderActiveM} text-text-primary`
-                            : 'text-text-muted hover:text-text-primary hover:bg-white/5'
-                        }`}
-                      >
-                        {mode === 'cosmic' ? 'Hero' : 'Male'}
-                      </button>
-                      <button
-                        onClick={() => setCharacterGender('female')}
-                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                          characterGender === 'female'
-                            ? `${styles.genderActiveF} text-text-primary`
-                            : 'text-text-muted hover:text-text-primary hover:bg-white/5'
-                        }`}
-                      >
-                        {mode === 'cosmic' ? 'Heroine' : 'Female'}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Evolution Showcase Button */}
-                  {visibility.showAvatar && (
-                    <button
-                      onClick={() => navigate('/evolution')}
-                      className={`mt-3 flex items-center gap-2 px-4 py-2 bg-gradient-to-r ${styles.actionBtn} rounded-lg text-sm font-medium text-text-primary hover:opacity-90 transition-all shadow-lg`}
-                    >
-                      <ArrowUpCircle className="w-4 h-4" />
-                      <span>View Evolution Stages</span>
-                    </button>
-                  )}
                 </div>
 
                 {/* Right: Stats */}

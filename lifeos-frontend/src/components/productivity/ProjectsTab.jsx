@@ -159,29 +159,31 @@ export default function ProjectsTab() {
     if (editingProject) {
       updateProject(editingProject.id, formData);
     } else {
-      // Create project
+      // Create project and get the actual ID back
       const projectData = { ...formData };
       delete projectData.initialTasks;
-      addProject(projectData);
+      const newProjectId = addProject(projectData);
 
-      // Add initial tasks if any
-      const newProjectId = `proj-${Date.now()}`;
-      formData.initialTasks.forEach((taskTitle, index) => {
-        if (taskTitle.trim()) {
-          setTimeout(() => {
-            addTask({
-              projectId: newProjectId,
-              title: taskTitle,
-              description: '',
-              status: 'pending',
-              priority: 'medium',
-              dueDate: null,
-              tags: [],
-              estimatedTime: 1800,
-            });
-          }, index * 10);
-        }
-      });
+      // Add initial tasks if any, using the actual project ID
+      if (newProjectId && formData.initialTasks.length > 0) {
+        formData.initialTasks.forEach((taskTitle, index) => {
+          if (taskTitle.trim()) {
+            // Small delay to ensure project is synced
+            setTimeout(() => {
+              addTask({
+                projectId: newProjectId,
+                title: taskTitle,
+                description: '',
+                status: 'pending',
+                priority: 'medium',
+                dueDate: null,
+                tags: [],
+                estimatedTime: 1800,
+              });
+            }, index * 50);
+          }
+        });
+      }
     }
     handleCloseModal();
   };

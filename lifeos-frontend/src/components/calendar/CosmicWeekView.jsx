@@ -20,7 +20,7 @@ import {
 import CosmicTimeBlock from './CosmicTimeBlock';
 import CreateTimeBlockModal from './CreateTimeBlockModal';
 
-export default function CosmicWeekView() {
+export default function CosmicWeekView({ onNavigateToDay }) {
   const {
     timeBlocks,
     getBlocksForDate,
@@ -336,11 +336,13 @@ export default function CosmicWeekView() {
                     : 'transparent',
                 }}
               >
-                {/* Day Header */}
+                {/* Day Header - Click to navigate to day view */}
                 <div
-                  className={`h-12 border-b border-border/50 flex flex-col items-center justify-center ${
+                  onClick={() => onNavigateToDay && onNavigateToDay(date)}
+                  className={`h-12 border-b border-border/50 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-primary-500/20 ${
                     today ? 'bg-primary-500/10' : 'bg-bg-elevated/20'
                   }`}
+                  title="Click to view full day"
                 >
                   <div className="text-xs text-text-muted uppercase">
                     {date.toLocaleDateString('en-GB', { weekday: 'short' })}

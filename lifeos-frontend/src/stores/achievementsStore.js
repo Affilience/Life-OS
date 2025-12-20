@@ -6,13 +6,21 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 import { feedback } from '../services/microInteractions';
 
 // Lazy import unlock service to avoid circular dependencies
 let unlockServiceRef = null;
+let notificationStoreRef = null;
+
+const getNotificationStore = async () => {
+  if (!notificationStoreRef) {
+    const module = await import('./notificationStore');
+    notificationStoreRef = module.useNotificationStore;
+  }
+  return notificationStoreRef;
+};
 const getUnlockService = async () => {
   if (!unlockServiceRef) {
     const module = await import('../services/unlockService');
@@ -1522,42 +1530,48 @@ const useAchievementsStore = create(
       // Initialize from Supabase - MERGES with local data instead of overwriting
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           // Get current local state FIRST
           const localState = get();
           const localUnlocked = localState.unlockedAchievements || [];
           const localProgress = localState.achievementProgress || {};
           const localStats = localState.stats || {};
 
-          // Load user discoveries (achievements)
-          const { data: userDiscoveries, error: discoveriesError } = await supabase
-            .from('user_discoveries')
-            .select(`
-              *,
-              discovery:discoveries (*)
-            `)
-            .eq('user_id', DEV_USER_ID);
-
-          if (discoveriesError) throw discoveriesError;
-
-          // Load achievement progress
-          const { data: progressData, error: progressError } = await supabase
-            .from('achievement_progress')
+          // Load user achievements from the new user_achievements table
+          const { data: userAchievements, error: achievementsError } = await supabase
+            .from('user_achievements')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
-          if (progressError) throw progressError;
+          if (achievementsError) {
+            console.error('Error loading achievements:', achievementsError);
+            // Continue with local data on error
+          }
+
+          // Load achievement stats
+          const { data: statsData, error: statsError } = await supabase
+            .from('user_achievement_stats')
+            .select('*')
+            .eq('user_id', userId);
+
+          if (statsError) {
+            console.error('Error loading achievement stats:', statsError);
+          }
 
           // Convert Supabase data to local format
-          const supabaseUnlocked = (userDiscoveries || []).map(ud => ({
-            achievementId: ud.discovery?.id || ud.discovery_id,
-            unlockedAt: ud.earned_at,
-            xpEarned: ud.discovery?.xp_reward || 0,
-            creditsEarned: ud.discovery?.credits_reward || 0,
+          const supabaseUnlocked = (userAchievements || []).map(ua => ({
+            achievementId: ua.achievement_id,
+            unlockedAt: ua.unlocked_at,
+            xpEarned: ua.xp_earned || 0,
+            creditsEarned: ua.credits_earned || 0,
           }));
 
-          const supabaseProgress = {};
-          (progressData || []).forEach(p => {
-            supabaseProgress[p.discovery_id] = p.current_progress;
+          // Convert stats from database
+          const supabaseStats = {};
+          (statsData || []).forEach(s => {
+            supabaseStats[s.stat_name] = s.stat_value;
           });
 
           // MERGE: Combine local and Supabase achievements (keep both, dedupe by achievementId)
@@ -1572,10 +1586,10 @@ const useAchievementsStore = create(
           });
           const mergedUnlocked = Array.from(unlockedMap.values());
 
-          // MERGE progress: take the higher value between local and Supabase
-          const mergedProgress = { ...localProgress };
-          Object.entries(supabaseProgress).forEach(([key, value]) => {
-            mergedProgress[key] = Math.max(mergedProgress[key] || 0, value);
+          // MERGE stats: take the higher value between local and Supabase
+          const mergedStats = { ...localStats };
+          Object.entries(supabaseStats).forEach(([key, value]) => {
+            mergedStats[key] = Math.max(mergedStats[key] || 0, value);
           });
 
           // Calculate totals from merged data
@@ -1584,12 +1598,26 @@ const useAchievementsStore = create(
 
           set({
             unlockedAchievements: mergedUnlocked,
-            achievementProgress: mergedProgress,
+            achievementProgress: localProgress, // Keep local progress tracking
             totalXPFromAchievements: totalXP,
             totalCreditsFromAchievements: totalCredits,
-            // Preserve local stats - don't overwrite from empty Supabase
-            stats: localStats,
+            stats: mergedStats,
           });
+
+          // Sync any local achievements that aren't in Supabase yet
+          const supabaseAchievementIds = new Set(supabaseUnlocked.map(a => a.achievementId));
+          const localOnlyAchievements = localUnlocked.filter(a => !supabaseAchievementIds.has(a.achievementId));
+          if (localOnlyAchievements.length > 0) {
+            // Find the full achievement data from templates
+            const achievementsToSync = localOnlyAchievements.map(local => {
+              const template = ACHIEVEMENT_TEMPLATES.find(t => t.id === local.achievementId);
+              return template ? { ...template, unlockedAt: local.unlockedAt } : null;
+            }).filter(Boolean);
+
+            if (achievementsToSync.length > 0) {
+              get().syncAchievementUnlocks(achievementsToSync, new Date().toISOString());
+            }
+          }
 
           console.log(`[Achievements] Initialized: ${mergedUnlocked.length} unlocked (${localUnlocked.length} local, ${supabaseUnlocked.length} from Supabase)`);
         } catch (error) {
@@ -1889,6 +1917,24 @@ const useAchievementsStore = create(
               xpOverride: totalXP,
               module: 'productivity', // Achievements are general progress
             });
+
+            // Show achievement toast notifications
+            (async () => {
+              const NotificationStore = await getNotificationStore();
+              for (const achievement of newUnlocks) {
+                NotificationStore.getState().addAchievementNotification({
+                  id: achievement.id,
+                  title: achievement.title,
+                  name: achievement.title,
+                  description: achievement.description,
+                  rarity: achievement.rarity,
+                  icon: achievement.icon,
+                  xp_reward: achievement.xpReward,
+                  credit_reward: achievement.creditsReward,
+                  category: achievement.category,
+                });
+              }
+            })();
           }
 
           // Sync achievement unlocks to database
@@ -1909,44 +1955,51 @@ const useAchievementsStore = create(
       // Sync achievement unlocks to Supabase
       syncAchievementUnlocks: async (achievements, unlockedAt) => {
         try {
-          // Insert into user_discoveries (achievements table)
-          const discoveryRecords = achievements.map(a => ({
-            user_id: DEV_USER_ID,
-            discovery_id: a.id,
-            earned_at: unlockedAt,
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
+          // Insert into user_achievements table (string-based IDs)
+          const achievementRecords = achievements.map(a => ({
+            user_id: userId,
+            achievement_id: a.id,
+            unlocked_at: unlockedAt,
+            xp_earned: a.xpReward || 0,
+            credits_earned: a.creditsReward || 0,
           }));
 
-          const { error: discoveryError } = await supabase
-            .from('user_discoveries')
-            .upsert(discoveryRecords, { onConflict: 'user_id,discovery_id' });
+          const { error: achievementError } = await supabase
+            .from('user_achievements')
+            .upsert(achievementRecords, { onConflict: 'user_id,achievement_id' });
 
-          if (discoveryError) {
-            console.error('Error syncing achievement unlocks:', discoveryError);
+          if (achievementError) {
+            console.error('Error syncing achievement unlocks:', achievementError);
+          } else {
+            console.log(`[Achievements] Synced ${achievements.length} achievements to Supabase`);
           }
 
           // Award XP and credits via gamification store if available
-          const totalXP = achievements.reduce((sum, a) => sum + a.xpReward, 0);
-          const totalCredits = achievements.reduce((sum, a) => sum + a.creditsReward, 0);
+          const totalXP = achievements.reduce((sum, a) => sum + (a.xpReward || 0), 0);
+          const totalCredits = achievements.reduce((sum, a) => sum + (a.creditsReward || 0), 0);
 
           if (totalXP > 0 || totalCredits > 0) {
             // Update cosmic currency
             const { data: currentCurrency } = await supabase
               .from('user_cosmic_currency')
               .select('balance')
-              .eq('user_id', DEV_USER_ID)
+              .eq('user_id', userId)
               .maybeSingle();
 
             if (currentCurrency) {
               await supabase
                 .from('user_cosmic_currency')
                 .update({ balance: currentCurrency.balance + totalCredits })
-                .eq('user_id', DEV_USER_ID);
+                .eq('user_id', userId);
             }
 
             // Log the achievement rewards in timeline
             for (const achievement of achievements) {
               await supabase.from('timeline').insert({
-                user_id: DEV_USER_ID,
+                user_id: userId,
                 module: 'achievements',
                 entry_type: 'achievement_unlocked',
                 title: `Achievement Unlocked: ${achievement.title}`,
@@ -1966,6 +2019,25 @@ const useAchievementsStore = create(
         }
       },
 
+      // Sync a stat to Supabase
+      syncStatToSupabase: async (statName, value) => {
+        try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
+          await supabase
+            .from('user_achievement_stats')
+            .upsert({
+              user_id: userId,
+              stat_name: statName,
+              stat_value: value,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id,stat_name' });
+        } catch (error) {
+          console.error('Error syncing stat to Supabase:', error);
+        }
+      },
+
       // Update a specific stat and check achievements
       updateStat: (statName, value) => {
         set(state => ({
@@ -1974,6 +2046,9 @@ const useAchievementsStore = create(
             [statName]: value,
           }
         }));
+
+        // Sync stat to Supabase
+        get().syncStatToSupabase(statName, value);
 
         // Check for new achievement unlocks
         return get().checkAchievements();

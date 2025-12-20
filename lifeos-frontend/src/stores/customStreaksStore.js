@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 import { feedback } from '../services/microInteractions';
 
@@ -193,7 +192,8 @@ const useCustomStreaksStore = create(
 
       // Initialize from Supabase
       initialize: async () => {
-        const userId = DEV_USER_ID;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
         set({ isLoading: true });
 
         try {
@@ -236,7 +236,15 @@ const useCustomStreaksStore = create(
 
       // Create a new custom streak
       createStreak: async ({ name, icon, color, frequency, customDays, goal, description }) => {
-        const userId = DEV_USER_ID;
+        console.log('[CustomStreaks] Creating streak:', { name, icon, color, frequency });
+
+        const userId = await getCurrentUserId();
+        console.log('[CustomStreaks] User ID:', userId);
+
+        if (!userId) {
+          console.error('[CustomStreaks] No authenticated user');
+          return { success: false, error: 'Not authenticated. Please log in.' };
+        }
         set({ isLoading: true });
 
         try {
@@ -255,6 +263,8 @@ const useCustomStreaksStore = create(
             created_at: new Date().toISOString(),
           };
 
+          console.log('[CustomStreaks] Inserting streak:', newStreak);
+
           const { data, error } = await supabase
             .from('custom_streaks')
             .insert(newStreak)
@@ -262,8 +272,10 @@ const useCustomStreaksStore = create(
             .single();
 
           if (error) {
+            console.error('[CustomStreaks] Insert error:', error);
             // If table doesn't exist, store locally
             if (error.code === '42P01') {
+              console.log('[CustomStreaks] Table not found, storing locally');
               const localStreak = {
                 ...newStreak,
                 id: `local-${Date.now()}`,
@@ -277,6 +289,8 @@ const useCustomStreaksStore = create(
             throw error;
           }
 
+          console.log('[CustomStreaks] Streak created successfully:', data);
+
           set(state => ({
             streaks: [data, ...state.streaks],
             isLoading: false,
@@ -287,7 +301,7 @@ const useCustomStreaksStore = create(
 
           return { success: true, streak: data };
         } catch (err) {
-          console.error('Error creating streak:', err);
+          console.error('[CustomStreaks] Error creating streak:', err);
           set({ isLoading: false });
           return { success: false, error: err.message };
         }
@@ -295,7 +309,8 @@ const useCustomStreaksStore = create(
 
       // Log completion for a streak
       logCompletion: async (streakId, date = null) => {
-        const userId = DEV_USER_ID;
+        const userId = await getCurrentUserId();
+        if (!userId) return { success: false, error: 'Not authenticated' };
         const { streaks, completions } = get();
         const completionDate = date || new Date().toISOString().split('T')[0];
 
@@ -393,7 +408,8 @@ const useCustomStreaksStore = create(
 
       // Undo completion for today
       undoCompletion: async (streakId, date = null) => {
-        const userId = DEV_USER_ID;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
         const completionDate = date || new Date().toISOString().split('T')[0];
 
         try {

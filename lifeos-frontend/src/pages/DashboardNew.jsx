@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useState } from 'react';
+import React, { useMemo, useCallback, useEffect, useState, forwardRef } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useNavigate } from 'react-router-dom';
 import { Settings, Move, Check, Undo2, Redo2, Plus, LayoutGrid, Home } from 'lucide-react';
@@ -12,6 +12,16 @@ import { WidgetWrapper, WIDGET_COMPONENTS } from '../components/dashboard/widget
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import '../components/dashboard/DashboardGrid.css';
+
+// Grid item wrapper that properly forwards refs for react-grid-layout
+// Named DashboardGridItem to avoid conflicts with react-grid-layout's internal GridItem
+const DashboardGridItem = forwardRef(function DashboardGridItem({ children, style, className, ...props }, ref) {
+  return (
+    <div ref={ref} style={style} className={className} {...props}>
+      {children}
+    </div>
+  );
+});
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -269,7 +279,7 @@ export default function DashboardNew() {
               const minW = 1;
 
               return (
-                <div
+                <DashboardGridItem
                   key={widgetId}
                   data-grid={{
                     // Provide default x, y, w, h values to prevent undefined errors
@@ -285,7 +295,7 @@ export default function DashboardNew() {
                   <WidgetWrapper widgetId={widgetId}>
                     <WidgetComponent />
                   </WidgetWrapper>
-                </div>
+                </DashboardGridItem>
               );
             })}
         </ResponsiveGridLayout>
@@ -309,15 +319,6 @@ export default function DashboardNew() {
           </div>
         )}
 
-        {/* Add Widget Button (floating) */}
-        <button
-          onClick={() => setIsAddWidgetOpen(true)}
-          data-tour="add-widget-btn"
-          className="fixed bottom-24 right-6 p-4 bg-gradient-to-r from-primary-500 to-secondary text-text-primary rounded-full shadow-lg shadow-primary hover:shadow-glow hover:scale-110 hover:-translate-y-1 active:scale-100 active:translate-y-0 transition-all duration-150 z-20"
-          title="Add Widget"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
       </div>
 
       {/* Add Widget Modal */}

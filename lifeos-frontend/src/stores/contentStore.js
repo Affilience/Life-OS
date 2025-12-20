@@ -6,12 +6,14 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 // Supabase sync helpers
 const syncContentToSupabase = async (content, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('content_items').delete().eq('id', content.id);
       return;
@@ -19,7 +21,7 @@ const syncContentToSupabase = async (content, action = 'upsert') => {
 
     const dbContent = {
       id: content.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       title: content.title,
       content_type: content.type,
       status: content.status || 'planned',
@@ -61,10 +63,13 @@ export const useContentStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           const { data, error } = await supabase
             .from('content_items')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
           if (error) throw error;

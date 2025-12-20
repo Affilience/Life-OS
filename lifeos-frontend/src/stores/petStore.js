@@ -5,8 +5,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 // Lazy store imports to avoid circular dependencies
 // These are resolved at runtime when checkUnlocks is called
@@ -555,6 +554,12 @@ export const usePetStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) {
+            set({ _isInitialized: true });
+            return;
+          }
+
           // Load user's pets and profile (for max_pet_slots)
           const [petsResult, profileResult] = await Promise.all([
             supabase
@@ -563,11 +568,11 @@ export const usePetStore = create(
                 *,
                 pet:pets (*)
               `)
-              .eq('user_id', DEV_USER_ID),
+              .eq('user_id', userId),
             supabase
               .from('user_profiles')
               .select('max_pet_slots')
-              .eq('id', DEV_USER_ID)
+              .eq('id', userId)
               .maybeSingle(),
           ]);
 
@@ -590,10 +595,18 @@ export const usePetStore = create(
               activePets: activePets.length > 0 ? activePets : ['common_kitsune_pup'],
             });
           }
+
+          // Mark as initialized after loading from Supabase
+          set({ _isInitialized: true });
+          console.log('[PetStore] Initialized from Supabase');
         } catch (error) {
           console.error('Error initializing pets from Supabase:', error);
+          set({ _isInitialized: true }); // Still mark initialized even on error
         }
       },
+
+      // Initialization flag - prevents race conditions with localStorage
+      _isInitialized: false,
 
       // User's pet collection - starts empty, unlocked through gameplay
       ownedPets: [], // Pets unlocked through achievements, levels, etc.
@@ -610,6 +623,12 @@ export const usePetStore = create(
 
       // Unlock a new pet
       unlockPet: async (petId, showNotification = true) => {
+        // Skip if not initialized to prevent syncing stale localStorage data
+        if (!get()._isInitialized) {
+          console.log('[PetStore] Skipping unlockPet - not initialized yet');
+          return false;
+        }
+
         const { ownedPets } = get();
         if (!ownedPets.includes(petId) && PET_DATABASE[petId]) {
           const pet = PET_DATABASE[petId];
@@ -630,8 +649,11 @@ export const usePetStore = create(
 
           // Sync to database
           try {
+            const userId = await getCurrentUserId();
+            if (!userId) return true;
+
             await supabase.from('user_pets').upsert({
-              user_id: DEV_USER_ID,
+              user_id: userId,
               pet_id: petId,
               is_active: false,
               unlocked_at: new Date().toISOString(),
@@ -639,7 +661,7 @@ export const usePetStore = create(
 
             // Log to timeline
             await supabase.from('timeline').insert({
-              user_id: DEV_USER_ID,
+              user_id: userId,
               module: 'companions',
               entry_type: 'pet_unlocked',
               title: `New Companion: ${pet.name}`,
@@ -673,10 +695,13 @@ export const usePetStore = create(
           set({ activePets: activePets.filter(id => id !== petId) });
           // Sync to database
           try {
-            await supabase.from('user_pets')
-              .update({ is_active: false })
-              .eq('user_id', DEV_USER_ID)
-              .eq('pet_id', petId);
+            const userId = await getCurrentUserId();
+            if (userId) {
+              await supabase.from('user_pets')
+                .update({ is_active: false })
+                .eq('user_id', userId)
+                .eq('pet_id', petId);
+            }
           } catch (error) {
             console.error('Error syncing pet unequip:', error);
           }
@@ -690,10 +715,13 @@ export const usePetStore = create(
         set({ activePets: [...activePets, petId] });
         // Sync to database
         try {
-          await supabase.from('user_pets')
-            .update({ is_active: true })
-            .eq('user_id', DEV_USER_ID)
-            .eq('pet_id', petId);
+          const userId = await getCurrentUserId();
+          if (userId) {
+            await supabase.from('user_pets')
+              .update({ is_active: true })
+              .eq('user_id', userId)
+              .eq('pet_id', petId);
+          }
         } catch (error) {
           console.error('Error syncing pet equip:', error);
         }
@@ -706,10 +734,13 @@ export const usePetStore = create(
         set({ activePets: activePets.filter(id => id !== petId) });
         // Sync to database
         try {
-          await supabase.from('user_pets')
-            .update({ is_active: false })
-            .eq('user_id', DEV_USER_ID)
-            .eq('pet_id', petId);
+          const userId = await getCurrentUserId();
+          if (userId) {
+            await supabase.from('user_pets')
+              .update({ is_active: false })
+              .eq('user_id', userId)
+              .eq('pet_id', petId);
+          }
         } catch (error) {
           console.error('Error syncing pet unequip:', error);
         }
@@ -724,10 +755,13 @@ export const usePetStore = create(
 
           // Sync to Supabase
           try {
-            await supabase
-              .from('user_profiles')
-              .update({ max_pet_slots: newMaxSlots })
-              .eq('id', DEV_USER_ID);
+            const userId = await getCurrentUserId();
+            if (userId) {
+              await supabase
+                .from('user_profiles')
+                .update({ max_pet_slots: newMaxSlots })
+                .eq('id', userId);
+            }
           } catch (error) {
             console.error('Error syncing pet slots to Supabase:', error);
           }
@@ -849,6 +883,12 @@ export const usePetStore = create(
 
       // Check unlock conditions and unlock eligible pets
       checkUnlocks: async () => {
+        // Skip if not initialized to prevent race conditions with localStorage
+        if (!get()._isInitialized) {
+          console.log('[PetStore] Skipping checkUnlocks - not initialized yet');
+          return [];
+        }
+
         const { ownedPets, unlockPet, unlockSlot, maxSlots, checkUnlockRequirement } = get();
 
         // Import stores dynamically to avoid circular dependencies
@@ -936,18 +976,21 @@ export const usePetStore = create(
 
         // Log the purchase to timeline
         try {
-          await supabase.from('timeline').insert({
-            user_id: DEV_USER_ID,
-            module: 'bazaar',
-            entry_type: 'pet_purchased',
-            title: `Purchased ${pet.name}`,
-            description: `Bought ${pet.name} for ${price} Cosmic Credits`,
-            metadata: {
-              pet_id: petId,
-              tier: pet.tier,
-              price: price,
-            },
-          });
+          const userId = await getCurrentUserId();
+          if (userId) {
+            await supabase.from('timeline').insert({
+              user_id: userId,
+              module: 'bazaar',
+              entry_type: 'pet_purchased',
+              title: `Purchased ${pet.name}`,
+              description: `Bought ${pet.name} for ${price} Cosmic Credits`,
+              metadata: {
+                pet_id: petId,
+                tier: pet.tier,
+                price: price,
+              },
+            });
+          }
         } catch (error) {
           console.error('Error logging pet purchase to timeline:', error);
         }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { CheckCircleIcon, StarIcon, SparklesIcon, TrophyIcon } from '@heroicons/react/24/solid';
+import { CheckCircle, Star, Sparkles, Trophy } from 'lucide-react';
 import { getRarityColor } from '../../stores/gamificationStore';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 import { feedback, sounds, haptics, celebrations } from '../../services/microInteractions';
@@ -11,7 +11,7 @@ import { useParticleBurst, PARTICLE_PALETTES } from '../../hooks/useParticleBurs
  */
 const RARITY_CONFIG = {
   common: {
-    icon: CheckCircleIcon,
+    icon: CheckCircle,
     animation: 'slide',
     particleCount: 0,
     confetti: false,
@@ -21,8 +21,19 @@ const RARITY_CONFIG = {
     duration: 4000,
     scale: 1,
   },
+  uncommon: {
+    icon: CheckCircle,
+    animation: 'slideGlow',
+    particleCount: 4,
+    confetti: false,
+    screenFlash: false,
+    glowPulse: true,
+    soundDelay: 50,
+    duration: 4500,
+    scale: 1,
+  },
   rare: {
-    icon: SparklesIcon,
+    icon: Sparkles,
     animation: 'slideGlow',
     particleCount: 8,
     confetti: false,
@@ -33,7 +44,7 @@ const RARITY_CONFIG = {
     scale: 1.02,
   },
   epic: {
-    icon: StarIcon,
+    icon: Star,
     animation: 'burst',
     particleCount: 20,
     confetti: true,
@@ -45,7 +56,7 @@ const RARITY_CONFIG = {
     scale: 1.05,
   },
   legendary: {
-    icon: TrophyIcon,
+    icon: Trophy,
     animation: 'legendary',
     particleCount: 35,
     confetti: true,
@@ -100,11 +111,6 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
 
   // Particle burst hook
   const burst = useParticleBurst(containerRef);
-
-  // In minimal mode or if achievement popups are disabled, don't show
-  if (!visibility.showAchievementPopups) {
-    return null;
-  }
 
   const rarity = achievement?.rarity?.toLowerCase() || 'common';
   const config = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
@@ -200,7 +206,13 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
     }
   }, [isVisible, onClose, config.duration]);
 
+  // Early returns AFTER all hooks
   if (!achievement) return null;
+
+  // In minimal mode or if achievement popups are disabled, don't show
+  if (!visibility.showAchievementPopups) {
+    return null;
+  }
 
   // Animation variants based on rarity
   const getAnimationVariants = () => {
@@ -489,11 +501,6 @@ export function AchievementToastManager({ achievements = [] }) {
   // Get visibility settings
   const visibility = VISIBILITY[useGamificationModeStore.getState().mode] || VISIBILITY.cosmic;
 
-  // If achievement popups are disabled, don't process queue
-  if (!visibility.showAchievementPopups) {
-    return null;
-  }
-
   // Add new achievements to queue
   React.useEffect(() => {
     if (achievements.length > 0) {
@@ -512,6 +519,11 @@ export function AchievementToastManager({ achievements = [] }) {
   const handleClose = () => {
     setCurrent(null);
   };
+
+  // If achievement popups are disabled, don't render (but hooks still run)
+  if (!visibility.showAchievementPopups) {
+    return null;
+  }
 
   return (
     <AchievementToast

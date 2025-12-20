@@ -56,8 +56,14 @@ export default function KnowledgeDashboard({ onTabChange }) {
   const knowledgeState = useKnowledgeStore();
   // Provide safe defaults for potentially undefined properties
   const notes = knowledgeState?.notes || [];
-  const ideas = knowledgeState?.ideas || [];
   const highlights = knowledgeState?.highlights || [];
+
+  // Ideas are notes with 'idea' tag (tag-based approach)
+  const ideas = useMemo(() => {
+    return notes.filter(note =>
+      note.tags?.includes('idea') || note.tags?.includes('Idea')
+    );
+  }, [notes]);
 
   const handleCaptureNote = () => {
     // Open the QuickCapture modal

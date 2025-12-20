@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import CreateTimeBlockModal from './CreateTimeBlockModal';
 
-export default function CosmicMonthView() {
+export default function CosmicMonthView({ onNavigateToDay }) {
   const {
     timeBlocks,
     getBlocksForDate,
@@ -122,12 +122,18 @@ export default function CosmicMonthView() {
   const handleDayClick = (dayData) => {
     if (!dayData) return;
 
-    setSelectedDay(dayData);
-    setSelectedSlot({
-      date: dayData.dateStr,
-      startTime: '09:00',
-      endTime: '10:00',
-    });
+    // Navigate to day view if callback is provided
+    if (onNavigateToDay) {
+      onNavigateToDay(dayData.date);
+    } else {
+      // Fallback: select the day locally
+      setSelectedDay(dayData);
+      setSelectedSlot({
+        date: dayData.dateStr,
+        startTime: '09:00',
+        endTime: '10:00',
+      });
+    }
   };
 
   const handleAddBlock = () => {

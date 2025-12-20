@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useAvatarStore } from './avatarStore';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 
 /**
@@ -13,6 +12,9 @@ import { triggerGamification } from '../hooks/useGamification';
 // Supabase sync helpers - use select+insert/update pattern to avoid 409 conflicts
 const syncSessionToSupabase = async (session, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       const { error } = await supabase.from('productivity_sessions').delete().eq('id', session.id);
       if (error) console.error('Error deleting session:', error);
@@ -21,7 +23,7 @@ const syncSessionToSupabase = async (session, action = 'upsert') => {
 
     const dbSession = {
       id: session.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       project_id: session.projectId || null,
       title: session.type || 'Work Session',
       description: session.notes || '',
@@ -54,6 +56,9 @@ const syncSessionToSupabase = async (session, action = 'upsert') => {
 
 const syncProjectToSupabase = async (project, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       const { error } = await supabase.from('productivity_projects').delete().eq('id', project.id);
       if (error) console.error('Error deleting project:', error);
@@ -62,7 +67,7 @@ const syncProjectToSupabase = async (project, action = 'upsert') => {
 
     const dbProject = {
       id: project.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       name: project.name,
       description: project.description || '',
       status: project.status || 'active',
@@ -95,6 +100,9 @@ const syncProjectToSupabase = async (project, action = 'upsert') => {
 
 const syncTaskToSupabase = async (task, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       const { error } = await supabase.from('productivity_tasks').delete().eq('id', task.id);
       if (error) console.error('Error deleting task:', error);
@@ -103,7 +111,7 @@ const syncTaskToSupabase = async (task, action = 'upsert') => {
 
     const dbTask = {
       id: task.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       project_id: task.projectId || null,
       title: task.title,
       description: task.description || '',
@@ -137,6 +145,9 @@ const syncTaskToSupabase = async (task, action = 'upsert') => {
 
 const syncIncomeToSupabase = async (income, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('productivity_income').delete().eq('id', income.id);
       return;
@@ -144,7 +155,7 @@ const syncIncomeToSupabase = async (income, action = 'upsert') => {
 
     const dbIncome = {
       id: income.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       project_id: income.projectId || null,
       amount: income.amount,
       currency: income.currency || 'USD',
@@ -174,11 +185,14 @@ const useProductivityStore = create(
       // ============================================================
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           // Load sessions (limit to 200 most recent)
           const { data: sessionsData, error: sessionsError } = await supabase
             .from('productivity_sessions')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('started_at', { ascending: false })
             .limit(200);
 
@@ -188,7 +202,7 @@ const useProductivityStore = create(
           const { data: projectsData, error: projectsError } = await supabase
             .from('productivity_projects')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(100);
 
@@ -198,7 +212,7 @@ const useProductivityStore = create(
           const { data: tasksData, error: tasksError } = await supabase
             .from('productivity_tasks')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(500);
 
@@ -208,7 +222,7 @@ const useProductivityStore = create(
           const { data: incomeData, error: incomeError } = await supabase
             .from('productivity_income')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('income_date', { ascending: false })
             .limit(200);
 
@@ -627,6 +641,8 @@ const useProductivityStore = create(
         syncProjectToSupabase(newProject);
         // Award XP for creating a new project
         triggerGamification('projectCreated', { xpOverride: 15, module: 'productivity' });
+        // Return the new project ID so callers can use it for initial tasks
+        return newProject.id;
       },
 
       updateProject: (projectId, updates) => {
@@ -1006,6 +1022,33 @@ const useProductivityStore = create(
     }),
     {
       name: 'productivity-storage',
+      partialize: (state) => ({
+        // Exclude timerInterval from persistence (can't serialize interval IDs)
+        ...state,
+        timerInterval: null,
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Restart timer if there's an active session after rehydration
+        if (state?.activeSession && !state.timerInterval) {
+          // Calculate elapsed time since session started
+          const startTime = new Date(state.activeSession.startTime).getTime();
+          const now = Date.now();
+          const elapsedSeconds = Math.floor((now - startTime) / 1000);
+
+          // Update sessionTimer with correct elapsed time
+          state.sessionTimer = elapsedSeconds;
+
+          // Restart the interval
+          const interval = setInterval(() => {
+            useProductivityStore.setState((s) => ({
+              sessionTimer: s.sessionTimer + 1,
+            }));
+          }, 1000);
+
+          state.timerInterval = interval;
+          console.log('[ProductivityStore] Restarted timer for active session, elapsed:', elapsedSeconds);
+        }
+      },
     }
   )
 );

@@ -15,7 +15,14 @@ import PageHeader from '../components/shared/PageHeader';
 
 const CalendarNew = () => {
   const [activeView, setActiveView] = useState('week');
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
+
+  // Handle navigating from month view to day view
+  const handleNavigateToDay = (date) => {
+    setSelectedDate(date);
+    setActiveView('day');
+  };
 
   // Show setup wizard if calendar module not configured during onboarding
   const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('calendar');
@@ -29,13 +36,13 @@ const CalendarNew = () => {
   const renderView = () => {
     switch (activeView) {
       case 'month':
-        return <CosmicMonthView />;
+        return <CosmicMonthView onNavigateToDay={handleNavigateToDay} />;
       case 'week':
-        return <CosmicWeekView />;
+        return <CosmicWeekView onNavigateToDay={handleNavigateToDay} />;
       case 'day':
-        return <CosmicDayView />;
+        return <CosmicDayView initialDate={selectedDate} />;
       default:
-        return <CosmicWeekView />;
+        return <CosmicWeekView onNavigateToDay={handleNavigateToDay} />;
     }
   };
 

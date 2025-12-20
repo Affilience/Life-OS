@@ -31,7 +31,7 @@ export default function HealthDashboard() {
 
   // Connect to stores
   const { meals, dailyGoals, waterIntake } = useHealthStore();
-  const { workouts } = useWorkoutStore();
+  const { workouts, cardioWorkouts } = useWorkoutStore();
 
   // Quick action handlers
   const handleLogWorkout = () => {
@@ -66,11 +66,16 @@ export default function HealthDashboard() {
     // Calculate total weekly calories
     const totalWeeklyCalories = weeklyCalories.reduce((sum, d) => sum + d.value, 0);
 
-    // Workouts this week
-    const workoutsThisWeek = (workouts || []).filter(w => {
+    // Workouts this week (strength + cardio combined)
+    const strengthWorkoutsThisWeek = (workouts || []).filter(w => {
       const workoutDate = w.date?.split('T')[0];
       return last7Days.includes(workoutDate);
     });
+    const cardioWorkoutsThisWeek = (cardioWorkouts || []).filter(c => {
+      const cardioDate = c.date?.split('T')[0];
+      return last7Days.includes(cardioDate);
+    });
+    const workoutsThisWeek = [...strengthWorkoutsThisWeek, ...cardioWorkoutsThisWeek];
 
     // Today's meals for nutrition
     const todayStr = today.toISOString().split('T')[0];
@@ -80,26 +85,34 @@ export default function HealthDashboard() {
     const todayCarbs = todayMeals.reduce((sum, m) => sum + (m.carbs || 0), 0);
     const todayFat = todayMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
 
-    // Calculate active calories burned from workouts
-    const todayWorkouts = workoutsThisWeek.filter(w => w.date?.startsWith(todayStr));
-    const activeCalories = todayWorkouts.reduce((sum, w) => sum + (w.caloriesBurned || 0), 0);
+    // Calculate active calories burned from workouts (strength + cardio)
+    const todayStrengthWorkouts = strengthWorkoutsThisWeek.filter(w => w.date?.startsWith(todayStr));
+    const todayCardioWorkouts = cardioWorkoutsThisWeek.filter(c => c.date?.startsWith(todayStr));
+    const strengthCalories = todayStrengthWorkouts.reduce((sum, w) => sum + (w.caloriesBurned || 0), 0);
+    const cardioCalories = todayCardioWorkouts.reduce((sum, c) => sum + (c.calories || c.caloriesBurned || 0), 0);
+    const activeCalories = strengthCalories + cardioCalories;
 
     // Water intake - waterIntake stores {amount, goal} objects per date
     const todayWater = waterIntake?.[todayStr]?.amount || 0;
 
-    // Calculate streak (consecutive days with workouts)
+    // Calculate streak (consecutive days with workouts - strength or cardio)
     let streak = 0;
     for (let i = 0; i < 30; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
       const dateStr = checkDate.toISOString().split('T')[0];
-      const hasWorkout = (workouts || []).some(w => w.date?.startsWith(dateStr));
-      if (hasWorkout) streak++;
+      const hasStrengthWorkout = (workouts || []).some(w => w.date?.startsWith(dateStr));
+      const hasCardioWorkout = (cardioWorkouts || []).some(c => c.date?.startsWith(dateStr));
+      if (hasStrengthWorkout || hasCardioWorkout) streak++;
       else if (i > 0) break;
     }
 
-    // Recent workouts
-    const recentWorkouts = (workouts || [])
+    // Recent workouts (combine strength + cardio, sorted by date)
+    const allWorkouts = [
+      ...(workouts || []).map(w => ({ ...w, isCardio: false })),
+      ...(cardioWorkouts || []).map(c => ({ ...c, isCardio: true }))
+    ];
+    const recentWorkouts = allWorkouts
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 3)
       .map(w => {
@@ -108,14 +121,39 @@ export default function HealthDashboard() {
         let timeAgo = diffHours < 24 ? `${diffHours}h ago` :
                       diffHours < 48 ? 'Yesterday' :
                       `${Math.floor(diffHours / 24)} days ago`;
-        return {
-          type: w.name || w.type || 'Workout',
-          duration: w.duration ? `${w.duration} min` : '-',
-          calories: w.caloriesBurned || 0,
-          time: timeAgo,
-          icon: w.type?.toLowerCase().includes('cardio') ? '🏃' :
-                w.type?.toLowerCase().includes('leg') ? '🦵' : '💪'
-        };
+
+        if (w.isCardio) {
+          // Cardio workout formatting
+          const activityIcons = {
+            running: '🏃',
+            cycling: '🚴',
+            swimming: '🏊',
+            walking: '🚶',
+            hiking: '🥾',
+            rowing: '🚣',
+            elliptical: '🏋️',
+            stairmaster: '🪜',
+            jump_rope: '🪢',
+            other: '🏃'
+          };
+          return {
+            type: w.activityType ? w.activityType.charAt(0).toUpperCase() + w.activityType.slice(1).replace('_', ' ') : 'Cardio',
+            duration: w.duration ? `${w.duration} min` : '-',
+            calories: w.calories || w.caloriesBurned || 0,
+            time: timeAgo,
+            icon: activityIcons[w.activityType] || '🏃'
+          };
+        } else {
+          // Strength workout formatting
+          return {
+            type: w.name || w.type || 'Workout',
+            duration: w.duration ? `${w.duration} min` : '-',
+            calories: w.caloriesBurned || 0,
+            time: timeAgo,
+            icon: w.type?.toLowerCase().includes('cardio') ? '🏃' :
+                  w.type?.toLowerCase().includes('leg') ? '🦵' : '💪'
+          };
+        }
       });
 
     return {
@@ -136,7 +174,7 @@ export default function HealthDashboard() {
       fatTarget: dailyGoals?.fat || 70,
       waterTarget: dailyGoals?.water || 3
     };
-  }, [meals, workouts, waterIntake, dailyGoals]);
+  }, [meals, workouts, cardioWorkouts, waterIntake, dailyGoals]);
 
   // Circular progress component - responsive sizing
   const CircularProgress = ({ value, max, label, icon: Icon, color, unit = '' }) => {

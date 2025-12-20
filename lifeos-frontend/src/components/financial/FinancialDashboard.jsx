@@ -77,7 +77,7 @@ const FinancialDashboard = () => {
   return (
     <div className="financial-page min-h-screen bg-[#0c0a10]">
       {/* Page Header */}
-      <div className="px-4 pt-6">
+      <div className="px-4 pt-6 overflow-visible">
         <PageHeader
           title="Finances"
           subtitle="Track spending, manage budgets, and reach your savings goals"

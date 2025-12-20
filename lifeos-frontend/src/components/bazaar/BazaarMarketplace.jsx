@@ -963,8 +963,23 @@ export default function BazaarMarketplace() {
       } else if (item.category === 'cosmetic') {
         // Add cosmetics to avatar store
         addOwnedCosmetic(item.id);
+      } else if (item.category === 'irl_reward') {
+        // Add IRL rewards to inventory for proper tracking
+        addToInventory({
+          ...item,
+          effect: {
+            type: 'irl_reward',
+            suggestion: item.suggestion,
+          },
+        });
+        // Also keep localStorage for backwards compatibility
+        try {
+          const owned = JSON.parse(localStorage.getItem('owned_shop_items') || '[]');
+          owned.push(item.id);
+          localStorage.setItem('owned_shop_items', JSON.stringify(owned));
+        } catch (e) {}
       } else {
-        // Track owned items in localStorage (for IRL rewards)
+        // Track other owned items in localStorage
         try {
           const owned = JSON.parse(localStorage.getItem('owned_shop_items') || '[]');
           owned.push(item.id);

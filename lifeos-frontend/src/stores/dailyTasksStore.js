@@ -6,8 +6,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 import useAchievementsStore from './achievementsStore';
 import { feedback } from '../services/microInteractions';
@@ -27,6 +26,9 @@ const getTomorrowString = () => {
 // Supabase sync helpers
 const syncTaskToSupabase = async (task, date, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       const { error } = await supabase.from('daily_tasks').delete().eq('id', task.id);
       if (error) console.error('Error deleting daily task:', error);
@@ -52,7 +54,7 @@ const syncTaskToSupabase = async (task, date, action = 'upsert') => {
 
     const dbTask = {
       id: task.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       task_date: date,
       title: task.title,
       description: task.description || null,
@@ -95,6 +97,9 @@ const syncTaskToSupabase = async (task, date, action = 'upsert') => {
 
 const syncTemplateToSupabase = async (template, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       const { error } = await supabase.from('daily_task_templates').delete().eq('id', template.id);
       if (error) console.error('Error deleting template:', error);
@@ -103,7 +108,7 @@ const syncTemplateToSupabase = async (template, action = 'upsert') => {
 
     const dbTemplate = {
       id: template.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       name: template.name,
       tasks: template.tasks,
     };
@@ -183,6 +188,9 @@ const useDailyTasksStore = create(
       // Initialize from Supabase - merges with local data and syncs unsynced tasks
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           const currentState = get();
           const localTasksByDate = currentState.tasksByDate || {};
 
@@ -196,7 +204,7 @@ const useDailyTasksStore = create(
           const { data: tasksData, error: tasksError } = await supabase
             .from('daily_tasks')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .gte('task_date', getDateString(startDate))
             .lte('task_date', getDateString(endDate))
             .order('task_order', { ascending: true });
@@ -207,7 +215,7 @@ const useDailyTasksStore = create(
           const { data: templatesData, error: templatesError } = await supabase
             .from('daily_task_templates')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           if (templatesError) throw templatesError;
 

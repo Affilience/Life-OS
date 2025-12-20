@@ -193,7 +193,7 @@ export default function NovaWidget() {
     }
   };
 
-  // Handle dragging for minimized avatar
+  // Handle dragging for minimized avatar (mouse)
   const handleMouseDown = (e) => {
     if (isExpanded || isFullscreen) return;
     e.preventDefault(); // Prevent text selection during drag
@@ -205,12 +205,23 @@ export default function NovaWidget() {
     });
   };
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDragging) return;
+  // Handle dragging for minimized avatar (touch)
+  const handleTouchStart = (e) => {
+    if (isExpanded || isFullscreen) return;
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setWasDragged(false);
+    setDragOffset({
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y
+    });
+  };
 
-      const newX = e.clientX - dragOffset.x;
-      const newY = e.clientY - dragOffset.y;
+  useEffect(() => {
+    // Shared logic for handling move (both mouse and touch)
+    const handleMove = (clientX, clientY) => {
+      const newX = clientX - dragOffset.x;
+      const newY = clientY - dragOffset.y;
 
       // Different constraints for expanded vs minimized
       if (isExpanded) {
@@ -246,7 +257,18 @@ export default function NovaWidget() {
       }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      handleMove(e.clientX, e.clientY);
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      handleMove(touch.clientX, touch.clientY);
+    };
+
+    const handleEnd = () => {
       if (isDragging) {
         setIsDragging(false);
         // Reset wasDragged after a short delay to allow click event to check it
@@ -256,11 +278,15 @@ export default function NovaWidget() {
 
     // Always add listeners when component mounts, check isDragging inside handlers
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleEnd);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleEnd);
     };
   }, [isDragging, dragOffset, position, isExpanded]);
 
@@ -652,6 +678,7 @@ export default function NovaWidget() {
           <div
             className="nova-minimized"
             onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
             onClick={(e) => {
               if (!wasDragged) {
                 setIsExpanded(true);
@@ -704,6 +731,17 @@ export default function NovaWidget() {
               setDragOffset({
                 x: e.clientX - rect.left,
                 y: e.clientY - rect.top
+              });
+            }}
+            onTouchStart={(e) => {
+              // Don't drag if touching on buttons
+              if (e.target.closest('button')) return;
+              const touch = e.touches[0];
+              setIsDragging(true);
+              const rect = e.currentTarget.closest('.nova-expanded').getBoundingClientRect();
+              setDragOffset({
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
               });
             }}
           >

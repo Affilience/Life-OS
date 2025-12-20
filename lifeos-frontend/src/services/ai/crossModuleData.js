@@ -39,9 +39,29 @@ function getTimeOfDay() {
 
 /**
  * Format a date as YYYY-MM-DD
+ * Returns null if the date is invalid
  */
 function formatDate(date) {
-  return date.toISOString().split('T')[0];
+  // Handle null/undefined
+  if (!date) return null;
+
+  // Handle case where date might not be a Date object
+  if (!(date instanceof Date)) {
+    try {
+      date = new Date(date);
+    } catch {
+      return null;
+    }
+  }
+
+  // Check if date is valid
+  try {
+    const time = date.getTime();
+    if (isNaN(time)) return null;
+    return date.toISOString().split('T')[0];
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -93,8 +113,10 @@ export function getCrossModuleContext() {
 
   // Today's time blocks
   const todaysBlocks = (calendar.timeBlocks || []).filter(b => {
+    if (!b.start) return false;
     const blockDate = new Date(b.start);
-    return formatDate(blockDate) === today;
+    const formattedDate = formatDate(blockDate);
+    return formattedDate && formattedDate === today;
   });
 
   // Streak information

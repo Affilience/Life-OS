@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 
 // XP earned per minute of practice
@@ -120,6 +119,9 @@ export const getPracticeHeatmap = (sessions, days = 30) => {
 // Supabase sync helpers
 const syncSkillToSupabase = async (skill, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('skills').delete().eq('id', skill.id);
       return;
@@ -127,7 +129,7 @@ const syncSkillToSupabase = async (skill, action = 'upsert') => {
 
     const dbSkill = {
       id: skill.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       name: skill.name,
       description: skill.description || '',
       category: skill.category || 'other',
@@ -149,6 +151,9 @@ const syncSkillToSupabase = async (skill, action = 'upsert') => {
 
 const syncPracticeLogToSupabase = async (skillId, session, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('skill_practice_logs').delete().eq('id', session.id);
       return;
@@ -157,7 +162,7 @@ const syncPracticeLogToSupabase = async (skillId, session, action = 'upsert') =>
     const dbLog = {
       id: session.id,
       skill_id: skillId,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       practice_date: session.date,
       duration_minutes: session.minutes,
       notes: session.notes || '',
@@ -178,6 +183,9 @@ const useSkillsStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           // Store current skills to preserve local data like goals and milestones
           const currentSkills = get().skills;
 
@@ -185,7 +193,7 @@ const useSkillsStore = create(
           const { data: skillsData, error: skillsError } = await supabase
             .from('skills')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           if (skillsError) throw skillsError;
 
@@ -193,7 +201,7 @@ const useSkillsStore = create(
           const { data: logsData, error: logsError } = await supabase
             .from('skill_practice_logs')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('practice_date', { ascending: false });
 
           if (logsError) throw logsError;

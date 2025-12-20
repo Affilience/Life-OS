@@ -19,12 +19,15 @@ import {
   Loader2,
   Users,
   Crown,
+  Sparkles,
 } from 'lucide-react';
 import usePvpArenaStore from '../../stores/pvpArenaStore';
 import { useAvatarStore } from '../../stores/avatarStore';
 import { usePetStore } from '../../stores/petStore';
 import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
+import { getWeaponAbility, isAbilityReady, calculateAbilityDamage } from '../../data/weaponAbilities';
 import { sounds } from '../../services/microInteractions';
+import AbilityAnimation from '../combat/AbilityAnimation';
 
 // Damage number floating animation
 const DamageNumber = ({ damage, x, y, isCrit, isPlayer }) => (
@@ -132,7 +135,7 @@ const QueueScreen = ({ queueTime, onCancel, playersInQueue }) => {
 };
 
 // Victory/Defeat screen
-const ResultScreen = ({ isWinner, rewards, onClose }) => (
+const ResultScreen = ({ isWinner, rewards, onClose, opponentName }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -173,7 +176,7 @@ const ResultScreen = ({ isWinner, rewards, onClose }) => (
       </h2>
 
       <p className="text-white/70 mb-6">
-        {isWinner ? 'You defeated your opponent!' : 'Better luck next time!'}
+        {isWinner ? `You defeated ${opponentName || 'your opponent'}!` : `${opponentName || 'Your opponent'} won!`}
       </p>
 
       {rewards && (
@@ -217,6 +220,8 @@ export default function PvPArena({ onClose }) {
     opponentMaxHealth,
     myTaps,
     opponentTaps,
+    myProfile,
+    opponentProfile,
     joinQueue,
     leaveQueue,
     attack,
@@ -230,12 +235,19 @@ export default function PvPArena({ onClose }) {
   const [damageNumbers, setDamageNumbers] = useState([]);
   const [weaponCooldown, setWeaponCooldown] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  const [abilityLastUsed, setAbilityLastUsed] = useState(0);
+  const [isAbilityAnimating, setIsAbilityAnimating] = useState(false);
+  const [activeAbilityAnimation, setActiveAbilityAnimation] = useState(null);
   const arenaRef = useRef(null);
   const cooldownIntervalRef = useRef(null);
 
   // Get weapon info
-  const weaponId = equipped?.weapon;
+  const weaponId = equipped?.mainHand || equipped?.weapon;
   const weapon = weaponId ? EQUIPMENT_DATABASE[weaponId] : null;
+
+  // Get the ability for the equipped weapon
+  const weaponAbility = weaponId ? getWeaponAbility(weaponId) : null;
+  const canUseAbility = weaponAbility && isAbilityReady(abilityLastUsed, weaponAbility.cooldown) && !isAbilityAnimating;
 
   // Get user ID
   const [userId, setUserId] = useState(null);
@@ -318,17 +330,57 @@ export default function PvPArena({ onClose }) {
 
   // Handle weapon ability
   const handleWeaponAbility = useCallback(async () => {
-    if (!weapon?.ability || weaponCooldown > 0 || !isInMatch || !userId || matchResult) return;
+    if (!weaponAbility || !canUseAbility || !isInMatch || !userId || matchResult) return;
 
-    const ability = weapon.ability;
-    const abilityDamage = ability.damage || damagePerTap * 2;
+    // Set ability as used
+    setAbilityLastUsed(Date.now());
+    setIsAbilityAnimating(true);
 
-    sounds.attackHit?.();
-    triggerShake('heavy');
+    // Calculate ability damage
+    const abilityDamage = calculateAbilityDamage(damagePerTap, weaponAbility);
 
-    await useAbility(userId, ability, abilityDamage);
-    setWeaponCooldown(ability.cooldown || 5000);
-  }, [weapon, weaponCooldown, isInMatch, userId, matchResult, damagePerTap, useAbility, triggerShake]);
+    // Play ability sound
+    if (sounds.powerAttack) {
+      sounds.powerAttack();
+    } else {
+      sounds.attackHit?.();
+    }
+
+    // Show ability animation
+    setActiveAbilityAnimation({
+      ability: weaponAbility,
+      position: { x: window.innerWidth / 2, y: window.innerHeight / 3 },
+    });
+
+    // Delay damage until animation completes
+    setTimeout(async () => {
+      // Trigger screen shake
+      triggerShake(weaponAbility.screenShake || 'heavy');
+
+      // Show damage number
+      setDamageNumbers(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          damage: abilityDamage,
+          x: window.innerWidth / 2 - 50,
+          y: 100,
+          isCrit: true,
+          isPlayer: true,
+        },
+      ]);
+
+      // Send ability damage to opponent
+      await useAbility(userId, weaponAbility, abilityDamage);
+
+      // Clean up
+      setTimeout(() => {
+        setDamageNumbers(prev => prev.slice(1));
+        setActiveAbilityAnimation(null);
+        setIsAbilityAnimating(false);
+      }, 800);
+    }, weaponAbility.duration || 600);
+  }, [weaponAbility, canUseAbility, isInMatch, userId, matchResult, damagePerTap, useAbility, triggerShake]);
 
   // Join queue handler - always ranked
   const handleJoinQueue = async () => {
@@ -358,6 +410,7 @@ export default function PvPArena({ onClose }) {
         isWinner={matchResult.winnerId === userId}
         rewards={matchResult}
         onClose={handleClose}
+        opponentName={opponentProfile?.display_name}
       />
     );
   }
@@ -466,14 +519,14 @@ export default function PvPArena({ onClose }) {
             current={myHealth}
             max={myMaxHealth}
             color="bg-gradient-to-r from-green-500 to-emerald-400"
-            label={`You (Lv.${level})`}
+            label={`${myProfile?.display_name || 'You'} (Lv.${level})`}
             isPlayer={true}
           />
           <HealthBar
             current={opponentHealth}
             max={opponentMaxHealth}
             color="bg-gradient-to-r from-red-500 to-orange-400"
-            label={`Opponent (Lv.${opponentLevel || '?'})`}
+            label={`${opponentProfile?.display_name || 'Opponent'} (Lv.${opponentLevel || '?'})`}
             isPlayer={false}
           />
         </div>
@@ -499,17 +552,43 @@ export default function PvPArena({ onClose }) {
           </div>
 
           {/* Player side indicator */}
-          <div className="absolute bottom-20 left-4 flex items-center gap-2 pointer-events-none">
-            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center border border-green-500/50">
-              <span className="text-lg font-bold text-green-400">YOU</span>
+          <div className="absolute bottom-20 left-4 flex flex-col items-center gap-1 pointer-events-none">
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center border-2 border-green-500/50 overflow-hidden">
+              {myProfile?.avatar_url ? (
+                <img
+                  src={myProfile.avatar_url}
+                  alt={myProfile.display_name || 'You'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-xl font-bold text-green-400">
+                  {myProfile?.display_name?.[0]?.toUpperCase() || 'Y'}
+                </span>
+              )}
             </div>
+            <span className="text-xs font-semibold text-green-400 bg-black/50 px-2 py-0.5 rounded-full">
+              {myProfile?.display_name || 'You'}
+            </span>
           </div>
 
           {/* Opponent side indicator */}
-          <div className="absolute top-20 right-4 flex items-center gap-2 pointer-events-none">
-            <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/50">
-              <span className="text-lg font-bold text-red-400">OPP</span>
+          <div className="absolute top-20 right-4 flex flex-col items-center gap-1 pointer-events-none">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center border-2 border-red-500/50 overflow-hidden">
+              {opponentProfile?.avatar_url ? (
+                <img
+                  src={opponentProfile.avatar_url}
+                  alt={opponentProfile.display_name || 'Opponent'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-xl font-bold text-red-400">
+                  {opponentProfile?.display_name?.[0]?.toUpperCase() || 'O'}
+                </span>
+              )}
             </div>
+            <span className="text-xs font-semibold text-red-400 bg-black/50 px-2 py-0.5 rounded-full">
+              {opponentProfile?.display_name || 'Opponent'}
+            </span>
           </div>
 
           {/* Damage Numbers */}
@@ -517,6 +596,18 @@ export default function PvPArena({ onClose }) {
             {damageNumbers.map(dn => (
               <DamageNumber key={dn.id} {...dn} />
             ))}
+          </AnimatePresence>
+
+          {/* Ability Animation */}
+          <AnimatePresence>
+            {activeAbilityAnimation && (
+              <AbilityAnimation
+                ability={activeAbilityAnimation.ability}
+                position={activeAbilityAnimation.position}
+                containerRef={arenaRef}
+                onComplete={() => setActiveAbilityAnimation(null)}
+              />
+            )}
           </AnimatePresence>
         </div>
 
@@ -537,32 +628,53 @@ export default function PvPArena({ onClose }) {
         </div>
 
         {/* Weapon Ability */}
-        {weapon?.ability && (
+        {weaponAbility && (
           <div className="p-4 bg-black/70">
             <button
               onClick={handleWeaponAbility}
-              disabled={weaponCooldown > 0}
+              disabled={!canUseAbility}
               className={`w-full p-4 rounded-xl flex items-center justify-center gap-3 transition-all ${
-                weaponCooldown > 0
+                !canUseAbility
                   ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-400 hover:to-red-400 active:scale-95'
+                  : 'text-white hover:scale-[1.02] active:scale-95'
               }`}
+              style={{
+                background: canUseAbility
+                  ? `linear-gradient(135deg, ${weaponAbility.color}, ${weaponAbility.trailColor || weaponAbility.color})`
+                  : undefined,
+                boxShadow: canUseAbility ? `0 0 30px ${weaponAbility.color}50` : 'none',
+              }}
             >
-              {weapon.sprite && (
-                <img
-                  src={weapon.sprite}
-                  alt={weapon.name}
-                  className="w-8 h-8 object-contain"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              )}
-              <span className="font-bold">
-                {weaponCooldown > 0
-                  ? `${weapon.ability.name} (${(weaponCooldown / 1000).toFixed(1)}s)`
-                  : weapon.ability.name}
+              <Sparkles className="w-6 h-6" />
+              <div className="flex flex-col items-start">
+                <span className="font-bold">{weaponAbility.name}</span>
+                {!canUseAbility && (
+                  <span className="text-xs text-white/50">
+                    {isAbilityAnimating
+                      ? 'Casting...'
+                      : `${((weaponAbility.cooldown - (Date.now() - abilityLastUsed)) / 1000).toFixed(1)}s`}
+                  </span>
+                )}
+              </div>
+              <span className="text-sm opacity-75 bg-black/30 px-2 py-1 rounded-lg">
+                {weaponAbility.damage}x DMG
               </span>
-              <Zap className="w-5 h-5" />
             </button>
+
+            {/* Ability Cooldown Progress */}
+            {!canUseAbility && !isAbilityAnimating && (
+              <div className="mt-2 h-1.5 bg-black/50 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: weaponAbility.color }}
+                  initial={{ width: '0%' }}
+                  animate={{
+                    width: `${Math.min(100, ((Date.now() - abilityLastUsed) / weaponAbility.cooldown) * 100)}%`,
+                  }}
+                  transition={{ duration: 0.1 }}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

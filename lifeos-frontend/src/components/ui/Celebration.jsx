@@ -24,6 +24,8 @@ import {
   QuestCompletedCelebration,
   AchievementUnlockedCelebration,
 } from './DuolingoCelebration';
+import LevelUpModal from '../gamification/LevelUpModal';
+import { SKILL_POINTS_PER_LEVEL } from '../../utils/statsSystem';
 
 // Context for celebration triggers
 const CelebrationContext = createContext(null);
@@ -444,10 +446,20 @@ export function CelebrationProvider({ children }) {
         setTimeout(() => setConfetti(false), options.duration || 3000);
       }
     },
-    levelUp: (level) => {
+    levelUp: (levelOrData) => {
       // Only show level up animation if enabled
       if (visibility.showLevelUpAnimation) {
-        setLevelUp(level);
+        // Support both old format (just level number) and new format (full data object)
+        if (typeof levelOrData === 'object') {
+          setLevelUp(levelOrData);
+        } else {
+          // Legacy support: just level number, create minimal data
+          setLevelUp({
+            newLevel: levelOrData,
+            oldLevel: levelOrData - 1,
+            skillPointsAwarded: SKILL_POINTS_PER_LEVEL,
+          });
+        }
       }
     },
     achievement: (options) => {
@@ -460,6 +472,18 @@ export function CelebrationProvider({ children }) {
       // Only show streak celebration if streak flame is enabled
       if (visibility.showStreakFlame) {
         setStreak(days);
+      }
+    },
+    // Skill points notification
+    skillPointsAwarded: (points) => {
+      if (visibility.showAchievementPopups && points > 0) {
+        setAchievement({
+          title: `+${points} Skill Points!`,
+          description: 'Allocate them in the Character page',
+          icon: Zap,
+          variant: 'purple',
+          duration: 3000,
+        });
       }
     },
 
@@ -505,12 +529,12 @@ export function CelebrationProvider({ children }) {
       {/* Confetti - only if particle effects enabled */}
       {visibility.showParticleEffects && <Confetti active={confetti} />}
 
-      {/* Level Up - only if level up animation enabled */}
+      {/* Level Up Modal - only if level up animation enabled */}
       {visibility.showLevelUpAnimation && (
-        <LevelUpOverlay
-          show={levelUp !== null}
-          level={levelUp}
-          onComplete={() => setLevelUp(null)}
+        <LevelUpModal
+          isOpen={levelUp !== null}
+          data={levelUp}
+          onClose={() => setLevelUp(null)}
         />
       )}
 

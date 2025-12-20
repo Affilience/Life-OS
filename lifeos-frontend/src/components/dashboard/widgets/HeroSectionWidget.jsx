@@ -168,16 +168,13 @@ const HeroSectionWidget = memo(function HeroSectionWidget() {
           <div className="mb-1.5">
             <LevelTitle level={level} size="sm" showLevel={true} showTooltip={false} variant="badge" />
           </div>
-          <p className="text-xs text-text-secondary mb-2 truncate">
-            {stageName}
-            {activePetsData.length > 0 && (
-              <span className="ml-1 text-primary-400">
-                • {activePetsData.length === 1
-                  ? activePetsData[0].name
-                  : `${activePetsData.length} companions`}
-              </span>
-            )}
-          </p>
+          {activePetsData.length > 0 && (
+            <p className="text-xs text-text-secondary mb-2 truncate">
+              {activePetsData.length === 1
+                ? activePetsData[0].name
+                : `${activePetsData.length} companions`}
+            </p>
+          )}
         </>
       );
     } else if (mode === 'professional') {

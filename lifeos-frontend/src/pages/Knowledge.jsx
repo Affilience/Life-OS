@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BarChart3, Library, FileText } from 'lucide-react';
+import { BarChart3, Library, FileText, Lightbulb } from 'lucide-react';
 import KnowledgeDashboard from '../components/knowledge/KnowledgeDashboard';
 import KnowledgeNew from './KnowledgeNew';
 import NotesTab from '../components/knowledge/NotesTab';
+import IdeasTab from '../components/knowledge/IdeasTab';
 
 export default function Knowledge() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,6 +28,7 @@ export default function Knowledge() {
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
     { id: 'library', name: 'Library', icon: Library },
     { id: 'notes', name: 'Notes', icon: FileText },
+    { id: 'ideas', name: 'Ideas', icon: Lightbulb },
   ];
 
   return (
@@ -60,6 +62,7 @@ export default function Knowledge() {
         {activeTab === 'dashboard' && <KnowledgeDashboard onTabChange={handleTabChange} />}
         {activeTab === 'library' && <KnowledgeNew />}
         {activeTab === 'notes' && <NotesTab />}
+        {activeTab === 'ideas' && <IdeasTab />}
       </div>
 
       <style>{`

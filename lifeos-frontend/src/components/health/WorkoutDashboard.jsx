@@ -101,7 +101,7 @@ export default function WorkoutDashboard() {
             <div className="stat-label">Total Workouts</div>
             <div className="stat-metric">
               <Target className="w-4 h-4" />
-              {monthlyVolume > 0 ? `${Math.round(monthlyVolume / 1000)}k lbs` : '0 lbs'} this month
+              {monthlyVolume > 0 ? `${Math.round(monthlyVolume / 1000)}k kg` : '0 kg'} this month
             </div>
           </div>
         </div>
@@ -217,7 +217,7 @@ export default function WorkoutDashboard() {
                     {workout.totalVolume > 0 && (
                       <div className="workout-stat">
                         <TrendingUp className="w-4 h-4" />
-                        <span>{Math.round(workout.totalVolume / 1000)}k lbs</span>
+                        <span>{Math.round(workout.totalVolume / 1000)}k kg</span>
                       </div>
                     )}
                   </div>

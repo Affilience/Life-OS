@@ -11,6 +11,9 @@ export const UNLOCK_TYPES = {
   PET: 'pet',
 };
 
+// Track shown item IDs in this session to prevent duplicates
+const shownItemIds = new Set();
+
 export const useUnlockNotificationStore = create((set, get) => ({
   // Queue of pending unlock notifications
   queue: [],
@@ -21,11 +24,20 @@ export const useUnlockNotificationStore = create((set, get) => ({
   // Add an unlock notification to the queue
   // item should include: { ...itemData, type: 'equipment' | 'pet' }
   addUnlock: (item, type = UNLOCK_TYPES.EQUIPMENT) => {
+    // Deduplicate: Don't show the same item twice in one session
+    const originalId = item.id;
+    if (shownItemIds.has(originalId)) {
+      console.log('[UnlockNotification] Skipping duplicate unlock:', originalId);
+      return;
+    }
+    shownItemIds.add(originalId);
+
     set(state => ({
       queue: [...state.queue, {
         ...item,
         type: item.type || type, // Use item's type if provided, fallback to parameter
         id: `${item.id}-${Date.now()}`, // Unique ID for animation keys
+        originalId, // Keep original for reference
         timestamp: Date.now(),
       }],
     }));

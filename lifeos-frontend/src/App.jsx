@@ -12,6 +12,7 @@ import { ToastProvider } from './components/ui/Toast';
 import { CommandPalette } from './components/ui/CommandPalette';
 import { CelebrationProvider } from './components/ui/Celebration';
 import EquipmentUnlockToast from './components/gamification/EquipmentUnlockToast';
+import GlobalNotifications from './components/gamification/GlobalNotifications';
 import RealtimeProvider from './components/RealtimeProvider';
 import { ModeAwareRoute } from './components/layout/ModeAwareRoute';
 
@@ -161,6 +162,7 @@ const EquipmentInventory = lazy(() => import('./components/avatar/EquipmentInven
 const Social = lazy(() => import('./pages/Social'));
 const AICompanion = lazy(() => import('./pages/AICompanion'));
 const EquipmentTest = lazy(() => import('./pages/EquipmentTest'));
+const EquipmentTestHeroine = lazy(() => import('./pages/EquipmentTestHeroine'));
 
 // Protected Route - requires authentication
 function ProtectedRoute({ children }) {
@@ -341,6 +343,9 @@ function App() {
                   <Route path="/equipment-test" element={
                     <EquipmentTest />
                   } />
+                  <Route path="/equipment-test-heroine" element={
+                    <EquipmentTestHeroine />
+                  } />
                 </Routes>
                 </MainLayout>
                 </ProtectedRoute>
@@ -352,6 +357,9 @@ function App() {
 
           {/* Equipment Unlock Notifications - shows pixel art when gear unlocks */}
           <EquipmentUnlockToast />
+
+          {/* Global Notifications - achievements, XP gains, level ups */}
+          <GlobalNotifications />
 
 
           {/* Enhanced Onboarding - legacy fallback */}

@@ -5,8 +5,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import {
   getLevelTitle,
   getTitleProgress,
@@ -62,18 +61,24 @@ const useLevelProgressionStore = create(
         set({ isLoading: true });
 
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) {
+            set({ isLoading: false });
+            return;
+          }
+
           // Fetch user's level progression data from Supabase
           const { data: progressionData } = await supabase
             .from('user_level_progression')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .maybeSingle();
 
           // Fetch claimed milestones
           const { data: claimedData } = await supabase
             .from('user_claimed_milestones')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           // Calculate current values based on level
           const title = getLevelTitle(level);
@@ -97,14 +102,17 @@ const useLevelProgressionStore = create(
 
           // Ensure user has a progression record (use upsert to avoid conflicts)
           if (!progressionData) {
-            await supabase.from('user_level_progression').upsert({
-              user_id: DEV_USER_ID,
-              selected_frame: frame.id,
-              pet_slots: getPetSlots(level),
-              equipment_set_slots: getEquipmentSetSlots(level),
-              inventory_slots: getInventorySlots(level),
-              level_xp_bonus: xpBonus,
-            }, { onConflict: 'user_id' });
+            const userId = await getCurrentUserId();
+            if (userId) {
+              await supabase.from('user_level_progression').upsert({
+                user_id: userId,
+                selected_frame: frame.id,
+                pet_slots: getPetSlots(level),
+                equipment_set_slots: getEquipmentSetSlots(level),
+                inventory_slots: getInventorySlots(level),
+                level_xp_bonus: xpBonus,
+              }, { onConflict: 'user_id' });
+            }
           }
         } catch (error) {
           console.error('Error initializing level progression:', error);
@@ -137,16 +145,19 @@ const useLevelProgressionStore = create(
         });
 
         // Update in database
-        await supabase
-          .from('user_level_progression')
-          .update({
-            pet_slots: getPetSlots(newLevel),
-            equipment_set_slots: getEquipmentSetSlots(newLevel),
-            inventory_slots: getInventorySlots(newLevel),
-            level_xp_bonus: xpBonus,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', DEV_USER_ID);
+        const userId = await getCurrentUserId();
+        if (userId) {
+          await supabase
+            .from('user_level_progression')
+            .update({
+              pet_slots: getPetSlots(newLevel),
+              equipment_set_slots: getEquipmentSetSlots(newLevel),
+              inventory_slots: getInventorySlots(newLevel),
+              level_xp_bonus: xpBonus,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', userId);
+        }
 
         return { pendingMilestones, titleChanged: title.title !== getLevelTitle(oldLevel).title };
       },
@@ -163,8 +174,13 @@ const useLevelProgressionStore = create(
         }
 
         // Insert claim record
+        const userId = await getCurrentUserId();
+        if (!userId) {
+          return { success: false, error: 'Not authenticated' };
+        }
+
         const { error } = await supabase.from('user_claimed_milestones').insert({
-          user_id: DEV_USER_ID,
+          user_id: userId,
           milestone_level: milestone.level,
           milestone_type: milestone.type,
           credits_claimed: milestone.credits || 0,
@@ -220,10 +236,13 @@ const useLevelProgressionStore = create(
 
         set({ selectedFrame: frameId });
 
-        await supabase
-          .from('user_level_progression')
-          .update({ selected_frame: frameId, updated_at: new Date().toISOString() })
-          .eq('user_id', DEV_USER_ID);
+        const userId = await getCurrentUserId();
+        if (userId) {
+          await supabase
+            .from('user_level_progression')
+            .update({ selected_frame: frameId, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+        }
 
         return { success: true };
       },
@@ -234,10 +253,13 @@ const useLevelProgressionStore = create(
       setCustomTitle: async (title) => {
         set({ customTitle: title });
 
-        await supabase
-          .from('user_level_progression')
-          .update({ custom_title: title, updated_at: new Date().toISOString() })
-          .eq('user_id', DEV_USER_ID);
+        const userId = await getCurrentUserId();
+        if (userId) {
+          await supabase
+            .from('user_level_progression')
+            .update({ custom_title: title, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+        }
 
         return { success: true };
       },
@@ -249,10 +271,13 @@ const useLevelProgressionStore = create(
         const newValue = !get().showLevelBadge;
         set({ showLevelBadge: newValue });
 
-        await supabase
-          .from('user_level_progression')
-          .update({ show_level_badge: newValue, updated_at: new Date().toISOString() })
-          .eq('user_id', DEV_USER_ID);
+        const userId = await getCurrentUserId();
+        if (userId) {
+          await supabase
+            .from('user_level_progression')
+            .update({ show_level_badge: newValue, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+        }
 
         return { success: true };
       },

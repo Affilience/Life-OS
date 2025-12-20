@@ -52,6 +52,8 @@ const DEFAULT_STATE = {
   waterContainerMl: 500,
   selectedDate: new Date().toISOString().split('T')[0],
   isAddingMeal: false,
+  // Favorite meals for quick re-logging
+  favoriteMeals: [],
 };
 
 export const useHealthStore = create(
@@ -354,6 +356,65 @@ export const useHealthStore = create(
             console.error('Failed to delete meal from Supabase:', error);
           }
         }
+      },
+
+      // Add meal to favorites for quick re-logging
+      addToFavorites: (meal) => {
+        set((state) => {
+          // Check if already in favorites (by description or items)
+          const signature = meal.description ||
+            (meal.items?.map(i => i.name).join(',')) ||
+            meal.id;
+
+          const exists = state.favoriteMeals.some(f => {
+            const fSig = f.description ||
+              (f.items?.map(i => i.name).join(',')) ||
+              f.id;
+            return fSig === signature;
+          });
+
+          if (exists) return state;
+
+          // Create a clean favorite entry (without timestamp/id)
+          const favorite = {
+            id: `fav-${Date.now()}`,
+            description: meal.description,
+            items: meal.items,
+            totalCalories: meal.totalCalories,
+            totalProtein: meal.totalProtein,
+            totalCarbs: meal.totalCarbs,
+            totalFat: meal.totalFat,
+            totalFiber: meal.totalFiber,
+            totalSugar: meal.totalSugar,
+            totalSodium: meal.totalSodium,
+            totalPotassium: meal.totalPotassium,
+            totalCalcium: meal.totalCalcium,
+            totalIron: meal.totalIron,
+            addedAt: new Date().toISOString(),
+          };
+
+          return {
+            favoriteMeals: [favorite, ...state.favoriteMeals].slice(0, 50), // Keep max 50
+          };
+        });
+      },
+
+      // Remove meal from favorites
+      removeFromFavorites: (meal) => {
+        set((state) => {
+          const signature = meal.description ||
+            (meal.items?.map(i => i.name).join(',')) ||
+            meal.id;
+
+          return {
+            favoriteMeals: state.favoriteMeals.filter(f => {
+              const fSig = f.description ||
+                (f.items?.map(i => i.name).join(',')) ||
+                f.id;
+              return fSig !== signature;
+            }),
+          };
+        });
       },
 
       // Get meals for specific date

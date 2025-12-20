@@ -60,12 +60,16 @@ export default function AddCustomStreakModal({ onClose }) {
   const [customDays, setCustomDays] = useState([1, 2, 3, 4, 5]); // Mon-Fri default
   const [goal, setGoal] = useState('');
   const [description, setDescription] = useState('');
+  const [error, setError] = useState(null);
 
   // Step state for wizard-like UX
   const [step, setStep] = useState(1);
 
   const handleSave = async () => {
     if (!name.trim()) return;
+    setError(null);
+
+    console.log('[AddStreakModal] Saving streak:', { name, icon: selectedIcon.emoji, color: selectedColor.id });
 
     const result = await createStreak({
       name: name.trim(),
@@ -77,8 +81,12 @@ export default function AddCustomStreakModal({ onClose }) {
       description: description.trim() || null,
     });
 
-    if (result.success) {
+    console.log('[AddStreakModal] Create result:', result);
+
+    if (result?.success) {
       onClose();
+    } else {
+      setError(result?.error || 'Failed to create streak. Please try again.');
     }
   };
 
@@ -279,6 +287,13 @@ export default function AddCustomStreakModal({ onClose }) {
             </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mx-4 mb-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex gap-3 p-4 border-t border-white/10">

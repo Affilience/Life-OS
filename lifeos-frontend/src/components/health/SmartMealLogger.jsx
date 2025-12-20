@@ -4,10 +4,12 @@
  * Uses Claude Haiku for parsing + USDA FoodData Central for nutrition data
  */
 
-import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, Loader2, Check, AlertCircle, ChevronDown, ChevronUp, X, Zap } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Sparkles, Send, Loader2, Check, AlertCircle, ChevronDown, ChevronUp, X, Zap, Mic } from 'lucide-react';
 import { parseNutrition, getQuickSuggestions, detectMealType } from '../../services/nutritionAI';
 import { haptics } from '../../utils/haptics';
+import VoiceMealLogger from './VoiceMealLogger';
+import RecentMealsQuickAdd from './RecentMealsQuickAdd';
 
 // Meal type options
 const MEAL_TYPES = [
@@ -175,6 +177,30 @@ export default function SmartMealLogger({ onMealLogged }) {
     inputRef.current?.focus();
   };
 
+  // Track if we should auto-submit after voice input
+  const pendingVoiceSubmitRef = useRef(null);
+
+  // Handle voice transcript - set input and mark for auto-submit
+  const handleVoiceTranscript = useCallback(async (transcript) => {
+    if (!transcript?.trim()) return;
+
+    await haptics.success();
+    setInput(transcript);
+    pendingVoiceSubmitRef.current = transcript;
+  }, []);
+
+  // Auto-submit when input changes from voice
+  useEffect(() => {
+    if (pendingVoiceSubmitRef.current && input === pendingVoiceSubmitRef.current) {
+      pendingVoiceSubmitRef.current = null;
+      // Short delay for visual feedback
+      const timer = setTimeout(() => {
+        handleSubmit();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [input]);
+
   const handleClear = async () => {
     await haptics.light();
     setInput('');
@@ -215,6 +241,39 @@ export default function SmartMealLogger({ onMealLogged }) {
         ))}
       </div>
 
+      {/* Quick Re-log: Recent & Favorites */}
+      {!result && !isLoading && (
+        <RecentMealsQuickAdd
+          mealType={mealType}
+          onMealSelected={(meal) => {
+            // Set as result for confirmation
+            setResult({
+              success: true,
+              items: meal.items || [{
+                food: meal.description,
+                calories: meal.totalCalories,
+                protein: meal.totalProtein,
+                carbs: meal.totalCarbs,
+                fat: meal.totalFat,
+                fiber: meal.totalFiber,
+                sugar: meal.totalSugar,
+              }],
+              totals: {
+                calories: meal.totalCalories,
+                protein: meal.totalProtein,
+                carbs: meal.totalCarbs,
+                fat: meal.totalFat,
+                fiber: meal.totalFiber || 0,
+                sugar: meal.totalSugar || 0,
+                sodium: meal.totalSodium || 0,
+              },
+              source: 'recent',
+            });
+            setInput(meal.description || 'Re-logged meal');
+          }}
+        />
+      )}
+
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="relative mb-4">
         <div className="relative">
@@ -230,7 +289,7 @@ export default function SmartMealLogger({ onMealLogged }) {
             }}
             placeholder={`What did you eat? (e.g., "${EXAMPLE_MEALS[mealType][0]}")`}
             rows={2}
-            className="w-full px-4 py-3 pr-24 bg-black/30 border border-white/10 rounded-xl text-fg-primary placeholder-fg-tertiary text-base resize-none focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
+            className="w-full px-4 py-3 pr-32 bg-black/30 border border-white/10 rounded-xl text-fg-primary placeholder-fg-tertiary text-base resize-none focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
             disabled={isLoading}
           />
 
@@ -244,6 +303,11 @@ export default function SmartMealLogger({ onMealLogged }) {
                 <X size={18} />
               </button>
             )}
+            {/* Voice Input Button */}
+            <VoiceMealLogger
+              onTranscript={handleVoiceTranscript}
+              disabled={isLoading}
+            />
             <button
               type="submit"
               disabled={!input.trim() || isLoading}

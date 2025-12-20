@@ -100,6 +100,7 @@ export const UNLOCK_METRICS = {
   EVENTS_COMPLETED: 'eventsCompleted',
   PLANNING_STREAK: 'planningStreak',
   TIME_BLOCKS_HONORED: 'timeBlocksHonored',
+  PLANNING_ACCURACY: 'planningAccuracy',
 
   // Financial
   BUDGETS_MET: 'budgetsMet',

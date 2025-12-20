@@ -5,12 +5,14 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 // Supabase sync helpers
 const syncQuoteToSupabase = async (quote, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('user_quotes').delete().eq('id', quote.id);
       return;
@@ -18,7 +20,7 @@ const syncQuoteToSupabase = async (quote, action = 'upsert') => {
 
     const dbQuote = {
       id: quote.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       text: quote.text,
       author: quote.author || 'Unknown',
       category: quote.category || 'custom',
@@ -115,10 +117,13 @@ export const useQuotesStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           const { data, error } = await supabase
             .from('user_quotes')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(200);
 

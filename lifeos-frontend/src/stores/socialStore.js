@@ -255,8 +255,8 @@ export const useSocialStore = create(
       // ============================================
 
       fetchFriends: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
         // Get accepted friendships
         const { data: friendships } = await supabase
@@ -270,14 +270,15 @@ export const useSocialStore = create(
             addressee:user_profiles!friendships_addressee_id_fkey(id, display_name, avatar_url, current_level, total_xp)
           `)
           .eq('status', 'accepted')
-          .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+          .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
 
         if (friendships) {
           const friends = friendships.map(f => {
-            const friendProfile = f.requester_id === user.id ? f.addressee : f.requester;
+            const friendProfile = f.requester_id === userId ? f.addressee : f.requester;
             return {
               friendshipId: f.id,
               ...friendProfile,
+              user_id: friendProfile?.id, // Ensure user_id is set for filtering
               acceptedAt: f.accepted_at,
             };
           });
@@ -286,8 +287,8 @@ export const useSocialStore = create(
       },
 
       fetchPendingRequests: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
         // Requests sent TO me
         const { data: pending } = await supabase
@@ -297,7 +298,7 @@ export const useSocialStore = create(
             created_at,
             requester:user_profiles!friendships_requester_id_fkey(id, display_name, avatar_url, current_level)
           `)
-          .eq('addressee_id', user.id)
+          .eq('addressee_id', userId)
           .eq('status', 'pending');
 
         // Requests sent BY me
@@ -308,7 +309,7 @@ export const useSocialStore = create(
             created_at,
             addressee:user_profiles!friendships_addressee_id_fkey(id, display_name, avatar_url, current_level)
           `)
-          .eq('requester_id', user.id)
+          .eq('requester_id', userId)
           .eq('status', 'pending');
 
         set({
@@ -318,15 +319,15 @@ export const useSocialStore = create(
       },
 
       sendFriendRequest: async (targetUserId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         // Check if blocked
         const { data: blocked } = await supabase
           .from('user_blocks')
           .select('id')
           .or(`blocker_id.eq.${targetUserId},blocked_id.eq.${targetUserId}`)
-          .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
+          .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
 
         if (blocked && blocked.length > 0) {
           return { error: 'Cannot send friend request' };
@@ -335,7 +336,7 @@ export const useSocialStore = create(
         const { data, error } = await supabase
           .from('friendships')
           .insert({
-            requester_id: user.id,
+            requester_id: userId,
             addressee_id: targetUserId,
             status: 'pending',
           })
@@ -397,20 +398,20 @@ export const useSocialStore = create(
       // ============================================
 
       blockUser: async (targetUserId, reason = '') => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         // Remove any existing friendship
         await supabase
           .from('friendships')
           .delete()
           .or(`requester_id.eq.${targetUserId},addressee_id.eq.${targetUserId}`)
-          .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+          .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
 
         const { data, error } = await supabase
           .from('user_blocks')
           .insert({
-            blocker_id: user.id,
+            blocker_id: userId,
             blocked_id: targetUserId,
             reason,
           })
@@ -437,8 +438,8 @@ export const useSocialStore = create(
       },
 
       fetchBlockedUsers: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
         const { data } = await supabase
           .from('user_blocks')
@@ -449,7 +450,7 @@ export const useSocialStore = create(
             created_at,
             blocked:user_profiles!user_blocks_blocked_id_fkey(id, display_name, avatar_url)
           `)
-          .eq('blocker_id', user.id);
+          .eq('blocker_id', userId);
 
         set({ blockedUsers: data || [] });
       },
@@ -469,24 +470,36 @@ export const useSocialStore = create(
       },
 
       fetchMyGuild: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
-        const { data: membership } = await supabase
-          .from('guild_members')
-          .select(`
-            role,
-            xp_contributed,
-            joined_at,
-            guild:guilds(*)
-          `)
-          .eq('user_id', user.id)
-          .single();
+        try {
+          const { data: membership, error } = await supabase
+            .from('guild_members')
+            .select(`
+              role,
+              xp_contributed,
+              joined_at,
+              guild:guilds(*)
+            `)
+            .eq('user_id', userId)
+            .maybeSingle();
 
-        if (membership?.guild) {
-          set({ currentGuild: { ...membership.guild, myRole: membership.role } });
-          get().fetchGuildMembers(membership.guild.id);
-        } else {
+          // Handle case where guild_members table doesn't exist yet
+          if (error) {
+            console.warn('[Social] Guild members query failed (table may not exist):', error.message);
+            set({ currentGuild: null, guildMembers: [] });
+            return;
+          }
+
+          if (membership?.guild) {
+            set({ currentGuild: { ...membership.guild, myRole: membership.role } });
+            get().fetchGuildMembers(membership.guild.id);
+          } else {
+            set({ currentGuild: null, guildMembers: [] });
+          }
+        } catch (err) {
+          console.warn('[Social] Error fetching guild:', err);
           set({ currentGuild: null, guildMembers: [] });
         }
       },
@@ -508,8 +521,8 @@ export const useSocialStore = create(
       },
 
       createGuild: async (name, description, privacy = 'open') => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         // Create guild
         const { data: guild, error } = await supabase
@@ -518,7 +531,7 @@ export const useSocialStore = create(
             name,
             description,
             privacy,
-            owner_id: user.id,
+            owner_id: userId,
           })
           .select()
           .single();
@@ -530,7 +543,7 @@ export const useSocialStore = create(
           .from('guild_members')
           .insert({
             guild_id: guild.id,
-            user_id: user.id,
+            user_id: userId,
             role: 'owner',
           });
 
@@ -539,14 +552,14 @@ export const useSocialStore = create(
       },
 
       joinGuild: async (guildId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const { data, error } = await supabase
           .from('guild_members')
           .insert({
             guild_id: guildId,
-            user_id: user.id,
+            user_id: userId,
             role: 'member',
           })
           .select()
@@ -559,15 +572,15 @@ export const useSocialStore = create(
       },
 
       leaveGuild: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const userId = await getCurrentUserId();
         const { currentGuild } = get();
-        if (!user || !currentGuild) return { error: 'Not in a guild' };
+        if (!userId || !currentGuild) return { error: 'Not in a guild' };
 
         const { error } = await supabase
           .from('guild_members')
           .delete()
           .eq('guild_id', currentGuild.id)
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
 
         if (!error) {
           set({ currentGuild: null, guildMembers: [] });
@@ -646,11 +659,12 @@ export const useSocialStore = create(
       },
 
       transferOwnership: async (newOwnerId) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const userId = await getCurrentUserId();
         const { currentGuild } = get();
         if (!currentGuild || currentGuild.myRole !== 'owner') {
           return { error: 'Only the owner can transfer ownership' };
         }
+        if (!userId) return { error: 'Not authenticated' };
 
         // Update guild owner
         await supabase
@@ -669,7 +683,7 @@ export const useSocialStore = create(
           .from('guild_members')
           .update({ role: 'officer' })
           .eq('guild_id', currentGuild.id)
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
 
         get().fetchMyGuild();
         return { success: true };
@@ -694,14 +708,14 @@ export const useSocialStore = create(
       },
 
       applyToGuild: async (guildId, message = '') => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const { data, error } = await supabase
           .from('guild_applications')
           .insert({
             guild_id: guildId,
-            user_id: user.id,
+            user_id: userId,
             message,
           })
           .select()
@@ -711,14 +725,15 @@ export const useSocialStore = create(
       },
 
       reviewApplication: async (applicationId, approved) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
         const status = approved ? 'accepted' : 'declined';
 
         const { data: app, error } = await supabase
           .from('guild_applications')
           .update({
             status,
-            reviewed_by: user.id,
+            reviewed_by: userId,
             reviewed_at: new Date().toISOString(),
           })
           .eq('id', applicationId)
@@ -743,17 +758,18 @@ export const useSocialStore = create(
       },
 
       // Guild Invites
-      sendGuildInvite: async (userId) => {
-        const { data: { user } } = await supabase.auth.getUser();
+      sendGuildInvite: async (targetUserId) => {
+        const userId = await getCurrentUserId();
         const { currentGuild } = get();
         if (!currentGuild) return { error: 'Not in a guild' };
+        if (!userId) return { error: 'Not authenticated' };
 
         const { data, error } = await supabase
           .from('guild_invites')
           .insert({
             guild_id: currentGuild.id,
-            inviter_id: user.id,
-            invitee_id: userId,
+            inviter_id: userId,
+            invitee_id: targetUserId,
           })
           .select()
           .single();
@@ -762,8 +778,8 @@ export const useSocialStore = create(
       },
 
       fetchMyGuildInvites: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
         const { data } = await supabase
           .from('guild_invites')
@@ -772,7 +788,7 @@ export const useSocialStore = create(
             guild:guilds(*),
             inviter:user_profiles!guild_invites_inviter_id_fkey(display_name, avatar_url)
           `)
-          .eq('invitee_id', user.id)
+          .eq('invitee_id', userId)
           .eq('status', 'pending')
           .gt('expires_at', new Date().toISOString());
 
@@ -780,7 +796,8 @@ export const useSocialStore = create(
       },
 
       respondToGuildInvite: async (inviteId, accept) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
         const status = accept ? 'accepted' : 'declined';
 
         const { data: invite, error } = await supabase
@@ -796,7 +813,7 @@ export const useSocialStore = create(
             .from('guild_members')
             .insert({
               guild_id: invite.guild_id,
-              user_id: user.id,
+              user_id: userId,
               role: 'member',
             });
 
@@ -937,7 +954,7 @@ export const useSocialStore = create(
       // ============================================
 
       fetchLeaderboards: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const userId = await getCurrentUserId();
 
         try {
           // Fetch from Redis
@@ -984,11 +1001,11 @@ export const useSocialStore = create(
           });
 
           // Fetch user's ranks
-          if (user) {
+          if (userId) {
             const [globalRank, weeklyRank, streakRank, totalUsers] = await Promise.all([
-              redis.getLeaderboardRank(LEADERBOARD_KEYS.GLOBAL_XP, user.id),
-              redis.getLeaderboardRank(LEADERBOARD_KEYS.WEEKLY_XP, user.id),
-              redis.getLeaderboardRank(LEADERBOARD_KEYS.STREAK, user.id),
+              redis.getLeaderboardRank(LEADERBOARD_KEYS.GLOBAL_XP, userId),
+              redis.getLeaderboardRank(LEADERBOARD_KEYS.WEEKLY_XP, userId),
+              redis.getLeaderboardRank(LEADERBOARD_KEYS.STREAK, userId),
               redis.getLeaderboardCount(LEADERBOARD_KEYS.GLOBAL_XP),
             ]);
 
@@ -1050,16 +1067,16 @@ export const useSocialStore = create(
 
       // Sync user stats to Redis leaderboards
       syncToLeaderboards: async (totalXP, xpGained = 0, currentStreak = 0) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
         const { socialProfile } = get();
         if (!socialProfile?.show_on_leaderboards) return;
 
         try {
           await Promise.all([
-            redis.updateUserXP(user.id, totalXP, xpGained),
-            redis.updateUserStreak(user.id, currentStreak),
+            redis.updateUserXP(userId, totalXP, xpGained),
+            redis.updateUserStreak(userId, currentStreak),
           ]);
         } catch (error) {
           console.error('Error syncing to leaderboards:', error);
@@ -1071,7 +1088,7 @@ export const useSocialStore = create(
       // ============================================
 
       fetchChallenges: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const userId = await getCurrentUserId();
 
         // Fetch active challenges
         const { data: active } = await supabase
@@ -1083,14 +1100,14 @@ export const useSocialStore = create(
         set({ availableChallenges: active || [] });
 
         // Fetch user's challenge participations
-        if (user) {
+        if (userId) {
           const { data: participations } = await supabase
             .from('challenge_participants')
             .select(`
               *,
               challenge:challenges(*)
             `)
-            .eq('user_id', user.id);
+            .eq('user_id', userId);
 
           // For H2H challenges, fetch opponent progress
           const enrichedParticipations = await Promise.all(
@@ -1104,7 +1121,7 @@ export const useSocialStore = create(
                     user:user_profiles!challenge_participants_user_id_fkey(id, display_name, avatar_url)
                   `)
                   .eq('challenge_id', p.challenge_id)
-                  .neq('user_id', user.id);
+                  .neq('user_id', userId);
 
                 // Get opponent data
                 const opponent = allParticipants?.[0];
@@ -1128,14 +1145,14 @@ export const useSocialStore = create(
       },
 
       joinChallenge: async (challengeId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const { data, error } = await supabase
           .from('challenge_participants')
           .insert({
             challenge_id: challengeId,
-            user_id: user.id,
+            user_id: userId,
           })
           .select()
           .single();
@@ -1147,15 +1164,15 @@ export const useSocialStore = create(
       },
 
       updateChallengeProgress: async (challengeId, newValue) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         // Get the challenge to check target
         const { data: participation } = await supabase
           .from('challenge_participants')
           .select('*, challenge:challenges(*)')
           .eq('challenge_id', challengeId)
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .single();
 
         const updates = { current_value: newValue };
@@ -1170,13 +1187,13 @@ export const useSocialStore = create(
           .from('challenge_participants')
           .update(updates)
           .eq('challenge_id', challengeId)
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .select()
           .single();
 
         // If completed, award rewards
         if (updates.completed && !error) {
-          await get().awardChallengeReward(challengeId, user.id);
+          await get().awardChallengeReward(challengeId, userId);
         }
 
         return { data, error };
@@ -1184,8 +1201,8 @@ export const useSocialStore = create(
 
       // Challenge Creation
       createChallenge: async (challengeData) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const {
           title,
@@ -1214,7 +1231,7 @@ export const useSocialStore = create(
             target_value: targetValue,
             duration_days: durationDays,
             xp_reward: xpReward,
-            creator_id: user.id,
+            creator_id: userId,
             status: 'active',
             starts_at: startsAt.toISOString(),
             ends_at: endsAt.toISOString(),
@@ -1229,7 +1246,7 @@ export const useSocialStore = create(
               .from('challenge_participants')
               .insert({
                 challenge_id: data.id,
-                user_id: user.id,
+                user_id: userId,
               });
           }
           get().fetchChallenges();
@@ -1242,8 +1259,8 @@ export const useSocialStore = create(
 
       // Head-to-Head Challenge System
       createHeadToHead: async (opponentId, challengeData) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const {
           title,
@@ -1270,7 +1287,7 @@ export const useSocialStore = create(
             target_value: targetValue,
             duration_days: durationDays,
             xp_reward: xpReward,
-            creator_id: user.id,
+            creator_id: userId,
             status: 'pending', // Needs opponent acceptance
             starts_at: startsAt.toISOString(),
             ends_at: endsAt.toISOString(),
@@ -1285,7 +1302,7 @@ export const useSocialStore = create(
           .from('challenge_participants')
           .insert({
             challenge_id: challenge.id,
-            user_id: user.id,
+            user_id: userId,
           });
 
         // Create invite for opponent (stored in challenge metadata)
@@ -1294,7 +1311,7 @@ export const useSocialStore = create(
           .update({
             event_data: {
               opponent_id: opponentId,
-              challenger_id: user.id,
+              challenger_id: userId,
               status: 'pending_acceptance',
             },
           })
@@ -1305,15 +1322,15 @@ export const useSocialStore = create(
       },
 
       acceptHeadToHead: async (challengeId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         // Join the challenge
         await supabase
           .from('challenge_participants')
           .insert({
             challenge_id: challengeId,
-            user_id: user.id,
+            user_id: userId,
           });
 
         // Activate the challenge
@@ -1341,8 +1358,8 @@ export const useSocialStore = create(
       },
 
       fetchHeadToHeadInvites: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
         const { data } = await supabase
           .from('challenges')
@@ -1352,7 +1369,7 @@ export const useSocialStore = create(
           `)
           .eq('challenge_type', 'head_to_head')
           .eq('status', 'pending')
-          .contains('event_data', { opponent_id: user.id });
+          .contains('event_data', { opponent_id: userId });
 
         set({ pendingH2HInvites: data || [] });
       },
@@ -1420,8 +1437,8 @@ export const useSocialStore = create(
 
       // Complete a challenge (for manual completion or checking)
       completeChallenge: async (challengeId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const { data, error } = await supabase
           .from('challenge_participants')
@@ -1430,12 +1447,12 @@ export const useSocialStore = create(
             completed_at: new Date().toISOString(),
           })
           .eq('challenge_id', challengeId)
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .select()
           .single();
 
         if (!error) {
-          await get().awardChallengeReward(challengeId, user.id);
+          await get().awardChallengeReward(challengeId, userId);
           get().fetchChallenges();
         }
 
@@ -1488,11 +1505,11 @@ export const useSocialStore = create(
       // ============================================
 
       updatePresence: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
         try {
-          await redis.setUserOnline(user.id);
+          await redis.setUserOnline(userId);
         } catch (error) {
           console.error('Error updating presence:', error);
         }
@@ -1520,13 +1537,13 @@ export const useSocialStore = create(
       // ============================================
 
       reportUser: async (targetUserId, reason, description = '', contentType = null, contentId = null) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const { data, error } = await supabase
           .from('user_reports')
           .insert({
-            reporter_id: user.id,
+            reporter_id: userId,
             reported_user_id: targetUserId,
             reason,
             description,

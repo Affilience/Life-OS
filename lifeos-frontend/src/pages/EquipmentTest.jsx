@@ -7,13 +7,19 @@ const EQUIPMENT_FILES = {
     'archmage_diadem', 'basic', 'celestial_circlet', 'cloth_cap', 'dragon',
     'dragon_helm', 'eternal_crown', 'iron', 'iron_helmet', 'leather_hood',
     'mindguard_helmet', 'phoenix_crown', 'reinforced_coif', 'sage_crown',
-    'scholar_circlet', 'steel_greathelm', 'titanium_helm', 'training_helmet'
+    'scholar_circlet', 'steel_greathelm', 'titanium_helm', 'training_helmet',
+    // Mythical helmets
+    'void_crown', 'crystal_diadem', 'celestial_halo_crown', 'abyssal_visage',
+    'stormforged_helm', 'infernal_visage'
   ],
   chests: [
     'aegis_titan', 'armor_chainmail', 'armor_cosmic', 'armor_leather', 'armor_plate',
     'chainmail_shirt', 'cloth_tunic', 'dragon_bone_cuirass', 'dragon_cuirass',
     'dragon_scale_chestplate', 'leather_vest', 'padded_armor', 'paladin_chestguard',
-    'phoenix_battleplate', 'reinforced_breastplate', 'steel_plate', 'titanium_platemail'
+    'phoenix_battleplate', 'reinforced_breastplate', 'steel_plate', 'titanium_platemail',
+    // Mythical chests
+    'void_platemail', 'crystal_aegis', 'celestial_raiment', 'abyssal_cuirass',
+    'stormforged_breastplate', 'infernal_harness'
   ],
   weapons: [
     'archmage_staff', 'basic_sword', 'battle_axe', 'bloodfang', 'crystal_wand',
@@ -21,21 +27,31 @@ const EQUIPMENT_FILES = {
     'focus_blade', 'godslayer', 'iron_dagger', 'iron_sword', 'quill_of_wisdom',
     'scholars_tome', 'steel_longsword', 'sword_celestial', 'sword_crystal',
     'sword_iron', 'sword_novice', 'sword_void', 'taskmaster_hammer',
-    'thunder_hammer', 'training_sword', 'warlock_scepter', 'wizard_wand', 'wooden_staff'
+    'thunder_hammer', 'training_sword', 'warlock_scepter', 'wizard_wand', 'wooden_staff',
+    // Mythical weapons
+    'void_scythe', 'frostbite_blade', 'celestial_mace', 'abyssal_trident',
+    'thunderstrike_axe', 'infernal_greatsword'
   ],
   shields: [
     'aegis_of_mastery', 'basic', 'dragon_shield', 'fortress_shield',
     'guardian_bulwark', 'immortal_shield', 'iron', 'iron_shield',
-    'phoenix_wing_shield', 'steel_kite', 'steel_tower_shield', 'tower_shield', 'wooden_buckler'
+    'phoenix_wing_shield', 'steel_kite', 'steel_tower_shield', 'tower_shield', 'wooden_buckler',
+    // Mythical shields
+    'void_bulwark', 'glacial_aegis', 'divine_barrier'
   ],
   capes: [
     'ancient_cloak', 'basic', 'cloak_shadows', 'enchanter_mantle', 'leather_cape',
     'memory_mantle', 'mystic_robe', 'oracle_shroud', 'sage_cloak', 'shadow',
-    'shadow_cloak', 'storyteller_cloak', 'traveler_cloak'
+    'shadow_cloak', 'storyteller_cloak', 'traveler_cloak',
+    // Mythical capes
+    'void_shroud', 'frostweave_mantle', 'celestial_wings_cape', 'abyssal_tentacle_cloak'
   ],
   legs: [
     'chainmail_leggings', 'cloth_pants', 'dragon_legguards', 'iron_legguards',
-    'leather_leggings', 'phoenix_legguards'
+    'leather_leggings', 'phoenix_legguards',
+    // Mythical legs
+    'void_greaves', 'crystal_legguards', 'celestial_tassets', 'abyssal_cuisses',
+    'stormforged_greaves', 'infernal_legguards'
   ]
 };
 

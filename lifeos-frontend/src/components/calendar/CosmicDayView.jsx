@@ -3,7 +3,7 @@
  * Shows hourly breakdown with cosmic styling
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCalendarStore } from '../../stores/calendarStore';
 import {
   Plus,
@@ -19,13 +19,20 @@ import {
 import CosmicTimeBlock from './CosmicTimeBlock';
 import CreateTimeBlockModal from './CreateTimeBlockModal';
 
-export default function CosmicDayView() {
+export default function CosmicDayView({ initialDate }) {
   const { getBlocksForDate, getPlannedTimeForDate, getBufferPercentage } =
     useCalendarStore();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(initialDate || new Date());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [editingBlock, setEditingBlock] = useState(null);
+
+  // Update selected date when initialDate prop changes
+  useEffect(() => {
+    if (initialDate) {
+      setSelectedDate(initialDate);
+    }
+  }, [initialDate]);
 
   // Time slots (6am to 11pm)
   const hours = Array.from({ length: 18 }, (_, i) => i + 6);

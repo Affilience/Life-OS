@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { calculateTotalStats, calculateStatBreakdown, getModuleXPMultiplier } from '../utils/statsSystem';
 import { useAvatarStore } from './avatarStore';
 import { calculateXPForLevel, calculateLevelFromTotalXP } from '../data/avatarEvolution';
@@ -15,6 +14,16 @@ const getUnlockService = async () => {
     unlockServiceRef = module.default;
   }
   return unlockServiceRef;
+};
+
+// Lazy import notification store to avoid circular dependencies
+let notificationStoreRef = null;
+const getNotificationStore = async () => {
+  if (!notificationStoreRef) {
+    const module = await import('./notificationStore');
+    notificationStoreRef = module.useNotificationStore;
+  }
+  return notificationStoreRef;
 };
 
 // ============================================
@@ -470,11 +479,25 @@ export const useGamificationStore = create(
        * Also syncs to avatarStore for equipment unlocks
        */
       addXP: async (amount, source = 'manual', options = {}) => {
-        const { userId, totalXP, xpMultiplier } = get();
+        const { userId, totalXP, xpMultiplier, activeBoosts } = get();
         const { skipAvatarSync = false } = options;
 
+        // Calculate total multiplier including active boosts (like Double XP Scroll)
+        let totalMultiplier = xpMultiplier;
+        const now = Date.now();
+
+        // Check for active XP multiplier boosts
+        const validBoosts = activeBoosts.filter(
+          boost => boost.type === 'xp_multiplier' && boost.expiresAt > now
+        );
+
+        // Apply all valid boost multipliers
+        for (const boost of validBoosts) {
+          totalMultiplier *= boost.amount;
+        }
+
         // Apply multiplier
-        const adjustedAmount = Math.floor(amount * xpMultiplier);
+        const adjustedAmount = Math.floor(amount * totalMultiplier);
         const newTotalXP = totalXP + adjustedAmount;
 
         // Calculate new level using exponential scaling
@@ -525,7 +548,10 @@ export const useGamificationStore = create(
         // Log event
         get().logEvent('xp_gained', source, {
           amount: adjustedAmount,
-          multiplier: xpMultiplier,
+          baseAmount: amount,
+          multiplier: totalMultiplier,
+          baseMultiplier: xpMultiplier,
+          activeBoosts: validBoosts.length,
           new_level: newLevel,
           leveled_up: leveledUp,
           stage_transition: stageTransition,
@@ -538,6 +564,24 @@ export const useGamificationStore = create(
           // Only play XP feedback for meaningful gains (avoid spam)
           feedback.xpGain(adjustedAmount);
         }
+
+        // Show XP and level up notifications
+        (async () => {
+          const NotificationStore = await getNotificationStore();
+          const notifStore = NotificationStore.getState();
+
+          // Show XP notification for meaningful gains
+          if (adjustedAmount >= 5) {
+            notifStore.addXPNotification(adjustedAmount, source);
+          }
+
+          // Show level up celebration
+          if (leveledUp) {
+            // Check if it's a tier up (every 10 levels)
+            const tierUp = newLevel % 10 === 0;
+            notifStore.showLevelUp(newLevel, tierUp);
+          }
+        })();
 
         // Trigger unlock service if leveled up (check for new pet/equipment unlocks)
         if (leveledUp) {
@@ -1191,6 +1235,56 @@ export const useGamificationStore = create(
             .eq('user_id', userId)
             .eq('module_id', 'cosmic_evolution');
         }
+
+        // Also clean up expired boosts
+        get().cleanupExpiredBoosts();
+      },
+
+      /**
+       * Get current total XP multiplier including active boosts
+       */
+      getTotalXPMultiplier: () => {
+        const { xpMultiplier, activeBoosts } = get();
+        const now = Date.now();
+
+        let totalMultiplier = xpMultiplier;
+
+        // Add active boost multipliers
+        const validBoosts = activeBoosts.filter(
+          boost => boost.type === 'xp_multiplier' && boost.expiresAt > now
+        );
+
+        for (const boost of validBoosts) {
+          totalMultiplier *= boost.amount;
+        }
+
+        return totalMultiplier;
+      },
+
+      /**
+       * Clean up expired boosts from state and database
+       */
+      cleanupExpiredBoosts: async () => {
+        const { userId, activeBoosts } = get();
+        const now = Date.now();
+
+        // Filter out expired boosts
+        const validBoosts = activeBoosts.filter(boost => boost.expiresAt > now);
+
+        if (validBoosts.length !== activeBoosts.length) {
+          set({ activeBoosts: validBoosts });
+
+          // Also clean from database
+          if (userId) {
+            await supabase
+              .from('user_active_boosts')
+              .delete()
+              .eq('user_id', userId)
+              .lt('expires_at', new Date().toISOString());
+          }
+        }
+
+        return validBoosts;
       },
 
       /**
@@ -1198,18 +1292,28 @@ export const useGamificationStore = create(
        */
       logEvent: async (eventType, eventSource, eventData = {}) => {
         const { userId } = get();
+        if (!userId) return;
 
-        await supabase
-          .from('gamification_events')
-          .insert({
-            user_id: userId,
-            event_type: eventType,
-            event_source: eventSource,
-            event_data: eventData,
-            created_at: new Date().toISOString(),
-          });
+        try {
+          const { error } = await supabase
+            .from('gamification_events')
+            .insert({
+              user_id: userId,
+              event_type: eventType,
+              event_source: eventSource,
+              event_data: eventData,
+              created_at: new Date().toISOString(),
+            });
 
-        // Update recent events
+          // Silently ignore RLS errors (403) until migration is applied
+          if (error && error.code !== '42501' && !error.message?.includes('policy')) {
+            console.warn('[GamificationStore] Event log error:', error.message);
+          }
+        } catch (err) {
+          // Silently fail - event logging is non-critical
+        }
+
+        // Update recent events locally regardless of DB success
         const recent = get().recentEvents;
         set({
           recentEvents: [
@@ -1346,9 +1450,11 @@ export function formatXP(xp) {
   return xp.toString();
 }
 
-// Export initialization function for App.jsx (uses dev user ID)
+// Export initialization function for App.jsx
 export const initializeGamificationStore = async () => {
-  return useGamificationStore.getState().initialize(DEV_USER_ID);
+  const userId = await getCurrentUserId();
+  if (!userId) return;
+  return useGamificationStore.getState().initialize(userId);
 };
 
 export default useGamificationStore;

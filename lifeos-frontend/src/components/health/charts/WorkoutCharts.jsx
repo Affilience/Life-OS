@@ -50,8 +50,8 @@ const CustomTooltip = ({ active, payload, label }) => {
         {payload.map((entry, index) => (
           <p key={index} className="tooltip-value" style={{ color: entry.color }}>
             {entry.name}: {entry.value}
-            {entry.name === 'volume' && ' lbs'}
-            {entry.name === 'weight' && ' lbs'}
+            {entry.name === 'volume' && ' kg'}
+            {entry.name === 'weight' && ' kg'}
           </p>
         ))}
       </div>
@@ -92,7 +92,19 @@ export default function WorkoutCharts() {
 
       weekWorkouts.forEach(workout => {
         (workout.exercises || []).forEach(ex => {
-          const volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
+          // Handle both set arrays (new format) and flat numbers (old format)
+          let volume = 0;
+          if (Array.isArray(ex.sets)) {
+            // New format: sets is an array of {weight, reps, completed}
+            ex.sets.forEach(set => {
+              if (set.completed) {
+                volume += (set.weight || 0) * (set.reps || 0);
+              }
+            });
+          } else {
+            // Old format: flat numbers
+            volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
+          }
           const muscle = (ex.muscleGroup || workout.type || 'other').toLowerCase();
           if (muscleVolume.hasOwnProperty(muscle)) {
             muscleVolume[muscle] += volume;
@@ -133,7 +145,22 @@ export default function WorkoutCharts() {
 
     (workouts || []).forEach(workout => {
       (workout.exercises || []).forEach(ex => {
-        const volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
+        // Handle both set arrays (new format) and flat numbers (old format)
+        let volume = 0;
+        let setsCount = 0;
+        if (Array.isArray(ex.sets)) {
+          // New format: sets is an array of {weight, reps, completed}
+          ex.sets.forEach(set => {
+            if (set.completed) {
+              volume += (set.weight || 0) * (set.reps || 0);
+              setsCount++;
+            }
+          });
+        } else {
+          // Old format: flat numbers
+          volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
+          setsCount = ex.sets || 0;
+        }
         const muscle = (ex.muscleGroup || workout.type || 'other').toLowerCase();
         let targetGroup = 'Arms';
         if (muscle.includes('chest') || muscle.includes('push')) targetGroup = 'Chest';
@@ -141,7 +168,7 @@ export default function WorkoutCharts() {
         else if (muscle.includes('leg') || muscle.includes('lower')) targetGroup = 'Legs';
         else if (muscle.includes('shoulder')) targetGroup = 'Shoulders';
 
-        muscleGroups[targetGroup].sets += ex.sets || 0;
+        muscleGroups[targetGroup].sets += setsCount;
         muscleGroups[targetGroup].volume += volume;
       });
     });
@@ -156,9 +183,16 @@ export default function WorkoutCharts() {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const prByMonth = {};
     (workouts || []).forEach(w => {
+      // Handle both old format (personalRecords array) and new format (prsAchieved number)
+      let prCount = 0;
       if (w.personalRecords && w.personalRecords.length > 0) {
+        prCount = w.personalRecords.length;
+      } else if (w.prsAchieved && w.prsAchieved > 0) {
+        prCount = w.prsAchieved;
+      }
+      if (prCount > 0) {
         const month = new Date(w.date).getMonth();
-        prByMonth[month] = (prByMonth[month] || 0) + w.personalRecords.length;
+        prByMonth[month] = (prByMonth[month] || 0) + prCount;
       }
     });
 
@@ -182,21 +216,35 @@ export default function WorkoutCharts() {
     sortedWorkouts.forEach(workout => {
       const dateStr = new Date(workout.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       (workout.exercises || []).forEach(ex => {
-        const exerciseName = (ex.name || ex.exercise || '').toLowerCase();
+        const exerciseName = (ex.name || ex.exerciseId || ex.exercise || '').toLowerCase();
         // Track main compound lifts
         if (exerciseName.includes('bench') || exerciseName.includes('squat') ||
             exerciseName.includes('deadlift') || exerciseName.includes('press')) {
-          const volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
-          const maxWeight = ex.weight || 0;
+          // Handle both set arrays (new format) and flat numbers (old format)
+          let volume = 0;
+          let maxWeight = 0;
+          if (Array.isArray(ex.sets)) {
+            ex.sets.forEach(set => {
+              if (set.completed) {
+                volume += (set.weight || 0) * (set.reps || 0);
+                maxWeight = Math.max(maxWeight, set.weight || 0);
+              }
+            });
+          } else {
+            volume = (ex.sets || 0) * (ex.reps || 0) * (ex.weight || 0);
+            maxWeight = ex.weight || 0;
+          }
 
           if (!progressionByExercise[exerciseName]) {
             progressionByExercise[exerciseName] = [];
           }
-          progressionByExercise[exerciseName].push({
-            date: dateStr,
-            weight: maxWeight,
-            volume: volume
-          });
+          if (volume > 0 || maxWeight > 0) {
+            progressionByExercise[exerciseName].push({
+              date: dateStr,
+              weight: maxWeight,
+              volume: volume
+            });
+          }
         }
       });
     });
@@ -216,18 +264,36 @@ export default function WorkoutCharts() {
     const volumeRepsData = [];
     (workouts || []).forEach(workout => {
       (workout.exercises || []).forEach(ex => {
-        const reps = ex.reps || 0;
-        const weight = ex.weight || 0;
-        const sets = ex.sets || 1;
-        const volume = sets * reps * weight;
+        const exerciseName = ex.name || ex.exerciseId || ex.exercise || 'Unknown';
 
-        if (reps > 0 && volume > 0) {
-          volumeRepsData.push({
-            reps,
-            weight,
-            volume,
-            exercise: ex.name || ex.exercise || 'Unknown'
+        if (Array.isArray(ex.sets)) {
+          // New format: iterate through each set
+          ex.sets.forEach(set => {
+            if (set.completed && set.reps > 0 && set.weight > 0) {
+              const volume = set.weight * set.reps;
+              volumeRepsData.push({
+                reps: set.reps,
+                weight: set.weight,
+                volume,
+                exercise: exerciseName
+              });
+            }
           });
+        } else {
+          // Old format: flat numbers
+          const reps = ex.reps || 0;
+          const weight = ex.weight || 0;
+          const sets = ex.sets || 1;
+          const volume = sets * reps * weight;
+
+          if (reps > 0 && volume > 0) {
+            volumeRepsData.push({
+              reps,
+              weight,
+              volume,
+              exercise: exerciseName
+            });
+          }
         }
       });
     });
@@ -311,7 +377,7 @@ export default function WorkoutCharts() {
           <div className="chart-card">
             <div className="chart-header">
               <h3 className="chart-title">Training Volume by Muscle Group</h3>
-              <p className="chart-subtitle">Weekly volume in pounds lifted</p>
+              <p className="chart-subtitle">Weekly volume in kilograms lifted</p>
             </div>
             <div className="chart-wrapper chart-wrapper-single-axis">
               <ResponsiveContainer width="100%" height={chartHeight}>
@@ -499,7 +565,7 @@ export default function WorkoutCharts() {
                     type="number"
                     name="Volume"
                     stroke="rgba(255,255,255,0.6)"
-                    label={{ value: 'Total Volume (lbs)', angle: -90, position: 'insideLeft' }}
+                    label={{ value: 'Total Volume (kg)', angle: -90, position: 'insideLeft' }}
                   />
                   <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
                   <Scatter name="Volume Distribution" data={volumeRepsData} fill="#8b5cf6">
@@ -539,7 +605,7 @@ export default function WorkoutCharts() {
           </div>
           <div className="stat-content">
             <div className="stat-value">{stats.totalVolume > 0 ? `${stats.totalVolume}k` : '-'}</div>
-            <div className="stat-label">Total Volume (lbs)</div>
+            <div className="stat-label">Total Volume (kg)</div>
           </div>
         </div>
 

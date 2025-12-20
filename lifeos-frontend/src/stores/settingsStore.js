@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 // Default settings values
 const DEFAULT_SETTINGS = {
@@ -163,10 +162,13 @@ const deepMerge = (target, source) => {
 // Sync settings to Supabase
 const syncSettingsToSupabase = async (settings) => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     const { error } = await supabase
       .from('user_profiles')
       .update({ preferences: settings })
-      .eq('id', DEV_USER_ID);
+      .eq('id', userId);
 
     if (error) throw error;
   } catch (error) {
@@ -187,10 +189,16 @@ const useSettingsStore = create(
         try {
           set({ isSyncing: true });
 
+          const userId = await getCurrentUserId();
+          if (!userId) {
+            set({ isSyncing: false });
+            return;
+          }
+
           const { data, error } = await supabase
             .from('user_profiles')
             .select('preferences, display_name, avatar_url')
-            .eq('id', DEV_USER_ID)
+            .eq('id', userId)
             .maybeSingle();
 
           if (error) throw error;
@@ -211,7 +219,7 @@ const useSettingsStore = create(
           } else {
             // No profile found, create one with defaults
             await supabase.from('user_profiles').upsert({
-              user_id: DEV_USER_ID,
+              id: userId,
               preferences: DEFAULT_SETTINGS,
             });
             set({ isInitialized: true, isSyncing: false });

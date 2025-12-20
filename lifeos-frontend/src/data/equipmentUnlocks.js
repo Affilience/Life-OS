@@ -243,6 +243,185 @@ export const EQUIPMENT_UNLOCK_OVERRIDES = {
     unlockRequirement: { tree: SKILL_TREES.SPIRIT, level: 20 },
     unlockDescription: 'Reach Spirit Tree Level 20',
   },
+
+  // ========================================
+  // MYTHICAL HELMETS - Ultimate unlock methods
+  // ========================================
+  helmet_void_crown: {
+    unlockMethod: UNLOCK_METHODS.SECRET,
+    unlockRequirement: { hint: 'Master all modules and reach Prestige 3' },
+    unlockDescription: '???',
+  },
+  helmet_crystal_diadem: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.KNOWLEDGE, metric: UNLOCK_METRICS.BOOKS_READ, target: 52 },
+    unlockDescription: 'Read 52 books (one year of weekly reading)',
+  },
+  helmet_celestial_halo_crown: {
+    unlockMethod: UNLOCK_METHODS.STREAK,
+    unlockRequirement: { streakDays: 180, module: null },
+    unlockDescription: '180-day streak in any module',
+  },
+  helmet_abyssal_visage: {
+    unlockMethod: UNLOCK_METHODS.PVP,
+    unlockRequirement: { wins: 200, rank: 'diamond' },
+    unlockDescription: 'Win 200 PvP battles and reach Diamond rank',
+  },
+  helmet_stormforged_helm: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.FITNESS, metric: UNLOCK_METRICS.WORKOUTS_COMPLETED, target: 200 },
+    unlockDescription: 'Complete 200 workouts',
+  },
+  helmet_infernal_visage: {
+    unlockMethod: UNLOCK_METHODS.ACHIEVEMENT,
+    unlockRequirement: { achievementId: 'infernal_dedication', achievementName: 'Infernal Dedication' },
+    unlockDescription: 'Complete "Infernal Dedication" achievement (complete all daily tasks for 90 days)',
+  },
+
+  // ========================================
+  // MYTHICAL CHESTS - Ultimate unlock methods
+  // ========================================
+  chest_void_platemail: {
+    unlockMethod: UNLOCK_METHODS.PRESTIGE,
+    unlockRequirement: { prestige: 3 },
+    unlockDescription: 'Reach Prestige 3',
+  },
+  chest_crystal_aegis: {
+    unlockMethod: UNLOCK_METHODS.SKILL_TREE,
+    unlockRequirement: { tree: SKILL_TREES.MIND, level: 50 },
+    unlockDescription: 'Reach Mind Tree Level 50',
+  },
+  chest_celestial_raiment: {
+    unlockMethod: UNLOCK_METHODS.STREAK,
+    unlockRequirement: { streakDays: 200, module: null },
+    unlockDescription: '200-day streak in any module',
+  },
+  chest_abyssal_cuirass: {
+    unlockMethod: UNLOCK_METHODS.PVP,
+    unlockRequirement: { wins: null, rank: 'legend' },
+    unlockDescription: 'Reach Legend rank in PvP',
+  },
+  chest_stormforged_breastplate: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.FITNESS, metric: UNLOCK_METRICS.WORKOUTS_COMPLETED, target: 300 },
+    unlockDescription: 'Complete 300 workouts',
+  },
+  chest_infernal_harness: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.PRODUCTIVITY, metric: UNLOCK_METRICS.TASKS_COMPLETED, target: 1000 },
+    unlockDescription: 'Complete 1000 tasks',
+  },
+
+  // ========================================
+  // MYTHICAL WEAPONS - Ultimate unlock methods
+  // ========================================
+  weapon_void_scythe: {
+    unlockMethod: UNLOCK_METHODS.SECRET,
+    unlockRequirement: { hint: 'Defeat the Void King boss 10 times' },
+    unlockDescription: '???',
+  },
+  weapon_frostbite_blade: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.CALENDAR, metric: UNLOCK_METRICS.PLANNING_ACCURACY, target: 90 },
+    unlockDescription: 'Maintain 90% planning accuracy for 30 days',
+  },
+  weapon_celestial_mace: {
+    unlockMethod: UNLOCK_METHODS.ACHIEVEMENT,
+    unlockRequirement: { achievementId: 'celestial_guardian', achievementName: 'Celestial Guardian' },
+    unlockDescription: 'Complete "Celestial Guardian" achievement (help 50 community members)',
+  },
+  weapon_abyssal_trident: {
+    unlockMethod: UNLOCK_METHODS.PVP,
+    unlockRequirement: { wins: 150, rank: 'platinum' },
+    unlockDescription: 'Win 150 PvP battles and reach Platinum rank',
+  },
+  weapon_thunderstrike_axe: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.HABITS, metric: UNLOCK_METRICS.HABITS_COMPLETED, target: 500 },
+    unlockDescription: 'Complete 500 habit check-ins',
+  },
+  weapon_infernal_greatsword: {
+    unlockMethod: UNLOCK_METHODS.SKILL_TREE,
+    unlockRequirement: { tree: SKILL_TREES.BODY, level: 50 },
+    unlockDescription: 'Reach Body Tree Level 50',
+  },
+
+  // ========================================
+  // MYTHICAL SHIELDS - Ultimate unlock methods
+  // ========================================
+  shield_void_bulwark: {
+    unlockMethod: UNLOCK_METHODS.PRESTIGE,
+    unlockRequirement: { prestige: 4 },
+    unlockDescription: 'Reach Prestige 4',
+  },
+  shield_glacial_aegis: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.HEALTH, metric: UNLOCK_METRICS.HEALTH_SCORE, target: 95 },
+    unlockDescription: 'Maintain 95% health score for 60 days',
+  },
+  shield_divine_barrier: {
+    unlockMethod: UNLOCK_METHODS.LEVEL,
+    unlockRequirement: { level: 75 },
+    unlockDescription: 'Reach Level 75',
+  },
+
+  // ========================================
+  // MYTHICAL CAPES - Ultimate unlock methods
+  // ========================================
+  cape_void_shroud: {
+    unlockMethod: UNLOCK_METHODS.SECRET,
+    unlockRequirement: { hint: 'Collect all void equipment pieces' },
+    unlockDescription: '???',
+  },
+  cape_frostweave_mantle: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.JOURNAL, metric: UNLOCK_METRICS.JOURNAL_ENTRIES, target: 365 },
+    unlockDescription: 'Write 365 journal entries (one year of daily journaling)',
+  },
+  cape_celestial_wings: {
+    unlockMethod: UNLOCK_METHODS.STREAK,
+    unlockRequirement: { streakDays: 365, module: null },
+    unlockDescription: '365-day streak (one full year)',
+  },
+  cape_abyssal_cloak: {
+    unlockMethod: UNLOCK_METHODS.PVP,
+    unlockRequirement: { wins: 300, rank: 'diamond' },
+    unlockDescription: 'Win 300 PvP battles and reach Diamond rank',
+  },
+
+  // ========================================
+  // MYTHICAL LEGS - Ultimate unlock methods
+  // ========================================
+  legs_void_greaves: {
+    unlockMethod: UNLOCK_METHODS.PRESTIGE,
+    unlockRequirement: { prestige: 2 },
+    unlockDescription: 'Reach Prestige 2',
+  },
+  legs_crystal_legguards: {
+    unlockMethod: UNLOCK_METHODS.SKILL_TREE,
+    unlockRequirement: { tree: SKILL_TREES.CRAFT, level: 40 },
+    unlockDescription: 'Reach Craft Tree Level 40',
+  },
+  legs_celestial_tassets: {
+    unlockMethod: UNLOCK_METHODS.STREAK,
+    unlockRequirement: { streakDays: 150, module: MODULES.FITNESS },
+    unlockDescription: '150-day fitness streak',
+  },
+  legs_abyssal_cuisses: {
+    unlockMethod: UNLOCK_METHODS.PVP,
+    unlockRequirement: { wins: 100, rank: 'gold' },
+    unlockDescription: 'Win 100 PvP battles and reach Gold rank',
+  },
+  legs_stormforged_greaves: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.FITNESS, metric: UNLOCK_METRICS.WORKOUTS_COMPLETED, target: 150 },
+    unlockDescription: 'Complete 150 workouts',
+  },
+  legs_infernal_legguards: {
+    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
+    unlockRequirement: { module: MODULES.PRODUCTIVITY, metric: UNLOCK_METRICS.FOCUS_HOURS, target: 500 },
+    unlockDescription: 'Log 500 focus hours',
+  },
 };
 
 /**
@@ -292,6 +471,13 @@ export const PVP_EQUIPMENT = {
   weapon_executioner_axe: { wins: null, rank: 'platinum' },
   chest_titanium_platemail: { wins: null, rank: 'diamond' },
   weapon_godslayer: { wins: null, rank: 'legend' },
+
+  // Mythical PvP Rewards (high tier - endgame)
+  legs_abyssal_cuisses: { wins: 100, rank: 'gold' },
+  weapon_abyssal_trident: { wins: 150, rank: 'platinum' },
+  helmet_abyssal_visage: { wins: 200, rank: 'diamond' },
+  cape_abyssal_cloak: { wins: 300, rank: 'diamond' },
+  chest_abyssal_cuirass: { wins: null, rank: 'legend' },
 };
 
 /**
@@ -401,6 +587,10 @@ export const ACHIEVEMENT_EQUIPMENT = {
   first_goal_complete: ['amulet_stone_pendant'],
   goals_3_complete: ['amulet_strength'],
   goals_10_complete: ['amulet_guardian'],
+
+  // Mythical Achievement Rewards
+  infernal_dedication: ['helmet_infernal_visage'],  // 90-day daily task completion
+  celestial_guardian: ['weapon_celestial_mace'],    // Help 50 community members
 };
 
 /**

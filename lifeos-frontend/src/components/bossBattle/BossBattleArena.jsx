@@ -14,8 +14,10 @@ import { useAvatarStore } from '../../stores/avatarStore';
 import { usePetStore } from '../../stores/petStore';
 import { BOSS_DATABASE, BOSS_DIFFICULTY } from '../../data/bossDatabase';
 import { WEAPON_ATTACKS, ATTACK_ANIMATIONS } from '../../data/weaponAttacks';
+import { ABILITY_TYPES, getWeaponAbility, isAbilityReady, calculateAbilityDamage } from '../../data/weaponAbilities';
 import { sounds } from '../../services/microInteractions';
 import AvatarRenderer from '../avatar/AvatarRenderer';
+import AbilityAnimation from '../combat/AbilityAnimation';
 
 // Custom hook for anime.js screen shake
 const useScreenShake = (containerRef) => {
@@ -436,6 +438,60 @@ const CooldownIndicator = ({ progress, weaponAttack, canAttack }) => {
           style={{ width: `${percentage}%` }}
           animate={isReady ? { opacity: [1, 0.7, 1] } : {}}
           transition={isReady ? { duration: 0.5, repeat: Infinity } : {}}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Ability cooldown indicator component
+const AbilityCooldownIndicator = ({ ability, lastUsedTime, canUse }) => {
+  const [progress, setProgress] = useState(canUse ? 1 : 0);
+
+  useEffect(() => {
+    if (!ability || canUse) {
+      setProgress(1);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - lastUsedTime;
+      const prog = Math.min(1, elapsed / ability.cooldown);
+      setProgress(prog);
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [ability, lastUsedTime, canUse]);
+
+  if (!ability) return null;
+
+  const percentage = Math.min(100, progress * 100);
+  const remainingMs = Math.max(0, ability.cooldown - (Date.now() - lastUsedTime));
+
+  return (
+    <div className="w-full max-w-xs mx-auto mt-2">
+      <div className="flex items-center justify-between text-xs mb-1">
+        <span className="text-white/60 font-medium flex items-center gap-1">
+          <Sparkles className="w-3 h-3" style={{ color: ability.color }} />
+          {ability.name}
+        </span>
+        {canUse ? (
+          <span className="font-bold animate-pulse" style={{ color: ability.color }}>READY!</span>
+        ) : (
+          <span className="text-white/40">{(remainingMs / 1000).toFixed(1)}s</span>
+        )}
+      </div>
+      <div className="h-2 bg-black/60 rounded-full overflow-hidden border border-white/20">
+        <motion.div
+          className="h-full rounded-full"
+          style={{
+            width: `${percentage}%`,
+            background: canUse
+              ? `linear-gradient(90deg, ${ability.color}, ${ability.trailColor || ability.color})`
+              : 'linear-gradient(90deg, #4b5563, #6b7280)',
+          }}
+          animate={canUse ? { opacity: [1, 0.6, 1] } : {}}
+          transition={canUse ? { duration: 0.5, repeat: Infinity } : {}}
         />
       </div>
     </div>
@@ -994,6 +1050,11 @@ export default function BossBattleArena({ bossId, onClose }) {
   const [cooldownProgress, setCooldownProgress] = useState(1);
   const [isAttackReady, setIsAttackReady] = useState(true);
 
+  // Ability system state
+  const [abilityLastUsed, setAbilityLastUsed] = useState(0);
+  const [isAbilityAnimating, setIsAbilityAnimating] = useState(false);
+  const [activeAbilityAnimation, setActiveAbilityAnimation] = useState(null);
+
   // Anime.js projectile and impact states
   const [playerProjectiles, setPlayerProjectiles] = useState([]);
   const [bossProjectiles, setBossProjectiles] = useState([]);
@@ -1015,6 +1076,11 @@ export default function BossBattleArena({ bossId, onClose }) {
   const boss = BOSS_DATABASE[bossId];
   const difficulty = BOSS_DIFFICULTY[boss?.difficulty] || BOSS_DIFFICULTY.normal;
   const currentWeapon = weaponAttack || WEAPON_ATTACKS.unarmed;
+
+  // Get the ability for the equipped weapon
+  const equippedWeaponId = equipped?.mainHand;
+  const weaponAbility = equippedWeaponId ? getWeaponAbility(equippedWeaponId) : null;
+  const canUseAbility = weaponAbility && isAbilityReady(abilityLastUsed, weaponAbility.cooldown) && !isAbilityAnimating;
 
   // Reset any stuck battle and start countdown
   useEffect(() => {
@@ -1279,6 +1345,82 @@ export default function BossBattleArena({ bossId, onClose }) {
     }, 250); // Delay matches projectile travel time
   }, [isBattleActive, isCountdown, battleResult, battleEnded, isAttackReady, playerAttack, currentBattle, lastAttackResult, currentWeapon, triggerShake, burstParticles]);
 
+  // Handle ability use
+  const handleAbility = useCallback(() => {
+    if (!isBattleActive || isCountdown || battleResult || battleEnded || !canUseAbility || !weaponAbility) return;
+
+    // Set ability as used
+    setAbilityLastUsed(Date.now());
+    setIsAbilityAnimating(true);
+
+    // Calculate ability damage
+    const baseDamage = currentBattle?.playerDamage || 10;
+    const abilityDamage = calculateAbilityDamage(baseDamage, weaponAbility);
+
+    // Show the ability animation
+    setActiveAbilityAnimation({
+      ability: weaponAbility,
+      position: { x: 200, y: 200 }, // Boss center position
+    });
+
+    // Play ability sound (if available)
+    if (sounds.powerAttack) {
+      sounds.powerAttack();
+    } else {
+      sounds.attackHit();
+    }
+
+    // Apply damage after animation duration
+    setTimeout(() => {
+      // Trigger screen shake based on ability
+      triggerShake(weaponAbility.screenShake || 'heavy');
+
+      // Massive particle burst
+      burstParticles(200, 200, {
+        colors: [weaponAbility.color, weaponAbility.trailColor || weaponAbility.color, '#ffffff'],
+        count: 25,
+        spread: 200,
+        size: 10,
+      });
+
+      // Show damage number
+      const id = damageIdRef.current++;
+      setDamageNumbers(prev => [...prev, {
+        id,
+        damage: abilityDamage,
+        position: { x: '60px', y: '60px' },
+        isPlayer: false,
+        isCrit: true, // Abilities always show as crit-style
+        color: weaponAbility.color,
+      }]);
+
+      // Apply damage to boss (simulate attack with custom damage)
+      // We'll call playerAttack multiple times based on damage multiplier
+      const attacksNeeded = Math.ceil(weaponAbility.damage);
+      for (let i = 0; i < attacksNeeded; i++) {
+        playerAttack();
+      }
+
+      // Add impact effect
+      const impactId = effectIdRef.current++;
+      setImpactEffects(prev => [...prev, {
+        id: impactId,
+        x: '50%',
+        y: '50%',
+        color: weaponAbility.color,
+        size: 'large',
+      }]);
+
+      // Clean up
+      setTimeout(() => {
+        setDamageNumbers(prev => prev.filter(d => d.id !== id));
+        setImpactEffects(prev => prev.filter(e => e.id !== impactId));
+        setActiveAbilityAnimation(null);
+        setIsAbilityAnimating(false);
+      }, 1000);
+    }, weaponAbility.duration || 600);
+  }, [isBattleActive, isCountdown, battleResult, battleEnded, canUseAbility, weaponAbility, currentBattle, playerAttack, triggerShake, burstParticles]);
+
   // Handle close/abandon - always ensure battle is properly ended
   const handleClose = async () => {
     // Always clear the intervals
@@ -1438,6 +1580,18 @@ export default function BossBattleArena({ bossId, onClose }) {
                 ))}
               </AnimatePresence>
 
+              {/* Ability Animation */}
+              <AnimatePresence>
+                {activeAbilityAnimation && (
+                  <AbilityAnimation
+                    ability={activeAbilityAnimation.ability}
+                    position={activeAbilityAnimation.position}
+                    containerRef={arenaRef}
+                    onComplete={() => setActiveAbilityAnimation(null)}
+                  />
+                )}
+              </AnimatePresence>
+
               {/* Damage numbers on boss */}
               <AnimatePresence>
                 {damageNumbers.filter(d => !d.isPlayer).map(d => (
@@ -1453,39 +1607,80 @@ export default function BossBattleArena({ bossId, onClose }) {
               </AnimatePresence>
             </motion.div>
 
-            {/* Attack Button - Only way to attack */}
+            {/* Attack and Ability Buttons */}
             {isBattleActive && !battleResult && (
-              <motion.button
-                onClick={handleAttack}
-                disabled={!isAttackReady}
-                whileHover={isAttackReady ? { scale: 1.05 } : {}}
-                whileTap={isAttackReady ? { scale: 0.95 } : {}}
-                className={`mt-4 px-8 py-4 rounded-2xl font-bold text-lg transition-all ${
-                  isAttackReady
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
-                    : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
-                }`}
-                style={{
-                  touchAction: 'manipulation',
-                  borderColor: isAttackReady ? (currentWeapon?.color || '#ff6600') : 'transparent',
-                  borderWidth: '2px',
-                  boxShadow: isAttackReady ? `0 0 20px ${currentWeapon?.color || '#ff6600'}40` : 'none',
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <Swords className="w-5 h-5" />
-                  <span>{currentWeapon?.attackName || 'Attack'}</span>
-                </div>
-              </motion.button>
+              <div className="flex gap-3 mt-4">
+                {/* Attack Button */}
+                <motion.button
+                  onClick={handleAttack}
+                  disabled={!isAttackReady}
+                  whileHover={isAttackReady ? { scale: 1.05 } : {}}
+                  whileTap={isAttackReady ? { scale: 0.95 } : {}}
+                  className={`px-6 py-3 rounded-2xl font-bold text-base transition-all ${
+                    isAttackReady
+                      ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
+                      : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
+                  }`}
+                  style={{
+                    touchAction: 'manipulation',
+                    borderColor: isAttackReady ? (currentWeapon?.color || '#ff6600') : 'transparent',
+                    borderWidth: '2px',
+                    boxShadow: isAttackReady ? `0 0 20px ${currentWeapon?.color || '#ff6600'}40` : 'none',
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Swords className="w-5 h-5" />
+                    <span>{currentWeapon?.attackName || 'Attack'}</span>
+                  </div>
+                </motion.button>
+
+                {/* Ability Button (if weapon has ability) */}
+                {weaponAbility && (
+                  <motion.button
+                    onClick={handleAbility}
+                    disabled={!canUseAbility}
+                    whileHover={canUseAbility ? { scale: 1.05 } : {}}
+                    whileTap={canUseAbility ? { scale: 0.95 } : {}}
+                    className={`px-6 py-3 rounded-2xl font-bold text-base transition-all ${
+                      canUseAbility
+                        ? 'text-white shadow-lg cursor-pointer'
+                        : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
+                    }`}
+                    style={{
+                      touchAction: 'manipulation',
+                      background: canUseAbility
+                        ? `linear-gradient(135deg, ${weaponAbility.color}, ${weaponAbility.trailColor || weaponAbility.color})`
+                        : undefined,
+                      borderColor: canUseAbility ? weaponAbility.color : 'transparent',
+                      borderWidth: '2px',
+                      boxShadow: canUseAbility ? `0 0 25px ${weaponAbility.color}60` : 'none',
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5" />
+                      <span>{weaponAbility.name}</span>
+                    </div>
+                  </motion.button>
+                )}
+              </div>
             )}
 
-            {/* Cooldown indicator */}
+            {/* Cooldown indicators */}
             {isBattleActive && !battleResult && (
-              <CooldownIndicator
-                progress={cooldownProgress}
-                weaponAttack={currentWeapon}
-                canAttack={isAttackReady}
-              />
+              <div className="w-full max-w-xs mx-auto">
+                <CooldownIndicator
+                  progress={cooldownProgress}
+                  weaponAttack={currentWeapon}
+                  canAttack={isAttackReady}
+                />
+                {weaponAbility && (
+                  <AbilityCooldownIndicator
+                    ability={weaponAbility}
+                    lastUsedTime={abilityLastUsed}
+                    canUse={canUseAbility}
+                  />
+                )}
+              </div>
             )}
 
             {/* Status text */}

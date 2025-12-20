@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Square, Clock, Zap, Calendar, Tag, TrendingUp } from 'lucide-react';
+import { Play, Pause, Square, X, Clock, Zap, Calendar, Tag, TrendingUp } from 'lucide-react';
 import useProductivityStore from '../../stores/productivityStore';
 import { EmptyState } from '../ui';
 import './WorkSessionsTab.css';
@@ -255,27 +255,29 @@ export default function WorkSessionsTab() {
               <button
                 onClick={handlePauseResume}
                 className="control-btn pause-resume"
+                title={isPaused ? 'Resume' : 'Pause'}
               >
                 {isPaused ? (
-                  <>
-                    <Play className="w-5 h-5" />
-                    Resume
-                  </>
+                  <Play className="w-6 h-6" />
                 ) : (
-                  <>
-                    <Pause className="w-5 h-5" />
-                    Pause
-                  </>
+                  <Pause className="w-6 h-6" />
                 )}
               </button>
 
-              <button onClick={handleEndClick} className="control-btn end">
-                <Square className="w-5 h-5" />
-                End Session
+              <button
+                onClick={handleEndClick}
+                className="control-btn end"
+                title="End Session"
+              >
+                <Square className="w-6 h-6" />
               </button>
 
-              <button onClick={handleCancelSession} className="control-btn cancel">
-                Cancel
+              <button
+                onClick={handleCancelSession}
+                className="control-btn cancel"
+                title="Cancel Session"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>

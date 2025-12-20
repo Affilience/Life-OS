@@ -122,6 +122,7 @@ async function initializeNewUser(userId, email, displayName) {
     if (currencyError) console.error('Currency creation error:', currencyError);
 
     // 3. Initialize user stats (all zeros to start)
+    // Note: total_power and balance_score are GENERATED columns in PostgreSQL - do not insert them
     const { error: statsError } = await supabase
       .from('user_stats')
       .upsert({
@@ -131,8 +132,6 @@ async function initializeNewUser(userId, email, displayName) {
         intelligence: 0,
         wisdom: 0,
         defense: 0,
-        total_power: 0,
-        balance_score: 0,
         // Equipment bonuses
         strength_equipment: 0,
         vitality_equipment: 0,

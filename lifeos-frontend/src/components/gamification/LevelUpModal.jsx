@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { XMarkIcon, CheckCircleIcon, ArrowUpIcon, TrophyIcon, GiftIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { X as XMarkIcon, CheckCircle as CheckCircleIcon, ArrowUp as ArrowUpIcon, Trophy as TrophyIcon, Gift as GiftIcon, Sparkles as SparklesIcon } from 'lucide-react';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 import { feedback, sounds, haptics, celebrations } from '../../services/microInteractions';
 import { getLevelTitle, getMilestoneForLevel, getHighestFrame, getLevelXPBonus, getPetSlots, getInventorySlots } from '../../data/levelProgression';

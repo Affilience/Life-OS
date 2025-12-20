@@ -57,6 +57,8 @@
   padding: 16px 32px;
   border-radius: 50px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 100;
 }
 
 .control-btn {
@@ -71,6 +73,9 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .control-btn:hover:not(:disabled) {
@@ -78,6 +83,11 @@
   border-color: rgba(139, 92, 246, 0.5);
   color: rgba(139, 92, 246, 1);
   transform: scale(1.05);
+}
+
+.control-btn:active:not(:disabled) {
+  background: rgba(139, 92, 246, 0.3);
+  transform: scale(0.95);
 }
 
 .control-btn:disabled {

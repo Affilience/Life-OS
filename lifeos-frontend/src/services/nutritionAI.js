@@ -10,13 +10,13 @@ import { supabase } from '../lib/supabase';
 // All values per 100g unless otherwise noted - Data from USDA FoodData Central
 const LOCAL_FOOD_CACHE = {
   // ===== EGGS =====
-  'egg': { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, sugar: 1.1, saturatedFat: 3.3, transFat: 0, cholesterol: 373, sodium: 124, potassium: 126, calcium: 50, iron: 1.2, magnesium: 10, phosphorus: 172, zinc: 1.0, vitaminA: 140, vitaminC: 0, vitaminD: 2.0, vitaminE: 1.0, vitaminK: 0.3, vitaminB6: 0.14, vitaminB12: 0.89, folate: 44, serving: '1 large (50g)' },
-  'eggs': { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, sugar: 1.1, saturatedFat: 3.3, transFat: 0, cholesterol: 373, sodium: 124, potassium: 126, calcium: 50, iron: 1.2, magnesium: 10, phosphorus: 172, zinc: 1.0, vitaminA: 140, vitaminC: 0, vitaminD: 2.0, vitaminE: 1.0, vitaminK: 0.3, vitaminB6: 0.14, vitaminB12: 0.89, folate: 44, serving: '1 large (50g)' },
+  'egg': { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, sugar: 1.1, saturatedFat: 3.3, transFat: 0, cholesterol: 373, sodium: 124, potassium: 126, calcium: 50, iron: 1.2, magnesium: 10, phosphorus: 172, zinc: 1.0, vitaminA: 140, vitaminC: 0, vitaminD: 2.0, vitaminE: 1.0, vitaminK: 0.3, vitaminB6: 0.14, vitaminB12: 0.89, folate: 44, serving: '100g (about 2 eggs)' },
+  'eggs': { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, sugar: 1.1, saturatedFat: 3.3, transFat: 0, cholesterol: 373, sodium: 124, potassium: 126, calcium: 50, iron: 1.2, magnesium: 10, phosphorus: 172, zinc: 1.0, vitaminA: 140, vitaminC: 0, vitaminD: 2.0, vitaminE: 1.0, vitaminK: 0.3, vitaminB6: 0.14, vitaminB12: 0.89, folate: 44, serving: '100g (about 2 eggs)' },
   'egg white': { calories: 52, protein: 11, carbs: 0.7, fat: 0.2, fiber: 0, sugar: 0.7, saturatedFat: 0, transFat: 0, cholesterol: 0, sodium: 166, potassium: 163, calcium: 7, iron: 0.1, magnesium: 11, phosphorus: 15, zinc: 0.03, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0, vitaminK: 0, vitaminB6: 0.01, vitaminB12: 0.09, folate: 4, serving: '100g' },
   'egg yolk': { calories: 322, protein: 16, carbs: 3.6, fat: 27, fiber: 0, sugar: 0.6, saturatedFat: 9.6, transFat: 0, cholesterol: 1085, sodium: 48, potassium: 109, calcium: 129, iron: 2.7, magnesium: 5, phosphorus: 390, zinc: 2.3, vitaminA: 381, vitaminC: 0, vitaminD: 5.4, vitaminE: 2.6, vitaminK: 0.7, vitaminB6: 0.35, vitaminB12: 1.95, folate: 146, serving: '100g' },
   'scrambled eggs': { calories: 149, protein: 10, carbs: 2.2, fat: 11, fiber: 0, sugar: 1.8, saturatedFat: 3.8, transFat: 0, cholesterol: 282, sodium: 227, potassium: 132, calcium: 66, iron: 1.2, magnesium: 11, phosphorus: 151, zinc: 1.0, vitaminA: 140, vitaminC: 0, vitaminD: 1.5, vitaminE: 1.0, vitaminK: 1.0, vitaminB6: 0.13, vitaminB12: 0.76, folate: 28, serving: '100g' },
-  'boiled egg': { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, sugar: 1.1, saturatedFat: 3.3, transFat: 0, cholesterol: 373, sodium: 124, potassium: 126, calcium: 50, iron: 1.2, magnesium: 10, phosphorus: 172, zinc: 1.0, vitaminA: 140, vitaminC: 0, vitaminD: 2.0, vitaminE: 1.0, vitaminK: 0.3, vitaminB6: 0.14, vitaminB12: 0.89, folate: 44, serving: '1 large (50g)' },
-  'fried egg': { calories: 196, protein: 14, carbs: 0.8, fat: 15, fiber: 0, sugar: 0.4, saturatedFat: 4.3, transFat: 0, cholesterol: 401, sodium: 207, potassium: 152, calcium: 62, iron: 1.9, magnesium: 13, phosphorus: 215, zinc: 1.3, vitaminA: 170, vitaminC: 0, vitaminD: 2.2, vitaminE: 1.5, vitaminK: 5.6, vitaminB6: 0.17, vitaminB12: 1.0, folate: 51, serving: '1 large (46g)' },
+  'boiled egg': { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, sugar: 1.1, saturatedFat: 3.3, transFat: 0, cholesterol: 373, sodium: 124, potassium: 126, calcium: 50, iron: 1.2, magnesium: 10, phosphorus: 172, zinc: 1.0, vitaminA: 140, vitaminC: 0, vitaminD: 2.0, vitaminE: 1.0, vitaminK: 0.3, vitaminB6: 0.14, vitaminB12: 0.89, folate: 44, serving: '100g (about 2 eggs)' },
+  'fried egg': { calories: 196, protein: 14, carbs: 0.8, fat: 15, fiber: 0, sugar: 0.4, saturatedFat: 4.3, transFat: 0, cholesterol: 401, sodium: 207, potassium: 152, calcium: 62, iron: 1.9, magnesium: 13, phosphorus: 215, zinc: 1.3, vitaminA: 170, vitaminC: 0, vitaminD: 2.2, vitaminE: 1.5, vitaminK: 5.6, vitaminB6: 0.17, vitaminB12: 1.0, folate: 51, serving: '100g (about 2 eggs)' },
   'omelette': { calories: 154, protein: 11, carbs: 1.6, fat: 12, fiber: 0, sugar: 1.3, saturatedFat: 3.7, transFat: 0, cholesterol: 295, sodium: 288, potassium: 138, calcium: 78, iron: 1.5, magnesium: 12, phosphorus: 167, zinc: 1.1, vitaminA: 155, vitaminC: 0.5, vitaminD: 1.6, vitaminE: 1.1, vitaminK: 2.0, vitaminB6: 0.14, vitaminB12: 0.8, folate: 32, serving: '100g' },
 
   // ===== POULTRY =====
@@ -113,10 +113,13 @@ const LOCAL_FOOD_CACHE = {
   'noodles': { calories: 138, protein: 4.5, carbs: 25, fat: 2.1, fiber: 1.2, sugar: 0.6, saturatedFat: 0.5, transFat: 0, cholesterol: 29, sodium: 5, potassium: 38, calcium: 12, iron: 1.5, magnesium: 21, phosphorus: 76, zinc: 0.7, vitaminA: 3, vitaminC: 0, vitaminD: 0.1, vitaminE: 0.1, vitaminK: 0, vitaminB6: 0.04, vitaminB12: 0.1, folate: 10, serving: '100g cooked' },
   'ramen noodles': { calories: 188, protein: 4.5, carbs: 26, fat: 7.5, fiber: 0.9, sugar: 0.4, saturatedFat: 3.3, transFat: 0, cholesterol: 0, sodium: 891, potassium: 35, calcium: 9, iron: 1.3, magnesium: 10, phosphorus: 45, zinc: 0.3, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.1, vitaminK: 0, vitaminB6: 0.04, vitaminB12: 0, folate: 73, serving: '100g cooked' },
   'rice noodles': { calories: 109, protein: 0.9, carbs: 25, fat: 0.2, fiber: 0.9, sugar: 0.1, saturatedFat: 0, transFat: 0, cholesterol: 0, sodium: 6, potassium: 4, calcium: 4, iron: 0.2, magnesium: 3, phosphorus: 14, zinc: 0.3, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0, vitaminK: 0, vitaminB6: 0.01, vitaminB12: 0, folate: 1, serving: '100g cooked' },
-  'bread': { calories: 265, protein: 9, carbs: 49, fat: 3.2, fiber: 2.7, sugar: 5, saturatedFat: 0.7, transFat: 0, cholesterol: 0, sodium: 491, potassium: 115, calcium: 260, iron: 3.6, magnesium: 25, phosphorus: 97, zinc: 0.7, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.2, vitaminB6: 0.1, vitaminB12: 0, folate: 111, serving: '1 slice (30g)' },
-  'white bread': { calories: 265, protein: 9, carbs: 49, fat: 3.2, fiber: 2.7, sugar: 5, saturatedFat: 0.7, transFat: 0, cholesterol: 0, sodium: 491, potassium: 115, calcium: 260, iron: 3.6, magnesium: 25, phosphorus: 97, zinc: 0.7, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.2, vitaminB6: 0.1, vitaminB12: 0, folate: 111, serving: '1 slice (30g)' },
-  'whole wheat bread': { calories: 247, protein: 13, carbs: 41, fat: 4.2, fiber: 6.0, sugar: 6, saturatedFat: 0.9, transFat: 0, cholesterol: 0, sodium: 472, potassium: 254, calcium: 161, iron: 2.5, magnesium: 75, phosphorus: 212, zinc: 1.8, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.4, vitaminK: 7.8, vitaminB6: 0.2, vitaminB12: 0, folate: 42, serving: '1 slice (30g)' },
-  'sourdough bread': { calories: 259, protein: 8.5, carbs: 51, fat: 1.8, fiber: 2.1, sugar: 2.2, saturatedFat: 0.4, transFat: 0, cholesterol: 0, sodium: 508, potassium: 100, calcium: 22, iron: 2.5, magnesium: 22, phosphorus: 70, zinc: 0.8, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.3, vitaminB6: 0.08, vitaminB12: 0, folate: 78, serving: '1 slice (30g)' },
+  'bread': { calories: 265, protein: 9, carbs: 49, fat: 3.2, fiber: 2.7, sugar: 5, saturatedFat: 0.7, transFat: 0, cholesterol: 0, sodium: 491, potassium: 115, calcium: 260, iron: 3.6, magnesium: 25, phosphorus: 97, zinc: 0.7, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.2, vitaminB6: 0.1, vitaminB12: 0, folate: 111, serving: '100g (about 3 slices)' },
+  'white bread': { calories: 265, protein: 9, carbs: 49, fat: 3.2, fiber: 2.7, sugar: 5, saturatedFat: 0.7, transFat: 0, cholesterol: 0, sodium: 491, potassium: 115, calcium: 260, iron: 3.6, magnesium: 25, phosphorus: 97, zinc: 0.7, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.2, vitaminB6: 0.1, vitaminB12: 0, folate: 111, serving: '100g (about 3 slices)' },
+  'whole wheat bread': { calories: 247, protein: 13, carbs: 41, fat: 4.2, fiber: 6.0, sugar: 6, saturatedFat: 0.9, transFat: 0, cholesterol: 0, sodium: 472, potassium: 254, calcium: 161, iron: 2.5, magnesium: 75, phosphorus: 212, zinc: 1.8, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.4, vitaminK: 7.8, vitaminB6: 0.2, vitaminB12: 0, folate: 42, serving: '100g (about 3 slices)' },
+  'sourdough bread': { calories: 259, protein: 8.5, carbs: 51, fat: 1.8, fiber: 2.1, sugar: 2.2, saturatedFat: 0.4, transFat: 0, cholesterol: 0, sodium: 508, potassium: 100, calcium: 22, iron: 2.5, magnesium: 22, phosphorus: 70, zinc: 0.8, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.3, vitaminB6: 0.08, vitaminB12: 0, folate: 78, serving: '100g' },
+  'sourdough': { calories: 259, protein: 8.5, carbs: 51, fat: 1.8, fiber: 2.1, sugar: 2.2, saturatedFat: 0.4, transFat: 0, cholesterol: 0, sodium: 508, potassium: 100, calcium: 22, iron: 2.5, magnesium: 22, phosphorus: 70, zinc: 0.8, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.3, vitaminB6: 0.08, vitaminB12: 0, folate: 78, serving: '100g' },
+  'sourdough slices': { calories: 259, protein: 8.5, carbs: 51, fat: 1.8, fiber: 2.1, sugar: 2.2, saturatedFat: 0.4, transFat: 0, cholesterol: 0, sodium: 508, potassium: 100, calcium: 22, iron: 2.5, magnesium: 22, phosphorus: 70, zinc: 0.8, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.3, vitaminB6: 0.08, vitaminB12: 0, folate: 78, serving: '100g' },
+  'toast': { calories: 265, protein: 9, carbs: 49, fat: 3.2, fiber: 2.7, sugar: 5, saturatedFat: 0.7, transFat: 0, cholesterol: 0, sodium: 491, potassium: 115, calcium: 260, iron: 3.6, magnesium: 25, phosphorus: 97, zinc: 0.7, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.2, vitaminB6: 0.1, vitaminB12: 0, folate: 111, serving: '100g' },
   'rye bread': { calories: 259, protein: 8.5, carbs: 48, fat: 3.3, fiber: 5.8, sugar: 3.9, saturatedFat: 0.6, transFat: 0, cholesterol: 0, sodium: 603, potassium: 166, calcium: 73, iron: 2.8, magnesium: 40, phosphorus: 125, zinc: 1.1, vitaminA: 0, vitaminC: 0.1, vitaminD: 0, vitaminE: 0.3, vitaminK: 1.2, vitaminB6: 0.08, vitaminB12: 0, folate: 110, serving: '1 slice (30g)' },
   'bagel': { calories: 275, protein: 11, carbs: 53, fat: 1.6, fiber: 2.3, sugar: 6, saturatedFat: 0.3, transFat: 0, cholesterol: 0, sodium: 500, potassium: 90, calcium: 19, iron: 3.3, magnesium: 22, phosphorus: 68, zinc: 0.8, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.3, vitaminB6: 0.06, vitaminB12: 0, folate: 115, serving: '1 medium (90g)' },
   'croissant': { calories: 406, protein: 8.2, carbs: 45, fat: 21, fiber: 2.6, sugar: 7, saturatedFat: 12, transFat: 0.6, cholesterol: 67, sodium: 402, potassium: 118, calcium: 37, iron: 2.3, magnesium: 19, phosphorus: 90, zinc: 0.7, vitaminA: 171, vitaminC: 0, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 4.2, vitaminB6: 0.08, vitaminB12: 0.15, folate: 71, serving: '1 medium (57g)' },
@@ -406,6 +409,8 @@ const UNIT_TO_GRAMS = {
   patty: 113, patties: 113, // Burger patty ~4oz
   link: 45, links: 45,     // Sausage link
   rasher: 8, rashers: 8,   // Bacon rasher (same as strip)
+  // Common foods used as units (e.g., "6 eggs" = 6 × 50g)
+  egg: 50, eggs: 50,       // 1 large egg = 50g
 };
 
 // Food-specific serving sizes in grams
@@ -486,6 +491,28 @@ const FOOD_SERVING_WEIGHTS = {
 // Default portion sizes in grams when no quantity is specified
 // This makes "steak and chips" give realistic calorie estimates
 const DEFAULT_PORTION_SIZES = {
+  // Eggs - when user says "6 eggs" without unit, assume 50g per egg
+  'egg': 50,              // 1 large egg = 50g
+  'eggs': 50,             // Same for plural
+  'boiled egg': 50,
+  'boiled eggs': 50,
+  'fried egg': 46,        // Slightly less after cooking
+  'fried eggs': 46,
+  'scrambled egg': 61,    // 1 egg scrambled with milk/butter
+  'scrambled eggs': 61,
+  'poached egg': 50,
+  'poached eggs': 50,
+  'omelette': 61,         // Per egg equivalent
+  // Bread - when user says "2 sourdough" without "slices", assume 1 slice = 30g
+  'bread': 30,            // 1 slice = 30g
+  'toast': 25,            // Slightly less after toasting
+  'sourdough': 30,
+  'sourdough bread': 30,
+  'sourdough slices': 30,
+  'white bread': 30,
+  'whole wheat bread': 30,
+  'rye bread': 30,
+  'bagel': 90,            // 1 medium bagel
   // Proteins - typical restaurant/home portions
   'steak': 225,           // 8oz steak
   'ribeye': 280,          // 10oz ribeye
@@ -496,6 +523,12 @@ const DEFAULT_PORTION_SIZES = {
   'chicken breast': 172,  // 6oz breast
   'salmon': 170,          // 6oz fillet
   'pork chop': 200,       // 7oz chop
+  // Bacon - when user says "4 bacon"
+  'bacon': 8,             // 1 strip = 8g cooked
+  'bacon strip': 8,
+  'bacon strips': 8,
+  'bacon rasher': 8,
+  'bacon rashers': 8,
   // Sides - typical restaurant portions
   'chips': 150,           // British chips/fries
   'fries': 150,

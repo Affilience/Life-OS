@@ -155,13 +155,13 @@ export default function SetLogger({ exercise, exerciseData, exerciseIndex, onSet
           <Target className="w-4 h-4 text-purple-400" />
           <span className="stat-label">Est. 1RM:</span>
           <span className="stat-value">
-            {currentPR ? `${calculate1RM(currentPR.weight, currentPR.reps)} lbs` : '—'}
+            {currentPR ? `${calculate1RM(currentPR.weight, currentPR.reps)} kg` : '—'}
           </span>
         </div>
         <div className="stat-item">
           <Zap className="w-4 h-4 text-emerald-400" />
           <span className="stat-label">Volume:</span>
-          <span className="stat-value">{completedVolume.toLocaleString()} lbs</span>
+          <span className="stat-value">{completedVolume.toLocaleString()} kg</span>
         </div>
       </div>
 
@@ -272,7 +272,7 @@ export default function SetLogger({ exercise, exerciseData, exerciseIndex, onSet
             <h4 className="input-title">Set {activeSetIndex + 1}</h4>
             {estimated1RM && (
               <div className="estimated-1rm">
-                Est. 1RM: <strong>{estimated1RM} lbs</strong>
+                Est. 1RM: <strong>{estimated1RM} kg</strong>
               </div>
             )}
           </div>
@@ -282,7 +282,7 @@ export default function SetLogger({ exercise, exerciseData, exerciseIndex, onSet
             <div className="beat-last-prompt">
               <Target className="w-4 h-4" />
               <span>
-                Last time: <strong>{lastWorkoutSets[activeSetIndex].weight} lbs × {lastWorkoutSets[activeSetIndex].reps} reps</strong>
+                Last time: <strong>{lastWorkoutSets[activeSetIndex].weight} kg × {lastWorkoutSets[activeSetIndex].reps} reps</strong>
                 {' '}- Can you beat it?
               </span>
             </div>
@@ -290,7 +290,7 @@ export default function SetLogger({ exercise, exerciseData, exerciseIndex, onSet
 
           {/* Weight Input */}
           <div className="input-row">
-            <label className="input-label">Weight (lbs)</label>
+            <label className="input-label">Weight (kg)</label>
             <div className="input-with-buttons">
               <button
                 className="adjust-btn minus"
@@ -401,7 +401,7 @@ export default function SetLogger({ exercise, exerciseData, exerciseIndex, onSet
           <div className="complete-icon">🎉</div>
           <h4 className="complete-title">All Sets Complete!</h4>
           <p className="complete-text">
-            Total volume: <strong>{completedVolume.toLocaleString()} lbs</strong>
+            Total volume: <strong>{completedVolume.toLocaleString()} kg</strong>
           </p>
           <p className="complete-hint">
             Move to the next exercise or finish your workout

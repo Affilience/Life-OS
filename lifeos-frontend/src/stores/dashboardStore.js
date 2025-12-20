@@ -1,16 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 // Sync dashboard settings to Supabase
 const syncDashboardToSupabase = async (settings) => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     // Get existing preferences first
     const { data: existingProfile } = await supabase
       .from('user_profiles')
       .select('preferences')
-      .eq('id', DEV_USER_ID)
+      .eq('id', userId)
       .maybeSingle();
 
     const { error } = await supabase
@@ -21,7 +23,7 @@ const syncDashboardToSupabase = async (settings) => {
           dashboard: settings
         }
       })
-      .eq('id', DEV_USER_ID);
+      .eq('id', userId);
 
     if (error) throw error;
   } catch (error) {
@@ -421,10 +423,16 @@ const useDashboardStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) {
+            set({ isInitialized: true });
+            return;
+          }
+
           const { data, error } = await supabase
             .from('user_profiles')
             .select('preferences')
-            .eq('id', DEV_USER_ID)
+            .eq('id', userId)
             .maybeSingle();
 
           if (error) throw error;

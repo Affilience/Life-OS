@@ -5,8 +5,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 
 // Resolution categories with colors and icons
@@ -36,6 +35,9 @@ export const ACHIEVEMENT_BADGES = {
 // Supabase sync helpers
 const syncResolutionToSupabase = async (resolution, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('resolutions').delete().eq('id', resolution.id);
       return;
@@ -43,7 +45,7 @@ const syncResolutionToSupabase = async (resolution, action = 'upsert') => {
 
     const dbResolution = {
       id: resolution.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       title: resolution.title,
       description: resolution.description || '',
       category: resolution.category,
@@ -66,9 +68,12 @@ const syncResolutionToSupabase = async (resolution, action = 'upsert') => {
 
 const syncCheckInToSupabase = async (resolutionId, checkInDate, note = '') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     const dbCheckIn = {
       id: crypto.randomUUID(),
-      user_id: DEV_USER_ID,
+      user_id: userId,
       resolution_id: resolutionId,
       check_in_date: checkInDate,
       note: note,
@@ -82,9 +87,12 @@ const syncCheckInToSupabase = async (resolutionId, checkInDate, note = '') => {
 
 const syncAchievementToSupabase = async (achievementKey, resolutionId = null, xpAwarded = 0) => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     const dbAchievement = {
       id: crypto.randomUUID(),
-      user_id: DEV_USER_ID,
+      user_id: userId,
       achievement_key: achievementKey,
       resolution_id: resolutionId,
       xp_awarded: xpAwarded,
@@ -117,11 +125,14 @@ export const useResolutionStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           // Load resolutions
           const { data: resolutionsData, error: resError } = await supabase
             .from('resolutions')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           if (resError) throw resError;
 
@@ -129,7 +140,7 @@ export const useResolutionStore = create(
           const { data: checkInsData, error: checkInError } = await supabase
             .from('resolution_check_ins')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           if (checkInError) throw checkInError;
 
@@ -137,7 +148,7 @@ export const useResolutionStore = create(
           const { data: achievementsData, error: achError } = await supabase
             .from('resolution_achievements')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           if (achError) throw achError;
 

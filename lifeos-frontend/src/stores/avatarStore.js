@@ -54,6 +54,7 @@ const DEFAULT_STATE = {
   totalLevelsEarned: 0,
   totalXPEarned: 0,
   characterGender: 'male',
+  skinTone: 'default', // Skin tone options: default, light, medium, tan, dark, deep
   equipped: {
     helmet: null,
     chest: null,
@@ -131,6 +132,8 @@ export const useAvatarStore = create(
 
       // Sync status
       _isSyncing: false,
+      _isInitialized: false, // True after first Supabase load - prevents race conditions
+      _isCheckingUnlocks: false, // Prevent concurrent checkUnlocks calls
       _lastSyncedAt: null,
       _syncError: null,
 
@@ -151,7 +154,7 @@ export const useAvatarStore = create(
           if (error) throw error;
           if (!data) {
             console.log('No user profile found, using defaults');
-            set({ _isSyncing: false });
+            set({ _isSyncing: false, _isInitialized: true });
             return;
           }
 
@@ -165,6 +168,7 @@ export const useAvatarStore = create(
               totalLevelsEarned: data.total_levels_earned || 0,
               totalXPEarned: data.total_xp || 0,
               characterGender: data.character_gender || 'male',
+              skinTone: data.skin_tone || 'default',
               equipped: data.equipped_items || DEFAULT_STATE.equipped,
               cosmetic: data.cosmetic_overrides || DEFAULT_STATE.cosmetic,
               dyes: data.dye_colors || DEFAULT_STATE.dyes,
@@ -174,6 +178,7 @@ export const useAvatarStore = create(
               activeCosmetics: data.active_cosmetics || DEFAULT_STATE.activeCosmetics,
               _lastSyncedAt: new Date().toISOString(),
               _isSyncing: false,
+              _isInitialized: true,
             });
 
             // Recalculate stats after loading
@@ -187,15 +192,23 @@ export const useAvatarStore = create(
 
       // Sync current state to Supabase
       syncToSupabase: async () => {
+        // Don't sync until we've loaded from Supabase first - prevents overwriting good data with stale local data
+        if (!get()._isInitialized) {
+          console.log('[AvatarStore] Skipping sync - not initialized yet');
+          return;
+        }
+
         const userId = await getCurrentUserId();
         if (!userId) return;
 
         const state = get();
 
         try {
+          // Use upsert to handle cases where the profile row might not exist yet
           const { error } = await supabase
             .from('user_profiles')
-            .update({
+            .upsert({
+              id: userId,
               current_level: state.level,
               current_xp: state.xp,
               current_tier: state.currentTier,
@@ -203,6 +216,7 @@ export const useAvatarStore = create(
               total_levels_earned: state.totalLevelsEarned,
               total_xp: state.totalXPEarned,
               character_gender: state.characterGender,
+              skin_tone: state.skinTone,
               equipped_items: state.equipped,
               cosmetic_overrides: state.cosmetic,
               dye_colors: state.dyes,
@@ -211,14 +225,19 @@ export const useAvatarStore = create(
               owned_cosmetics: state.ownedCosmetics,
               active_cosmetics: state.activeCosmetics,
               updated_at: new Date().toISOString(),
-            })
-            .eq('id', userId);
+            }, {
+              onConflict: 'id',
+              ignoreDuplicates: false,
+            });
 
           if (error) throw error;
 
           set({ _lastSyncedAt: new Date().toISOString(), _syncError: null });
         } catch (error) {
-          console.error('Failed to sync avatar to Supabase:', error);
+          // Only log if it's not a column-doesn't-exist error (which we can safely ignore until migration is applied)
+          if (!error.message?.includes('column') && !error.code === '42703') {
+            console.error('Failed to sync avatar to Supabase:', error);
+          }
           set({ _syncError: error.message });
         }
       },
@@ -562,89 +581,108 @@ export const useAvatarStore = create(
 
       // Check for equipment unlocks based on progress
       checkUnlocks: async () => {
-        const { unlockedEquipment, unlockEquipment, checkUnlockRequirement, level, prestige, moduleProgress } = get();
+        // Don't check unlocks until Supabase data has loaded to prevent false "re-unlocks"
+        if (!get()._isInitialized) {
+          console.log('[AvatarStore] Skipping checkUnlocks - not initialized yet');
+          return [];
+        }
 
-        // Import stores dynamically to avoid circular dependencies
-        const [achievementsStore, perkStore] = await Promise.all([
-          getAchievementsStore(),
-          getPerkStore()
-        ]);
+        // Prevent concurrent checkUnlocks calls which can cause duplicate unlocks
+        if (get()._isCheckingUnlocks) {
+          console.log('[AvatarStore] Skipping checkUnlocks - already in progress');
+          return [];
+        }
 
-        const achievementsState = achievementsStore.getState();
-        const perkState = perkStore.getState();
-
-        const stats = achievementsState.stats || {};
-        const unlockedAchievements = achievementsState.unlockedAchievements || [];
-
-        // Fetch additional data from Supabase
-        let streaks = {};
-        let pvpStats = {};
-        let questsCompleted = [];
-        let loginStreak = 0;
+        set({ _isCheckingUnlocks: true });
 
         try {
-          const userId = await getCurrentUserId();
-          if (userId) {
-            // Fetch user streaks
-            const { data: streakData } = await supabase
-              .from('user_streaks')
-              .select('*')
-              .eq('user_id', userId);
-            if (streakData) {
-              streaks = streakData.reduce((acc, s) => ({ ...acc, [s.module]: s }), {});
+          const { unlockedEquipment, unlockEquipment, checkUnlockRequirement, level, prestige, moduleProgress } = get();
+
+          // Import stores dynamically to avoid circular dependencies
+          const [achievementsStore, perkStore] = await Promise.all([
+            getAchievementsStore(),
+            getPerkStore()
+          ]);
+
+          const achievementsState = achievementsStore.getState();
+          const perkState = perkStore.getState();
+
+          const stats = achievementsState.stats || {};
+          const unlockedAchievements = achievementsState.unlockedAchievements || [];
+
+          // Fetch additional data from Supabase
+          let streaks = {};
+          let pvpStats = {};
+          let questsCompleted = [];
+          let loginStreak = 0;
+
+          try {
+            const userId = await getCurrentUserId();
+            if (userId) {
+              // Fetch user streaks
+              const { data: streakData } = await supabase
+                .from('user_streaks')
+                .select('*')
+                .eq('user_id', userId);
+              if (streakData) {
+                streaks = streakData.reduce((acc, s) => ({ ...acc, [s.module]: s }), {});
+              }
+
+              // Fetch PvP stats
+              const { data: pvpData } = await supabase
+                .from('user_pvp_stats')
+                .select('*')
+                .eq('user_id', userId)
+                .maybeSingle();
+              if (pvpData) pvpStats = pvpData;
+
+              // Fetch completed quests
+              const { data: questData } = await supabase
+                .from('user_quests')
+                .select('quest_id')
+                .eq('user_id', userId)
+                .eq('status', 'completed');
+              if (questData) {
+                questsCompleted = questData.map(q => q.quest_id);
+              }
+
+              // Get login streak from stats or user_profiles
+              loginStreak = stats.loginStreak || 0;
             }
+          } catch (error) {
+            console.warn('[AvatarStore] Error fetching unlock data:', error);
+          }
 
-            // Fetch PvP stats
-            const { data: pvpData } = await supabase
-              .from('user_pvp_stats')
-              .select('*')
-              .eq('user_id', userId)
-              .maybeSingle();
-            if (pvpData) pvpStats = pvpData;
+          const newUnlocks = [];
 
-            // Fetch completed quests
-            const { data: questData } = await supabase
-              .from('user_quests')
-              .select('quest_id')
-              .eq('user_id', userId)
-              .eq('status', 'completed');
-            if (questData) {
-              questsCompleted = questData.map(q => q.quest_id);
+          // Check each equipment's unlock condition
+          for (const [itemId, item] of Object.entries(EQUIPMENT_DATABASE)) {
+            if (unlockedEquipment.includes(itemId)) continue; // Already owned
+
+            const shouldUnlock = await checkUnlockRequirement(item, {
+              level,
+              prestige,
+              stats,
+              unlockedAchievements,
+              perkState,
+              moduleProgress,
+              streaks,
+              pvpStats,
+              questsCompleted,
+              loginStreak,
+            });
+
+            if (shouldUnlock) {
+              await unlockEquipment(itemId);
+              newUnlocks.push(item);
             }
-
-            // Get login streak from stats or user_profiles
-            loginStreak = stats.loginStreak || 0;
           }
-        } catch (error) {
-          console.warn('[AvatarStore] Error fetching unlock data:', error);
+
+          return newUnlocks;
+        } finally {
+          // Always reset the flag, even on error
+          set({ _isCheckingUnlocks: false });
         }
-
-        const newUnlocks = [];
-
-        // Check each equipment's unlock condition
-        for (const [itemId, item] of Object.entries(EQUIPMENT_DATABASE)) {
-          if (unlockedEquipment.includes(itemId)) continue; // Already owned
-
-          const shouldUnlock = await checkUnlockRequirement(item, {
-            level,
-            prestige,
-            stats,
-            unlockedAchievements,
-            perkState,
-            moduleProgress,
-            streaks,
-            pvpStats,
-            questsCompleted,
-            loginStreak,
-          });
-
-          if (shouldUnlock) {
-            await unlockEquipment(itemId);
-            newUnlocks.push(item);
-          }
-        }
-
-        return newUnlocks;
       },
 
       // Purchase equipment from the Bazaar
@@ -942,6 +980,15 @@ export const useAvatarStore = create(
         }
       },
 
+      // Set skin tone
+      setSkinTone: async (tone) => {
+        const validTones = ['default', 'light', 'medium', 'tan', 'dark', 'deep'];
+        if (validTones.includes(tone)) {
+          set({ skinTone: tone });
+          get().syncToSupabase();
+        }
+      },
+
       // ============================================
       // COSMETICS (Titles, Frames)
       // ============================================
@@ -1080,6 +1127,7 @@ export const useAvatarStore = create(
         totalLevelsEarned: state.totalLevelsEarned,
         totalXPEarned: state.totalXPEarned,
         characterGender: state.characterGender,
+        skinTone: state.skinTone,
         equipped: state.equipped,
         cosmetic: state.cosmetic,
         dyes: state.dyes,

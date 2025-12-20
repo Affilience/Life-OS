@@ -2,8 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WORKOUT_TEMPLATES } from '../data/exerciseDatabase';
 import { useAvatarStore } from './avatarStore';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 import useAchievementsStore from './achievementsStore';
 
@@ -160,6 +159,9 @@ export const calculateCaloriesBurned = (
 // Supabase sync helpers
 const syncWorkoutToSupabase = async (workout, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       // Delete exercises first (foreign key constraint)
       await supabase.from('health_exercises').delete().eq('workout_id', workout.id);
@@ -169,7 +171,7 @@ const syncWorkoutToSupabase = async (workout, action = 'upsert') => {
 
     const dbWorkout = {
       id: workout.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       workout_date: workout.date,
       workout_type: workout.templateId ? 'strength' : 'general',
       name: workout.name,
@@ -213,6 +215,9 @@ const syncWorkoutToSupabase = async (workout, action = 'upsert') => {
 
 const syncCardioToSupabase = async (cardio, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('health_workouts').delete().eq('id', cardio.id);
       return;
@@ -220,14 +225,13 @@ const syncCardioToSupabase = async (cardio, action = 'upsert') => {
 
     const dbCardio = {
       id: cardio.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       workout_date: cardio.date,
       workout_type: cardio.activityType || 'cardio',
-      name: CARDIO_TYPES[cardio.activityType]?.name || 'Cardio',
+      title: CARDIO_TYPES[cardio.activityType]?.name || 'Cardio',
       duration_minutes: Math.round((cardio.durationSeconds || 0) / 60),
       calories_burned: cardio.calories || 0,
       notes: cardio.notes || '',
-      rating: cardio.prs && cardio.prs.length > 0 ? 5 : 4,
     };
 
     await supabase.from('health_workouts').upsert(dbCardio, { onConflict: 'id' });
@@ -268,6 +272,9 @@ export const useWorkoutStore = create(
       // Sync workout metadata to Supabase
       syncWorkoutMetadataToSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           const state = get();
           await supabase
             .from('user_profiles')
@@ -278,7 +285,7 @@ export const useWorkoutStore = create(
               workout_personal_records: state.personalRecords,
               workout_cardio_records: state.cardioRecords,
             })
-            .eq('id', DEV_USER_ID);
+            .eq('id', userId);
         } catch (error) {
           console.error('Error syncing workout metadata to Supabase:', error);
         }
@@ -287,6 +294,9 @@ export const useWorkoutStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           // Load workouts with exercises AND user profile workout metadata
           const [workoutsResult, profileResult] = await Promise.all([
             supabase
@@ -295,12 +305,12 @@ export const useWorkoutStore = create(
                 *,
                 health_exercises (*)
               `)
-              .eq('user_id', DEV_USER_ID)
+              .eq('user_id', userId)
               .order('workout_date', { ascending: false }),
             supabase
               .from('user_profiles')
               .select('workout_custom_templates, workout_custom_exercises, workout_exercise_history, workout_personal_records, workout_cardio_records')
-              .eq('id', DEV_USER_ID)
+              .eq('id', userId)
               .maybeSingle(),
           ]);
 

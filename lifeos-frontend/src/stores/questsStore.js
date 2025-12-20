@@ -12,8 +12,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 import useAchievementsStore from './achievementsStore';
 import { feedback } from '../services/microInteractions';
@@ -414,11 +413,14 @@ export const BOSS_BATTLE_TEMPLATES = [
 // Supabase sync helper - sync quest completion to user_missions
 const syncQuestCompletionToSupabase = async (questData) => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     // We'll create a user_missions entry for tracking
     const { data: existingMission } = await supabase
       .from('user_missions')
       .select('id')
-      .eq('user_id', DEV_USER_ID)
+      .eq('user_id', userId)
       .eq('mission_id', questData.missionId || questData.templateId || questData.id)
       .maybeSingle();
 
@@ -450,6 +452,9 @@ const useQuestsStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           // Load user's mission progress
           const { data: userMissions, error: missionsError } = await supabase
             .from('user_missions')
@@ -457,7 +462,7 @@ const useQuestsStore = create(
               *,
               mission:missions (*)
             `)
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           if (missionsError) throw missionsError;
 

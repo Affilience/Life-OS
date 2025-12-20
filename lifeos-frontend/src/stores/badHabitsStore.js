@@ -11,8 +11,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 
 // Predefined habit categories with icons and colors
@@ -344,11 +343,14 @@ const useBadHabitsStore = create(
       // Supabase sync functions
       syncHabitToSupabase: async (habit) => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           const { error } = await supabase
             .from('bad_habits')
             .upsert({
               id: habit.id,
-              user_id: DEV_USER_ID,
+              user_id: userId,
               name: habit.name,
               category: habit.category,
               icon: habit.icon,
@@ -387,12 +389,15 @@ const useBadHabitsStore = create(
 
       syncRelapseToSupabase: async (relapse) => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           const { error } = await supabase
             .from('bad_habit_relapses')
             .insert({
               id: relapse.id,
               habit_id: relapse.habitId,
-              user_id: DEV_USER_ID,
+              user_id: userId,
               relapse_date: relapse.date,
               days_since_start: relapse.daysSinceStart,
               notes: relapse.notes,
@@ -410,11 +415,17 @@ const useBadHabitsStore = create(
         set({ isLoading: true });
 
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) {
+            set({ isLoading: false });
+            return;
+          }
+
           // Fetch habits
           const { data: habitsData, error: habitsError } = await supabase
             .from('bad_habits')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           if (habitsError) {
             console.error('Error fetching bad habits:', habitsError);
@@ -424,7 +435,7 @@ const useBadHabitsStore = create(
           const { data: relapsesData, error: relapsesError } = await supabase
             .from('bad_habit_relapses')
             .select('*')
-            .eq('user_id', DEV_USER_ID);
+            .eq('user_id', userId);
 
           if (relapsesError) {
             console.error('Error fetching relapses:', relapsesError);

@@ -6,15 +6,17 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 
 // Supabase sync helpers
 const syncPurposeToSupabase = async (purpose) => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     const dbPurpose = {
-      user_id: DEV_USER_ID,
+      user_id: userId,
       mission_statement: purpose.missionStatement || null,
       vision_one_year: purpose.visionOneYear || null,
       vision_five_year: purpose.visionFiveYear || null,
@@ -30,6 +32,9 @@ const syncPurposeToSupabase = async (purpose) => {
 
 const syncValueToSupabase = async (value, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('user_values').delete().eq('id', value.id);
       return;
@@ -37,7 +42,7 @@ const syncValueToSupabase = async (value, action = 'upsert') => {
 
     const dbValue = {
       id: value.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       name: value.name,
       description: value.description || null,
       importance: value.importance || 5,
@@ -54,6 +59,9 @@ const syncValueToSupabase = async (value, action = 'upsert') => {
 
 const syncDecisionToSupabase = async (decision, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('user_decisions').delete().eq('id', decision.id);
       return;
@@ -61,7 +69,7 @@ const syncDecisionToSupabase = async (decision, action = 'upsert') => {
 
     const dbDecision = {
       id: decision.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       title: decision.title,
       context: decision.context || null,
       situation: decision.situation || null,
@@ -89,6 +97,9 @@ const syncDecisionToSupabase = async (decision, action = 'upsert') => {
 
 const syncCheckInToSupabase = async (checkIn, action = 'upsert') => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
     if (action === 'delete') {
       await supabase.from('user_identity_checkins').delete().eq('id', checkIn.id);
       return;
@@ -96,7 +107,7 @@ const syncCheckInToSupabase = async (checkIn, action = 'upsert') => {
 
     const dbCheckIn = {
       id: checkIn.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       identity_statement: checkIn.identityStatement || null,
       reflections: checkIn.reflections || null,
       changes_from_last: checkIn.changesFromLast || null,
@@ -139,32 +150,35 @@ export const usePurposeStore = create(
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
           // Load purpose/vision
           const { data: purposeData } = await supabase
             .from('user_purpose')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .maybeSingle();
 
           // Load values
           const { data: valuesData } = await supabase
             .from('user_values')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('importance', { ascending: false });
 
           // Load decisions
           const { data: decisionsData } = await supabase
             .from('user_decisions')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('decision_date', { ascending: false });
 
           // Load identity check-ins
           const { data: checkInsData } = await supabase
             .from('user_identity_checkins')
             .select('*')
-            .eq('user_id', DEV_USER_ID)
+            .eq('user_id', userId)
             .order('checkin_date', { ascending: false });
 
           const updates = {};

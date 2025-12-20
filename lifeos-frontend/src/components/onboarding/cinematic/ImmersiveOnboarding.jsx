@@ -8,7 +8,7 @@
  * - Scrubbed animations tied to scroll position
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
@@ -20,6 +20,7 @@ import { feedback } from '../../../services/microInteractions';
 import ImmersiveIntro from './immersive/ImmersiveIntro';
 import ImmersiveModeSelect from './immersive/ImmersiveModeSelect';
 import ImmersiveHeroSelect from './immersive/ImmersiveHeroSelect';
+import ImmersiveAvatarCustomization from './immersive/ImmersiveAvatarCustomization';
 import ImmersiveGamification from './immersive/ImmersiveGamification';
 import ImmersiveIdentity from './immersive/ImmersiveIdentity';
 import ImmersiveGoals from './immersive/ImmersiveGoals';
@@ -33,16 +34,36 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Section configuration
-const SECTIONS = [
+// Section configuration - base sections for all modes
+const BASE_SECTIONS = [
   { id: 'intro', component: ImmersiveIntro },
   { id: 'mode', component: ImmersiveModeSelect, requiresInteraction: true },
+];
+
+// Cosmic mode sections (full gamification experience)
+const COSMIC_SECTIONS = [
   { id: 'hero', component: ImmersiveHeroSelect, requiresInteraction: true },
+  { id: 'customize', component: ImmersiveAvatarCustomization, requiresInteraction: true },
   { id: 'gamification', component: ImmersiveGamification, requiresInteraction: true },
   { id: 'identity', component: ImmersiveIdentity, requiresInteraction: true },
   { id: 'goals', component: ImmersiveGoals, requiresInteraction: true },
   { id: 'launch', component: ImmersiveLaunch },
 ];
+
+// Minimal mode sections (streamlined experience)
+const MINIMAL_SECTIONS = [
+  { id: 'identity', component: ImmersiveIdentity, requiresInteraction: true },
+  { id: 'goals', component: ImmersiveGoals, requiresInteraction: true },
+  { id: 'launch', component: ImmersiveLaunch },
+];
+
+// Get sections based on selected mode
+const getSections = (mode) => {
+  if (mode === 'minimal') {
+    return [...BASE_SECTIONS, ...MINIMAL_SECTIONS];
+  }
+  return [...BASE_SECTIONS, ...COSMIC_SECTIONS];
+};
 
 export default function ImmersiveOnboarding() {
   const containerRef = useRef(null);
@@ -63,8 +84,11 @@ export default function ImmersiveOnboarding() {
 
   const { setMode } = useGamificationModeStore();
 
-  // Avatar store for character gender
-  const { characterGender, setCharacterGender } = useAvatarStore();
+  // Avatar store for character gender and skin tone
+  const { characterGender, setCharacterGender, skinTone, setSkinTone } = useAvatarStore();
+
+  // Dynamic sections based on selected mode
+  const sections = useMemo(() => getSections(gamificationMode), [gamificationMode]);
 
   // Derived values
   const username = profile?.username || profile?.displayName || '';
@@ -177,15 +201,15 @@ export default function ImmersiveOnboarding() {
 
   // Handle section completion
   const handleSectionComplete = useCallback((sectionId) => {
-    const sectionIndex = SECTIONS.findIndex(s => s.id === sectionId);
-    if (sectionIndex < SECTIONS.length - 1) {
+    const sectionIndex = sections.findIndex(s => s.id === sectionId);
+    if (sectionIndex < sections.length - 1) {
       // Unlock scroll and auto-advance
       setIsScrollLocked(false);
       setTimeout(() => {
         scrollToSection(sectionIndex + 1);
       }, 300);
     }
-  }, [scrollToSection]);
+  }, [scrollToSection, sections]);
 
   // Handle final launch
   const handleLaunch = useCallback(() => {
@@ -198,11 +222,11 @@ export default function ImmersiveOnboarding() {
 
   // Track current section for progress indicator
   const handleSectionEnter = useCallback((sectionId) => {
-    const index = SECTIONS.findIndex(s => s.id === sectionId);
+    const index = sections.findIndex(s => s.id === sectionId);
     if (index !== -1) {
       setCurrentSection(index);
     }
-  }, []);
+  }, [sections]);
 
   return (
     <div className="immersive-onboarding" ref={containerRef}>
@@ -215,7 +239,7 @@ export default function ImmersiveOnboarding() {
 
       {/* Progress indicator */}
       <div className="immersive-progress">
-        {SECTIONS.map((section, index) => (
+        {sections.map((section, index) => (
           <button
             key={section.id}
             className={`progress-dot ${index === currentSection ? 'active' : ''} ${index < currentSection ? 'completed' : ''}`}
@@ -242,7 +266,7 @@ export default function ImmersiveOnboarding() {
 
       {/* Sections - each is min-h-screen, handles its own pinning */}
       <main className="immersive-sections">
-        {SECTIONS.map((section, index) => {
+        {sections.map((section, index) => {
           const Section = section.component;
 
           return (
@@ -262,6 +286,8 @@ export default function ImmersiveOnboarding() {
               setGamificationMode={setGamificationMode}
               characterGender={characterGender}
               setCharacterGender={setCharacterGender}
+              skinTone={skinTone}
+              setSkinTone={setSkinTone}
             />
           );
         })}

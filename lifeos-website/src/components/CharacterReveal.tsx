@@ -419,7 +419,7 @@ export function CharacterReveal() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen overflow-hidden"
+      className="relative min-h-screen overflow-x-clip"
     >
       {/* Same background as Hero */}
       <motion.div
@@ -433,7 +433,7 @@ export function CharacterReveal() {
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
       />
 
-      <div className="container-wide relative z-10 min-h-screen flex flex-col items-center justify-center py-16">
+      <div className="container-wide relative z-10 min-h-screen flex flex-col items-center justify-center py-16 overflow-visible">
         {/* Title Section */}
         <div className="text-center mb-8">
           <h2
@@ -463,7 +463,7 @@ export function CharacterReveal() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12 relative">
+        <div className="flex flex-col items-center gap-8 relative">
           {/* XP Bar - Positioned above character area, hidden on mobile */}
           <div
             ref={xpBarRef}
@@ -576,10 +576,10 @@ export function CharacterReveal() {
             </div>
           </div>
 
-          {/* Stat Bars Panel - hidden on mobile, full width on tablet */}
+          {/* Stat Bars Panel - hidden on mobile/tablet, positioned to the right on desktop */}
           <div
             ref={statBarsRef}
-            className="hidden md:block w-full md:w-72 lg:w-80 space-y-4 bg-white/5 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/10"
+            className="hidden lg:block lg:absolute lg:right-[-340px] lg:top-1/2 lg:-translate-y-1/2 w-80 space-y-4 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
             style={{ opacity: 0 }}
           >
             <h3 className="text-xl font-bold text-white mb-5">Character Stats</h3>
