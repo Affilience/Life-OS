@@ -8,12 +8,39 @@
  * - Minimal: Hidden (bonuses still apply silently)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { usePetStore, PET_DATABASE, TIER_INFO } from '../../stores/petStore';
-import { Lock, Star, Sparkles, Crown, BookOpen, X, Zap, TrendingUp, Trophy, Coins } from 'lucide-react';
+import { Lock, Star, Sparkles, Crown, BookOpen, X, Zap, TrendingUp, Trophy, Coins, Sword, Heart, Brain, Eye, Shield } from 'lucide-react';
 import Card from '../ui/Card';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
 import UnlockBadge from '../shared/UnlockBadge';
+import { PET_STAT_MAPPING } from '../../utils/statsSystem';
+
+// Stat display config - shared across components
+const STAT_CONFIG = {
+  strength: { icon: Sword, color: '#EF4444', label: 'STR' },
+  vitality: { icon: Heart, color: '#10B981', label: 'VIT' },
+  intelligence: { icon: Brain, color: '#8B5CF6', label: 'INT' },
+  wisdom: { icon: Eye, color: '#F59E0B', label: 'WIS' },
+  defense: { icon: Shield, color: '#3B82F6', label: 'DEF' },
+};
+
+// Helper function to calculate stat contribution for a single pet
+const getPetStatContribution = (pet) => {
+  if (!pet) return {};
+  const contributions = {};
+  const petBonus = pet.bonusAmount || 0;
+  const mapping = PET_STAT_MAPPING[pet.bonusType] || PET_STAT_MAPPING.universal;
+
+  Object.entries(mapping).forEach(([stat, multiplier]) => {
+    const value = Math.floor(petBonus * multiplier);
+    if (value > 0) {
+      contributions[stat] = value;
+    }
+  });
+
+  return contributions;
+};
 
 const PetsSection = ({ forceShow = false }) => {
   const {
@@ -39,6 +66,34 @@ const PetsSection = ({ forceShow = false }) => {
 
   const stats = getCollectionStats();
   const activeBonuses = getActiveBonuses();
+
+  // Calculate stat contributions from active pets
+  const petStatContributions = useMemo(() => {
+    const contributions = {
+      strength: 0,
+      vitality: 0,
+      intelligence: 0,
+      wisdom: 0,
+      defense: 0,
+    };
+
+    activePets.forEach(petId => {
+      const pet = PET_DATABASE[petId];
+      if (!pet) return;
+
+      const petBonus = pet.bonusAmount || 0;
+      const mapping = PET_STAT_MAPPING[pet.bonusType] || PET_STAT_MAPPING.universal;
+
+      Object.entries(mapping).forEach(([stat, multiplier]) => {
+        contributions[stat] += Math.floor(petBonus * multiplier);
+      });
+    });
+
+    return contributions;
+  }, [activePets]);
+
+  // Check if pets contribute any stats
+  const hasStatContributions = Object.values(petStatContributions).some(v => v > 0);
 
   // Get active pet slots
   const activeSlots = Array.from({ length: maxSlots }, (_, i) => activePets[i] || null);
@@ -129,30 +184,69 @@ const PetsSection = ({ forceShow = false }) => {
         ))}
       </div>
 
-      {/* Active Bonuses */}
-      {Object.keys(activeBonuses).length > 0 && (
+      {/* Active Bonuses & Stat Contributions */}
+      {(Object.keys(activeBonuses).length > 0 || hasStatContributions) && (
         <Card padding="sm">
-          <div className="flex items-center gap-2 mb-2">
-            <Star className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm font-semibold" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
-              Active Bonuses
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(activeBonuses).map(([type, amount]) => (
-              <div
-                key={type}
-                className="px-3 py-1 rounded-full text-xs font-medium"
-                style={{
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                  color: '#a78bfa',
-                }}
-              >
-                +{amount}% {type.charAt(0).toUpperCase() + type.slice(1)} XP
+          {/* XP Bonuses */}
+          {Object.keys(activeBonuses).length > 0 && (
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <Star className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm font-semibold" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
+                  XP Bonuses
+                </span>
               </div>
-            ))}
-          </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {Object.entries(activeBonuses).map(([type, amount]) => (
+                  <div
+                    key={type}
+                    className="px-3 py-1 rounded-full text-xs font-medium"
+                    style={{
+                      background: 'rgba(139, 92, 246, 0.1)',
+                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      color: '#a78bfa',
+                    }}
+                  >
+                    +{amount}% {type.charAt(0).toUpperCase() + type.slice(1)} XP
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Stat Contributions */}
+          {hasStatContributions && (
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm font-semibold" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
+                  Stat Bonuses from Companions
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(petStatContributions)
+                  .filter(([_, value]) => value > 0)
+                  .map(([stat, value]) => {
+                    const config = STAT_CONFIG[stat];
+                    const Icon = config.icon;
+                    return (
+                      <div
+                        key={stat}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5"
+                        style={{
+                          background: `${config.color}15`,
+                          border: `1px solid ${config.color}40`,
+                          color: config.color,
+                        }}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>+{value} {config.label}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </>
+          )}
         </Card>
       )}
 
@@ -453,6 +547,10 @@ function PetCard({ pet, unlocked, active, onClick, onEquip, forceShowSprites = f
   const displayName = getPetName(pet.id);
   const equipLabel = getTerm('equip');
 
+  // Calculate stat contributions for this pet
+  const statContributions = getPetStatContribution(pet);
+  const hasStats = Object.keys(statContributions).length > 0;
+
   // Professional tier labels
   const professionalTierNames = {
     common: 'Basic',
@@ -520,9 +618,34 @@ function PetCard({ pet, unlocked, active, onClick, onEquip, forceShowSprites = f
           {mode === 'cosmic' && `${pet.culture} • `}{tierLabel}
         </div>
         {unlocked ? (
-          <div className="text-xs font-medium" style={{ color: tierColor }}>
-            {pet.bonusDescription}
-          </div>
+          <>
+            <div className="text-xs font-medium" style={{ color: tierColor }}>
+              {pet.bonusDescription}
+            </div>
+            {/* Stat Contributions */}
+            {hasStats && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {Object.entries(statContributions).map(([stat, value]) => {
+                  const config = STAT_CONFIG[stat];
+                  const Icon = config.icon;
+                  return (
+                    <div
+                      key={stat}
+                      className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                      style={{
+                        background: `${config.color}15`,
+                        color: config.color,
+                      }}
+                      title={`+${value} ${stat.charAt(0).toUpperCase() + stat.slice(1)}`}
+                    >
+                      <Icon className="w-2.5 h-2.5" />
+                      <span>+{value}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         ) : (
           <UnlockBadge
             method={pet.unlockMethod}
@@ -561,6 +684,10 @@ function PetDetailModal({ pet, onClose }) {
   const tierColor = TIER_INFO[pet.tier].color;
   const unlocked = isPetUnlocked(pet.id);
   const active = isPetActive(pet.id);
+
+  // Calculate stat contributions for this pet
+  const statContributions = getPetStatContribution(pet);
+  const hasStats = Object.keys(statContributions).length > 0;
 
   return (
     <div
@@ -668,6 +795,44 @@ function PetDetailModal({ pet, onClose }) {
                   {pet.bonusDescription}
                 </p>
               </div>
+
+              {/* Stat Contributions */}
+              {hasStats && (
+                <div
+                  className="p-3 sm:p-4 rounded-lg"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm font-semibold" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
+                      Stat Contributions
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(statContributions).map(([stat, value]) => {
+                      const config = STAT_CONFIG[stat];
+                      const Icon = config.icon;
+                      return (
+                        <div
+                          key={stat}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium"
+                          style={{
+                            background: `${config.color}20`,
+                            border: `1px solid ${config.color}40`,
+                            color: config.color,
+                          }}
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span>+{value} {stat.charAt(0).toUpperCase() + stat.slice(1)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center py-4 sm:py-8">

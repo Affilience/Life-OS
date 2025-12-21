@@ -5,11 +5,11 @@ import useDashboardStore, { DASHBOARD_WIDGETS } from '../../../stores/dashboardS
 // Map widget IDs to tour data attributes
 const WIDGET_TOUR_MAP = {
   heroSection: 'hero-section',
-  streakStats: 'quick-stats',
+  streakStats: 'streak-stats',
   todaysPlan: 'todays-plan',
   quickActions: 'quick-actions',
   weeklyInsights: 'widget-area',
-  moduleHealth: 'widget-area',
+  moduleHealth: 'quick-stats',  // Module health shows stats across all modules
   recentActivity: 'widget-area',
   financialSnapshot: 'widget-area',
   goalsProgress: 'widget-area',

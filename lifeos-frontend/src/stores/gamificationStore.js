@@ -769,6 +769,11 @@ export const useGamificationStore = create(
       addCredits: async (amount, source = 'reward') => {
         const { userId, cosmicCredits, lifetimeCreditsEarned } = get();
 
+        if (!userId) {
+          console.warn('[Gamification] Cannot add credits - no userId');
+          return { newCredits: cosmicCredits, earned: 0 };
+        }
+
         const newCredits = cosmicCredits + amount;
         const newLifetime = lifetimeCreditsEarned + amount;
 
@@ -777,15 +782,23 @@ export const useGamificationStore = create(
           lifetimeCreditsEarned: newLifetime,
         });
 
-        // Update database
-        await supabase
+        // Upsert to database (creates record if it doesn't exist)
+        const { error } = await supabase
           .from('user_cosmic_currency')
-          .update({
+          .upsert({
+            user_id: userId,
             cosmic_credits: newCredits,
             lifetime_credits_earned: newLifetime,
             updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', userId);
+          }, {
+            onConflict: 'user_id',
+          });
+
+        if (error) {
+          console.error('[Gamification] Failed to update credits in database:', error);
+        } else {
+          console.log(`[Gamification] Added ${amount} credits (source: ${source}), total: ${newCredits}`);
+        }
 
         get().logEvent('credits_earned', source, { amount });
 
@@ -1294,6 +1307,17 @@ export const useGamificationStore = create(
         const { userId } = get();
         if (!userId) return;
 
+        // Extract XP and credits from eventData for proper column storage
+        let xpAwarded = 0;
+        let creditsAwarded = 0;
+
+        if (eventType === 'xp_gained' && eventData.amount) {
+          xpAwarded = eventData.amount;
+        }
+        if (eventType === 'credits_earned' && eventData.amount) {
+          creditsAwarded = eventData.amount;
+        }
+
         try {
           const { error } = await supabase
             .from('gamification_events')
@@ -1302,6 +1326,8 @@ export const useGamificationStore = create(
               event_type: eventType,
               event_source: eventSource,
               event_data: eventData,
+              xp_awarded: xpAwarded,
+              credits_awarded: creditsAwarded,
               created_at: new Date().toISOString(),
             });
 
@@ -1317,7 +1343,7 @@ export const useGamificationStore = create(
         const recent = get().recentEvents;
         set({
           recentEvents: [
-            { eventType, eventSource, eventData, timestamp: new Date().toISOString() },
+            { eventType, eventSource, eventData, xpAwarded, creditsAwarded, timestamp: new Date().toISOString() },
             ...recent,
           ].slice(0, 20),
         });

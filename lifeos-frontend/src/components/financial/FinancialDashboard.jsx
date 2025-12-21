@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Wallet,
   Target,
@@ -65,7 +65,12 @@ const CURRENCIES = [
 const FinancialDashboard = () => {
   const [activeTab, setActiveTab] = useState('budget');
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
-  const { currency, setCurrency } = useFinancialStore();
+  const { currency, setCurrency, initializeFromSupabase } = useFinancialStore();
+
+  // Initialize from Supabase on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
 
   const currentCurrency = CURRENCIES.find(c => c.code === currency) || CURRENCIES[0];
 

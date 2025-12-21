@@ -604,56 +604,25 @@ export default function FeatureTour() {
   // Check for auto-start tour when route changes
   useEffect(() => {
     const tourId = ROUTE_TO_TOUR[location.pathname];
-    console.log('[FeatureTour] Route check:', {
-      pathname: location.pathname,
-      tourId,
-      toursEnabled,
-      isActive,
-      shouldAutoStart: tourId ? shouldAutoStartTour(location.pathname) : 'no tourId',
-    });
 
-    if (!toursEnabled) {
-      console.log('[FeatureTour] Tours disabled, skipping');
-      return;
-    }
-
-    if (!tourId) {
-      console.log('[FeatureTour] No tour for this route');
-      return;
-    }
-
-    // Don't prompt if there's an active tour
-    if (isActive) {
-      console.log('[FeatureTour] Tour already active, skipping');
+    if (!toursEnabled || !tourId || isActive) {
       return;
     }
 
     // Check if should auto-start
     if (shouldAutoStartTour(location.pathname)) {
-      console.log('[FeatureTour] Will show tour prompt in 1 second');
       // Small delay to let the page render
       const timeout = setTimeout(() => {
-        console.log('[FeatureTour] Showing tour prompt for:', tourId);
         setPromptTourId(tourId);
         setShowPrompt(true);
       }, 1000);
 
       return () => clearTimeout(timeout);
-    } else {
-      console.log('[FeatureTour] Tour already completed or skipped');
     }
   }, [location.pathname, toursEnabled, isActive, shouldAutoStartTour]);
 
   // Find and track the target element
   useEffect(() => {
-    console.log('[FeatureTour] Element tracking:', {
-      isActive,
-      isPaused,
-      currentStep: currentStep?.id,
-      activeTour,
-      currentStepIndex,
-    });
-
     if (!isActive || isPaused || !currentStep) {
       setTargetRect(null);
       setTooltipPosition(null);
@@ -661,7 +630,6 @@ export default function FeatureTour() {
     }
 
     const { target, position } = currentStep;
-    console.log('[FeatureTour] Finding element:', { target, position });
 
     // Center position (no target)
     if (!target || position === 'center') {
@@ -876,17 +844,6 @@ export default function FeatureTour() {
       targetElement.removeEventListener('click', handleTargetClick);
     };
   }, [isActive, currentStep, nextStep]);
-
-  // Debug: log render conditions
-  console.log('[FeatureTour] Render conditions:', {
-    showPrompt,
-    promptTourId,
-    isActive,
-    isPaused,
-    hasCurrentStep: !!currentStep,
-    hasTooltipPosition: !!tooltipPosition,
-    willRenderTour: isActive && !isPaused && currentStep && tooltipPosition,
-  });
 
   return (
     <>

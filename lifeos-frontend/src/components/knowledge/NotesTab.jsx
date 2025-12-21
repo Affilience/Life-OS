@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { Save, FileText } from 'lucide-react';
+import { Save, FileText, Check } from 'lucide-react';
+import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import './NotesTab.css';
 
 const NotesTab = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('personal');
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const { createNote } = useKnowledgeStore();
 
   const handleSave = () => {
     if (!title.trim() && !content.trim()) {
@@ -13,21 +18,32 @@ const NotesTab = () => {
       return;
     }
 
-    const note = {
-      title: title || 'Untitled Note',
-      content,
-      category,
-      dateCreated: new Date().toISOString(),
+    setIsSaving(true);
+
+    // Map category to tag
+    const categoryTags = {
+      personal: 'personal',
+      work: 'work',
+      ideas: 'idea',
+      research: 'research',
+      meetings: 'meetings'
     };
 
-    console.log('Note saved:', note);
+    // Create note in knowledge store (syncs to Supabase automatically)
+    createNote({
+      title: title || 'Untitled Note',
+      content,
+      tags: [categoryTags[category] || category]
+    });
 
     // Clear the form
     setTitle('');
     setContent('');
+    setIsSaving(false);
 
     // Show success message
-    alert('Note saved successfully!');
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 2000);
   };
 
   return (

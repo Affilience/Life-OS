@@ -1,9 +1,6 @@
 import Dexie from 'dexie';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
-
-// Dev user ID for development mode
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 // Initialize Dexie database
 export const db = new Dexie('QuantaJournalDB');
@@ -189,14 +186,20 @@ export const journalSync = {
   // Sync entry to Supabase
   async syncToSupabase(entry) {
     try {
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        console.warn('No authenticated user, skipping journal sync');
+        return null;
+      }
+
       const supabaseEntry = {
-        user_id: DEV_USER_ID,
+        user_id: userId,
         entry_date: entry.date,
         entry_timestamp: entry.timestamp,
         title: entry.title || null,
         content: entry.content,
-        mood: entry.mood || null,
-        energy: entry.energy || null,
+        mood_rating: entry.mood || null,
+        energy_level: entry.energy || null,
         tags: entry.tags || [],
         word_count: entry.wordCount || 0,
         is_favorite: entry.isFavorite || false,
@@ -227,10 +230,16 @@ export const journalSync = {
   // Fetch all entries from Supabase
   async fetchFromSupabase() {
     try {
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        console.warn('No authenticated user, skipping journal fetch');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('journal_entries')
         .select('*')
-        .eq('user_id', DEV_USER_ID)
+        .eq('user_id', userId)
         .order('entry_date', { ascending: false });
 
       if (error) {
@@ -244,8 +253,8 @@ export const journalSync = {
         timestamp: entry.entry_timestamp,
         title: entry.title,
         content: entry.content,
-        mood: entry.mood,
-        energy: entry.energy,
+        mood: entry.mood_rating,
+        energy: entry.energy_level,
         tags: entry.tags || [],
         wordCount: entry.word_count,
         isFavorite: entry.is_favorite,
@@ -319,10 +328,16 @@ export const journalSync = {
   // Delete from Supabase
   async deleteFromSupabase(timestamp) {
     try {
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        console.warn('No authenticated user, skipping journal delete');
+        return false;
+      }
+
       const { error } = await supabase
         .from('journal_entries')
         .delete()
-        .eq('user_id', DEV_USER_ID)
+        .eq('user_id', userId)
         .eq('entry_timestamp', timestamp);
 
       if (error) {
@@ -334,6 +349,59 @@ export const journalSync = {
     } catch (err) {
       console.error('Journal delete error:', err);
       return false;
+    }
+  },
+
+  // Sync journal cover settings to Supabase
+  async syncCoverSettings(settings) {
+    try {
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        console.warn('No authenticated user, skipping cover settings sync');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ journal_cover_settings: settings })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error syncing journal cover settings:', error);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Cover settings sync error:', err);
+      return false;
+    }
+  },
+
+  // Fetch journal cover settings from Supabase
+  async fetchCoverSettings() {
+    try {
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        console.warn('No authenticated user, skipping cover settings fetch');
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('journal_cover_settings')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching journal cover settings:', error);
+        return null;
+      }
+
+      return data?.journal_cover_settings || null;
+    } catch (err) {
+      console.error('Cover settings fetch error:', err);
+      return null;
     }
   }
 };

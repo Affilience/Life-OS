@@ -40,6 +40,10 @@ const DEFAULT_SETTINGS = {
     quietHoursStart: '22:00',
     quietHoursEnd: '08:00',
     soundEnabled: true,
+    // XP Toast Settings
+    xpToastEnabled: true, // Show XP gained toasts
+    xpToastMinThreshold: 15, // Minimum XP to show toast (0 = show all)
+    xpToastBatchWindow: 2000, // ms to batch XP gains before showing toast
   },
 
   // Privacy

@@ -82,6 +82,22 @@ export const useHealthStore = create(
         }
       },
 
+      // Sync supplement stacks to Supabase
+      syncSupplementStacksToSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        try {
+          const state = get();
+          await supabase
+            .from('user_profiles')
+            .update({ supplement_stacks: state.supplementStacks })
+            .eq('id', userId);
+        } catch (error) {
+          console.error('Error syncing supplement stacks to Supabase:', error);
+        }
+      },
+
       // Initialize from Supabase
       initializeFromSupabase: async () => {
         const userId = await getCurrentUserId();
@@ -90,10 +106,10 @@ export const useHealthStore = create(
         set({ _isSyncing: true, _syncError: null });
 
         try {
-          // Fetch user health settings AND meal plans
+          // Fetch user health settings, meal plans, AND supplement stacks
           const { data: profile } = await supabase
             .from('user_profiles')
-            .select('health_settings, meal_plans')
+            .select('health_settings, meal_plans, supplement_stacks')
             .eq('id', userId)
             .maybeSingle();
 
@@ -113,6 +129,11 @@ export const useHealthStore = create(
             set({ mealPlans: profile.meal_plans });
           }
 
+          // Load supplement stacks from profile
+          if (profile?.supplement_stacks) {
+            set({ supplementStacks: profile.supplement_stacks });
+          }
+
           // Fetch meals (nutrition logs)
           const { data: nutritionLogs } = await supabase
             .from('health_nutrition_logs')
@@ -127,10 +148,10 @@ export const useHealthStore = create(
               timestamp: log.meal_timestamp,
               type: log.meal_type,
               items: log.food_items || [],
-              totalCalories: log.total_calories,
-              totalProtein: log.total_protein,
-              totalCarbs: log.total_carbs,
-              totalFat: log.total_fat,
+              totalCalories: log.total_calories || 0,
+              totalProtein: log.total_protein || 0,
+              totalCarbs: log.total_carbs || 0,
+              totalFat: log.total_fat || 0,
               notes: log.notes,
             }));
             set({ meals });
@@ -246,10 +267,18 @@ export const useHealthStore = create(
       // Add a new meal
       addMeal: async (mealData) => {
         const userId = await getCurrentUserId();
+
+        // Normalize field names (SmartMealLogger uses mealType, others use type)
         const newMeal = {
           id: `meal-${Date.now()}`,
           timestamp: new Date().toISOString(),
-          ...mealData,
+          type: mealData.mealType || mealData.type,
+          items: mealData.items || [],
+          totalCalories: mealData.totalCalories || 0,
+          totalProtein: mealData.totalProtein || 0,
+          totalCarbs: mealData.totalCarbs || 0,
+          totalFat: mealData.totalFat || 0,
+          notes: mealData.notes || mealData.description,
         };
 
         // Optimistic update
@@ -265,14 +294,14 @@ export const useHealthStore = create(
               .from('health_nutrition_logs')
               .insert({
                 user_id: userId,
-                meal_type: mealData.type,
+                meal_type: mealData.mealType || mealData.type, // Support both field names
                 food_items: mealData.items || [],
                 total_calories: mealData.totalCalories || 0,
                 total_protein: mealData.totalProtein || 0,
                 total_carbs: mealData.totalCarbs || 0,
                 total_fat: mealData.totalFat || 0,
                 meal_timestamp: newMeal.timestamp,
-                notes: mealData.notes,
+                notes: mealData.notes || mealData.description,
               })
               .select()
               .single();
@@ -293,7 +322,8 @@ export const useHealthStore = create(
         // Award XP through unified gamification
         const { dailyGoals } = get();
         let xpEarned = 15;
-        if (mealData.protein && mealData.protein >= dailyGoals.protein * 0.25) {
+        const proteinAmount = newMeal.totalProtein || 0;
+        if (proteinAmount >= dailyGoals.protein * 0.25) {
           xpEarned += 5; // Protein bonus
           triggerGamification('proteinGoalHit', { xpOverride: 0 }); // Just track stat
         }
@@ -666,7 +696,7 @@ export const useHealthStore = create(
           }
         }
 
-        triggerGamification('noteCreated', { xpOverride: 10, module: 'health' }); // Recipe created
+        triggerGamification('recipeCreated', { xpOverride: 10, module: 'health' });
 
         return newRecipe.id;
       },
@@ -857,7 +887,7 @@ export const useHealthStore = create(
           }
         }
 
-        triggerGamification('expenseLogged', { xpOverride: 5, module: 'health' }); // Generic action for supplement added
+        triggerGamification('supplementAdded', { xpOverride: 5, module: 'health' });
 
         return newSupplement.id;
       },
@@ -921,10 +951,11 @@ export const useHealthStore = create(
         }
       },
 
-      // Supplement stacks (local only for now)
+      // Supplement stacks (synced to Supabase)
       addSupplementStack: (stackData) => {
         const newStack = {
           id: `stack-${Date.now()}`,
+          createdAt: new Date().toISOString(),
           ...stackData,
         };
 
@@ -932,21 +963,30 @@ export const useHealthStore = create(
           supplementStacks: [...state.supplementStacks, newStack],
         }));
 
+        // Sync to Supabase
+        get().syncSupplementStacksToSupabase();
+
         return newStack.id;
       },
 
       updateSupplementStack: (id, updates) => {
         set((state) => ({
           supplementStacks: state.supplementStacks.map((stack) =>
-            stack.id === id ? { ...stack, ...updates } : stack
+            stack.id === id ? { ...stack, ...updates, updatedAt: new Date().toISOString() } : stack
           ),
         }));
+
+        // Sync to Supabase
+        get().syncSupplementStacksToSupabase();
       },
 
       deleteSupplementStack: (id) => {
         set((state) => ({
           supplementStacks: state.supplementStacks.filter((stack) => stack.id !== id),
         }));
+
+        // Sync to Supabase
+        get().syncSupplementStacksToSupabase();
       },
 
       addSupplementToStack: (stackId, supplementId) => {
@@ -957,6 +997,9 @@ export const useHealthStore = create(
               : stack
           ),
         }));
+
+        // Sync to Supabase
+        get().syncSupplementStacksToSupabase();
       },
 
       removeSupplementFromStack: (stackId, supplementId) => {
@@ -967,6 +1010,9 @@ export const useHealthStore = create(
               : stack
           ),
         }));
+
+        // Sync to Supabase
+        get().syncSupplementStacksToSupabase();
       },
 
       // Supplement logging
@@ -1002,7 +1048,7 @@ export const useHealthStore = create(
           }
         }
 
-        triggerGamification('sleepLogged', { xpOverride: 2, module: 'health' }); // Generic daily action
+        triggerGamification('supplementTaken', { xpOverride: 2, module: 'health' });
       },
 
       unlogSupplementTaken: (supplementId, date = null) => {

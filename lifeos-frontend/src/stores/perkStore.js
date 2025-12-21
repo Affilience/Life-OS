@@ -102,6 +102,13 @@ function calculateActiveEffects(unlockedPerksByTree) {
     readingXpBonus: 0,
     deepWorkXpBonus: 0,
     meditationXpBonus: 0,
+    mealLogXpBonus: 0,
+    yogaXpBonus: 0,
+    journalStreakBonus: 0,
+    eventXpBonus: 0,
+    listeningXpBonus: 0,
+    incomeXpBonus: 0,
+    savingsXpBonus: 0,
 
     // Streak bonuses
     streakBonusPerDay: 0,
@@ -162,6 +169,23 @@ function calculateActiveEffects(unlockedPerksByTree) {
     gratitudeXp: 0,
     conversationXp: 0,
     projectXp: 0,
+    macroGoalBonusXp: 0,
+    sleepBonusXp: 0,
+    bookCompletionBonusXp: 0,
+    weeklyReflectionXp: 0,
+    monthlyReviewBonusXp: 0,
+    zenMeditationXp: 0,
+    innovationXp: 0,
+    moodTrackingXp: 0,
+    emotionalInsightXp: 0,
+    eventXp: 0,
+    listeningXp: 0,
+    tripleGratitudeXp: 0,
+    investmentXp: 0,
+    newConnectionXp: 0,
+    presentationXp: 0,
+    mentoringXp: 0,
+    communityXp: 0,
 
     // Keystones and special effects
     keystones: [],
@@ -210,6 +234,13 @@ function calculateActiveEffects(unlockedPerksByTree) {
       if (effect.readingXpBonus) effects.readingXpBonus += effect.readingXpBonus;
       if (effect.deepWorkXpBonus) effects.deepWorkXpBonus += effect.deepWorkXpBonus;
       if (effect.meditationXpBonus) effects.meditationXpBonus += effect.meditationXpBonus;
+      if (effect.mealLogXpBonus) effects.mealLogXpBonus += effect.mealLogXpBonus;
+      if (effect.yogaXpBonus) effects.yogaXpBonus += effect.yogaXpBonus;
+      if (effect.journalStreakBonus) effects.journalStreakBonus += effect.journalStreakBonus;
+      if (effect.eventXpBonus) effects.eventXpBonus += effect.eventXpBonus;
+      if (effect.listeningXpBonus) effects.listeningXpBonus += effect.listeningXpBonus;
+      if (effect.incomeXpBonus) effects.incomeXpBonus += effect.incomeXpBonus;
+      if (effect.savingsXpBonus) effects.savingsXpBonus += effect.savingsXpBonus;
       if (effect.allWorkoutsBonus) effects.cardioXpBonus += effect.allWorkoutsBonus;
       if (effect.allWorkoutsBonus) effects.strengthXpBonus += effect.allWorkoutsBonus;
       if (effect.globalXpBonus) effects.globalXpMultiplier += effect.globalXpBonus;
@@ -259,12 +290,29 @@ function calculateActiveEffects(unlockedPerksByTree) {
 
       // Flat XP bonuses
       if (effect.noteXp) effects.noteXp += effect.noteXp;
+      if (effect.noteLinkBonusXp) effects.noteXp += effect.noteLinkBonusXp;
       if (effect.journalXp) effects.journalXp += effect.journalXp;
       if (effect.gratitudeXp) effects.gratitudeXp += effect.gratitudeXp;
       if (effect.conversationXp) effects.conversationXp += effect.conversationXp;
       if (effect.projectXp) effects.projectXp += effect.projectXp;
       if (effect.linkNotesXp) effects.noteXp += effect.linkNotesXp;
-      if (effect.newConnectionXp) effects.conversationXp += effect.newConnectionXp;
+      if (effect.newConnectionXp) effects.newConnectionXp += effect.newConnectionXp;
+      if (effect.macroGoalBonusXp) effects.macroGoalBonusXp += effect.macroGoalBonusXp;
+      if (effect.sleepBonusXp) effects.sleepBonusXp += effect.sleepBonusXp;
+      if (effect.bookCompletionBonus) effects.bookCompletionBonusXp += effect.bookCompletionBonus;
+      if (effect.weeklyReflectionXp) effects.weeklyReflectionXp += effect.weeklyReflectionXp;
+      if (effect.monthlyReviewBonus) effects.monthlyReviewBonusXp += effect.monthlyReviewBonus;
+      if (effect.zenMeditationXp) effects.zenMeditationXp += effect.zenMeditationXp;
+      if (effect.innovationXp) effects.innovationXp += effect.innovationXp;
+      if (effect.moodTrackingXp) effects.moodTrackingXp += effect.moodTrackingXp;
+      if (effect.emotionalInsightXp) effects.emotionalInsightXp += effect.emotionalInsightXp;
+      if (effect.eventXp) effects.eventXp += effect.eventXp;
+      if (effect.listeningXp) effects.listeningXp += effect.listeningXp;
+      if (effect.tripleGratitudeXp) effects.tripleGratitudeXp += effect.tripleGratitudeXp;
+      if (effect.investmentXp) effects.investmentXp += effect.investmentXp;
+      if (effect.presentationXp) effects.presentationXp += effect.presentationXp;
+      if (effect.mentoringXp) effects.mentoringXp += effect.mentoringXp;
+      if (effect.communityXp) effects.communityXp += effect.communityXp;
 
       // Title unlocks
       if (effect.unlockTitle) {
@@ -617,6 +665,17 @@ const usePerkStore = create(
         if (options.isReading) multiplier += effects.readingXpBonus;
         if (options.isDeepWork) multiplier += effects.deepWorkXpBonus;
         if (options.isMeditation) multiplier += effects.meditationXpBonus;
+        if (options.isMealLog) multiplier += effects.mealLogXpBonus;
+        if (options.isYoga) multiplier += effects.yogaXpBonus;
+        if (options.isEvent) multiplier += effects.eventXpBonus;
+        if (options.isListening) multiplier += effects.listeningXpBonus;
+        if (options.isIncome) multiplier += effects.incomeXpBonus;
+        if (options.isSavings) multiplier += effects.savingsXpBonus;
+
+        // Journal streak bonus
+        if (options.isJournal && options.journalStreak) {
+          multiplier += effects.journalStreakBonus;
+        }
 
         // Duration-based multipliers
         if (options.durationMinutes) {
@@ -686,7 +745,7 @@ const usePerkStore = create(
       /**
        * Get flat XP bonus for specific actions
        */
-      getFlatBonus: (actionType) => {
+      getFlatBonus: (actionType, options = {}) => {
         const effects = get().activeEffects;
 
         switch (actionType) {
@@ -696,12 +755,55 @@ const usePerkStore = create(
           case 'journalEntry':
             return effects.journalXp;
           case 'gratitudeLogged':
+            // Triple gratitude bonus (3+ gratitudes per day)
+            if (options.gratitudeCount >= 3) {
+              return effects.gratitudeXp + effects.tripleGratitudeXp;
+            }
             return effects.gratitudeXp;
           case 'conversation':
-          case 'newConnection':
-            return effects.conversationXp;
+          case 'friendAdded':
+            return effects.newConnectionXp || effects.conversationXp;
           case 'projectCompleted':
             return effects.projectXp;
+          case 'proteinGoalHit':
+          case 'macroGoalHit':
+            return effects.macroGoalBonusXp;
+          case 'sleepLogged':
+            // Bonus for 8hr sleep
+            if (options.sleepHours >= 8) {
+              return effects.sleepBonusXp;
+            }
+            return 0;
+          case 'bookCompleted':
+            return effects.bookCompletionBonusXp;
+          case 'weeklyReflection':
+          case 'reflectionCompleted':
+            return effects.weeklyReflectionXp;
+          case 'monthlyReview':
+            return effects.monthlyReviewBonusXp;
+          case 'meditationCompleted':
+            // Zen meditation bonus (60+ minutes)
+            if (options.durationMinutes >= 60) {
+              return effects.zenMeditationXp;
+            }
+            return 0;
+          case 'innovationCreated':
+          case 'originalWorkCreated':
+            return effects.innovationXp;
+          case 'moodLogged':
+            return effects.moodTrackingXp + (options.hasInsight ? effects.emotionalInsightXp : 0);
+          case 'eventAttended':
+            return effects.eventXp;
+          case 'activeListening':
+            return effects.listeningXp;
+          case 'investmentMade':
+            return effects.investmentXp;
+          case 'presentationGiven':
+            return effects.presentationXp;
+          case 'mentoring':
+            return effects.mentoringXp;
+          case 'communityBuilding':
+            return effects.communityXp;
           default:
             return 0;
         }

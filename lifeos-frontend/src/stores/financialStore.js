@@ -613,7 +613,7 @@ const syncEnvelopeToSupabase = async (monthKey, categoryId, amount) => {
     // Generate a deterministic ID based on user, month, and category
     const envelopeId = `${userId}-${monthKey}-${categoryId}`.replace(/[^a-zA-Z0-9-]/g, '-');
 
-    await supabase
+    const { error } = await supabase
       .from('financial_envelope_budgets')
       .upsert({
         id: envelopeId,
@@ -623,8 +623,13 @@ const syncEnvelopeToSupabase = async (monthKey, categoryId, amount) => {
         allocated_amount: amount,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
+
+    if (error) {
+      // Table may not exist or have different schema - this is OK for now
+      console.warn('[Financial] Could not sync envelope to database:', error.message);
+    }
   } catch (error) {
-    console.error('Error syncing envelope to Supabase:', error);
+    console.warn('[Financial] Error syncing envelope:', error.message);
   }
 };
 

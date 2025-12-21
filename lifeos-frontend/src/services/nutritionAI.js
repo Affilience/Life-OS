@@ -6,6 +6,42 @@
 
 import { supabase } from '../lib/supabase';
 
+// ============================================================================
+// RETRY & ERROR HANDLING
+// ============================================================================
+
+/**
+ * Retry a function with exponential backoff
+ */
+async function withRetry(fn, options = {}) {
+  const { maxRetries = 3, baseDelay = 1000, maxDelay = 10000 } = options;
+  let lastError;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      // Don't retry on client errors (4xx) except 429 (rate limit)
+      if (error.status >= 400 && error.status < 500 && error.status !== 429) {
+        throw error;
+      }
+
+      if (attempt === maxRetries) {
+        throw error;
+      }
+
+      // Exponential backoff with jitter
+      const delay = Math.min(baseDelay * Math.pow(2, attempt) + Math.random() * 500, maxDelay);
+      console.log(`Nutrition API retry ${attempt + 1}/${maxRetries} after ${Math.round(delay)}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
 // Local cache for common foods with full micronutrients (reduces API calls)
 // All values per 100g unless otherwise noted - Data from USDA FoodData Central
 const LOCAL_FOOD_CACHE = {
@@ -721,20 +757,26 @@ export async function parseNutrition(mealDescription) {
     };
   }
 
-  // Step 2: Call Edge Function for uncached items or full meal
+  // Step 2: Call Edge Function for uncached items or full meal (with retry)
   try {
     const descriptionToSend = uncachedItems.length > 0
       ? uncachedItems.join(', ')
       : trimmed;
 
-    const { data, error } = await supabase.functions.invoke('parse-nutrition', {
-      body: { mealDescription: descriptionToSend },
-    });
+    const { data, error } = await withRetry(async () => {
+      const response = await supabase.functions.invoke('parse-nutrition', {
+        body: { mealDescription: descriptionToSend },
+      });
 
-    if (error) {
-      console.error('Edge function error:', error);
-      throw new Error(error.message || 'Failed to parse nutrition');
-    }
+      // Throw on error to trigger retry
+      if (response.error) {
+        const err = new Error(response.error.message || 'Failed to parse nutrition');
+        err.status = response.error.status || 500;
+        throw err;
+      }
+
+      return response;
+    });
 
     if (!data.success) {
       throw new Error(data.error || 'Failed to parse nutrition');

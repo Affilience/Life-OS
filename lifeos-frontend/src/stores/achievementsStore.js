@@ -1586,10 +1586,12 @@ const useAchievementsStore = create(
           });
           const mergedUnlocked = Array.from(unlockedMap.values());
 
-          // MERGE stats: take the higher value between local and Supabase
+          // Use Supabase stats as source of truth to prevent corrupted localStorage values
+          // Only fall back to localStorage for stats that don't exist in Supabase yet
           const mergedStats = { ...localStats };
           Object.entries(supabaseStats).forEach(([key, value]) => {
-            mergedStats[key] = Math.max(mergedStats[key] || 0, value);
+            // Supabase values always win (they're the source of truth)
+            mergedStats[key] = value;
           });
 
           // Calculate totals from merged data
@@ -1650,6 +1652,7 @@ const useAchievementsStore = create(
         // Productivity stats
         deepWorkHours: 0,
         tasksCompleted: 0,
+        projectsCreated: 0,
         projectsCompleted: 0,
         taskStreakDays: 0,
         tasksSingleDay: 0,
@@ -1982,18 +1985,26 @@ const useAchievementsStore = create(
           const totalCredits = achievements.reduce((sum, a) => sum + (a.creditsReward || 0), 0);
 
           if (totalXP > 0 || totalCredits > 0) {
-            // Update cosmic currency
-            const { data: currentCurrency } = await supabase
-              .from('user_cosmic_currency')
-              .select('balance')
-              .eq('user_id', userId)
-              .maybeSingle();
-
-            if (currentCurrency) {
-              await supabase
+            // Update cosmic currency using gamificationStore for consistency
+            try {
+              const gamificationStore = (await import('./gamificationStore')).default;
+              if (gamificationStore && totalCredits > 0) {
+                await gamificationStore.getState().addCredits(totalCredits, 'achievement');
+              }
+            } catch (e) {
+              // Fallback: direct database update
+              const { data: currentCurrency } = await supabase
                 .from('user_cosmic_currency')
-                .update({ balance: currentCurrency.balance + totalCredits })
-                .eq('user_id', userId);
+                .select('cosmic_credits')
+                .eq('user_id', userId)
+                .maybeSingle();
+
+              if (currentCurrency && totalCredits > 0) {
+                await supabase
+                  .from('user_cosmic_currency')
+                  .update({ cosmic_credits: (currentCurrency.cosmic_credits || 0) + totalCredits })
+                  .eq('user_id', userId);
+              }
             }
 
             // Log the achievement rewards in timeline
@@ -2149,6 +2160,62 @@ const useAchievementsStore = create(
         const sorted = locked.sort((a, b) => b.percentComplete - a.percentComplete);
         return sorted.slice(0, limit);
       },
+
+      // Retroactively award credits and trigger equipment unlocks for all unlocked achievements
+      // Call this once to fix missing rewards from past achievements
+      retroactivelyAwardRewards: async () => {
+        const { unlockedAchievements } = get();
+        console.log('[Achievements] Retroactively awarding rewards for', unlockedAchievements.length, 'achievements');
+
+        let totalCredits = 0;
+
+        // Calculate total credits from all unlocked achievements
+        for (const unlock of unlockedAchievements) {
+          const template = ACHIEVEMENT_TEMPLATES.find(t => t.id === unlock.achievementId);
+          if (template?.creditsReward) {
+            totalCredits += template.creditsReward;
+          }
+        }
+
+        console.log('[Achievements] Total credits to award:', totalCredits);
+
+        // Award credits via gamificationStore
+        if (totalCredits > 0) {
+          try {
+            const gamificationStore = (await import('./gamificationStore')).default;
+            if (gamificationStore) {
+              await gamificationStore.getState().addCredits(totalCredits, 'achievement_retroactive');
+              console.log('[Achievements] Awarded', totalCredits, 'retroactive credits');
+            }
+          } catch (e) {
+            console.error('[Achievements] Failed to award retroactive credits:', e);
+          }
+        }
+
+        // Trigger equipment unlock check
+        try {
+          const avatarStore = (await import('./avatarStore')).useAvatarStore;
+          if (avatarStore) {
+            const newUnlocks = await avatarStore.getState().checkUnlocks();
+            console.log('[Achievements] Equipment unlock check complete, new unlocks:', newUnlocks?.length || 0);
+          }
+        } catch (e) {
+          console.error('[Achievements] Failed to check equipment unlocks:', e);
+        }
+
+        // Trigger pet unlock check
+        try {
+          const petStore = (await import('./petStore')).usePetStore;
+          if (petStore) {
+            const petUnlocks = await petStore.getState().checkUnlocks();
+            console.log('[Achievements] Pet unlock check complete, new unlocks:', petUnlocks?.length || 0);
+          }
+        } catch (e) {
+          console.error('[Achievements] Failed to check pet unlocks:', e);
+        }
+
+        return { creditsAwarded: totalCredits };
+      },
     }),
     {
       name: 'achievements-storage',
@@ -2165,7 +2232,54 @@ const useAchievementsStore = create(
 
 // Initialize function for App.jsx
 export const initializeAchievementsStore = async () => {
-  return useAchievementsStore.getState().initializeFromSupabase();
+  // One-time migration: Clear corrupted localStorage stats (v3)
+  // This fixes the issue where Math.max() was keeping corrupted high values
+  const hasStatsMigration = localStorage.getItem('achievements-stats-migration-v3');
+  if (!hasStatsMigration) {
+    console.log('[Achievements] Running stats migration v3 - clearing localStorage stats');
+    // Get the persisted state
+    const persistedData = localStorage.getItem('achievements-storage');
+    if (persistedData) {
+      try {
+        const parsed = JSON.parse(persistedData);
+        if (parsed.state?.stats) {
+          // Clear the stats from persisted state - Supabase will be source of truth
+          parsed.state.stats = {};
+          // Also clear incorrectly unlocked achievements
+          parsed.state.unlockedAchievements = [];
+          parsed.state.achievementProgress = {};
+          parsed.state.totalXPFromAchievements = 0;
+          parsed.state.totalCreditsFromAchievements = 0;
+          localStorage.setItem('achievements-storage', JSON.stringify(parsed));
+          console.log('[Achievements] Cleared corrupted stats and achievements from localStorage');
+        }
+      } catch (e) {
+        console.error('[Achievements] Failed to parse localStorage for migration:', e);
+      }
+    }
+    localStorage.setItem('achievements-stats-migration-v3', 'true');
+    // Also reset the retro-awarded flag so it runs again with clean data
+    localStorage.removeItem('achievements-retro-awarded-v2');
+  }
+
+  await useAchievementsStore.getState().initializeFromSupabase();
+
+  // Check if we need to retroactively award rewards (one-time fix)
+  // v2: Fixed achievement-based equipment unlocks for 'default' method items
+  const hasRetroAwarded = localStorage.getItem('achievements-retro-awarded-v2');
+  if (!hasRetroAwarded) {
+    // Wait a moment for other stores to initialize
+    setTimeout(async () => {
+      try {
+        const result = await useAchievementsStore.getState().retroactivelyAwardRewards();
+        // Always mark as completed after running (even if 0 credits) to prevent re-running
+        localStorage.setItem('achievements-retro-awarded-v2', 'true');
+        console.log('[Achievements] Retroactive rewards applied successfully, credits:', result.creditsAwarded);
+      } catch (e) {
+        console.error('[Achievements] Failed to apply retroactive rewards:', e);
+      }
+    }, 2000);
+  }
 };
 
 export default useAchievementsStore;

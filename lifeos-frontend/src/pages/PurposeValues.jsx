@@ -4,7 +4,7 @@
  * Identity evolution and values alignment
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePurposeStore } from '../stores/purposeStore';
 import { PurposeSetup } from '../components/onboarding/setup';
@@ -26,9 +26,14 @@ import ValuesAssessment from '../components/purpose/ValuesAssessment';
 
 const PurposeValues = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { coreValues } = usePurposeStore();
+  const { coreValues, initializeFromSupabase } = usePurposeStore();
   const navigate = useNavigate();
   const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
+
+  // Initialize from Supabase on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
 
   // Show setup wizard if purpose module not configured during onboarding
   const showSetup = hasSeenWelcome && !isOnboardingComplete && !isModuleComplete('purpose');

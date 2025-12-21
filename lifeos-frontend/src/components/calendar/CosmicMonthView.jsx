@@ -20,7 +20,9 @@ import CreateTimeBlockModal from './CreateTimeBlockModal';
 export default function CosmicMonthView({ onNavigateToDay }) {
   const {
     timeBlocks,
+    events,
     getBlocksForDate,
+    getEventsForDate,
   } = useCalendarStore();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -54,12 +56,15 @@ export default function CosmicMonthView({ onNavigateToDay }) {
       const date = new Date(year, month, day);
       const dateStr = date.toISOString().split('T')[0];
       const dayBlocks = getBlocksForDate(dateStr);
+      const dayEvents = getEventsForDate ? getEventsForDate(dateStr) :
+        (events || []).filter(e => e.startTime?.split('T')[0] === dateStr);
 
       days.push({
         day,
         date,
         dateStr,
         blocks: dayBlocks,
+        events: dayEvents,
         totalMinutes: dayBlocks.reduce((sum, b) => sum + (b.plannedDuration || 0), 0),
         completedBlocks: dayBlocks.filter(b => b.status === 'completed').length,
         deepWorkBlocks: dayBlocks.filter(b => b.type === 'deep_work').length,
@@ -67,7 +72,7 @@ export default function CosmicMonthView({ onNavigateToDay }) {
     }
 
     return days;
-  }, [year, month, daysInMonth, adjustedStartDay, getBlocksForDate]);
+  }, [year, month, daysInMonth, adjustedStartDay, getBlocksForDate, getEventsForDate, events]);
 
   // Monthly stats
   const monthlyStats = useMemo(() => {
@@ -308,6 +313,7 @@ export default function CosmicMonthView({ onNavigateToDay }) {
               const isEmpty = dayData === null;
               const today = dayData && isToday(dayData.day);
               const hasBlocks = dayData && dayData.blocks.length > 0;
+              const hasEvents = dayData && dayData.events && dayData.events.length > 0;
               const isSelected = selectedDay && dayData && selectedDay.dateStr === dayData.dateStr;
 
               return (
@@ -356,6 +362,28 @@ export default function CosmicMonthView({ onNavigateToDay }) {
                         </div>
                       )}
 
+                      {/* Event indicators */}
+                      {hasEvents && (
+                        <div className="space-y-1 mt-1">
+                          {dayData.events.slice(0, 2).map((event, i) => (
+                            <div
+                              key={event.id || i}
+                              className="h-1.5 sm:h-2 rounded-full"
+                              style={{
+                                backgroundColor: event.color || '#06b6d4',
+                                opacity: event.allDay ? 1 : 0.7,
+                              }}
+                              title={event.title}
+                            />
+                          ))}
+                          {dayData.events.length > 2 && (
+                            <div className="text-xs text-cyan-400">
+                              +{dayData.events.length - 2} events
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Time summary (desktop only) */}
                       {hasBlocks && dayData.totalMinutes > 0 && (
                         <div className="hidden sm:flex items-center gap-1 mt-1 text-xs text-text-muted">
@@ -372,7 +400,7 @@ export default function CosmicMonthView({ onNavigateToDay }) {
         </div>
 
         {/* Selected Day Details */}
-        {selectedDay && selectedDay.blocks.length > 0 && (
+        {selectedDay && (selectedDay.blocks.length > 0 || (selectedDay.events && selectedDay.events.length > 0)) && (
           <div className="mt-4 bg-bg-elevated/40 backdrop-blur-sm border border-border/50 rounded-xl p-4">
             <h3 className="text-sm font-semibold text-text-primary mb-3">
               {selectedDay.date.toLocaleDateString('en-GB', {
@@ -381,27 +409,63 @@ export default function CosmicMonthView({ onNavigateToDay }) {
                 month: 'long'
               })}
             </h3>
-            <div className="space-y-2">
-              {selectedDay.blocks.map((block, i) => (
-                <div
-                  key={block.id || i}
-                  className="flex items-center gap-3 p-2 bg-bg-0/50 rounded-lg"
-                >
-                  <div className={`w-2 h-8 rounded-full ${getBlockTypeColor(block.type)}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-text-primary truncate">
-                      {block.title}
-                    </div>
-                    <div className="text-xs text-text-muted">
-                      {block.startTime} - {block.endTime}
-                      {block.status === 'completed' && (
-                        <span className="ml-2 text-green-400">Completed</span>
-                      )}
+
+            {/* Events */}
+            {selectedDay.events && selectedDay.events.length > 0 && (
+              <div className="space-y-2 mb-3">
+                <div className="text-xs text-cyan-400 font-medium uppercase tracking-wider">Events</div>
+                {selectedDay.events.map((event, i) => (
+                  <div
+                    key={event.id || i}
+                    className="flex items-center gap-3 p-2 bg-bg-0/50 rounded-lg"
+                  >
+                    <div
+                      className="w-2 h-8 rounded-full"
+                      style={{ backgroundColor: event.color || '#06b6d4' }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-text-primary truncate">
+                        {event.title}
+                      </div>
+                      <div className="text-xs text-text-muted">
+                        {event.allDay ? 'All day' : (
+                          event.startTime ? new Date(event.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''
+                        )}
+                        {event.location && <span className="ml-2">📍 {event.location}</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {/* Time Blocks */}
+            {selectedDay.blocks.length > 0 && (
+              <div className="space-y-2">
+                {selectedDay.events && selectedDay.events.length > 0 && (
+                  <div className="text-xs text-primary-400 font-medium uppercase tracking-wider">Time Blocks</div>
+                )}
+                {selectedDay.blocks.map((block, i) => (
+                  <div
+                    key={block.id || i}
+                    className="flex items-center gap-3 p-2 bg-bg-0/50 rounded-lg"
+                  >
+                    <div className={`w-2 h-8 rounded-full ${getBlockTypeColor(block.type)}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-text-primary truncate">
+                        {block.title}
+                      </div>
+                      <div className="text-xs text-text-muted">
+                        {block.startTime} - {block.endTime}
+                        {block.status === 'completed' && (
+                          <span className="ml-2 text-green-400">Completed</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

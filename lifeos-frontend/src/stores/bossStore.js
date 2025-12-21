@@ -95,9 +95,11 @@ export const useBossStore = create(
                 defeats: stats.defeats || 0,
                 totalDamageDealt: stats.total_damage_dealt || 0,
                 totalTaps: stats.total_taps || 0,
+                totalCrits: stats.total_crits || 0,
                 bossVictories: stats.boss_victories || {},
                 fastestVictory: stats.fastest_victory_seconds,
                 highestDamage: stats.highest_damage_single_battle || 0,
+                highestCombo: stats.highest_combo || 0,
               },
             });
           }
@@ -401,6 +403,7 @@ export const useBossStore = create(
             defeats: battleStats.defeats + (isVictory ? 0 : 1),
             totalDamageDealt: battleStats.totalDamageDealt + currentBattle.totalDamageDealt,
             totalTaps: battleStats.totalTaps + currentBattle.tapCount,
+            totalCrits: (battleStats.totalCrits || 0) + (currentBattle.critCount || 0),
             bossVictories: newBossVictories,
             fastestVictory: isVictory
               ? (battleStats.fastestVictory
@@ -420,6 +423,7 @@ export const useBossStore = create(
               defeats: newStats.defeats,
               total_damage_dealt: newStats.totalDamageDealt,
               total_taps: newStats.totalTaps,
+              total_crits: newStats.totalCrits,
               boss_victories: newStats.bossVictories,
               fastest_victory_seconds: newStats.fastestVictory,
               highest_damage_single_battle: newStats.highestDamage,

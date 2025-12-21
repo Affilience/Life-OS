@@ -620,6 +620,7 @@ export default function EquipmentUnlockToast() {
                         duration: 1.5,
                         repeat: Infinity,
                         ease: 'easeInOut',
+                        type: 'tween',
                       }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.98 }}

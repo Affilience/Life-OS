@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, BookOpen, Search, ArrowLeft, Settings } from 'lucide-react';
+import { Plus, BookOpen, Search, ArrowLeft, Settings, X } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import SimpleJournalBook from '../components/journal/SimpleJournalBook';
 import JournalCoverCustomizer from '../components/journal/JournalCoverCustomizer';
-import { journalDB, settingsDB } from '../db/journalDB';
+import { journalDB, settingsDB, journalSync } from '../db/journalDB';
 import { JournalSetup } from '../components/onboarding/setup';
 import useIntegratedOnboardingStore from '../stores/integratedOnboardingStore';
 import './JournalBookPage.css';
@@ -13,6 +13,9 @@ export default function JournalBookPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [showCoverCustomizer, setShowCoverCustomizer] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [coverSettings, setCoverSettings] = useState(null);
   const { isModuleComplete, hasSeenWelcome, isOnboardingComplete } = useIntegratedOnboardingStore();
 
@@ -26,10 +29,20 @@ export default function JournalBookPage() {
     // Load cover settings and cleanup sample entries
     const initialize = async () => {
       try {
-        // Load cover settings
-        const savedCoverSettings = await settingsDB.get('journalCover');
-        if (savedCoverSettings) {
-          setCoverSettings(savedCoverSettings);
+        // Try to load cover settings from Supabase first
+        const supabaseCoverSettings = await journalSync.fetchCoverSettings();
+        if (supabaseCoverSettings && Object.keys(supabaseCoverSettings).length > 0) {
+          setCoverSettings(supabaseCoverSettings);
+          // Also save to local for offline access
+          await settingsDB.set('journalCover', supabaseCoverSettings);
+        } else {
+          // Fall back to local settings
+          const savedCoverSettings = await settingsDB.get('journalCover');
+          if (savedCoverSettings) {
+            setCoverSettings(savedCoverSettings);
+            // Sync to Supabase if local settings exist but Supabase doesn't have them
+            await journalSync.syncCoverSettings(savedCoverSettings);
+          }
         }
 
         // Remove any sample entries if they exist
@@ -65,9 +78,29 @@ export default function JournalBookPage() {
   };
 
   const handleSaveCoverSettings = async (settings) => {
+    // Save locally
     await settingsDB.set('journalCover', settings);
     setCoverSettings(settings);
     setShowCoverCustomizer(false);
+    // Sync to Supabase in background
+    await journalSync.syncCoverSettings(settings);
+  };
+
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      const results = await journalDB.searchEntries(query);
+      setSearchResults(results);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const handleSearchResultClick = (entry) => {
+    setShowSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    navigate('/journal/write', { state: { entry } });
   };
 
   if (loading) {
@@ -120,7 +153,11 @@ export default function JournalBookPage() {
           >
             <Settings size={20} />
           </button>
-          <button className="icon-btn" title="Search entries">
+          <button
+            className="icon-btn"
+            title="Search entries"
+            onClick={() => setShowSearch(true)}
+          >
             <Search size={20} />
           </button>
           <button onClick={handleNewEntry} className="new-entry-btn" data-tour="write-entry-btn">
@@ -147,6 +184,53 @@ export default function JournalBookPage() {
           onSave={handleSaveCoverSettings}
           onClose={() => setShowCoverCustomizer(false)}
         />
+      )}
+
+      {/* Search Modal */}
+      {showSearch && (
+        <div className="journal-search-overlay" onClick={() => setShowSearch(false)}>
+          <div className="journal-search-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="search-modal-header">
+              <div className="search-input-wrapper">
+                <Search size={20} />
+                <input
+                  type="text"
+                  placeholder="Search entries..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <button className="close-search-btn" onClick={() => setShowSearch(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="search-results">
+              {searchQuery && searchResults.length === 0 && (
+                <div className="no-results">No entries found matching "{searchQuery}"</div>
+              )}
+              {searchResults.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="search-result-item"
+                  onClick={() => handleSearchResultClick(entry)}
+                >
+                  <div className="result-title">{entry.title || 'Untitled Entry'}</div>
+                  <div className="result-meta">
+                    <span className="result-date">{entry.date}</span>
+                    {entry.wordCount > 0 && (
+                      <span className="result-words">{entry.wordCount} words</span>
+                    )}
+                  </div>
+                  <div className="result-preview">
+                    {entry.content?.substring(0, 100)}
+                    {entry.content?.length > 100 && '...'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Stats Footer */}

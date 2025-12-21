@@ -16,9 +16,12 @@ const getRestConfig = () => {
 const { baseUrl, token } = getRestConfig();
 
 /**
- * Execute a Redis command via Upstash REST API
+ * Execute a Redis command via Upstash REST API with timeout
  */
 async function redisCommand(command, ...args) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
   try {
     const response = await fetch(`${baseUrl}`, {
       method: 'POST',
@@ -27,7 +30,10 @@ async function redisCommand(command, ...args) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify([command, ...args]),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Redis error: ${response.statusText}`);
@@ -36,15 +42,23 @@ async function redisCommand(command, ...args) {
     const data = await response.json();
     return data.result;
   } catch (error) {
-    console.error('Redis command failed:', error);
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.warn('Redis command timed out');
+    } else {
+      console.error('Redis command failed:', error);
+    }
     throw error;
   }
 }
 
 /**
- * Pipeline multiple commands for efficiency
+ * Pipeline multiple commands for efficiency with timeout
  */
 async function redisPipeline(commands) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for pipeline
+
   try {
     const response = await fetch(`${baseUrl}/pipeline`, {
       method: 'POST',
@@ -53,7 +67,10 @@ async function redisPipeline(commands) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(commands),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Redis pipeline error: ${response.statusText}`);
@@ -62,7 +79,12 @@ async function redisPipeline(commands) {
     const data = await response.json();
     return data.map(r => r.result);
   } catch (error) {
-    console.error('Redis pipeline failed:', error);
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.warn('Redis pipeline timed out');
+    } else {
+      console.error('Redis pipeline failed:', error);
+    }
     throw error;
   }
 }

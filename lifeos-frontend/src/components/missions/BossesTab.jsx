@@ -2,7 +2,7 @@
  * Bosses Tab - Boss battle selection and stats within Missions page
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Swords,
@@ -17,6 +17,7 @@ import {
   Clock,
   TrendingUp,
   Flame,
+  Loader2,
 } from 'lucide-react';
 import { useBossStore } from '../../stores/bossStore';
 import { useAvatarStore } from '../../stores/avatarStore';
@@ -147,12 +148,17 @@ const BossCard = ({ boss, isLocked, isDefeated, defeatCount, playerLevel, onSele
 };
 
 export default function BossesTab() {
-  const { battleStats, getDefeatedBosses } = useBossStore();
+  const { battleStats, getDefeatedBosses, initializeFromSupabase, isLoading } = useBossStore();
   const { level, equipped } = useAvatarStore();
   const { activePet } = usePetStore();
 
   const [selectedBoss, setSelectedBoss] = useState(null);
   const [showBattle, setShowBattle] = useState(false);
+
+  // Ensure fresh data is loaded from Supabase when tab is viewed
+  useEffect(() => {
+    initializeFromSupabase();
+  }, [initializeFromSupabase]);
 
   // Calculate player stats
   const playerStats = calculatePlayerStats(level, equipped, activePet, EQUIPMENT_DATABASE);
@@ -183,25 +189,25 @@ export default function BossesTab() {
         <StatCard
           icon={Trophy}
           label="Victories"
-          value={battleStats.victories || 0}
+          value={isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (battleStats.victories || 0)}
           color="text-yellow-400"
         />
         <StatCard
           icon={Skull}
           label="Defeats"
-          value={battleStats.defeats || 0}
+          value={isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (battleStats.defeats || 0)}
           color="text-red-400"
         />
         <StatCard
           icon={Clock}
           label="Best Time"
-          value={battleStats.fastestVictory ? `${battleStats.fastestVictory}s` : '-'}
+          value={isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (battleStats.fastestVictory ? `${battleStats.fastestVictory}s` : '-')}
           color="text-blue-400"
         />
         <StatCard
           icon={Target}
           label="Total Taps"
-          value={battleStats.totalTaps?.toLocaleString() || 0}
+          value={isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (battleStats.totalTaps?.toLocaleString() || 0)}
           color="text-purple-400"
         />
       </div>

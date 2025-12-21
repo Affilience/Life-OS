@@ -19,6 +19,7 @@ import { createPortal } from 'react-dom';
 import { Star, Trophy, Zap, Flame, Target, Crown, Sparkles, TrendingUp, CheckCircle } from 'lucide-react';
 import { setCelebrationTrigger } from '../../hooks/useGamification';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
+import useSettingsStore from '../../stores/settingsStore';
 import {
   StreakExtendedCelebration,
   QuestCompletedCelebration,
@@ -407,9 +408,18 @@ export function CelebrationProvider({ children }) {
   const [currentCelebration, setCurrentCelebration] = useState(null);
   const isProcessingRef = useRef(false);
 
+  // XP batching state
+  const xpBatchRef = useRef({ totalXP: 0, actions: [], modules: new Set() });
+  const xpBatchTimerRef = useRef(null);
+
   // Get mode visibility settings
   const mode = useGamificationModeStore((state) => state.mode);
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
+
+  // Get XP toast settings
+  const xpToastEnabled = useSettingsStore((state) => state.settings?.notifications?.xpToastEnabled ?? true);
+  const xpToastMinThreshold = useSettingsStore((state) => state.settings?.notifications?.xpToastMinThreshold ?? 15);
+  const xpToastBatchWindow = useSettingsStore((state) => state.settings?.notifications?.xpToastBatchWindow ?? 2000);
 
   // Process celebration queue
   const processQueue = useCallback(() => {
@@ -486,6 +496,86 @@ export function CelebrationProvider({ children }) {
         });
       }
     },
+    // XP gained notification (for non-level-up XP gains)
+    // Uses batching to combine multiple XP gains within a time window
+    xpGained: ({ amount, action, module }) => {
+      // Check if XP toasts are enabled
+      if (!xpToastEnabled || !visibility.showAchievementPopups || amount <= 0) {
+        return;
+      }
+
+      // Get action-friendly name
+      const actionNames = {
+        budgetCreated: 'Budget Created',
+        incomeLogged: 'Income Logged',
+        expenseLogged: 'Expense Logged',
+        savingsGoalCreated: 'Savings Goal Created',
+        savingsGoalCompleted: 'Savings Goal Completed',
+        savingsContribution: 'Savings Contribution',
+        sinkingFundCreated: 'Sinking Fund Created',
+        sinkingFundContribution: 'Fund Contribution',
+        taskCompleted: 'Task Complete',
+        workoutCompleted: 'Workout Complete',
+        mealLogged: 'Meal Logged',
+        journalEntry: 'Journal Entry',
+        bookCompleted: 'Book Completed',
+        noteCreated: 'Note Created',
+        practiceSession: 'Practice Session',
+        articleRead: 'Article Read',
+        ideaCaptured: 'Idea Captured',
+        waterLogged: 'Water Logged',
+        sleepLogged: 'Sleep Logged',
+        prSet: 'PR Set',
+        questCompleted: 'Quest Complete',
+      };
+      const actionName = actionNames[action] || action?.replace(/([A-Z])/g, ' $1').trim() || 'Action';
+
+      // Add to batch
+      xpBatchRef.current.totalXP += amount;
+      xpBatchRef.current.actions.push(actionName);
+      if (module) {
+        xpBatchRef.current.modules.add(module);
+      }
+
+      // Clear existing timer and set new one
+      if (xpBatchTimerRef.current) {
+        clearTimeout(xpBatchTimerRef.current);
+      }
+
+      xpBatchTimerRef.current = setTimeout(() => {
+        const batch = xpBatchRef.current;
+
+        // Only show toast if total XP meets threshold
+        if (batch.totalXP >= xpToastMinThreshold) {
+          // Create description from batched actions
+          const uniqueActions = [...new Set(batch.actions)];
+          const description = uniqueActions.length === 1
+            ? uniqueActions[0]
+            : uniqueActions.length <= 3
+              ? uniqueActions.join(', ')
+              : `${uniqueActions.slice(0, 2).join(', ')} +${uniqueActions.length - 2} more`;
+
+          // Determine variant based on most common module
+          const modulesArray = [...batch.modules];
+          const primaryModule = modulesArray[0] || 'general';
+
+          setAchievement({
+            title: `+${batch.totalXP} XP`,
+            description,
+            icon: Sparkles,
+            variant: primaryModule === 'financial' ? 'green' :
+                     primaryModule === 'health' ? 'blue' :
+                     primaryModule === 'productivity' ? 'gold' :
+                     primaryModule === 'knowledge' ? 'purple' : 'gold',
+            duration: 2500,
+          });
+        }
+
+        // Reset batch
+        xpBatchRef.current = { totalXP: 0, actions: [], modules: new Set() };
+        xpBatchTimerRef.current = null;
+      }, xpToastBatchWindow);
+    },
 
     // Duolingo-style celebrations (queued)
     streakExtended: (options) => {
@@ -515,7 +605,16 @@ export function CelebrationProvider({ children }) {
         setCelebrationQueue(prev => [...prev, ...filtered]);
       }
     },
-  }), [visibility]);
+  }), [visibility, xpToastEnabled, xpToastMinThreshold, xpToastBatchWindow]);
+
+  // Cleanup batch timer on unmount
+  useEffect(() => {
+    return () => {
+      if (xpBatchTimerRef.current) {
+        clearTimeout(xpBatchTimerRef.current);
+      }
+    };
+  }, []);
 
   // Register celebration trigger with gamification system
   useEffect(() => {

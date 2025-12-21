@@ -58,7 +58,7 @@ export default function HealthDashboard() {
     // Calculate weekly calories from meals
     const weeklyCalories = last7Days.map(date => {
       const dayMeals = (meals || []).filter(m => m.timestamp?.startsWith(date));
-      const totalCal = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+      const totalCal = dayMeals.reduce((sum, m) => sum + (m.totalCalories || m.calories || 0), 0);
       const dayOfWeek = new Date(date).getDay();
       return { label: dayLabels[dayOfWeek], value: totalCal || 0 };
     });
@@ -80,10 +80,10 @@ export default function HealthDashboard() {
     // Today's meals for nutrition
     const todayStr = today.toISOString().split('T')[0];
     const todayMeals = (meals || []).filter(m => m.timestamp?.startsWith(todayStr));
-    const todayCalories = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
-    const todayProtein = todayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
-    const todayCarbs = todayMeals.reduce((sum, m) => sum + (m.carbs || 0), 0);
-    const todayFat = todayMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
+    const todayCalories = todayMeals.reduce((sum, m) => sum + (m.totalCalories || m.calories || 0), 0);
+    const todayProtein = todayMeals.reduce((sum, m) => sum + (m.totalProtein || m.protein || 0), 0);
+    const todayCarbs = todayMeals.reduce((sum, m) => sum + (m.totalCarbs || m.carbs || 0), 0);
+    const todayFat = todayMeals.reduce((sum, m) => sum + (m.totalFat || m.fat || 0), 0);
 
     // Calculate active calories burned from workouts (strength + cardio)
     const todayStrengthWorkouts = strengthWorkoutsThisWeek.filter(w => w.date?.startsWith(todayStr));

@@ -20,7 +20,7 @@ import CosmicTimeBlock from './CosmicTimeBlock';
 import CreateTimeBlockModal from './CreateTimeBlockModal';
 
 export default function CosmicDayView({ initialDate }) {
-  const { getBlocksForDate, getPlannedTimeForDate, getBufferPercentage } =
+  const { getBlocksForDate, getEventsForDate, getPlannedTimeForDate, getBufferPercentage } =
     useCalendarStore();
   const [selectedDate, setSelectedDate] = useState(initialDate || new Date());
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -76,6 +76,7 @@ export default function CosmicDayView({ initialDate }) {
 
   const dateStr = selectedDate.toISOString().split('T')[0];
   const dayBlocks = getBlocksForDate(dateStr);
+  const dayEvents = getEventsForDate ? getEventsForDate(dateStr) : [];
   const plannedMinutes = getPlannedTimeForDate(dateStr);
   const bufferPct = getBufferPercentage(dateStr);
 
@@ -222,6 +223,28 @@ export default function CosmicDayView({ initialDate }) {
         </div>
       </div>
 
+      {/* All-Day Events */}
+      {dayEvents.filter(e => e.allDay).length > 0 && (
+        <div className="relative z-10 px-4 md:px-6 py-3 border-b border-border/50 bg-bg-elevated/20">
+          <div className="text-xs text-text-muted mb-2">All-Day Events</div>
+          <div className="flex flex-wrap gap-2">
+            {dayEvents.filter(e => e.allDay).map((event) => (
+              <div
+                key={event.id}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium"
+                style={{
+                  backgroundColor: `${event.color || '#8b5cf6'}20`,
+                  borderLeft: `3px solid ${event.color || '#8b5cf6'}`,
+                  color: event.color || '#8b5cf6',
+                }}
+              >
+                {event.title}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Time Grid */}
       <div className="flex-1 overflow-auto relative z-10 -webkit-overflow-scrolling-touch">
         <div className="min-w-0 md:min-w-[600px] lg:min-w-[800px] flex">
@@ -277,6 +300,44 @@ export default function CosmicDayView({ initialDate }) {
                     }}
                   />
                 ))}
+
+                {/* Render Timed Events */}
+                {dayEvents.filter(e => !e.allDay && e.startTime).map((event) => {
+                  const startHour = parseInt(event.startTime?.split('T')[1]?.split(':')[0] || '0');
+                  const startMinute = parseInt(event.startTime?.split('T')[1]?.split(':')[1] || '0');
+                  const endHour = parseInt(event.endTime?.split('T')[1]?.split(':')[0] || startHour + 1);
+                  const endMinute = parseInt(event.endTime?.split('T')[1]?.split(':')[1] || '0');
+
+                  const top = (startHour - 6) * 80 + (startMinute / 60) * 80;
+                  const duration = (endHour - startHour) * 60 + (endMinute - startMinute);
+                  const height = Math.max((duration / 60) * 80, 30);
+
+                  if (startHour < 6 || startHour >= 23) return null;
+
+                  return (
+                    <div
+                      key={event.id}
+                      className="absolute left-1 right-1 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                      style={{
+                        top: `${top}px`,
+                        height: `${height}px`,
+                        backgroundColor: `${event.color || '#8b5cf6'}30`,
+                        borderLeft: `3px solid ${event.color || '#8b5cf6'}`,
+                      }}
+                    >
+                      <div className="p-2">
+                        <div className="text-sm font-medium text-text-primary truncate">
+                          {event.title}
+                        </div>
+                        {event.location && (
+                          <div className="text-xs text-text-muted truncate">
+                            📍 {event.location}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Current Time Indicator (if today) */}

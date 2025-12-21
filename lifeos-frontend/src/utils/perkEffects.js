@@ -21,8 +21,12 @@ const ACTION_TO_TREE = {
   weightLogged: 'body',
   caloriesTracked: 'body',
   proteinGoalHit: 'body',
+  macroGoalHit: 'body',
   cardioCompleted: 'body',
+  cardioSession: 'body',
   strengthTraining: 'body',
+  prSet: 'body',
+  yogaSession: 'body',
 
   // Mind tree actions
   bookCompleted: 'mind',
@@ -32,12 +36,15 @@ const ACTION_TO_TREE = {
   podcastCompleted: 'mind',
   courseCompleted: 'mind',
   deepWorkMinutes: 'mind',
+  deepWorkHour: 'mind',
   pomodoroCompleted: 'mind',
 
   // Spirit tree actions
-  journalEntry: 'mind', // Journal gives MIND and SPIRIT
+  journalEntry: 'spirit',
   gratitudeLogged: 'spirit',
   reflectionCompleted: 'spirit',
+  weeklyReflection: 'spirit',
+  monthlyReview: 'spirit',
   moodLogged: 'spirit',
   meditationCompleted: 'spirit',
 
@@ -47,7 +54,10 @@ const ACTION_TO_TREE = {
   budgetCreated: 'wealth',
   savingsGoalCreated: 'wealth',
   savingsGoalCompleted: 'wealth',
+  savingsContribution: 'wealth',
   investmentMade: 'wealth',
+  budgetFollowed: 'wealth',
+  portfolioGrowth: 'wealth',
 
   // Social tree actions
   friendAdded: 'social',
@@ -56,18 +66,26 @@ const ACTION_TO_TREE = {
   conversationLogged: 'social',
   eventAttended: 'social',
   presentationGiven: 'social',
+  activeListening: 'social',
+  mentoring: 'social',
+  communityBuilding: 'social',
+  relationshipMilestone: 'social',
 
   // Craft tree actions
   practiceSession: 'craft',
   skillLevelUp: 'craft',
   skillMastered: 'craft',
   projectCompleted: 'craft',
+  innovationCreated: 'craft',
+  originalWorkCreated: 'craft',
+  feedbackReceived: 'craft',
 
   // General
   taskCompleted: 'mind',
   timeBlockCompleted: 'mind',
   eventCreated: 'mind',
   scheduleFollowed: 'spirit',
+  questCompleted: null, // Quests give XP directly
   loginDay: null, // No tree
   consecutiveDay: null, // No tree
 };
@@ -100,6 +118,14 @@ export function calculatePerkBonusXP(baseXP, action, options = {}) {
       isMeditation: action === 'meditationCompleted',
       isWorkout: action === 'workoutCompleted',
       isPractice: action === 'practiceSession',
+      isMealLog: action === 'mealLogged',
+      isYoga: options.workoutType === 'yoga',
+      isEvent: action === 'eventAttended',
+      isListening: action === 'activeListening',
+      isIncome: action === 'incomeLogged',
+      isSavings: action === 'savingsContribution' || action === 'savingsGoalCompleted',
+      isJournal: action === 'journalEntry',
+      journalStreak: options.journalStreak,
     });
 
     if (multiplier !== 1) {
@@ -111,7 +137,7 @@ export function calculatePerkBonusXP(baseXP, action, options = {}) {
   }
 
   // Get flat bonuses for specific actions
-  flatBonus = perkStore.getFlatBonus(action);
+  flatBonus = perkStore.getFlatBonus(action, options);
   if (flatBonus > 0) {
     breakdown.push({
       source: 'Perk flat bonus',

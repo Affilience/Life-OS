@@ -143,12 +143,14 @@
 .nova-chat {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   background: #0a0a0a;
   min-height: 200px;
   max-height: 350px;
   font-size: 14px;
   line-height: 1.5;
+  word-break: break-word;
 }
 
 .nova-chat::-webkit-scrollbar {

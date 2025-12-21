@@ -32,10 +32,10 @@ export default function NutritionAnalytics() {
     // Aggregate meals by day
     const dailyData = last7Days.map(({ dateStr, dayOfWeek }) => {
       const dayMeals = (meals || []).filter(m => m.timestamp?.startsWith(dateStr));
-      const calories = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
-      const protein = dayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
-      const carbs = dayMeals.reduce((sum, m) => sum + (m.carbs || 0), 0);
-      const fat = dayMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
+      const calories = dayMeals.reduce((sum, m) => sum + (m.totalCalories || m.calories || 0), 0);
+      const protein = dayMeals.reduce((sum, m) => sum + (m.totalProtein || m.protein || 0), 0);
+      const carbs = dayMeals.reduce((sum, m) => sum + (m.totalCarbs || m.carbs || 0), 0);
+      const fat = dayMeals.reduce((sum, m) => sum + (m.totalFat || m.fat || 0), 0);
 
       // Calculate adherence as % of target (100% = perfect)
       const calorieAdherence = targetCalories > 0 ? Math.min(100, (calories / targetCalories) * 100) : 0;

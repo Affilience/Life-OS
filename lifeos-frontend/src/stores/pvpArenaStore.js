@@ -93,9 +93,9 @@ const usePvpArenaStore = create((set, get) => ({
   fetchPlayerProfile: async (userId) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url, current_level')
-        .eq('user_id', userId)
+        .from('user_profiles')
+        .select('id, display_name, avatar_url, current_level')
+        .eq('id', userId)
         .single();
 
       if (error) {
@@ -144,13 +144,13 @@ const usePvpArenaStore = create((set, get) => ({
       let profileMap = {};
       if (opponentIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', opponentIds);
+          .from('user_profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', opponentIds);
 
         if (profiles) {
           profileMap = profiles.reduce((acc, p) => {
-            acc[p.user_id] = p;
+            acc[p.id] = p;
             return acc;
           }, {});
         }

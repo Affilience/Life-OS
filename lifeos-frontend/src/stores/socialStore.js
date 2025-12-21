@@ -103,16 +103,15 @@ export const useSocialStore = create(
           .from('user_profiles')
           .select('*')
           .eq('id', userId)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching social profile:', error);
           return;
         }
 
-        if (data) {
-          set({ socialProfile: data });
-        }
+        // Profile might not exist yet for new users - that's okay
+        set({ socialProfile: data || null });
       },
 
       updateSocialProfile: async (updates) => {

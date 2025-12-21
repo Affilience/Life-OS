@@ -3,7 +3,7 @@
  * Track goals throughout the year with progress visualization and gamification
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResolutionsSetup } from '../components/onboarding/setup';
@@ -56,7 +56,13 @@ export default function Resolutions() {
     getStats,
     getYearProgress,
     getDaysRemaining,
+    initializeFromSupabase,
   } = useResolutionStore();
+
+  // Initialize from Supabase on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
 
   const stats = getStats();
   const yearProgress = getYearProgress();

@@ -223,6 +223,7 @@ export function CosmicFlame({
           duration: 0.4,
           repeat: Infinity,
           ease: 'easeInOut',
+          type: 'tween',
         }}
       >
         {/* Legendary rainbow filter */}

@@ -652,15 +652,21 @@ export const usePetStore = create(
             const userId = await getCurrentUserId();
             if (!userId) return true;
 
-            await supabase.from('user_pets').upsert({
+            // Try to sync to database (table may not exist yet)
+            const { error: petError } = await supabase.from('user_pets').upsert({
               user_id: userId,
               pet_id: petId,
               is_active: false,
               unlocked_at: new Date().toISOString(),
             }, { onConflict: 'user_id,pet_id' });
 
-            // Log to timeline
-            await supabase.from('timeline').insert({
+            if (petError) {
+              // Table may not exist - this is OK, local state is sufficient for now
+              console.warn('[PetStore] Could not sync pet to database:', petError.message);
+            }
+
+            // Log to timeline (may fail if table doesn't exist)
+            const { error: timelineError } = await supabase.from('timeline').insert({
               user_id: userId,
               module: 'companions',
               entry_type: 'pet_unlocked',
@@ -673,8 +679,12 @@ export const usePetStore = create(
                 bonus: pet.bonusDescription,
               },
             });
+
+            if (timelineError) {
+              console.warn('[PetStore] Could not log pet unlock to timeline:', timelineError.message);
+            }
           } catch (error) {
-            console.error('Error syncing pet unlock to database:', error);
+            console.warn('[PetStore] Error syncing pet unlock:', error.message);
           }
 
           return true;
@@ -903,7 +913,10 @@ export const usePetStore = create(
         const perkState = perkStore.getState();
 
         const stats = achievementsState.stats || {};
-        const unlockedAchievements = achievementsState.unlockedAchievements || [];
+        // Extract achievement IDs from objects (unlockedAchievements is array of { achievementId, ... })
+        const unlockedAchievements = (achievementsState.unlockedAchievements || [])
+          .map(a => a.achievementId || a.id || a)
+          .filter(Boolean);
         const level = avatarState.level || 1;
 
         const newUnlocks = [];

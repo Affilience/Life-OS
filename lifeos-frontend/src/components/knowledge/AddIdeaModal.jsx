@@ -1,22 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Lightbulb, Tag, Star, Target } from 'lucide-react';
 import Modal from '../shared/Modal';
 import Button from '../shared/Button';
 import './AddIdeaModal.css';
 
-const AddIdeaModal = ({ isOpen, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: 'Technology',
-    priority: 'medium',
-    tags: '',
-    rating: 0,
-    notes: '',
-    nextActions: ''
-  });
+const initialFormData = {
+  title: '',
+  description: '',
+  category: 'Technology',
+  priority: 'medium',
+  tags: '',
+  rating: 0,
+  notes: '',
+  nextActions: '',
+  stage: 'seed'
+};
 
+const AddIdeaModal = ({ isOpen, onClose, onSubmit, editIdea }) => {
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editIdea) {
+      setFormData({
+        title: editIdea.title || '',
+        description: editIdea.description || '',
+        category: editIdea.category || 'Technology',
+        priority: editIdea.priority || 'medium',
+        tags: (editIdea.tags || []).join(', '),
+        rating: editIdea.rating || 0,
+        notes: editIdea.notes || '',
+        nextActions: (editIdea.nextActions || []).join('\n'),
+        stage: editIdea.stage || 'seed'
+      });
+    } else {
+      setFormData(initialFormData);
+    }
+  }, [editIdea]);
 
   const categories = [
     'Technology',
@@ -35,6 +56,13 @@ const AddIdeaModal = ({ isOpen, onClose, onSubmit }) => {
     { value: 'low', label: 'Low', color: '#10b981' },
     { value: 'medium', label: 'Medium', color: '#f59e0b' },
     { value: 'high', label: 'High', color: '#ef4444' }
+  ];
+
+  const stages = [
+    { value: 'seed', label: 'Seed' },
+    { value: 'sprouting', label: 'Sprouting' },
+    { value: 'growing', label: 'Growing' },
+    { value: 'mature', label: 'Mature' }
   ];
 
   const handleInputChange = (e) => {
@@ -77,7 +105,7 @@ const AddIdeaModal = ({ isOpen, onClose, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     const ideaData = {
@@ -90,8 +118,8 @@ const AddIdeaModal = ({ isOpen, onClose, onSubmit }) => {
         .split('\n')
         .map(action => action.trim())
         .filter(action => action.length > 0),
-      stage: 'seed',
-      dateCreated: new Date().toISOString(),
+      stage: editIdea ? formData.stage : 'seed',
+      dateCreated: editIdea ? editIdea.dateCreated : new Date().toISOString(),
       lastUpdated: new Date().toISOString()
     };
 
@@ -100,22 +128,15 @@ const AddIdeaModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   const handleClose = () => {
-    setFormData({
-      title: '',
-      description: '',
-      category: 'Technology',
-      priority: 'medium',
-      tags: '',
-      rating: 0,
-      notes: '',
-      nextActions: ''
-    });
+    setFormData(initialFormData);
     setErrors({});
     onClose();
   };
 
+  const isEditing = !!editIdea;
+
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Plant New Idea">
+    <Modal isOpen={isOpen} onClose={handleClose} title={isEditing ? "Edit Idea" : "Plant New Idea"}>
       <form onSubmit={handleSubmit} className="add-idea-form">
         <div className="form-row">
           <div className="form-group">
@@ -173,6 +194,26 @@ const AddIdeaModal = ({ isOpen, onClose, onSubmit }) => {
               ))}
             </select>
           </div>
+
+          {isEditing && (
+            <div className="form-group">
+              <label htmlFor="stage">
+                Growth Stage
+              </label>
+              <select
+                id="stage"
+                name="stage"
+                value={formData.stage}
+                onChange={handleInputChange}
+              >
+                {stages.map(stage => (
+                  <option key={stage.value} value={stage.value}>
+                    {stage.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="form-row">
@@ -277,7 +318,7 @@ const AddIdeaModal = ({ isOpen, onClose, onSubmit }) => {
             Cancel
           </Button>
           <Button type="submit" variant="primary">
-            Plant Idea
+            {isEditing ? 'Save Changes' : 'Plant Idea'}
           </Button>
         </div>
       </form>

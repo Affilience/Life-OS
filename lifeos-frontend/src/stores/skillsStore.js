@@ -485,6 +485,9 @@ const useSkillsStore = create(
         if (updatedSkill) {
           syncSkillToSupabase(updatedSkill);
         }
+
+        // Award XP for recording a milestone achievement
+        triggerGamification('milestoneAchieved', { xpOverride: 30, module: 'skills' });
       },
     }),
     {

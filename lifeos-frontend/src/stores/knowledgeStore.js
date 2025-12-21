@@ -771,6 +771,11 @@ export const useKnowledgeStore = create(
        * Update media item
        */
       updateMedia: (mediaId, updates) => {
+        // Get the original item to check if status changed to completed
+        const originalItem = get().media.find(m => m.id === mediaId);
+        const wasCompleted = originalItem?.status === 'completed';
+        const nowCompleted = updates.status === 'completed';
+
         set((state) => ({
           media: state.media.map((item) => {
             if (item.id === mediaId) {
@@ -790,6 +795,22 @@ export const useKnowledgeStore = create(
             return item;
           }),
         }));
+
+        // Award XP when media is newly completed
+        if (!wasCompleted && nowCompleted) {
+          const mediaType = originalItem?.type || 'video';
+          const xpAmounts = {
+            video: 20,
+            course: 50,  // Courses get more XP
+            podcast: 15,
+            article: 10
+          };
+          triggerGamification('mediaCompleted', {
+            xpOverride: xpAmounts[mediaType] || 20,
+            module: 'knowledge'
+          });
+        }
+
         const media = get().media.find(m => m.id === mediaId);
         if (media) syncMediaToSupabase(media);
       },

@@ -47,6 +47,7 @@ const MODULE_CONSTELLATION_MAP = {
 const ACTION_STAT_MAP = {
   // Productivity
   taskCompleted: 'tasksCompleted',
+  projectCreated: 'projectsCreated',
   projectCompleted: 'projectsCompleted',
   deepWorkMinutes: 'deepWorkHours', // Note: converts to hours in the store
   deepWorkHour: 'deepWorkHours',
@@ -185,6 +186,7 @@ const XP_VALUES = {
 
   // Medium XP actions (15-25)
   taskCompleted: 20,
+  projectCreated: 15,
   questCompleted: 25,
   mealLogged: 15,
   journalEntry: 20,
@@ -495,7 +497,9 @@ export async function triggerGamification(action, options = {}) {
   const xpAmount = perkResult.finalXP;
 
   // 3. Add XP to stores
+  let xpWasAdded = false;
   if (xpAmount > 0) {
+    xpWasAdded = true;
     // Update both stores for consistency
     avatarStore.addXP(xpAmount);
 
@@ -613,6 +617,13 @@ export async function triggerGamification(action, options = {}) {
       stageTransition: avatarStore.currentTier !== tierBefore,
       newStage: avatarStore.currentTier,
       oldStage: tierBefore,
+    });
+  } else if (xpWasAdded && globalCelebrate?.xpGained) {
+    // Show XP gained notification if no level up occurred
+    globalCelebrate.xpGained({
+      amount: xpAmount,
+      action,
+      module,
     });
   }
 

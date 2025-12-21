@@ -58,7 +58,6 @@ async function loadGlobalPositions() {
           scale: parseFloat(row.scale)
         };
       });
-      console.log('[AvatarRenderer] Loaded global positions:', Object.keys(globalPositionsCache).length);
     } else {
       globalPositionsCache = {};
     }
@@ -362,8 +361,6 @@ export default function AvatarRenderer({
         positionKey = `${slot}/${item.id}`;
         spritePath = `/assets/equipment/${folder}/${baseName}.png`;
       }
-      console.log('[AvatarRenderer] Sprite path:', { slot, folder, baseName, spritePath, fromDb: !!item.sprite?.path });
-
       // Get saved position or default
       const savedPos = savedPositions[positionKey];
       const defaultKey = slot === 'offHand'
@@ -373,15 +370,6 @@ export default function AvatarRenderer({
           : folder;
       const defaultPos = DEFAULT_POSITIONS[defaultKey] || { x: 0, y: 0, scale: 1 };
 
-      // Debug: Show position lookup result
-      console.log(`[AvatarRenderer] Position lookup for ${slot}:`, {
-        positionKey,
-        foundSaved: !!savedPos,
-        savedPos: savedPos || 'NOT FOUND - using default',
-        defaultPos,
-        availableKeys: savedKeys.filter(k => k.startsWith(folder))
-      });
-
       let position;
 
       // For shields, prefer saved position with hand suffix, but don't force x if saved position exists
@@ -389,12 +377,10 @@ export default function AvatarRenderer({
         if (savedPos) {
           // Use saved position entirely - it was positioned correctly in EquipmentTest
           position = savedPos;
-          console.log(`[AvatarRenderer] Shield using saved position for ${shieldHand} hand:`, savedPos);
         } else {
           // Use default with forced x for correct hand
           const forcedX = shieldHand === 'left' ? 90 : 60;
           position = { ...defaultPos, x: forcedX };
-          console.log(`[AvatarRenderer] Shield using default for ${shieldHand} hand, x=${forcedX}`);
         }
       } else {
         position = savedPos || defaultPos;
@@ -420,15 +406,6 @@ export default function AvatarRenderer({
         // Always use stage 10 swordsman as base avatar
         const baseSpriteUrl = BASE_AVATAR_PATH;
 
-        // DEBUG: Log what equipment we're trying to render
-        if (equipmentToRender.length > 0) {
-          console.log('[AvatarRenderer] Equipment to render:', equipmentToRender.map(eq => ({
-            slot: eq.slot,
-            path: eq.spritePath,
-            item: eq.item.name
-          })));
-        }
-
         // Load all images in parallel
         const loadPromises = [
           loadImage(baseSpriteUrl),
@@ -442,14 +419,6 @@ export default function AvatarRenderer({
 
         // Check if cancelled after loading (component might have unmounted)
         if (isCancelled) return;
-
-        // DEBUG: Log loaded images
-        console.log('[AvatarRenderer] Base image loaded:', baseImg?.width, 'x', baseImg?.height);
-        equipmentImages.forEach((img, i) => {
-          if (img) {
-            console.log(`[AvatarRenderer] Equipment ${equipmentToRender[i]?.slot} loaded:`, img.width, 'x', img.height);
-          }
-        });
 
         // Now render everything synchronously
         ctx.clearRect(0, 0, size, size);

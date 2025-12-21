@@ -3,6 +3,14 @@
  *
  * Main orchestrator that combines all Nova services into a cohesive AI system.
  * This is the primary interface for the NovaWidget and other components.
+ *
+ * V2 ADDITIONS:
+ * - Knowledge base for accurate system information
+ * - Trend analysis for data-driven insights
+ * - Personality learning for adaptive responses
+ * - Memory consolidation for efficient storage
+ * - Offline mode with graceful fallbacks
+ * - Proactive intelligence with smart timing
  */
 
 import { embeddingService } from './embeddingService';
@@ -14,6 +22,30 @@ import { feedbackLearning } from './feedbackLearning';
 import { conversationManager } from './conversationManager';
 import { getCrossModuleContext, generateContextSummary } from '../crossModuleData';
 import { supabase, getCurrentUserId } from '../../../lib/supabase';
+
+// NEW V2 SERVICES
+import { novaKnowledgeBase, buildKnowledgeContext } from './knowledgeBase';
+import { generateTrendAnalysis, formatTrendsForPrompt } from './trendAnalysis';
+import {
+  loadPreferences as loadPersonalityPreferences,
+  getPersonalityAdaptations,
+  getResponseParameters,
+  getVariedGreeting,
+} from './personalityLearning';
+import {
+  scheduleMemoryMaintenance,
+  runMemoryMaintenance as runMemoryConsolidation,
+} from './memoryConsolidation';
+import {
+  initNetworkListeners,
+  checkOnline,
+  withErrorHandling,
+} from './offlineMode';
+import {
+  selectNudge,
+  startProactiveChecks,
+  stopProactiveChecks,
+} from './proactiveIntelligence';
 
 // NEW: Optimized context system with Redis caching
 import {
@@ -48,6 +80,9 @@ export async function initializeNova() {
     console.log('Initializing Nova AI...');
 
     try {
+      // Initialize V2 network listeners
+      initNetworkListeners();
+
       // Check if system knowledge is already embedded
       const hasKnowledge = await ragService.isKnowledgeInitialized();
 
@@ -68,8 +103,19 @@ export async function initializeNova() {
         console.log(`Cleaned up ${cleanedConversations} old conversations`);
       }
 
+      // V2: Schedule memory maintenance
+      scheduleMemoryMaintenance();
+
+      // V2: Pre-warm hot context cache
+      try {
+        const summary = generateHotSummary();
+        console.log('Nova: Hot summary pre-warmed');
+      } catch (e) {
+        console.warn('Failed to pre-warm hot summary:', e);
+      }
+
       isInitialized = true;
-      console.log('Nova AI initialized successfully');
+      console.log('Nova AI initialized successfully (V2 features enabled)');
 
       return { success: true };
     } catch (error) {
@@ -597,6 +643,51 @@ export const novaCore = {
   // Expose new optimized functions
   classifyQueryIntent,
   determineContextTier,
+
+  // V2 ADDITIONS
+  // Knowledge base
+  knowledgeBase: novaKnowledgeBase,
+  buildKnowledgeContext,
+
+  // Trend analysis
+  generateTrendAnalysis,
+  formatTrendsForPrompt,
+
+  // Personality
+  getPersonalityAdaptations,
+  getResponseParameters,
+  getVariedGreeting,
+
+  // Memory consolidation
+  runMemoryConsolidation,
+  scheduleMemoryMaintenance,
+
+  // Offline mode
+  checkOnline,
+  withErrorHandling,
+
+  // Proactive intelligence
+  selectNudge,
+  startProactiveChecks,
+  stopProactiveChecks,
+};
+
+// Re-export V2 services for direct import
+export {
+  novaKnowledgeBase,
+  buildKnowledgeContext,
+  generateTrendAnalysis,
+  formatTrendsForPrompt,
+  getPersonalityAdaptations,
+  getResponseParameters,
+  getVariedGreeting,
+  scheduleMemoryMaintenance,
+  runMemoryConsolidation,
+  checkOnline,
+  withErrorHandling,
+  selectNudge,
+  startProactiveChecks,
+  stopProactiveChecks,
 };
 
 export default novaCore;

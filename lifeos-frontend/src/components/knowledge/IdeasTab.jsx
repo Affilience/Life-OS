@@ -6,11 +6,13 @@ import StatCard from '../shared/StatCard';
 import AddIdeaModal from './AddIdeaModal';
 import { EmptyState } from '../ui';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
+import { triggerGamification } from '../../hooks/useGamification';
 import './IdeasTab.css';
 
 const IdeasTab = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [stageFilter, setStageFilter] = useState('all');
+  const [editingIdea, setEditingIdea] = useState(null);
 
   // Get data from store
   const { notes, createNote, updateNote, initializeFromSupabase } = useKnowledgeStore();
@@ -99,6 +101,82 @@ const IdeasTab = () => {
       tags: [...new Set(tags)]
     });
     console.log('Idea planted:', ideaData);
+  };
+
+  // Handle editing an existing idea
+  const handleEditIdea = (idea) => {
+    setEditingIdea(idea);
+    setShowAddModal(true);
+  };
+
+  // Handle updating an edited idea
+  const handleUpdateIdea = (ideaData) => {
+    if (!editingIdea) return;
+
+    // Build tags array - use updated stage from form
+    const updatedStage = ideaData.stage || editingIdea.stage || 'seed';
+    const tags = ['idea', updatedStage];
+    if (ideaData.priority === 'high') tags.push('high-priority');
+    else if (ideaData.priority === 'low') tags.push('low-priority');
+    if (ideaData.category) tags.push(ideaData.category);
+    if (ideaData.tags) tags.push(...ideaData.tags);
+
+    const content = [
+      ideaData.description || '',
+      ideaData.notes || '',
+      ideaData.nextActions?.length > 0 ? '\n**Next Actions:**\n' + ideaData.nextActions.map(a => `- ${a}`).join('\n') : ''
+    ].filter(Boolean).join('\n');
+
+    updateNote(editingIdea.id, {
+      title: ideaData.title,
+      content,
+      tags: [...new Set(tags)],
+      rating: ideaData.rating
+    });
+
+    setEditingIdea(null);
+    console.log('Idea updated:', ideaData);
+  };
+
+  // Handle evolving an idea to the next stage
+  const handleEvolveIdea = (idea) => {
+    const stageOrder = ['seed', 'sprouting', 'growing', 'mature'];
+    const currentIndex = stageOrder.indexOf(idea.stage);
+
+    if (currentIndex >= stageOrder.length - 1) {
+      // Already at mature stage
+      return;
+    }
+
+    const nextStage = stageOrder[currentIndex + 1];
+
+    // Find the original note
+    const originalNote = notes.find(n => n.id === idea.id);
+    if (!originalNote) return;
+
+    // Remove old stage tags and add new one
+    const skipStageTags = ['seed', 'sprouting', 'growing', 'mature', 'completed', 'in-progress'];
+    const newTags = [
+      ...(originalNote.tags || []).filter(t => !skipStageTags.includes(t)),
+      nextStage
+    ];
+
+    updateNote(idea.id, {
+      tags: newTags
+    });
+
+    // Award XP for evolving ideas - more XP for reaching mature
+    const xpRewards = {
+      sprouting: 5,
+      growing: 10,
+      mature: 25  // Big reward for implementing an idea fully
+    };
+    triggerGamification('ideaEvolved', {
+      xpOverride: xpRewards[nextStage] || 5,
+      module: 'knowledge'
+    });
+
+    console.log(`Idea evolved from ${idea.stage} to ${nextStage}`);
   };
 
   const getStageIcon = (stage) => {
@@ -309,10 +387,20 @@ const IdeasTab = () => {
                     )}
                   </div>
                   <div className="idea-actions">
-                    <Button variant="ghost" size="small">
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => handleEditIdea(idea)}
+                    >
                       Edit
                     </Button>
-                    <Button variant="ghost" size="small">
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => handleEvolveIdea(idea)}
+                      disabled={idea.stage === 'mature'}
+                      title={idea.stage === 'mature' ? 'Already at mature stage' : `Evolve to next stage`}
+                    >
                       Evolve
                     </Button>
                   </div>
@@ -323,11 +411,15 @@ const IdeasTab = () => {
         )}
       </Card>
 
-      {/* Add Idea Modal */}
+      {/* Add/Edit Idea Modal */}
       <AddIdeaModal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSubmit={handleIdeaSubmit}
+        onClose={() => {
+          setShowAddModal(false);
+          setEditingIdea(null);
+        }}
+        onSubmit={editingIdea ? handleUpdateIdea : handleIdeaSubmit}
+        editIdea={editingIdea}
       />
     </div>
   );

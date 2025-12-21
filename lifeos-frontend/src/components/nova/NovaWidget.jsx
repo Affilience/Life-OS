@@ -833,7 +833,7 @@ export default function NovaWidget() {
                     }`}
                   >
                     <div
-                      className={`inline-block px-3 py-1.5 rounded-lg max-w-[90%] ${
+                      className={`inline-block px-3 py-1.5 rounded-lg max-w-[80%] break-words ${
                         msg.role === 'user'
                           ? 'bg-primary-500 text-white'
                           : 'bg-bg-1 text-gray-100'

@@ -21,14 +21,18 @@ import { analyzeUserData, getAnalysisForPrompt, getRecommendations, correlationE
 import { memoryService, storeMessage, getMemoryContext, extractMemoriesFromConversation } from './memoryService';
 import { supabase, getCurrentUserId } from '../../../lib/supabase';
 
+// V2 Enhancements - Offline handling, caching, and optimized chat
+import { chat as chatV2, prewarmCaches, initializeNova as initV2 } from './novaServiceV2';
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
 const CONFIG = {
-  // Edge function URLs
-  edgeFunctionUrl: import.meta.env.VITE_SUPABASE_URL + '/functions/v1/nova-chat-v2',
-  fallbackUrl: import.meta.env.VITE_SUPABASE_URL + '/functions/v1/nova-chat',
+  // Edge function URLs - V3 is optimized with Haiku-first routing
+  edgeFunctionUrl: import.meta.env.VITE_SUPABASE_URL + '/functions/v1/nova-chat-v3',
+  fallbackUrl: import.meta.env.VITE_SUPABASE_URL + '/functions/v1/nova-chat-v2',
+  legacyUrl: import.meta.env.VITE_SUPABASE_URL + '/functions/v1/nova-chat',
 
   // Default settings
   defaultMode: 'standard', // 'quick', 'standard', 'comprehensive'
@@ -273,6 +277,7 @@ export function buildSystemPrompt(options = {}) {
 
 /**
  * Send a message to Nova and get a response
+ * Uses V2 chat with offline handling, caching, and V3 edge function
  *
  * @param {string} message - The user's message
  * @param {Object} options - Configuration options
@@ -284,100 +289,36 @@ export async function chat(message, options = {}) {
     stream = CONFIG.enableStreaming,
     conversationHistory = [],
     conversationId = null,
-    onStream = null, // Callback for streaming: (text) => void
-    enableMemory = true, // Use long-term memory system
+    onStream = null,
+    enableMemory = true,
   } = options;
 
   try {
-    // Detect if this is a simple query - skip heavy operations for instant response
-    const isSimpleQuery = /^(hi|hey|hello|thanks|ok|yes|no|bye|what'?s up|how are you)[\s!?.]*$/i.test(message.trim());
-
-    // Start all async operations in PARALLEL for speed
-    const [sessionResult, memoryContextResult] = await Promise.all([
-      // 1. Get auth session (fast, cached)
-      supabase.auth.getSession(),
-
-      // 2. Memory context - skip for simple queries, run in parallel otherwise
-      (enableMemory && !isSimpleQuery && mode !== 'quick')
-        ? getMemoryContext(message).catch(e => {
-            console.warn('Memory retrieval failed:', e);
-            return null;
-          })
-        : Promise.resolve(null),
-    ]);
-
-    const authToken = sessionResult.data?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const memoryContext = memoryContextResult;
-
-    // Build system prompt (fast, client-side) - skip for simple queries
-    // The edge function already has personality + user data, so we can send minimal prompt
-    const systemPrompt = isSimpleQuery ? null : buildSystemPrompt({
-      mode,
-      userQuery: message,
-      memoryContext,
-    });
-
-    // Prepare messages
-    const messages = [
-      ...conversationHistory,
-      { role: 'user', content: message },
-    ];
-
-    // Store user message in background (don't wait)
+    // Store user message in background for memory system
     if (enableMemory) {
       storeMessage('user', message, conversationId).catch(() => {});
       trackMessage('user', message);
     }
 
-    // Make request to edge function
-    const response = await fetch(CONFIG.edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        messages,
-        systemPrompt,
-        stream,
-        mode,
-      }),
+    // Use V2 chat which has offline handling, caching, and V3 edge function
+    const result = await chatV2(message, {
+      conversationHistory,
+      stream,
+      mode,
+      onStream: stream ? (chunk) => {
+        // V2 passes chunk object with { text, content, done }
+        if (chunk.text && onStream) {
+          onStream(chunk.text);
+        }
+      } : null,
     });
 
-    if (!response.ok) {
-      // Try fallback
-      return await chatFallback(systemPrompt, messages, stream, onStream);
-    }
-
-    // Handle streaming response
-    if (stream && onStream) {
-      const result = await handleStreamResponse(response, onStream);
-
-      // Store assistant response in memory system and check for auto-extraction
-      if (enableMemory && result.success && result.content) {
-        storeMessage('assistant', result.content, conversationId).catch(e =>
-          console.warn('Failed to store assistant message:', e)
-        );
-        trackMessage('assistant', result.content);
-
-        // Check if we should auto-extract memories
-        if (shouldExtractMemories(message)) {
-          triggerAutoExtraction();
-        }
-      }
-
-      return result;
-    }
-
-    // Handle regular response
-    const data = await response.json();
-
-    // Store assistant response in memory system and check for auto-extraction
-    if (enableMemory && data.content) {
-      storeMessage('assistant', data.content, conversationId).catch(e =>
+    // Store assistant response in memory system
+    if (enableMemory && result.success && result.content) {
+      storeMessage('assistant', result.content, conversationId).catch(e =>
         console.warn('Failed to store assistant message:', e)
       );
-      trackMessage('assistant', data.content);
+      trackMessage('assistant', result.content);
 
       // Check if we should auto-extract memories
       if (shouldExtractMemories(message)) {
@@ -385,12 +326,7 @@ export async function chat(message, options = {}) {
       }
     }
 
-    return {
-      success: true,
-      content: data.content,
-      model: data.model,
-      mode: data.mode,
-    };
+    return result;
   } catch (error) {
     console.error('Nova chat error:', error);
     return {
@@ -726,6 +662,26 @@ export async function recordFeedback(responseId, feedback) {
 }
 
 // ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+/**
+ * Initialize Nova service - call on app startup
+ * Pre-warms caches for instant responses
+ */
+export async function initialize() {
+  try {
+    console.log('Nova: Initializing...');
+    await prewarmCaches();
+    console.log('Nova: Ready');
+    return true;
+  } catch (e) {
+    console.warn('Nova: Initialization warning:', e);
+    return false;
+  }
+}
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
@@ -734,6 +690,8 @@ export const novaService = {
   chat,
   quickChat,
   buildSystemPrompt,
+  initialize,
+  prewarmCaches,
 
   // Insights & Analysis
   getInsights,

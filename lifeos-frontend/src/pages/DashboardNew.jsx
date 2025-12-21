@@ -187,6 +187,14 @@ export default function DashboardNew() {
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={() => setIsAddWidgetOpen(true)}
+                  data-tour="add-widget-btn"
+                  className="p-2 rounded-lg transition-all duration-150 text-text-secondary hover:bg-bg-hover hover:text-text-primary hover:-translate-y-0.5 active:translate-y-0"
+                  title="Add Widget"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
                 <div className="w-px h-6 bg-border mx-1" />
               </>
             )}

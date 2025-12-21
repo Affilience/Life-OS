@@ -2,7 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase, getCurrentUserId } from '../lib/supabase';
 import { AVATAR_TIERS, calculateStats } from '../data/avatarData';
-import { EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, EQUIPMENT_RARITY } from '../data/equipmentDatabase';
+import { EQUIPMENT_DATABASE as RAW_EQUIPMENT_DATABASE, EQUIPMENT_SLOTS, EQUIPMENT_RARITY } from '../data/equipmentDatabase';
+import { BAZAAR_EQUIPMENT, applyUnlockOverrides } from '../data/equipmentUnlocks';
+
+// Apply unlock overrides to equipment database to ensure all items have proper unlockRequirements
+const EQUIPMENT_DATABASE = applyUnlockOverrides(RAW_EQUIPMENT_DATABASE);
 
 // DEV MODE: Set to true to unlock all equipment automatically
 const DEV_UNLOCK_ALL = false;
@@ -424,6 +428,19 @@ export const useAvatarStore = create(
         if (method === 'default') {
           // If there's a specific unlock requirement, check it
           if (req) {
+            // Achievement-based requirement (even for 'default' method items)
+            if (req.achievementId) {
+              if (unlockedAchievements?.includes(req.achievementId)) {
+                return true;
+              }
+              // Check fallback stat if achievement not unlocked
+              if (req.fallbackStat && req.fallbackTarget) {
+                return (stats[req.fallbackStat] || 0) >= req.fallbackTarget;
+              }
+              // Achievement not unlocked and no fallback - don't unlock yet
+              return false;
+            }
+
             // Module-based requirement (e.g., { module: 'fitness', metric: 'workouts', value: 10 })
             if (req.module && req.metric && req.value !== undefined) {
               const moduleStats = moduleProgress?.[req.module] || {};
@@ -437,6 +454,11 @@ export const useAvatarStore = create(
 
         // Bazaar items are never auto-unlocked - must be purchased
         if (method === 'bazaar') {
+          return false;
+        }
+
+        // If no unlock requirement defined for non-default methods, can't auto-unlock
+        if (!req) {
           return false;
         }
 
@@ -499,6 +521,7 @@ export const useAvatarStore = create(
 
         // Module progress-based unlocks
         if (method === 'module') {
+          if (!req?.module) return false;
           const progress = moduleProgress?.[req.module] || {};
           if (req.metric && req.target) {
             return (progress[req.metric] || stats[req.metric] || 0) >= req.target;
@@ -508,9 +531,9 @@ export const useAvatarStore = create(
 
         // Streak-based unlocks
         if (method === 'streak') {
-          if (req.module) {
+          if (req?.module) {
             const moduleStreak = streaks?.[req.module]?.current_streak || moduleProgress?.[req.module]?.streak || 0;
-            return moduleStreak >= (req.streakDays || 0);
+            return moduleStreak >= (req?.streakDays || 0);
           }
           // Any module streak
           const anyStreak = Math.max(
@@ -518,15 +541,15 @@ export const useAvatarStore = create(
             ...Object.values(moduleProgress || {}).map(m => m.streak || 0),
             0
           );
-          return anyStreak >= (req.streakDays || 0);
+          return anyStreak >= (req?.streakDays || 0);
         }
 
         // PvP-based unlocks
         if (method === 'pvp') {
-          if (req.wins) {
+          if (req?.wins) {
             return (pvpStats?.total_wins || 0) >= req.wins;
           }
-          if (req.rank) {
+          if (req?.rank) {
             const rankOrder = ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'legend'];
             const currentRankIndex = rankOrder.indexOf(pvpStats?.current_rank || 'bronze');
             const requiredRankIndex = rankOrder.indexOf(req.rank);
@@ -537,10 +560,10 @@ export const useAvatarStore = create(
 
         // Social-based unlocks
         if (method === 'social') {
-          if (req.friends) {
+          if (req?.friends) {
             return (stats.friendsAdded || 0) >= req.friends;
           }
-          if (req.challengesWon) {
+          if (req?.challengesWon) {
             return (stats.challengesWon || 0) >= req.challengesWon;
           }
           return false;
@@ -548,22 +571,22 @@ export const useAvatarStore = create(
 
         // Quest-based unlocks
         if (method === 'quest') {
-          return questsCompleted?.includes(req.questId);
+          return questsCompleted?.includes(req?.questId);
         }
 
         // Daily quest count unlocks
         if (method === 'daily_quest') {
-          return (stats.dailyQuestsCompleted || 0) >= (req.count || 0);
+          return (stats.dailyQuestsCompleted || 0) >= (req?.count || 0);
         }
 
         // Weekly quest count unlocks
         if (method === 'weekly_quest') {
-          return (stats.weeklyQuestsCompleted || 0) >= (req.count || 0);
+          return (stats.weeklyQuestsCompleted || 0) >= (req?.count || 0);
         }
 
         // Daily login streak unlocks
         if (method === 'daily_login') {
-          return (loginStreak || stats.loginStreak || 0) >= (req.days || 0);
+          return (loginStreak || stats.loginStreak || 0) >= (req?.days || 0);
         }
 
         // Secret/Discovery unlocks - handled separately
@@ -608,7 +631,10 @@ export const useAvatarStore = create(
           const perkState = perkStore.getState();
 
           const stats = achievementsState.stats || {};
-          const unlockedAchievements = achievementsState.unlockedAchievements || [];
+          // unlockedAchievements is array of { achievementId, ... } objects, extract IDs
+          const unlockedAchievements = (achievementsState.unlockedAchievements || [])
+            .map(a => a.achievementId || a.id || a)
+            .filter(Boolean);
 
           // Fetch additional data from Supabase
           let streaks = {};
@@ -659,22 +685,27 @@ export const useAvatarStore = create(
           for (const [itemId, item] of Object.entries(EQUIPMENT_DATABASE)) {
             if (unlockedEquipment.includes(itemId)) continue; // Already owned
 
-            const shouldUnlock = await checkUnlockRequirement(item, {
-              level,
-              prestige,
-              stats,
-              unlockedAchievements,
-              perkState,
-              moduleProgress,
-              streaks,
-              pvpStats,
-              questsCompleted,
-              loginStreak,
-            });
+            try {
+              const shouldUnlock = await checkUnlockRequirement(item, {
+                level,
+                prestige,
+                stats,
+                unlockedAchievements,
+                perkState,
+                moduleProgress,
+                streaks,
+                pvpStats,
+                questsCompleted,
+                loginStreak,
+              });
 
-            if (shouldUnlock) {
-              await unlockEquipment(itemId);
-              newUnlocks.push(item);
+              if (shouldUnlock) {
+                await unlockEquipment(itemId);
+                newUnlocks.push(item);
+              }
+            } catch (error) {
+              // Log but don't stop checking other items
+              console.warn(`[AvatarStore] Error checking unlock for ${itemId}:`, error.message);
             }
           }
 
@@ -689,9 +720,10 @@ export const useAvatarStore = create(
       purchaseEquipment: async (itemId) => {
         const { unlockedEquipment, unlockEquipment } = get();
         const item = EQUIPMENT_DATABASE[itemId];
+        const bazaarInfo = BAZAAR_EQUIPMENT[itemId];
 
         // Validate item exists and is bazaar-purchasable
-        if (!item || item.unlockMethod !== 'bazaar') {
+        if (!item || !bazaarInfo) {
           console.error('[AvatarStore] Equipment cannot be purchased:', itemId);
           return { success: false, error: 'Equipment cannot be purchased' };
         }
@@ -701,7 +733,7 @@ export const useAvatarStore = create(
           return { success: false, error: 'Already owned' };
         }
 
-        const price = item.unlockRequirement.price;
+        const price = bazaarInfo.price;
 
         // Get gamification store to handle credits
         const gamificationStore = await getGamificationStore();
@@ -758,15 +790,16 @@ export const useAvatarStore = create(
       getPurchasableEquipment: () => {
         const { unlockedEquipment } = get();
 
-        return Object.entries(EQUIPMENT_DATABASE)
-          .filter(([itemId, item]) => {
-            // Must be bazaar-purchasable and not already owned
-            return item.unlockMethod === 'bazaar' && !unlockedEquipment.includes(itemId);
+        return Object.entries(BAZAAR_EQUIPMENT)
+          .filter(([itemId]) => {
+            // Must exist in equipment database and not already owned
+            return EQUIPMENT_DATABASE[itemId] && !unlockedEquipment.includes(itemId);
           })
-          .map(([itemId, item]) => ({
-            ...item,
+          .map(([itemId, bazaarInfo]) => ({
+            ...EQUIPMENT_DATABASE[itemId],
             id: itemId,
-            price: item.unlockRequirement.price,
+            price: bazaarInfo.price,
+            bazaarCategory: bazaarInfo.category,
           }))
           .sort((a, b) => a.price - b.price);
       },

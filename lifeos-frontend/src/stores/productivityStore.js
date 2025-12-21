@@ -73,11 +73,10 @@ const syncProjectToSupabase = async (project, action = 'upsert') => {
       status: project.status || 'active',
       priority: project.priority === 'high' ? 1 : project.priority === 'medium' ? 2 : 3,
       color: project.color,
-      start_date: project.startDate,
-      due_date: project.dueDate,
+      deadline: project.dueDate || null,
       estimated_hours: project.estimatedTime ? Math.round(project.estimatedTime / 3600) : null,
       actual_hours: project.totalTimeSpent ? Math.round(project.totalTimeSpent / 3600) : 0,
-      progress_percentage: project.progress || 0,
+      completed_at: project.status === 'completed' ? (project.completedAt || new Date().toISOString()) : null,
     };
 
     const { data: existing } = await supabase
@@ -247,14 +246,15 @@ const useProductivityStore = create(
             description: p.description || '',
             status: p.status || 'active',
             priority: p.priority === 1 ? 'high' : p.priority === 2 ? 'medium' : 'low',
-            progress: p.progress_percentage || 0,
+            progress: 0, // Progress calculated from tasks, not stored
             color: p.color || '#8b5cf6',
-            startDate: p.start_date,
-            dueDate: p.due_date,
+            startDate: p.created_at, // Use created_at as start date
+            dueDate: p.deadline,
             totalTimeSpent: (p.actual_hours || 0) * 3600,
             estimatedTime: (p.estimated_hours || 0) * 3600,
             createdAt: p.created_at,
             updatedAt: p.updated_at,
+            completedAt: p.completed_at,
           }));
 
           const tasks = (tasksData || []).map(t => ({
@@ -646,6 +646,10 @@ const useProductivityStore = create(
       },
 
       updateProject: (projectId, updates) => {
+        // Check if project is being marked as completed
+        const previousProject = get().projects.find(p => p.id === projectId);
+        const isBeingCompleted = updates.status === 'completed' && previousProject?.status !== 'completed';
+
         set((state) => ({
           projects: state.projects.map((p) =>
             p.id === projectId
@@ -656,6 +660,11 @@ const useProductivityStore = create(
         const updatedProject = get().projects.find(p => p.id === projectId);
         if (updatedProject) {
           syncProjectToSupabase(updatedProject);
+        }
+
+        // Award XP when project is marked as completed
+        if (isBeingCompleted) {
+          triggerGamification('projectCompleted', { xpOverride: 50, module: 'productivity' });
         }
       },
 
@@ -879,6 +888,9 @@ const useProductivityStore = create(
           incomeTransactions: [newTransaction, ...state.incomeTransactions],
         }));
         syncIncomeToSupabase(newTransaction);
+
+        // Award XP for logging income
+        triggerGamification('incomeLogged', { xpOverride: 10, module: 'productivity' });
       },
 
       updateIncomeTransaction: (transactionId, updates) => {

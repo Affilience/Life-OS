@@ -48,7 +48,7 @@ export default function SkillsDashboard() {
       let totalMinutes = 0;
       (skills || []).forEach(skill => {
         const daySessions = (skill.sessions || []).filter(s => s.date?.startsWith(date));
-        totalMinutes += daySessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+        totalMinutes += daySessions.reduce((sum, s) => sum + (s.minutes || 0), 0);
       });
       const dayOfWeek = new Date(date).getDay();
       return { label: dayLabels[dayOfWeek], value: Math.round((totalMinutes / 60) * 10) / 10 };
@@ -59,8 +59,8 @@ export default function SkillsDashboard() {
 
     // Calculate total all-time hours
     const totalHours = (skills || []).reduce((sum, skill) => {
-      const skillHours = (skill.sessions || []).reduce((s, session) => s + (session.duration || 0), 0);
-      return sum + skillHours;
+      const skillMinutes = (skill.sessions || []).reduce((s, session) => s + (session.minutes || 0), 0);
+      return sum + skillMinutes;
     }, 0) / 60;
 
     // Calculate progress trend (last 4 weeks)
@@ -82,7 +82,7 @@ export default function SkillsDashboard() {
       const category = (skill.category || 'default').toLowerCase();
       const Icon = CATEGORY_ICONS[category] || CATEGORY_ICONS.default;
       const color = CATEGORY_COLORS[category] || CATEGORY_COLORS.default;
-      const hours = (skill.sessions || []).reduce((sum, s) => sum + (s.duration || 0), 0) / 60;
+      const hours = (skill.sessions || []).reduce((sum, s) => sum + (s.minutes || 0), 0) / 60;
 
       return {
         name: skill.name || 'Skill',

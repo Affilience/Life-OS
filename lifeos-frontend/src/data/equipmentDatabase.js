@@ -623,6 +623,7 @@ export const EQUIPMENT_DATABASE = {
     overlay: { path: '/assets/equipment/overlays/chest/chest_phoenix_plate.png' },
     effects: [{ type: 'particle', name: 'divine_aura', color: '#ffd700' }],
     unlockMethod: 'streak',
+    unlockRequirement: { streakDays: 200, module: null },
     unlockDescription: '200-day streak in any module',
   },
 

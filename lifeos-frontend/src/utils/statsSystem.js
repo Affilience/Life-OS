@@ -184,6 +184,7 @@ export const MODULE_MASTERY_BONUSES = {
 
 // Pet bonus type to stat mapping (enhanced)
 export const PET_STAT_MAPPING = {
+  // Original mappings
   learning: { intelligence: 1.0 },
   productivity: { wisdom: 0.7, defense: 0.3 },
   health: { strength: 0.5, vitality: 0.5 },
@@ -192,6 +193,21 @@ export const PET_STAT_MAPPING = {
   universal: { strength: 0.2, vitality: 0.2, intelligence: 0.2, wisdom: 0.2, defense: 0.2 },
   power: { strength: 1.0 },
   mastery: { intelligence: 0.5, wisdom: 0.5 },
+  // New mappings for additional pet types
+  focus: { wisdom: 0.8, intelligence: 0.2 }, // Foo Dog Pup - Focus Session XP
+  streak: { defense: 0.8, vitality: 0.2 }, // Will-o'-Wisp - Streak Bonus
+  journal: { wisdom: 0.6, intelligence: 0.4 }, // Domovoi - Reflection Bonus
+  adaptation: { defense: 0.5, vitality: 0.5 }, // Selkie Pup - Streak Recovery
+  discovery: { intelligence: 0.6, wisdom: 0.4 }, // Carbuncle - Quest Reward XP
+  prosperity: { defense: 0.5, wisdom: 0.5 }, // Qilin - Financial XP
+  intensity: { strength: 0.6, wisdom: 0.4 }, // Basilisk Hatchling - Task Completion XP
+  recovery: { vitality: 1.0 }, // Baku - Sleep/Recovery XP
+  balance: { strength: 0.2, vitality: 0.2, intelligence: 0.2, wisdom: 0.2, defense: 0.2 }, // Fenghuang - All modules
+  versatility: { strength: 0.2, vitality: 0.2, intelligence: 0.2, wisdom: 0.2, defense: 0.2 }, // Chimera - Multi-module
+  speed: { wisdom: 0.6, strength: 0.4 }, // Garuda - Daily Challenge XP
+  endurance: { defense: 0.6, vitality: 0.4 }, // Sleipnir Foal - Long Streak XP
+  completion: { defense: 0.6, wisdom: 0.4 }, // Jörmungandr - Weekly completion XP
+  wisdom: { intelligence: 0.6, wisdom: 0.4 }, // Anubis Jackal, Quetzalcoatl - Study/Learning XP
 };
 
 /**

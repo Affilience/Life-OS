@@ -131,7 +131,6 @@ export default function EquipmentTest() {
             };
           });
 
-          console.log('[EquipmentTest] Loaded global positions:', Object.keys(cloudPositions).length);
           setSavedPositions(cloudPositions);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudPositions));
           setSyncStatus(`✓ Loaded ${Object.keys(cloudPositions).length} global positions`);
@@ -185,7 +184,6 @@ export default function EquipmentTest() {
         return false;
       }
 
-      console.log('[EquipmentTest] Saved global positions:', Object.keys(positions).length);
       setSyncStatus(`✓ Saved ${Object.keys(positions).length} GLOBAL positions (applies to all users!)`);
       setLastSyncTime(new Date());
       return true;
@@ -280,13 +278,6 @@ export default function EquipmentTest() {
       const hand = forceHand || getShieldHand();
       const handKey = `${key}_${hand}`;
       const pos = currentPositions[handKey] || savedPositions[handKey] || DEFAULT_POSITIONS[`shields_${hand}`];
-      console.log('[EquipmentTest] Shield position lookup:', {
-        item, hand, handKey,
-        hasCurrent: !!currentPositions[handKey],
-        hasSaved: !!savedPositions[handKey],
-        usingDefault: !currentPositions[handKey] && !savedPositions[handKey],
-        finalPos: pos
-      });
       return pos;
     }
 

@@ -222,6 +222,43 @@ const syncSettingsToSupabase = async (settings) => {
   }
 };
 
+// Sync event to Supabase
+const syncEventToSupabase = async (event, action = 'upsert') => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+
+    if (action === 'delete') {
+      await supabase
+        .from('calendar_events')
+        .delete()
+        .eq('id', event.id)
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('calendar_events')
+        .upsert({
+          id: event.id,
+          user_id: userId,
+          title: event.title,
+          description: event.description,
+          event_type: event.type,
+          start_time: event.startTime,
+          end_time: event.endTime,
+          all_day: event.allDay || false,
+          recurrence_rule: event.recurrenceRule,
+          location: event.location,
+          attendees: event.attendees || [],
+          color: event.color,
+          tags: event.tags || [],
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+  } catch (error) {
+    console.error('Error syncing event to Supabase:', error);
+  }
+};
+
 export const useCalendarStore = create(
   persist(
     (set, get) => ({
@@ -423,6 +460,97 @@ export const useCalendarStore = create(
         // Sync to Supabase
         const block = get().timeBlocks.find(b => b.id === blockId);
         if (block) syncTimeBlockToSupabase(block);
+      },
+
+      // ============================================
+      // EVENT ACTIONS
+      // ============================================
+
+      /**
+       * Create a new calendar event
+       */
+      createEvent: (eventData) => {
+        const newEvent = {
+          id: `event-${Date.now()}`,
+          title: eventData.title || 'Untitled Event',
+          description: eventData.description || '',
+          type: eventData.type || 'event', // event, meeting, reminder, deadline
+          startTime: eventData.startTime,
+          endTime: eventData.endTime,
+          allDay: eventData.allDay || false,
+          recurrenceRule: eventData.recurrenceRule || null,
+          location: eventData.location || '',
+          attendees: eventData.attendees || [],
+          color: eventData.color || '#8b5cf6',
+          tags: eventData.tags || [],
+          createdAt: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          events: [...state.events, newEvent],
+        }));
+
+        // Sync to Supabase
+        syncEventToSupabase(newEvent);
+
+        // Award XP for creating an event
+        triggerGamification('eventCreated', { xpOverride: 5, module: 'calendar' });
+
+        return newEvent.id;
+      },
+
+      /**
+       * Update an event
+       */
+      updateEvent: (eventId, updates) => {
+        set((state) => ({
+          events: state.events.map((event) =>
+            event.id === eventId
+              ? { ...event, ...updates, updatedAt: new Date().toISOString() }
+              : event
+          ),
+        }));
+
+        // Sync to Supabase
+        const event = get().events.find(e => e.id === eventId);
+        if (event) syncEventToSupabase(event);
+      },
+
+      /**
+       * Delete an event
+       */
+      deleteEvent: (eventId) => {
+        const event = get().events.find(e => e.id === eventId);
+        set((state) => ({
+          events: state.events.filter((e) => e.id !== eventId),
+        }));
+
+        // Sync to Supabase
+        if (event) syncEventToSupabase(event, 'delete');
+      },
+
+      /**
+       * Get events for a specific date
+       */
+      getEventsForDate: (date) => {
+        const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
+        return get().events.filter((event) => {
+          const eventDate = event.startTime?.split('T')[0];
+          return eventDate === dateStr;
+        });
+      },
+
+      /**
+       * Get events for a date range
+       */
+      getEventsForDateRange: (startDate, endDate) => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        return get().events.filter((event) => {
+          const eventDate = new Date(event.startTime);
+          return eventDate >= start && eventDate <= end;
+        });
       },
 
       // ============================================

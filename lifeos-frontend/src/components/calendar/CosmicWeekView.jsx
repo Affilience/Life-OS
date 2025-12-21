@@ -23,7 +23,9 @@ import CreateTimeBlockModal from './CreateTimeBlockModal';
 export default function CosmicWeekView({ onNavigateToDay }) {
   const {
     timeBlocks,
+    events,
     getBlocksForDate,
+    getEventsForDate,
     getBufferPercentage,
     getPlanningAccuracy,
     getEnergyPatterns,
@@ -167,6 +169,14 @@ export default function CosmicWeekView({ onNavigateToDay }) {
   const getBlocksForDay = (date) => {
     const dateStr = date.toISOString().split('T')[0];
     return timeBlocks.filter((block) => block.date === dateStr);
+  };
+
+  const getEventsForDay = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    if (getEventsForDate) {
+      return getEventsForDate(dateStr);
+    }
+    return (events || []).filter((event) => event.startTime?.split('T')[0] === dateStr);
   };
 
   const getBufferWarning = (date) => {
@@ -323,6 +333,7 @@ export default function CosmicWeekView({ onNavigateToDay }) {
           {/* Day Columns */}
           {weekDays.map((date, dayIndex) => {
             const dayBlocks = getBlocksForDay(date);
+            const dayEvents = getEventsForDay(date);
             const bufferWarning = getBufferWarning(date);
             const today = isToday(date);
 
@@ -386,6 +397,39 @@ export default function CosmicWeekView({ onNavigateToDay }) {
                       }}
                     />
                   ))}
+
+                  {/* Render Timed Events */}
+                  {dayEvents.filter(e => !e.allDay && e.startTime).map((event) => {
+                    const startHour = parseInt(event.startTime?.split('T')[1]?.split(':')[0] || '0');
+                    const startMinute = parseInt(event.startTime?.split('T')[1]?.split(':')[1] || '0');
+                    const endHour = parseInt(event.endTime?.split('T')[1]?.split(':')[0] || startHour + 1);
+                    const endMinute = parseInt(event.endTime?.split('T')[1]?.split(':')[1] || '0');
+
+                    const top = (startHour - 6) * 64 + (startMinute / 60) * 64;
+                    const duration = (endHour - startHour) * 60 + (endMinute - startMinute);
+                    const height = Math.max((duration / 60) * 64, 24);
+
+                    if (startHour < 6 || startHour >= 23) return null;
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="absolute left-0.5 right-0.5 rounded overflow-hidden cursor-pointer hover:opacity-90 transition-opacity z-10"
+                        style={{
+                          top: `${top}px`,
+                          height: `${height}px`,
+                          backgroundColor: `${event.color || '#06b6d4'}30`,
+                          borderLeft: `2px solid ${event.color || '#06b6d4'}`,
+                        }}
+                      >
+                        <div className="p-1">
+                          <div className="text-xs font-medium text-text-primary truncate">
+                            {event.title}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );

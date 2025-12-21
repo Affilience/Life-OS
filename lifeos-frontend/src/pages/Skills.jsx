@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Target, Clock, TrendingUp, Flame, GraduationCap } from 'lucide-react';
 import useSkillsStore, {
   getProficiencyLevel,
@@ -36,8 +36,13 @@ const Skills = () => {
   const [newSkillIcon, setNewSkillIcon] = useState('✨');
 
   // Get skills from store
-  const { skills, getOverallStats, addSkill, getSkillStats } = useSkillsStore();
+  const { skills, getOverallStats, addSkill, getSkillStats, initializeFromSupabase } = useSkillsStore();
   const overallStats = useMemo(() => getOverallStats(), [skills, getOverallStats]);
+
+  // Initialize from Supabase on mount
+  useEffect(() => {
+    initializeFromSupabase?.();
+  }, []);
 
 
   // Quick log practice

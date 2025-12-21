@@ -88,8 +88,8 @@ export const TOURS = {
       {
         id: 'quick-stats',
         target: '[data-tour="quick-stats"]',
-        title: 'Daily Statistics',
-        content: "These cards show your key metrics for today - tasks completed, calories logged, workouts done, and more. They update in real-time!",
+        title: 'Module Health',
+        content: "These cards show your engagement across all modules - productivity, health, fitness, knowledge, and more. Each score reflects your weekly activity!",
         novaState: NOVA_STATES.HAPPY,
         position: POSITIONS.BOTTOM,
       },

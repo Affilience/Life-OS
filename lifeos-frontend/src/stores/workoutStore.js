@@ -174,11 +174,11 @@ const syncWorkoutToSupabase = async (workout, action = 'upsert') => {
       user_id: userId,
       workout_date: workout.date,
       workout_type: workout.templateId ? 'strength' : 'general',
-      name: workout.name,
+      title: workout.name,
       duration_minutes: workout.duration || 0,
       calories_burned: workout.caloriesBurned || 0,
       notes: workout.notes || '',
-      rating: workout.prsAchieved > 0 ? 5 : 4,
+      intensity: workout.prsAchieved > 0 ? 8 : 6,
     };
 
     await supabase.from('health_workouts').upsert(dbWorkout, { onConflict: 'id' });

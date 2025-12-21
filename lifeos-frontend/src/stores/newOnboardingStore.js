@@ -248,19 +248,24 @@ export const useNewOnboardingStore = create(
 
           // Map database fields to store state
           const preferences = data.preferences || {};
+          const currentState = get();
+
+          // IMPORTANT: Don't overwrite local "complete" state with Supabase "incomplete" state
+          // This prevents race conditions where local completion hasn't synced yet
+          const isComplete = currentState.isOnboardingComplete || data.onboarding_completed || false;
 
           set({
             profile: {
-              username: data.display_name || '',
-              displayName: data.display_name || '',
-              gender: data.character_gender || null,
+              username: data.display_name || currentState.profile.displayName || '',
+              displayName: data.display_name || currentState.profile.displayName || '',
+              gender: data.character_gender || currentState.profile.gender || null,
             },
-            lifeGoals: preferences.life_goals || [],
-            dailyCommitment: preferences.daily_commitment || 15,
-            gamificationMode: preferences.gamification_mode || null,
-            isOnboardingComplete: data.onboarding_completed || false,
-            isOnboardingActive: !data.onboarding_completed,
-            currentStep: data.onboarding_completed ? ONBOARDING_STEPS.COMPLETED : ONBOARDING_STEPS.GAMIFICATION_MODE,
+            lifeGoals: preferences.life_goals || currentState.lifeGoals || [],
+            dailyCommitment: preferences.daily_commitment || currentState.dailyCommitment || 15,
+            gamificationMode: preferences.gamification_mode || currentState.gamificationMode || null,
+            isOnboardingComplete: isComplete,
+            isOnboardingActive: !isComplete,
+            currentStep: isComplete ? ONBOARDING_STEPS.COMPLETED : (currentState.currentStep || ONBOARDING_STEPS.GAMIFICATION_MODE),
             _lastSyncedAt: new Date().toISOString(),
             _isSyncing: false,
           });
@@ -287,27 +292,38 @@ export const useNewOnboardingStore = create(
 
         try {
           // Note: character_gender is synced by avatarStore, not here
+          const profileData = {
+            id: userId,
+            username: nameToSave,
+            display_name: nameToSave,
+            onboarding_completed: state.isOnboardingComplete,
+            preferences: {
+              life_goals: state.lifeGoals,
+              daily_commitment: state.dailyCommitment,
+              gamification_mode: state.gamificationMode,
+              module_setup: state.moduleSetup,
+            },
+            updated_at: new Date().toISOString(),
+          };
+
+          // Use upsert to handle race conditions with other stores
           const { error } = await supabase
             .from('user_profiles')
-            .update({
-              username: nameToSave,
-              display_name: nameToSave,
-              onboarding_completed: state.isOnboardingComplete,
-              preferences: {
-                life_goals: state.lifeGoals,
-                daily_commitment: state.dailyCommitment,
-                gamification_mode: state.gamificationMode,
-                module_setup: state.moduleSetup,
-              },
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', userId);
+            .upsert(profileData, {
+              onConflict: 'id',
+              ignoreDuplicates: false,
+            });
 
           if (error) throw error;
 
           set({ _lastSyncedAt: new Date().toISOString(), _syncError: null });
           console.log('[Onboarding] Synced to Supabase');
         } catch (error) {
+          // Ignore 409 conflicts - another store may have synced first
+          if (error?.code === '23505' || error?.message?.includes('conflict')) {
+            console.log('[Onboarding] Sync conflict (another store synced first), ignoring');
+            return;
+          }
           console.error('[Onboarding] Failed to sync to Supabase:', error);
           set({ _syncError: error.message });
         }

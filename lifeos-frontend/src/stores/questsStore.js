@@ -588,7 +588,7 @@ const useQuestsStore = create(
         // Sync to database and trigger unified gamification when quest is completed
         if (isNowComplete) {
           // Play quest completion sound
-          feedback.success();
+          feedback.questComplete();
 
           triggerGamification('weeklyQuestCompleted', {
             xpOverride: quest.xpReward,

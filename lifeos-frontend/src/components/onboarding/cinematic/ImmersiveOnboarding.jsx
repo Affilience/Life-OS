@@ -43,7 +43,7 @@ const BASE_SECTIONS = [
 // Cosmic mode sections (full gamification experience)
 const COSMIC_SECTIONS = [
   { id: 'hero', component: ImmersiveHeroSelect, requiresInteraction: true },
-  { id: 'customize', component: ImmersiveAvatarCustomization, requiresInteraction: true },
+  // Note: Color customization step removed - users can customize later in Character page
   { id: 'gamification', component: ImmersiveGamification, requiresInteraction: true },
   { id: 'identity', component: ImmersiveIdentity, requiresInteraction: true },
   { id: 'goals', component: ImmersiveGoals, requiresInteraction: true },
