@@ -1,10 +1,31 @@
-import React, { useState } from 'react';
-import { X, Clock, TrendingUp, Target, Award, Calendar, Plus, Edit3 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Clock, TrendingUp, Target, Award, Calendar, Plus, Edit3, CheckCircle2 } from 'lucide-react';
 import Button from '../shared/Button';
+import useSkillsStore, { getXpProgress, getProficiencyLevel } from '../../stores/skillsStore';
 import './SkillDetailModal.css';
 
 const SkillDetailModal = ({ skill, onClose }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const { addGoal, toggleGoal, addMilestone } = useSkillsStore();
+  const [newGoalText, setNewGoalText] = useState('');
+  const [showAddGoal, setShowAddGoal] = useState(false);
+
+  // Calculate real progress from XP
+  const xpProgress = useMemo(() => getXpProgress(skill.xp || 0), [skill.xp]);
+  const proficiencyLevel = useMemo(() => getProficiencyLevel(skill.xp || 0), [skill.xp]);
+
+  // Get real practice sessions from skill (most recent first, limited to 10)
+  const practiceHistory = useMemo(() => {
+    return (skill.sessions || []).slice(0, 10).map(session => ({
+      date: session.date,
+      duration: Math.round(session.minutes / 60 * 10) / 10, // Convert to hours
+      notes: session.notes || 'Practice session',
+      xpEarned: session.xpEarned || 0,
+    }));
+  }, [skill.sessions]);
+
+  // Get real goals from skill
+  const skillGoals = useMemo(() => skill.goals || [], [skill.goals]);
 
   const getLevelColor = (level) => {
     switch (level) {
@@ -47,21 +68,25 @@ const SkillDetailModal = ({ skill, onClose }) => {
     return `${Math.floor(diffDays / 30)} months ago`;
   };
 
-  // Mock practice history data
-  const practiceHistory = [
-    { date: '2025-10-26', duration: 1.5, notes: 'Focused on advanced array methods' },
-    { date: '2025-10-24', duration: 2, notes: 'Built a small React component' },
-    { date: '2025-10-22', duration: 1, notes: 'Studied async/await patterns' },
-    { date: '2025-10-20', duration: 2.5, notes: 'Worked on personal project' },
-    { date: '2025-10-18', duration: 1, notes: 'Code review and cleanup' }
-  ];
+  // Calculate total practice time in hours
+  const totalHours = Math.round((skill.totalMinutes || 0) / 60 * 10) / 10;
 
-  // Mock upcoming goals
-  const upcomingGoals = [
-    { id: 1, goal: 'Learn React hooks in depth', targetDate: '2025-11-15', priority: 'high' },
-    { id: 2, goal: 'Build a full-stack application', targetDate: '2025-12-01', priority: 'medium' },
-    { id: 3, goal: 'Master TypeScript basics', targetDate: '2025-11-30', priority: 'medium' }
-  ];
+  // Get last practice date
+  const lastPracticed = skill.sessions?.[0]?.date;
+
+  // Handle adding a new goal
+  const handleAddGoal = () => {
+    if (newGoalText.trim()) {
+      addGoal(skill.id, newGoalText.trim());
+      setNewGoalText('');
+      setShowAddGoal(false);
+    }
+  };
+
+  // Handle toggling goal completion
+  const handleToggleGoal = (goalId) => {
+    toggleGoal(skill.id, goalId);
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Target },
@@ -74,11 +99,11 @@ const SkillDetailModal = ({ skill, onClose }) => {
       <div className="overview-stats">
         <div className="stat-group">
           <div className="stat-item large">
-            <div className="stat-value">{skill.progress}%</div>
-            <div className="stat-label">Progress</div>
+            <div className="stat-value">{skill.xp || 0}</div>
+            <div className="stat-label">Total XP</div>
           </div>
           <div className="stat-item">
-            <div className="stat-value">{skill.timeInvested}h</div>
+            <div className="stat-value">{totalHours}h</div>
             <div className="stat-label">Time Invested</div>
           </div>
           <div className="stat-item">
@@ -89,18 +114,21 @@ const SkillDetailModal = ({ skill, onClose }) => {
       </div>
 
       <div className="progress-section">
-        <h4>Current Progress</h4>
+        <h4>Progress to {proficiencyLevel.id === 'expert' ? 'Mastery' : 'Next Level'}</h4>
         <div className="progress-bar-container">
           <div className="progress-bar-bg">
-            <div 
+            <div
               className="progress-bar-fill"
-              style={{ 
-                width: `${skill.progress}%`,
+              style={{
+                width: `${Math.round(xpProgress.percent)}%`,
                 backgroundColor: 'var(--color-skills-500)'
               }}
             />
           </div>
-          <span className="progress-percentage">{skill.progress}%</span>
+          <span className="progress-percentage">{Math.round(xpProgress.percent)}%</span>
+        </div>
+        <div className="progress-detail" style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+          {xpProgress.current} / {xpProgress.next} XP to next level
         </div>
       </div>
 
@@ -139,70 +167,157 @@ const SkillDetailModal = ({ skill, onClose }) => {
         </Button>
       </div>
       <div className="history-list">
-        {practiceHistory.map((session, index) => (
-          <div key={index} className="history-item">
-            <div className="session-date">
-              <Calendar size={16} />
-              {new Date(session.date).toLocaleDateString('en-GB', { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric' 
-              })}
-            </div>
-            <div className="session-duration">
-              <Clock size={16} />
-              {session.duration}h
-            </div>
-            <div className="session-notes">{session.notes}</div>
+        {practiceHistory.length === 0 ? (
+          <div className="empty-state">
+            No practice sessions yet. Start practicing to see your history!
           </div>
-        ))}
+        ) : (
+          practiceHistory.map((session, index) => (
+            <div key={index} className="history-item">
+              <div className="session-date">
+                <Calendar size={16} />
+                {new Date(session.date).toLocaleDateString('en-GB', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </div>
+              <div className="session-duration">
+                <Clock size={16} />
+                {session.duration}h
+                {session.xpEarned > 0 && (
+                  <span style={{ marginLeft: '0.5rem', color: 'var(--color-skills-400)' }}>
+                    +{session.xpEarned} XP
+                  </span>
+                )}
+              </div>
+              <div className="session-notes">{session.notes}</div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 
-  const renderGoals = () => (
-    <div className="goals-section">
-      <div className="goals-header">
-        <h4>Upcoming Goals</h4>
-        <Button variant="primary" size="small" icon={Plus}>
-          Add Goal
-        </Button>
-      </div>
-      <div className="goals-list">
-        {upcomingGoals.map((goalItem) => (
-          <div key={goalItem.id} className="goal-item">
-            <div className="goal-content">
-              <div className="goal-text">{goalItem.goal}</div>
-              <div className="goal-meta">
-                <span className="goal-date">
-                  Target: {new Date(goalItem.targetDate).toLocaleDateString('en-GB')}
-                </span>
-                <span className={`goal-priority ${goalItem.priority}`}>
-                  {goalItem.priority} priority
-                </span>
-              </div>
-            </div>
-            <Button variant="ghost" size="small" icon={Edit3} />
-          </div>
-        ))}
-      </div>
+  const renderGoals = () => {
+    const pendingGoals = skillGoals.filter(g => !g.completed);
+    const completedGoals = skillGoals.filter(g => g.completed);
 
-      <div className="achieved-milestones">
-        <h4>Achieved Milestones</h4>
-        <div className="milestones-list">
-          {skill.milestones?.map((milestone, index) => (
-            <div key={index} className="milestone-item achieved">
-              <Award size={14} />
-              <span>{milestone}</span>
-              <span className="achievement-date">Oct 2025</span>
+    return (
+      <div className="goals-section">
+        <div className="goals-header">
+          <h4>Goals</h4>
+          <Button
+            variant="primary"
+            size="small"
+            icon={Plus}
+            onClick={() => setShowAddGoal(true)}
+          >
+            Add Goal
+          </Button>
+        </div>
+
+        {/* Add goal input */}
+        {showAddGoal && (
+          <div className="add-goal-form" style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
+            <input
+              type="text"
+              value={newGoalText}
+              onChange={(e) => setNewGoalText(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddGoal()}
+              placeholder="Enter a new goal..."
+              style={{
+                flex: 1,
+                padding: '0.5rem',
+                borderRadius: '0.375rem',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+              }}
+              autoFocus
+            />
+            <Button variant="primary" size="small" onClick={handleAddGoal}>
+              Add
+            </Button>
+            <Button variant="ghost" size="small" onClick={() => setShowAddGoal(false)}>
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        <div className="goals-list">
+          {pendingGoals.length === 0 && !showAddGoal ? (
+            <div className="empty-state">
+              No goals set. Add a goal to track your progress!
             </div>
-          )) || (
-            <div className="empty-state">No milestones achieved yet</div>
+          ) : (
+            pendingGoals.map((goalItem) => (
+              <div
+                key={goalItem.id}
+                className="goal-item"
+                onClick={() => handleToggleGoal(goalItem.id)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="goal-content" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: '2px solid var(--color-border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  />
+                  <div className="goal-text">{goalItem.text}</div>
+                </div>
+              </div>
+            ))
           )}
         </div>
+
+        {/* Completed goals */}
+        {completedGoals.length > 0 && (
+          <div className="completed-goals" style={{ marginTop: '1.5rem' }}>
+            <h4 style={{ marginBottom: '0.5rem', opacity: 0.7 }}>Completed</h4>
+            <div className="goals-list">
+              {completedGoals.map((goalItem) => (
+                <div
+                  key={goalItem.id}
+                  className="goal-item completed"
+                  onClick={() => handleToggleGoal(goalItem.id)}
+                  style={{ cursor: 'pointer', opacity: 0.7 }}
+                >
+                  <div className="goal-content" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <CheckCircle2 size={20} style={{ color: 'var(--color-skills-500)' }} />
+                    <div className="goal-text" style={{ textDecoration: 'line-through' }}>{goalItem.text}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Milestones */}
+        <div className="achieved-milestones" style={{ marginTop: '1.5rem' }}>
+          <h4>Milestones</h4>
+          <div className="milestones-list">
+            {skill.milestones?.length > 0 ? (
+              skill.milestones.map((milestone, index) => (
+                <div key={index} className="milestone-item achieved">
+                  <Award size={14} />
+                  <span>{milestone}</span>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">No milestones recorded yet</div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -226,18 +341,18 @@ const SkillDetailModal = ({ skill, onClose }) => {
               <h2 className="skill-title">{skill.name}</h2>
               <div className="skill-meta">
                 <span className="skill-category">{getCategoryLabel(skill.category)}</span>
-                <div className="skill-level" style={{ 
-                  backgroundColor: getLevelColor(skill.level),
+                <div className="skill-level" style={{
+                  backgroundColor: getLevelColor(proficiencyLevel.id),
                   color: 'white'
                 }}>
-                  {skill.level}
+                  {proficiencyLevel.name}
                 </div>
               </div>
             </div>
             <div className="skill-quick-stats">
               <div className="quick-stat">
                 <TrendingUp size={16} />
-                <span>{getTimeSinceLastPractice(skill.lastPracticed)}</span>
+                <span>{lastPracticed ? getTimeSinceLastPractice(lastPracticed) : 'No practice yet'}</span>
               </div>
             </div>
           </div>

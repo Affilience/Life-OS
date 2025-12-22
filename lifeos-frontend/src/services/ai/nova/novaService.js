@@ -1,5 +1,17 @@
 /**
- * Nova Service - The Unified AI Interface
+ * Nova Service - The Unified AI Interface (PRODUCTION VERSION)
+ *
+ * ============================================================================
+ * VERSION INFORMATION
+ * ============================================================================
+ * PRODUCTION: nova-chat-v3 (Haiku-first routing with Opus fallback)
+ * FALLBACK:   nova-chat-v2 (Standard routing)
+ * LEGACY:     nova-chat (Original version, deprecated)
+ *
+ * The v3 edge function uses intelligent model routing:
+ * - Quick queries -> Claude Haiku (fast, cheap)
+ * - Complex analysis -> Claude Opus (comprehensive)
+ * ============================================================================
  *
  * This is the main entry point for all Nova AI functionality.
  * It brings together:
@@ -8,6 +20,11 @@
  * - Proactive Insights (automatic notifications)
  * - Personality System (emotional intelligence)
  * - Correlation Engine (pattern detection)
+ *
+ * Related Files:
+ * - novaServiceV2.js: Background services (init, nudges, caching)
+ * - NovaWidget.jsx: Primary UI component
+ * - useNovaInit.js: Initialization hook
  *
  * Use this service to interact with Nova from any component.
  */
@@ -20,9 +37,10 @@ import { generatePersonalityPrompt, getCurrentStage, detectEmotionalState, perso
 import { analyzeUserData, getAnalysisForPrompt, getRecommendations, correlationEngine } from './correlationEngine';
 import { memoryService, storeMessage, getMemoryContext, extractMemoriesFromConversation } from './memoryService';
 import { supabase, getCurrentUserId } from '../../../lib/supabase';
+import { checkRateLimit } from '../../redis';
 
 // V2 Enhancements - Offline handling, caching, and optimized chat
-import { chat as chatV2, prewarmCaches, initializeNova as initV2 } from './novaServiceV2';
+import { chat as chatV2, prewarmCaches, initializeNova as initV2, clearAllCaches as clearV2Caches } from './novaServiceV2';
 
 // ============================================================================
 // CONFIGURATION
@@ -107,6 +125,34 @@ function getCachedInsights() {
 export function invalidateCaches() {
   contextCache = { data: null, timestamp: 0 };
   insightsCache = { data: null, timestamp: 0 };
+}
+
+/**
+ * Clear ALL in-memory state for Nova services
+ * SECURITY: Call this on auth changes (signIn/signOut/signUp) to prevent data leakage
+ *
+ * This clears:
+ * - Local context and insights caches
+ * - Conversation history tracking
+ * - V2 service caches (context, profile memories, trends)
+ * - Any personalization data
+ */
+export function clearAllNovaState() {
+  console.log('[Nova] Clearing all in-memory state for security');
+
+  // Clear local caches
+  contextCache = { data: null, timestamp: 0 };
+  insightsCache = { data: null, timestamp: 0 };
+
+  // Clear conversation tracking (contains message history)
+  conversationTracker.messageCount = 0;
+  conversationTracker.recentMessages = [];
+  conversationTracker.lastExtractionTime = 0;
+
+  // Clear V2 service caches (context, profile memories, trends)
+  clearV2Caches();
+
+  console.log('[Nova] All in-memory state cleared');
 }
 
 // ============================================================================
@@ -294,6 +340,21 @@ export async function chat(message, options = {}) {
   } = options;
 
   try {
+    // Rate limiting: 30 requests per minute per user
+    const userId = await getCurrentUserId();
+    if (userId) {
+      const rateLimitKey = `nova:ratelimit:${userId}`;
+      const allowed = await checkRateLimit(rateLimitKey, 30, 60);
+      if (!allowed) {
+        console.warn(`Rate limit exceeded for user ${userId}`);
+        return {
+          success: false,
+          error: 'You\'re sending messages too quickly. Please wait a moment.',
+          rateLimited: true,
+        };
+      }
+    }
+
     // Store user message in background for memory system
     if (enableMemory) {
       storeMessage('user', message, conversationId).catch(() => {});
@@ -715,6 +776,7 @@ export const novaService = {
   recordFeedback,
   invalidateCaches,
   resetConversationTracking,
+  clearAllNovaState,
 
   // Memory System
   learnFromConversation,

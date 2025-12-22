@@ -1,7 +1,22 @@
 /**
- * Nova Service V2 - Fully Optimized AI Companion Service
+ * Nova Service V2 - Background Services & Initialization
  *
- * This is the upgraded Nova service integrating all improvements:
+ * ============================================================================
+ * NOTE: This file handles BACKGROUND functionality for Nova.
+ * For CHAT functionality, use novaService.js (the main production file).
+ * ============================================================================
+ *
+ * Provides:
+ * - initializeNova(): App startup initialization
+ * - prewarmCaches(): Cache warming for instant responses
+ * - startNudges() / stopNudges(): Proactive notification system
+ * - checkForNudge(): Manual nudge trigger
+ * - generateInsights(): Generate user insights
+ * - cleanup(): Resource cleanup
+ *
+ * Used by: useNovaInit.js hook
+ *
+ * Background services integrating:
  * 1. Knowledge base for accurate system information
  * 2. Trend analysis for data-driven insights
  * 3. Personality learning for adaptive responses
@@ -90,6 +105,15 @@ export function invalidateCaches() {
   profileMemoriesCacheTime = 0;
   trendsCache = null;
   trendsCacheTime = 0;
+}
+
+/**
+ * Clear all caches - SECURITY function for auth changes
+ * Alias for invalidateCaches but named clearly for security context
+ */
+export function clearAllCaches() {
+  console.log('[NovaV2] Clearing all in-memory caches for security');
+  invalidateCaches();
 }
 
 /**
