@@ -345,12 +345,17 @@ export const useGamificationStore = create(
           // Process user progress
           const progress = progressData.data;
           if (progress) {
+            // Always recalculate level/currentXP/xpToNextLevel from totalXP
+            // This ensures consistency even if DB fields are slightly stale
+            const savedTotalXP = progress.total_xp_earned || progress.current_xp || 0;
+            const calculated = calculateLevelFromTotalXP(savedTotalXP);
+
             set({
-              level: progress.level || 1,
-              currentStage: progress.current_stage || 1,
-              totalXP: progress.total_xp_earned || progress.current_xp || 0,
-              currentXP: progress.current_xp || 0,
-              xpToNextLevel: progress.xp_to_next_level || (progress.level || 1) * 150,
+              level: calculated.level,
+              currentStage: Math.min(40, calculated.level),
+              totalXP: savedTotalXP,
+              currentXP: calculated.currentXP,
+              xpToNextLevel: calculated.xpToNextLevel,
               xpMultiplier: progress.xp_multiplier || 1.0,
               totalDefense: progress.total_defense || 0,
               totalStrength: progress.total_strength || 0,
