@@ -55,14 +55,14 @@ const STAT_BARS = [
 
 const LAYER_ORDER = ['capes', 'legs', 'chests', 'shields', 'helmets', 'weapons'];
 
-// Pet positions - spread on sides with even vertical spacing
+// Pet positions - spread on sides with even vertical spacing (shifted left to avoid stats overlap)
 const PET_POSITIONS = [
-  { x: -260, y: -80 },   // Top-left
-  { x: -280, y: 60 },    // Mid-left
-  { x: -240, y: 180 },   // Bottom-left
-  { x: 240, y: -80 },    // Top-right
-  { x: 260, y: 50 },     // Mid-right (slightly higher)
-  { x: 230, y: 170 },    // Bottom-right (spread out more, matching left spacing)
+  { x: -220, y: -80 },   // Top-left
+  { x: -240, y: 60 },    // Mid-left
+  { x: -200, y: 180 },   // Bottom-left
+  { x: 180, y: -80 },    // Top-right (moved left to avoid stats)
+  { x: 200, y: 50 },     // Mid-right (moved left to avoid stats)
+  { x: 170, y: 170 },    // Bottom-right (moved left to avoid stats)
 ];
 
 // Starting positions for equipment spiral-in
@@ -271,8 +271,8 @@ export function CharacterReveal() {
       // XP bar appears after title (0.06-0.15)
       if (xpBarRef.current) {
         tl.fromTo(xpBarRef.current,
-          { opacity: 0, y: -30 },
-          { opacity: 1, y: 0, duration: 0.08, ease: 'power3.out' },
+          { opacity: 0, y: -30, xPercent: -50, x: -20 },
+          { opacity: 1, y: 0, xPercent: -50, x: -20, duration: 0.08, ease: 'power3.out' },
           0.06
         );
       }
@@ -463,12 +463,12 @@ export function CharacterReveal() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex flex-col items-center gap-8 relative">
+        <div className="flex flex-col items-center gap-8 relative lg:-translate-x-[100px]">
           {/* XP Bar - Positioned above character area, hidden on mobile */}
           <div
             ref={xpBarRef}
-            className="hidden md:block absolute -top-4 left-1/2 -translate-x-1/2 w-[300px] lg:w-[500px] z-20"
-            style={{ opacity: 0 }}
+            className="hidden md:block absolute -top-4 w-[300px] lg:w-[500px] z-20"
+            style={{ opacity: 0, left: '50%', transform: 'translateX(calc(-50% - 80px))' }}
           >
             <div className="flex justify-between text-sm text-white/60 mb-2">
               <span className="font-medium">Level 42</span>
@@ -579,7 +579,7 @@ export function CharacterReveal() {
           {/* Stat Bars Panel - hidden on mobile/tablet, positioned to the right on desktop */}
           <div
             ref={statBarsRef}
-            className="hidden lg:block lg:absolute lg:right-[-340px] lg:top-1/2 lg:-translate-y-1/2 w-80 space-y-4 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
+            className="hidden lg:block lg:absolute lg:right-[-440px] lg:top-1/2 lg:-translate-y-1/2 w-80 space-y-4 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
             style={{ opacity: 0 }}
           >
             <h3 className="text-xl font-bold text-white mb-5">Character Stats</h3>
@@ -609,7 +609,7 @@ export function CharacterReveal() {
         {/* Quick Stats */}
         <div
           ref={statsRef}
-          className="flex gap-12 mt-6 text-center"
+          className="flex gap-12 mt-6 text-center lg:-translate-x-[60px]"
           style={{ opacity: 0 }}
         >
           <div>
