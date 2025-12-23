@@ -1470,11 +1470,12 @@ export const EQUIPMENT_DATABASE = {
     rarity: 'common',
     description: 'Simple cloth trousers',
     stats: { vitality: 1 },
-    levelRequired: 1,
+    levelRequired: 3,
     sprite: { path: '/assets/equipment/legs/cloth_pants.png' },
     overlay: { path: '/assets/equipment/overlays/legs/legs_cloth_pants.png' },
-    unlockMethod: 'default',
-    unlockDescription: 'Starting equipment',
+    unlockMethod: 'level',
+    unlockRequirement: { level: 3 },
+    unlockDescription: 'Reach level 3',
   },
 
   legs_leather_leggings: {
@@ -1680,10 +1681,11 @@ export const EQUIPMENT_DATABASE = {
     rarity: 'common',
     description: 'A simple copper ring',
     stats: { vitality: 1 },
-    levelRequired: 1,
+    levelRequired: 2,
     sprite: { path: '/assets/equipment/rings/copper_band.png' },
-    unlockMethod: 'default',
-    unlockDescription: 'Starting equipment',
+    unlockMethod: 'level',
+    unlockRequirement: { level: 2 },
+    unlockDescription: 'Reach level 2',
   },
 
   ring_iron: {
@@ -1830,10 +1832,11 @@ export const EQUIPMENT_DATABASE = {
     rarity: 'common',
     description: 'A simple protective charm',
     stats: { vitality: 2 },
-    levelRequired: 1,
+    levelRequired: 2,
     sprite: { path: '/assets/equipment/amulets/wooden_charm.png' },
-    unlockMethod: 'default',
-    unlockDescription: 'Starting equipment',
+    unlockMethod: 'level',
+    unlockRequirement: { level: 2 },
+    unlockDescription: 'Reach level 2',
   },
 
   amulet_stone_pendant: {
@@ -1980,11 +1983,12 @@ export const EQUIPMENT_DATABASE = {
     rarity: 'common',
     description: 'A basic sword for beginners',
     stats: { strength: 2 },
-    levelRequired: 1,
+    levelRequired: 2,
     sprite: { path: '/assets/equipment/weapons/sword_novice.png' },
     weaponType: 'sword',
-    unlockMethod: 'default',
-    unlockDescription: 'Starting equipment',
+    unlockMethod: 'level',
+    unlockRequirement: { level: 2 },
+    unlockDescription: 'Reach level 2',
   },
 
   weapon_sword_iron: {
@@ -2131,10 +2135,11 @@ export const EQUIPMENT_DATABASE = {
     rarity: 'common',
     description: 'Basic leather protection',
     stats: { defense: 2, vitality: 1 },
-    levelRequired: 1,
+    levelRequired: 3,
     sprite: { path: '/assets/equipment/chests/armor_leather.png' },
-    unlockMethod: 'default',
-    unlockDescription: 'Starting equipment',
+    unlockMethod: 'level',
+    unlockRequirement: { level: 3 },
+    unlockDescription: 'Reach level 3',
   },
 
   chest_armor_chainmail: {
