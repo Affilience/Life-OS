@@ -779,7 +779,7 @@ export const useAvatarStore = create(
         }
 
         // Deduct credits
-        gamificationState.spendCredits(price, `Equipment purchase: ${item.name}`);
+        await gamificationState.spendCredits(price, 'purchase');
 
         // Unlock the equipment
         await unlockEquipment(itemId);

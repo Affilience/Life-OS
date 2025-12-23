@@ -976,8 +976,11 @@ export default function BazaarMarketplace() {
 
   // Handle purchase
   const handlePurchase = async (item) => {
-    // Handle pet purchases through unlock service
-    if (item.itemType === 'pet') {
+    try {
+      console.log('[Bazaar] Attempting purchase:', item.id, item.category, item.itemType);
+
+      // Handle pet purchases through unlock service
+      if (item.itemType === 'pet') {
       const result = await unlockService.purchasePet(item.id);
       if (result.success) {
         setPurchaseItem(null);
@@ -1011,7 +1014,7 @@ export default function BazaarMarketplace() {
     }
 
     // Original purchase flow for other items
-    const result = await spendCredits(item.price, `purchase_${item.id}`);
+    const result = await spendCredits(item.price, 'purchase');
 
     if (!result.success) {
       console.error('Failed to purchase item:', result.error);

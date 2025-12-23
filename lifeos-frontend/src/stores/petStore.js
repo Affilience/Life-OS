@@ -1008,7 +1008,7 @@ export const usePetStore = create(
         }
 
         // Deduct credits
-        gamificationState.spendCredits(price, `Pet purchase: ${pet.name}`);
+        await gamificationState.spendCredits(price, 'purchase');
 
         // Unlock the pet
         await unlockPet(petId);
