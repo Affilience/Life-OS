@@ -460,7 +460,6 @@ export default function UnifiedBudgetTab() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {Object.entries(ENVELOPE_CATEGORIES)
-            .filter(([_, cat]) => cat.type !== 'savings') // Hide savings categories
             .map(([id, category]) => {
               const status = envelopeStatus[id];
               const budgeted = monthBudgets[id] || 0;
@@ -638,21 +637,20 @@ function CreateBudgetModal({ selectedMonth, monthBudgets, onClose, onSave, onCop
 
   const totalBudgeted = Object.values(budgets).reduce((sum, v) => sum + (v || 0), 0);
 
-  // Group categories by type
+  // Group categories by type - now includes savings/investments
   const categoryGroups = {
     fixed: { label: 'Fixed Expenses', categories: [] },
     variable: { label: 'Variable Expenses', categories: [] },
     wants: { label: 'Wants & Lifestyle', categories: [] },
     growth: { label: 'Growth & Learning', categories: [] },
+    savings: { label: 'Savings & Investments', categories: [] },
     other: { label: 'Other', categories: [] },
   };
 
   Object.entries(ENVELOPE_CATEGORIES).forEach(([id, cat]) => {
-    if (cat.type !== 'savings') {
-      const type = cat.type || 'other';
-      if (categoryGroups[type]) {
-        categoryGroups[type].categories.push({ id, ...cat });
-      }
+    const type = cat.type || 'other';
+    if (categoryGroups[type]) {
+      categoryGroups[type].categories.push({ id, ...cat });
     }
   });
 

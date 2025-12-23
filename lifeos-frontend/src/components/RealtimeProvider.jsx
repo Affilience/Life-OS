@@ -35,6 +35,7 @@ import { useContentStore } from '../stores/contentStore';  // named export
 import { usePurposeStore } from '../stores/purposeStore';  // named export
 import { useQuotesStore } from '../stores/quotesStore';  // named export
 import useDailyTasksStore from '../stores/dailyTasksStore';  // default export
+import { useSocialStore } from '../stores/socialStore';  // named export
 
 export function RealtimeProvider({ children, showNotifications = false }) {
   const channelsRef = useRef([]);
@@ -81,6 +82,13 @@ export function RealtimeProvider({ children, showNotifications = false }) {
   const refreshPurpose = usePurposeStore(state => state.initializeFromSupabase);
   const refreshQuotes = useQuotesStore(state => state.initializeFromSupabase);
   const refreshDailyTasks = useDailyTasksStore(state => state.initializeFromSupabase);
+
+  // Social store refresh functions
+  const refreshFriends = useSocialStore(state => state.fetchFriends);
+  const refreshPendingRequests = useSocialStore(state => state.fetchPendingRequests);
+  const refreshChallenges = useSocialStore(state => state.fetchChallenges);
+  const refreshH2HInvites = useSocialStore(state => state.fetchHeadToHeadInvites);
+  const refreshActivityFeed = useSocialStore(state => state.fetchActivityFeed);
 
   // Helper to show realtime notification (only if enabled)
   const notifyRealtime = (module, eventType) => {
@@ -503,6 +511,95 @@ export function RealtimeProvider({ children, showNotifications = false }) {
       .subscribe(handleSubscriptionStatus('Daily Tasks'));
     channels.push(dailyTasksChannel);
 
+    // ============================================
+    // SOCIAL - Friend requests, challenges, activity feed
+    // ============================================
+    const socialChannel = supabase
+      .channel('global_social')
+      // Friend requests - both as requester and addressee
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'friendships',
+        filter: `requester_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Friendship changed (requester):', payload.eventType);
+        refreshFriends?.();
+        refreshPendingRequests?.();
+        if (payload.eventType === 'UPDATE' && payload.new?.status === 'accepted') {
+          toast.success('Friend request accepted!', { duration: 3000 });
+        }
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'friendships',
+        filter: `addressee_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Friendship changed (addressee):', payload.eventType);
+        refreshFriends?.();
+        refreshPendingRequests?.();
+        if (payload.eventType === 'INSERT' && payload.new?.status === 'pending') {
+          toast.info('New friend request!', {
+            title: '👋 Friend Request',
+            duration: 5000
+          });
+        }
+      })
+      // Challenges - both created by user and targeting user
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'challenges',
+        filter: `creator_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Challenge changed (creator):', payload.eventType);
+        refreshChallenges?.();
+        refreshH2HInvites?.();
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'challenges',
+      }, (payload) => {
+        // Check if this challenge is for us (H2H opponent)
+        if (payload.new?.event_data?.opponent_id === userId) {
+          debug('[Realtime] New H2H challenge received!');
+          refreshH2HInvites?.();
+          toast.info('New head-to-head challenge!', {
+            title: '⚔️ Challenge Received',
+            duration: 5000,
+          });
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'challenges',
+      }, (payload) => {
+        // Check if challenge status changed (accepted/completed)
+        if (payload.new?.creator_id === userId || payload.new?.event_data?.opponent_id === userId) {
+          debug('[Realtime] Challenge updated:', payload.eventType);
+          refreshChallenges?.();
+          refreshH2HInvites?.();
+          if (payload.new?.status === 'active' && payload.old?.status === 'pending') {
+            toast.success('Challenge accepted!', { duration: 3000 });
+          }
+        }
+      })
+      // Activity feed
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'user_activity_feed',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] New activity:', payload.eventType);
+        refreshActivityFeed?.();
+      })
+      .subscribe(handleSubscriptionStatus('Social'));
+    channels.push(socialChannel);
+
     channelsRef.current = channels;
 
     console.log(`[Realtime] ${channels.length} channels subscribed`);
@@ -533,6 +630,11 @@ export function RealtimeProvider({ children, showNotifications = false }) {
     refreshPurpose,
     refreshQuotes,
     refreshDailyTasks,
+    refreshFriends,
+    refreshPendingRequests,
+    refreshChallenges,
+    refreshH2HInvites,
+    refreshActivityFeed,
     toast,
     showNotifications,
   ]);

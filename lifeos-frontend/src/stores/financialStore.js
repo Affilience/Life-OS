@@ -192,6 +192,95 @@ export const ENVELOPE_CATEGORIES = {
     description: 'Car, laptop, furniture, etc.',
   },
 
+  // Fixed - Additional
+  phone: {
+    id: 'phone',
+    name: 'Phone & Mobile',
+    type: 'fixed',
+    icon: '📱',
+    color: 'from-sky-500 to-sky-600',
+    bgColor: 'bg-sky-500/10',
+    description: 'Phone bill, mobile data',
+  },
+  debt: {
+    id: 'debt',
+    name: 'Debt Payments',
+    type: 'fixed',
+    icon: '💳',
+    color: 'from-red-600 to-red-700',
+    bgColor: 'bg-red-600/10',
+    description: 'Credit cards, loans, student debt',
+  },
+
+  // Variable - Additional
+  pets: {
+    id: 'pets',
+    name: 'Pets',
+    type: 'variable',
+    icon: '🐕',
+    color: 'from-amber-500 to-amber-600',
+    bgColor: 'bg-amber-500/10',
+    description: 'Pet food, vet, grooming',
+  },
+  childcare: {
+    id: 'childcare',
+    name: 'Kids & Family',
+    type: 'variable',
+    icon: '👶',
+    color: 'from-pink-400 to-pink-500',
+    bgColor: 'bg-pink-400/10',
+    description: 'Childcare, school, family expenses',
+  },
+  home_maintenance: {
+    id: 'home_maintenance',
+    name: 'Home Maintenance',
+    type: 'variable',
+    icon: '🔧',
+    color: 'from-stone-500 to-stone-600',
+    bgColor: 'bg-stone-500/10',
+    description: 'Repairs, cleaning, garden',
+  },
+
+  // Wants - Additional
+  hobbies: {
+    id: 'hobbies',
+    name: 'Hobbies',
+    type: 'wants',
+    icon: '🎨',
+    color: 'from-lime-500 to-lime-600',
+    bgColor: 'bg-lime-500/10',
+    description: 'Sports, crafts, creative pursuits',
+  },
+  alcohol_tobacco: {
+    id: 'alcohol_tobacco',
+    name: 'Alcohol & Tobacco',
+    type: 'wants',
+    icon: '🍺',
+    color: 'from-yellow-600 to-yellow-700',
+    bgColor: 'bg-yellow-600/10',
+    description: 'Drinks, smoking, vaping',
+  },
+
+  // Growth - Additional
+  coaching: {
+    id: 'coaching',
+    name: 'Coaching & Mentorship',
+    type: 'growth',
+    icon: '🎯',
+    color: 'from-violet-500 to-violet-600',
+    bgColor: 'bg-violet-500/10',
+    description: 'Personal coaching, business mentors',
+  },
+  business: {
+    id: 'business',
+    name: 'Business Expenses',
+    type: 'growth',
+    icon: '💼',
+    color: 'from-slate-500 to-slate-600',
+    bgColor: 'bg-slate-500/10',
+    description: 'Tools, software, marketing',
+  },
+
   // Other
   gifts: {
     id: 'gifts',
@@ -201,6 +290,24 @@ export const ENVELOPE_CATEGORIES = {
     color: 'from-pink-500 to-rose-500',
     bgColor: 'bg-pink-500/10',
     description: 'Birthday, holiday, and other gifts',
+  },
+  charity: {
+    id: 'charity',
+    name: 'Charity & Donations',
+    type: 'other',
+    icon: '❤️',
+    color: 'from-rose-500 to-rose-600',
+    bgColor: 'bg-rose-500/10',
+    description: 'Charitable giving, donations',
+  },
+  taxes: {
+    id: 'taxes',
+    name: 'Taxes',
+    type: 'other',
+    icon: '🏛️',
+    color: 'from-neutral-500 to-neutral-600',
+    bgColor: 'bg-neutral-500/10',
+    description: 'Income tax, council tax, VAT',
   },
   other: {
     id: 'other',
