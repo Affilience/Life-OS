@@ -105,25 +105,28 @@ export const Navbar = forwardRef<NavbarHandle, NavbarProps>(function Navbar({ vi
         </Link>
 
         {/* Navigation Links */}
-        <div ref={linksRef} className="hidden md:flex items-center gap-6 lg:gap-8">
-          <Link href="#character" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
+        <div ref={linksRef} className="hidden md:flex items-center gap-5 lg:gap-7">
+          <a href="#character" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
             Character
-          </Link>
-          <Link href="#modules" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
+          </a>
+          <a href="#modules" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
             Modules
-          </Link>
-          <Link href="#ai" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
-            AI Assistant
-          </Link>
-          <Link href="#gamification" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
+          </a>
+          <a href="#ai" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
+            AI
+          </a>
+          <a href="#gamification" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
             Gamification
-          </Link>
-          <Link href="#screenshots" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
+          </a>
+          <a href="#screenshots" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
             Screenshots
-          </Link>
-          <Link href="#pricing" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
+          </a>
+          <a href="#pricing" className="nav-link navbar-element text-white/60 hover:text-white transition-colors text-sm font-medium">
             Pricing
-          </Link>
+          </a>
+          <a href="#beta" className="nav-link navbar-element px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 text-white hover:border-purple-400/50 transition-colors text-sm font-medium">
+            Beta Testing
+          </a>
         </div>
 
         {/* Empty div for layout balance (removed CTA) */}

@@ -351,6 +351,7 @@ export function AIShowcase() {
 
   return (
     <section
+      id="ai"
       ref={sectionRef}
       className="relative min-h-screen overflow-hidden"
     >

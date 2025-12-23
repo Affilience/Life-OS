@@ -281,6 +281,7 @@ export function Modules() {
 
   return (
     <section
+      id="modules"
       ref={sectionRef}
       className="relative min-h-screen overflow-hidden"
     >

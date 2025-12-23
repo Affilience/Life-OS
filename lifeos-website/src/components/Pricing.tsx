@@ -338,6 +338,7 @@ export function Pricing() {
 
   return (
     <section
+      id="pricing"
       ref={sectionRef}
       className="relative min-h-screen overflow-hidden"
       style={{ perspective: '1200px' }}
@@ -372,7 +373,7 @@ export function Pricing() {
         />
       </div>
 
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-20">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 pt-16 pb-10">
         {/* Header */}
         <div className="text-center mb-12" style={{ transformStyle: 'preserve-3d' }}>
           <h2
@@ -496,7 +497,7 @@ export function Pricing() {
         {/* Guarantee Badge */}
         <div
           ref={guaranteeRef}
-          className="mt-12 flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10"
+          className="mt-8 flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10"
           style={{ opacity: 0 }}
         >
           <motion.span

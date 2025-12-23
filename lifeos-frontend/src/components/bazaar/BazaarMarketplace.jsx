@@ -987,7 +987,8 @@ export default function BazaarMarketplace() {
         });
       } else {
         console.error('Failed to purchase pet:', result.error);
-        // Could show error toast here
+        alert(`Purchase failed: ${result.error || 'Unknown error'}`);
+        setPurchaseItem(null);
       }
       return;
     }
@@ -1003,7 +1004,8 @@ export default function BazaarMarketplace() {
         });
       } else {
         console.error('Failed to purchase gear:', result.error);
-        // Could show error toast here
+        alert(`Purchase failed: ${result.error || 'Unknown error'}`);
+        setPurchaseItem(null);
       }
       return;
     }
@@ -1011,41 +1013,46 @@ export default function BazaarMarketplace() {
     // Original purchase flow for other items
     const result = await spendCredits(item.price, `purchase_${item.id}`);
 
-    if (result.success) {
-      // Handle different item types
-      if (item.category === 'consumable') {
-        // Add consumables to inventory for later use
-        addToInventory(item);
-      } else if (item.category === 'cosmetic') {
-        // Add cosmetics to avatar store
-        addOwnedCosmetic(item.id);
-      } else if (item.category === 'irl_reward') {
-        // Add IRL rewards to inventory for proper tracking
-        addToInventory({
-          ...item,
-          effect: {
-            type: 'irl_reward',
-            suggestion: item.suggestion,
-          },
-        });
-        // Also keep localStorage for backwards compatibility
-        try {
-          const owned = JSON.parse(localStorage.getItem('owned_shop_items') || '[]');
-          owned.push(item.id);
-          localStorage.setItem('owned_shop_items', JSON.stringify(owned));
-        } catch (e) {}
-      } else {
-        // Track other owned items in localStorage
-        try {
-          const owned = JSON.parse(localStorage.getItem('owned_shop_items') || '[]');
-          owned.push(item.id);
-          localStorage.setItem('owned_shop_items', JSON.stringify(owned));
-        } catch (e) {}
-      }
-
+    if (!result.success) {
+      console.error('Failed to purchase item:', result.error);
+      alert(`Purchase failed: ${result.error || 'Unknown error'}`);
       setPurchaseItem(null);
-      setSuccessItem(item);
+      return;
     }
+
+    // Handle different item types
+    if (item.category === 'consumable') {
+      // Add consumables to inventory for later use
+      addToInventory(item);
+    } else if (item.category === 'cosmetic') {
+      // Add cosmetics to avatar store
+      addOwnedCosmetic(item.id);
+    } else if (item.category === 'irl_reward') {
+      // Add IRL rewards to inventory for proper tracking
+      addToInventory({
+        ...item,
+        effect: {
+          type: 'irl_reward',
+          suggestion: item.suggestion,
+        },
+      });
+      // Also keep localStorage for backwards compatibility
+      try {
+        const owned = JSON.parse(localStorage.getItem('owned_shop_items') || '[]');
+        owned.push(item.id);
+        localStorage.setItem('owned_shop_items', JSON.stringify(owned));
+      } catch (e) {}
+    } else {
+      // Track other owned items in localStorage
+      try {
+        const owned = JSON.parse(localStorage.getItem('owned_shop_items') || '[]');
+        owned.push(item.id);
+        localStorage.setItem('owned_shop_items', JSON.stringify(owned));
+      } catch (e) {}
+    }
+
+    setPurchaseItem(null);
+    setSuccessItem(item);
   };
 
   return (

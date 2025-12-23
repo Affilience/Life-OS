@@ -9,7 +9,7 @@ import { Gamification } from '@/components/Gamification';
 import { Screenshots } from '@/components/Screenshots';
 import { CTA } from '@/components/CTA';
 import { Pricing } from '@/components/Pricing';
-import { Footer } from '@/components/Footer';
+import { BetaCTA } from '@/components/BetaCTA';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { Navbar, NavbarHandle } from '@/components/Navbar';
 import { SmoothScrollProvider } from '@/components/SmoothScrollProvider';
@@ -109,11 +109,9 @@ export default function Home() {
         <Gamification />
         <Screenshots />
         <Pricing />
-        {/* Large spacer to provide scroll height for all pinned animations to complete */}
-        {/* Pricing needs 900% scroll, so spacer must extend past that */}
-        <div className="h-[1000vh]" />
-        {/* <CTA /> */}
-        {/* <Footer /> */}
+        <BetaCTA />
+        {/* Spacer to provide scroll height for pinned animations to complete */}
+        <div className="h-[1100vh]" />
       </main>
     </SmoothScrollProvider>
   );

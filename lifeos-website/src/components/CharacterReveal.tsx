@@ -418,6 +418,7 @@ export function CharacterReveal() {
 
   return (
     <section
+      id="character"
       ref={sectionRef}
       className="relative min-h-screen overflow-x-clip"
     >

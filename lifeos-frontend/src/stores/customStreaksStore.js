@@ -537,15 +537,24 @@ const useCustomStreaksStore = create(
       // Delete a streak
       deleteStreak: async (streakId) => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) {
+            console.error('No user ID available for deleteStreak');
+            return { success: false, error: 'Not authenticated' };
+          }
+
+          // Delete with user_id check for security
           await supabase
             .from('custom_streaks')
             .delete()
-            .eq('id', streakId);
+            .eq('id', streakId)
+            .eq('user_id', userId);
 
           await supabase
             .from('custom_streak_completions')
             .delete()
-            .eq('streak_id', streakId);
+            .eq('streak_id', streakId)
+            .eq('user_id', userId);
 
           set(state => ({
             streaks: state.streaks.filter(s => s.id !== streakId),
@@ -562,10 +571,18 @@ const useCustomStreaksStore = create(
       // Update streak settings
       updateStreak: async (streakId, updates) => {
         try {
+          const userId = await getCurrentUserId();
+          if (!userId) {
+            console.error('No user ID available for updateStreak');
+            return { success: false, error: 'Not authenticated' };
+          }
+
+          // Update with user_id check for security
           const { error } = await supabase
             .from('custom_streaks')
             .update(updates)
-            .eq('id', streakId);
+            .eq('id', streakId)
+            .eq('user_id', userId);
 
           if (error && error.code !== '42P01') {
             throw error;

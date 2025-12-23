@@ -30,7 +30,7 @@ import { useFinancialStore } from '../../stores/financialStore';
  * - Income/Revenue
  * - Efficiency Rating
  */
-export default function ProductivityDashboard() {
+export default function ProductivityDashboard({ onSwitchToProjects }) {
   const [showTaskModal, setShowTaskModal] = useState(false);
 
   // Get real data from productivity store
@@ -175,7 +175,12 @@ export default function ProductivityDashboard() {
   };
 
   const handleLogTask = () => {
-    setShowTaskModal(true);
+    // Navigate to Projects tab for task logging
+    if (onSwitchToProjects) {
+      onSwitchToProjects();
+    } else {
+      setShowTaskModal(true);
+    }
   };
 
   return (

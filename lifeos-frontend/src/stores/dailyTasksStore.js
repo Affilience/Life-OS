@@ -30,7 +30,12 @@ const syncTaskToSupabase = async (task, date, action = 'upsert') => {
     if (!userId) return;
 
     if (action === 'delete') {
-      const { error } = await supabase.from('daily_tasks').delete().eq('id', task.id);
+      // Delete with user_id check for security
+      const { error } = await supabase
+        .from('daily_tasks')
+        .delete()
+        .eq('id', task.id)
+        .eq('user_id', userId);
       if (error) console.error('Error deleting daily task:', error);
       return;
     }

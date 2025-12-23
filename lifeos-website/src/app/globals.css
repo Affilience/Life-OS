@@ -254,6 +254,28 @@ body {
   animation: fade-in-up 0.6s ease-out forwards;
 }
 
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 3s ease infinite;
+}
+
+@keyframes shine {
+  from {
+    transform: translateX(-100%) skewX(-12deg);
+  }
+  to {
+    transform: translateX(400%) skewX(-12deg);
+  }
+}
+
+.animate-shine {
+  animation: shine 3s ease-in-out infinite;
+}
+
 /* Feature Card Hover */
 .feature-card {
   transition: all 0.3s ease;

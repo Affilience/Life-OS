@@ -72,7 +72,9 @@ export default function Productivity() {
 
       {/* Active Tab Content */}
       <div className="tab-content">
-        {!showSetup && activeTab === 'dashboard' && <ProductivityDashboard />}
+        {!showSetup && activeTab === 'dashboard' && (
+          <ProductivityDashboard onSwitchToProjects={() => setActiveTab('projects')} />
+        )}
         {!showSetup && activeTab === 'sessions' && <WorkSessionsTab />}
         {!showSetup && activeTab === 'projects' && <ProjectsTab />}
       </div>
