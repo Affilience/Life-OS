@@ -55,125 +55,59 @@ const checkUserCredits = async (userId, amount) => {
   return { hasEnough: data.cosmic_credits >= amount, balance: data.cosmic_credits };
 };
 
-// Deduct credits from a user (for wagers)
+// Deduct credits from a user (for wagers) - ATOMIC operation
 const deductCredits = async (userId, amount, description, relatedChallengeId) => {
-  // Get current balance
-  const { data: currency, error: fetchError } = await supabase
-    .from('user_cosmic_currency')
-    .select('cosmic_credits, lifetime_credits_spent')
-    .eq('user_id', userId)
-    .single();
-
-  if (fetchError) return { success: false, error: fetchError.message };
-  if (currency.cosmic_credits < amount) return { success: false, error: 'Insufficient credits' };
-
-  // Deduct credits
-  const { data: updated, error: updateError } = await supabase
-    .from('user_cosmic_currency')
-    .update({
-      cosmic_credits: currency.cosmic_credits - amount,
-      lifetime_credits_spent: (currency.lifetime_credits_spent || 0) + amount,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-    .select()
-    .single();
-
-  if (updateError) return { success: false, error: updateError.message };
-
-  // Log transaction
-  await supabase
-    .from('currency_transactions')
-    .insert({
-      user_id: userId,
-      amount: -amount,
-      transaction_type: 'wager',
-      description,
-      related_entity_id: relatedChallengeId,
-      related_entity_type: 'challenge',
-      balance_after: updated.cosmic_credits,
+  // Use atomic RPC function with row locking to prevent race conditions
+  const { data: result, error } = await supabase
+    .rpc('spend_credits_atomic', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_purpose: 'wager',
+      p_description: description
     });
 
-  return { success: true, newBalance: updated.cosmic_credits };
+  if (error) return { success: false, error: error.message };
+  if (!result?.success) return { success: false, error: result?.error || 'Spend failed' };
+
+  return { success: true, newBalance: result.new_balance };
 };
 
-// Award credits to a user (for winning wagers)
+// Award credits to a user (for winning wagers) - ATOMIC operation
 const awardCredits = async (userId, amount, description, relatedChallengeId) => {
-  // Get current balance
-  const { data: currency, error: fetchError } = await supabase
-    .from('user_cosmic_currency')
-    .select('cosmic_credits, lifetime_credits_earned')
-    .eq('user_id', userId)
-    .single();
-
-  if (fetchError) return { success: false, error: fetchError.message };
-
-  // Award credits
-  const { data: updated, error: updateError } = await supabase
-    .from('user_cosmic_currency')
-    .update({
-      cosmic_credits: currency.cosmic_credits + amount,
-      lifetime_credits_earned: (currency.lifetime_credits_earned || 0) + amount,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-    .select()
-    .single();
-
-  if (updateError) return { success: false, error: updateError.message };
-
-  // Log transaction
-  await supabase
-    .from('currency_transactions')
-    .insert({
-      user_id: userId,
-      amount: amount,
-      transaction_type: 'wager_win',
-      description,
-      related_entity_id: relatedChallengeId,
-      related_entity_type: 'challenge',
-      balance_after: updated.cosmic_credits,
+  // Use atomic RPC function to prevent race conditions
+  const { data: result, error } = await supabase
+    .rpc('award_cosmic_credits', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_transaction_type: 'wager_win',
+      p_description: description,
+      p_related_entity_id: relatedChallengeId,
+      p_related_entity_type: 'challenge'
     });
 
-  return { success: true, newBalance: updated.cosmic_credits };
+  if (error) return { success: false, error: error.message };
+  if (!result?.success) return { success: false, error: 'Award failed' };
+
+  return { success: true, newBalance: result.new_balance };
 };
 
-// Refund credits (for cancelled challenges)
+// Refund credits (for cancelled challenges) - ATOMIC operation
 const refundCredits = async (userId, amount, description, relatedChallengeId) => {
-  const { data: currency, error: fetchError } = await supabase
-    .from('user_cosmic_currency')
-    .select('cosmic_credits, lifetime_credits_spent')
-    .eq('user_id', userId)
-    .single();
-
-  if (fetchError) return { success: false, error: fetchError.message };
-
-  const { data: updated, error: updateError } = await supabase
-    .from('user_cosmic_currency')
-    .update({
-      cosmic_credits: currency.cosmic_credits + amount,
-      lifetime_credits_spent: Math.max(0, (currency.lifetime_credits_spent || 0) - amount),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-    .select()
-    .single();
-
-  if (updateError) return { success: false, error: updateError.message };
-
-  await supabase
-    .from('currency_transactions')
-    .insert({
-      user_id: userId,
-      amount: amount,
-      transaction_type: 'wager_refund',
-      description,
-      related_entity_id: relatedChallengeId,
-      related_entity_type: 'challenge',
-      balance_after: updated.cosmic_credits,
+  // Use atomic RPC function - refunds use award since we're adding credits back
+  const { data: result, error } = await supabase
+    .rpc('award_cosmic_credits', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_transaction_type: 'wager_refund',
+      p_description: description,
+      p_related_entity_id: relatedChallengeId,
+      p_related_entity_type: 'challenge'
     });
 
-  return { success: true, newBalance: updated.cosmic_credits };
+  if (error) return { success: false, error: error.message };
+  if (!result?.success) return { success: false, error: 'Refund failed' };
+
+  return { success: true, newBalance: result.new_balance };
 };
 
 // Initial state

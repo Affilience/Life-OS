@@ -505,7 +505,6 @@ export const useGamificationStore = create(
         const { skipAvatarSync = false } = options;
 
         // Skip database sync if userId is null (store not initialized yet)
-        // Local state will still update for UI responsiveness
         const shouldSyncToDatabase = !!userId;
 
         // Calculate total multiplier including active boosts (like Double XP Scroll)
@@ -524,19 +523,46 @@ export const useGamificationStore = create(
 
         // Apply multiplier
         const adjustedAmount = Math.floor(amount * totalMultiplier);
-        const newTotalXP = totalXP + adjustedAmount;
 
-        // Calculate new level using exponential scaling
-        const { level: newLevel, currentXP: newCurrentXP, xpToNextLevel: newXPToNext } = calculateLevelFromTotalXP(newTotalXP);
+        // For immediate UI feedback, calculate locally first
+        let newTotalXP = totalXP + adjustedAmount;
+        let newLevel, newCurrentXP, newXPToNext;
 
         const oldLevel = get().level;
-        const leveledUp = newLevel > oldLevel;
-
-        // Check for stage transition (stage = level, 40 stages for 40 levels)
         const oldStage = get().currentStage;
+
+        // Use ATOMIC database operation if userId is available
+        // This prevents race conditions when multiple devices add XP simultaneously
+        if (shouldSyncToDatabase) {
+          try {
+            // Step 1: Atomically add XP to database (uses DB's own value, not our local state)
+            const { data: xpResult, error: xpError } = await supabase
+              .rpc('add_xp_atomic', {
+                p_user_id: userId,
+                p_amount: adjustedAmount,
+                p_source: source
+              });
+
+            if (xpError) {
+              console.warn('[GamificationStore] Atomic XP add failed, using local:', xpError.message);
+            } else if (xpResult?.success) {
+              // Use the authoritative total from database
+              newTotalXP = xpResult.new_total_xp;
+              console.log(`[GamificationStore] Atomic XP: +${adjustedAmount} → ${newTotalXP} total`);
+            }
+          } catch (error) {
+            console.warn('[GamificationStore] RPC error, using local calculation:', error.message);
+          }
+        }
+
+        // Calculate level using exponential scaling (frontend formula is source of truth for levels)
+        ({ level: newLevel, currentXP: newCurrentXP, xpToNextLevel: newXPToNext } = calculateLevelFromTotalXP(newTotalXP));
+
+        const leveledUp = newLevel > oldLevel;
         const newStage = Math.min(40, newLevel);
         const stageTransition = newStage > oldStage;
 
+        // Update local state
         set({
           level: newLevel,
           currentStage: newStage,
@@ -557,23 +583,18 @@ export const useGamificationStore = create(
           }
         }
 
-        // Update database (only if userId is available)
-        if (shouldSyncToDatabase) {
+        // Update level in database if it changed (atomic operation)
+        if (shouldSyncToDatabase && leveledUp) {
           try {
-            await supabase
-              .from('user_module_progress')
-              .upsert({
-                user_id: userId,
-                module_id: 'cosmic_evolution',
-                level: newLevel,
-                current_xp: newCurrentXP,
-                total_xp_earned: newTotalXP,
-                xp_to_next_level: newXPToNext,
-                current_stage: get().currentStage,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'user_id,module_id' });
+            await supabase.rpc('update_level_atomic', {
+              p_user_id: userId,
+              p_new_level: newLevel,
+              p_new_stage: newStage,
+              p_current_xp: newCurrentXP,
+              p_xp_to_next: newXPToNext
+            });
           } catch (error) {
-            console.warn('[GamificationStore] Failed to sync XP to database:', error.message);
+            console.warn('[GamificationStore] Failed to sync level to database:', error.message);
           }
         }
 
@@ -816,31 +837,37 @@ export const useGamificationStore = create(
           return { newCredits: cosmicCredits, earned: 0 };
         }
 
-        const newCredits = cosmicCredits + amount;
-        const newLifetime = lifetimeCreditsEarned + amount;
+        // Use ATOMIC database operation to prevent race conditions
+        // when multiple devices award credits simultaneously
+        let newCredits = cosmicCredits + amount;
+        let newLifetime = lifetimeCreditsEarned + amount;
 
+        try {
+          // award_cosmic_credits is already atomic (uses ON CONFLICT DO UPDATE SET credits = credits + amount)
+          const { data: result, error } = await supabase
+            .rpc('award_cosmic_credits', {
+              p_user_id: userId,
+              p_amount: amount,
+              p_transaction_type: source,
+              p_description: `Earned from ${source}`
+            });
+
+          if (error) {
+            console.error('[Gamification] Atomic credit add failed:', error);
+          } else if (result?.success) {
+            // Use authoritative balance from database
+            newCredits = result.new_balance;
+            console.log(`[Gamification] Atomic credits: +${amount} → ${newCredits} total (source: ${source})`);
+          }
+        } catch (error) {
+          console.warn('[Gamification] RPC error for credits, using local:', error.message);
+        }
+
+        // Update local state with authoritative value
         set({
           cosmicCredits: newCredits,
           lifetimeCreditsEarned: newLifetime,
         });
-
-        // Upsert to database (creates record if it doesn't exist)
-        const { error } = await supabase
-          .from('user_cosmic_currency')
-          .upsert({
-            user_id: userId,
-            cosmic_credits: newCredits,
-            lifetime_credits_earned: newLifetime,
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id',
-          });
-
-        if (error) {
-          console.error('[Gamification] Failed to update credits in database:', error);
-        } else {
-          console.log(`[Gamification] Added ${amount} credits (source: ${source}), total: ${newCredits}`);
-        }
 
         get().logEvent('credits_earned', source, { amount });
 
@@ -849,35 +876,59 @@ export const useGamificationStore = create(
 
       /**
        * Spend cosmic credits
+       * Uses ATOMIC database operation to prevent race conditions and ensure balance check
        */
       spendCredits: async (amount, purpose = 'purchase') => {
         const { userId, cosmicCredits, lifetimeCreditsSpent } = get();
 
+        if (!userId) {
+          return { success: false, error: 'Not authenticated' };
+        }
+
+        // Quick local check (authoritative check happens in database)
         if (cosmicCredits < amount) {
           return { success: false, error: 'Insufficient credits' };
         }
 
-        const newCredits = cosmicCredits - amount;
-        const newSpent = lifetimeCreditsSpent + amount;
+        // Use ATOMIC database operation with row locking
+        // This prevents race conditions where two devices spend simultaneously
+        try {
+          const { data: result, error } = await supabase
+            .rpc('spend_credits_atomic', {
+              p_user_id: userId,
+              p_amount: amount,
+              p_purpose: purpose,
+              p_description: `Spent on ${purpose}`
+            });
 
-        set({
-          cosmicCredits: newCredits,
-          lifetimeCreditsSpent: newSpent,
-        });
+          if (error) {
+            console.error('[Gamification] Atomic spend failed:', error);
+            return { success: false, error: error.message };
+          }
 
-        // Update database
-        await supabase
-          .from('user_cosmic_currency')
-          .update({
-            cosmic_credits: newCredits,
-            lifetime_credits_spent: newSpent,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', userId);
+          if (!result?.success) {
+            // Database rejected the spend (insufficient balance or user not found)
+            console.warn('[Gamification] Spend rejected:', result?.error);
+            return { success: false, error: result?.error || 'Spend failed' };
+          }
 
-        get().logEvent('credits_spent', purpose, { amount });
+          // Update local state with authoritative value from database
+          const newCredits = result.new_balance;
+          const newSpent = lifetimeCreditsSpent + amount;
 
-        return { success: true, newCredits, spent: amount };
+          set({
+            cosmicCredits: newCredits,
+            lifetimeCreditsSpent: newSpent,
+          });
+
+          console.log(`[Gamification] Atomic spend: -${amount} → ${newCredits} remaining (purpose: ${purpose})`);
+          get().logEvent('credits_spent', purpose, { amount });
+
+          return { success: true, newCredits, spent: amount };
+        } catch (error) {
+          console.error('[Gamification] RPC error for spend:', error);
+          return { success: false, error: error.message };
+        }
       },
 
       // ============================================

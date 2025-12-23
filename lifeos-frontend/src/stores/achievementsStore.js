@@ -2016,18 +2016,14 @@ const useAchievementsStore = create(
                 await gamificationStore.getState().addCredits(totalCredits, 'achievement');
               }
             } catch (e) {
-              // Fallback: direct database update
-              const { data: currentCurrency } = await supabase
-                .from('user_cosmic_currency')
-                .select('cosmic_credits')
-                .eq('user_id', userId)
-                .maybeSingle();
-
-              if (currentCurrency && totalCredits > 0) {
-                await supabase
-                  .from('user_cosmic_currency')
-                  .update({ cosmic_credits: (currentCurrency.cosmic_credits || 0) + totalCredits })
-                  .eq('user_id', userId);
+              // Fallback: use atomic RPC function
+              if (totalCredits > 0) {
+                await supabase.rpc('award_cosmic_credits', {
+                  p_user_id: userId,
+                  p_amount: totalCredits,
+                  p_transaction_type: 'achievement',
+                  p_description: 'Achievement reward fallback'
+                });
               }
             }
 
