@@ -251,10 +251,22 @@ export default function PvPArena({ onClose }) {
 
   // Get user ID
   const [userId, setUserId] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
   useEffect(() => {
     const getUser = async () => {
-      const { data } = await import('../../lib/supabase').then(m => m.supabase.auth.getUser());
-      if (data?.user) setUserId(data.user.id);
+      try {
+        const { data, error } = await import('../../lib/supabase').then(m => m.supabase.auth.getUser());
+        if (error) {
+          console.error('[PvPArena] Auth error:', error);
+        }
+        if (data?.user) {
+          setUserId(data.user.id);
+        }
+      } catch (err) {
+        console.error('[PvPArena] Failed to get user:', err);
+      } finally {
+        setUserLoading(false);
+      }
     };
     getUser();
   }, []);
@@ -468,13 +480,26 @@ export default function PvPArena({ onClose }) {
           <div className="p-6">
             <button
               onClick={handleJoinQueue}
-              className="w-full p-5 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 rounded-xl transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98]"
+              disabled={userLoading || !userId}
+              className={`w-full p-5 rounded-xl transition-all ${
+                userLoading || !userId
+                  ? 'bg-gray-700 cursor-not-allowed opacity-60'
+                  : 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98]'
+              }`}
             >
               <div className="flex items-center justify-center gap-3">
-                <Swords className="w-8 h-8 text-white" />
+                {userLoading ? (
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                ) : (
+                  <Swords className="w-8 h-8 text-white" />
+                )}
                 <div className="text-left">
-                  <h3 className="font-bold text-white text-lg">Find Match</h3>
-                  <p className="text-sm text-white/80">Ranked battle based on your level</p>
+                  <h3 className="font-bold text-white text-lg">
+                    {userLoading ? 'Loading...' : !userId ? 'Not Signed In' : 'Find Match'}
+                  </h3>
+                  <p className="text-sm text-white/80">
+                    {userLoading ? 'Please wait...' : !userId ? 'Please sign in to play' : 'Ranked battle based on your level'}
+                  </p>
                 </div>
               </div>
             </button>
