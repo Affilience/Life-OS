@@ -3,6 +3,16 @@ import { persist } from 'zustand/middleware';
 import useDashboardStore from './dashboardStore';
 import { supabase, getCurrentUserId } from '../lib/supabase';
 
+// Lazy import gamification store to avoid circular dependency
+let gamificationStoreRef = null;
+const getGamificationStore = async () => {
+  if (!gamificationStoreRef) {
+    const module = await import('./gamificationStore');
+    gamificationStoreRef = module.default;
+  }
+  return gamificationStoreRef;
+};
+
 /**
  * New Onboarding Store
  * Manages the complete onboarding flow with progress saving
@@ -341,6 +351,12 @@ export const useNewOnboardingStore = create(
           const isComplete = data.onboarding_completed === true;
           const preferences = data.preferences || {};
 
+          console.log('[OnboardingStore] DB data:', {
+            onboarding_completed: data.onboarding_completed,
+            isComplete,
+            display_name: data.display_name
+          });
+
           clearTimeout(timeoutId);
           if (!timedOut) {
             set({
@@ -642,6 +658,15 @@ export const useNewOnboardingStore = create(
           completedAt: new Date().toISOString(),
           novaState: 'celebrating',
         });
+
+        // Award 100 starter credits
+        try {
+          const gamificationStore = await getGamificationStore();
+          await gamificationStore.getState().addCredits(100, 'onboarding_bonus');
+          console.log('[Onboarding] Awarded 100 starter credits');
+        } catch (e) {
+          console.warn('[Onboarding] Could not award starter credits:', e);
+        }
 
         // Sync all onboarding data to Supabase
         // This is CRITICAL - if sync fails, on refresh user will be sent back to onboarding
