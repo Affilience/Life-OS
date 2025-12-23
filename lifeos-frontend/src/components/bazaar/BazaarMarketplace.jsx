@@ -839,7 +839,7 @@ export default function BazaarMarketplace() {
     addToInventory,
   } = useGamificationStore();
 
-  const { addOwnedCosmetic, ownedCosmetics, unlockedEquipment, getPurchasableEquipment } = useAvatarStore();
+  const { addOwnedCosmetic, ownedCosmetics, unlockedEquipment, getPurchasableEquipment, unlockEquipment } = useAvatarStore();
   const { ownedPets, getPurchasablePets } = usePetStore();
 
   const { mode } = useGamificationModeStore();
@@ -1030,6 +1030,9 @@ export default function BazaarMarketplace() {
     } else if (item.category === 'cosmetic') {
       // Add cosmetics to avatar store
       addOwnedCosmetic(item.id);
+    } else if (item.category === 'equipment') {
+      // Add equipment directly (credits already spent above)
+      await unlockEquipment(item.id);
     } else if (item.category === 'irl_reward') {
       // Add IRL rewards to inventory for proper tracking
       addToInventory({
