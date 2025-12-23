@@ -344,8 +344,8 @@ export const useAvatarStore = create(
           result = { leveledUp: false };
         }
 
-        // Sync to Supabase (non-blocking)
-        get().syncToSupabase();
+        // Sync to Supabase
+        await get().syncToSupabase();
 
         return result;
       },
@@ -380,7 +380,7 @@ export const useAvatarStore = create(
         }));
 
         get().recalculateStats();
-        get().syncToSupabase();
+        await get().syncToSupabase();
         return true;
       },
 
@@ -394,7 +394,7 @@ export const useAvatarStore = create(
         }));
 
         get().recalculateStats();
-        get().syncToSupabase();
+        await get().syncToSupabase();
       },
 
       // Unlock equipment
@@ -420,7 +420,8 @@ export const useAvatarStore = create(
           }
         }
 
-        get().syncToSupabase();
+        // Await sync to ensure it completes before returning
+        await get().syncToSupabase();
         return true;
       },
 
@@ -438,7 +439,7 @@ export const useAvatarStore = create(
 
         // Check for new unlocks
         get().checkUnlocks();
-        get().syncToSupabase();
+        await get().syncToSupabase();
       },
 
       // Check if a specific unlock requirement is met
@@ -927,7 +928,7 @@ export const useAvatarStore = create(
           },
         }));
 
-        get().syncToSupabase();
+        await get().syncToSupabase();
         return true;
       },
 
@@ -939,7 +940,7 @@ export const useAvatarStore = create(
             [slot]: null,
           },
         }));
-        get().syncToSupabase();
+        await get().syncToSupabase();
       },
 
       // Clear all cosmetic overrides
@@ -957,7 +958,7 @@ export const useAvatarStore = create(
             amulet: null,
           },
         });
-        get().syncToSupabase();
+        await get().syncToSupabase();
       },
 
       // Get visual item for a slot
@@ -985,7 +986,7 @@ export const useAvatarStore = create(
           },
         }));
 
-        get().syncToSupabase();
+        await get().syncToSupabase();
         return true;
       },
 
@@ -997,7 +998,7 @@ export const useAvatarStore = create(
             [slot]: null,
           },
         }));
-        get().syncToSupabase();
+        await get().syncToSupabase();
       },
 
       // Clear all dyes
@@ -1015,7 +1016,7 @@ export const useAvatarStore = create(
             amulet: null,
           },
         });
-        get().syncToSupabase();
+        await get().syncToSupabase();
       },
 
       // Get all visual equipment (RPG slots)
@@ -1037,7 +1038,7 @@ export const useAvatarStore = create(
       setCharacterGender: async (gender) => {
         if (gender === 'male' || gender === 'female') {
           set({ characterGender: gender });
-          get().syncToSupabase();
+          await get().syncToSupabase();
         }
       },
 
@@ -1046,7 +1047,7 @@ export const useAvatarStore = create(
         const validTones = ['default', 'light', 'medium', 'tan', 'dark', 'deep'];
         if (validTones.includes(tone)) {
           set({ skinTone: tone });
-          get().syncToSupabase();
+          await get().syncToSupabase();
         }
       },
 
@@ -1060,7 +1061,7 @@ export const useAvatarStore = create(
         if (!ownedCosmetics.includes(cosmeticId)) {
           set({ ownedCosmetics: [...ownedCosmetics, cosmeticId] });
           // Sync to Supabase
-          get().syncToSupabase();
+          await get().syncToSupabase();
         }
       },
 
@@ -1076,7 +1077,7 @@ export const useAvatarStore = create(
             },
           });
           // Sync to Supabase
-          get().syncToSupabase();
+          await get().syncToSupabase();
         }
       },
 
@@ -1136,7 +1137,7 @@ export const useAvatarStore = create(
         });
 
         get().recalculateStats();
-        get().syncToSupabase();
+        await get().syncToSupabase();
 
         return {
           success: true,
@@ -1174,7 +1175,7 @@ export const useAvatarStore = create(
           ...DEFAULT_STATE,
         });
         get().recalculateStats();
-        get().syncToSupabase();
+        await get().syncToSupabase();
       },
     }),
     {
