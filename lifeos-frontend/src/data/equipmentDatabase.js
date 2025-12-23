@@ -408,8 +408,8 @@ export const EQUIPMENT_DATABASE = {
     sprite: { path: '/assets/equipment/chests/cloth_tunic.png' },
     overlay: { path: '/assets/equipment/overlays/chest/chest_cloth_tunic.png' },
     unlockMethod: 'milestone',
-    unlockRequirement: { metric: 'tasksCompleted', target: 1 },
-    unlockDescription: 'Complete your first task',
+    unlockRequirement: { metric: 'tasksCompleted', target: 10 },
+    unlockDescription: 'Complete 10 tasks',
   },
 
   chest_leather_vest: {
@@ -696,8 +696,8 @@ export const EQUIPMENT_DATABASE = {
     overlay: { path: '/assets/equipment/overlays/weapons/weapon_wooden_sword.png' },
     weaponType: 'sword',
     unlockMethod: 'milestone',
-    unlockRequirement: { metric: 'workoutsCompleted', target: 1 },
-    unlockDescription: 'Complete your first workout',
+    unlockRequirement: { metric: 'workoutsCompleted', target: 5 },
+    unlockDescription: 'Complete 5 workouts',
   },
 
   weapon_wooden_staff: {
@@ -712,8 +712,8 @@ export const EQUIPMENT_DATABASE = {
     overlay: { path: '/assets/equipment/overlays/weapons/weapon_wooden_sword.png' },
     weaponType: 'staff',
     unlockMethod: 'milestone',
-    unlockRequirement: { metric: 'booksCompleted', target: 1 },
-    unlockDescription: 'Finish your first book',
+    unlockRequirement: { metric: 'booksCompleted', target: 3 },
+    unlockDescription: 'Finish 3 books',
   },
 
   // Uncommon Weapons
@@ -1081,8 +1081,8 @@ export const EQUIPMENT_DATABASE = {
     sprite: { path: '/assets/equipment/shields/wooden_buckler.png' },
     overlay: { path: '/assets/equipment/overlays/shields/shield_wooden.png' },
     unlockMethod: 'milestone',
-    unlockRequirement: { metric: 'journalEntriesWritten', target: 1 },
-    unlockDescription: 'Write your first journal entry',
+    unlockRequirement: { metric: 'journalEntriesWritten', target: 5 },
+    unlockDescription: 'Write 5 journal entries',
   },
 
   shield_iron: {
