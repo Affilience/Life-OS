@@ -294,7 +294,13 @@ export function AuthProvider({ children }) {
           return;
         }
       } else if (!newUser) {
-        localStorage.removeItem(CURRENT_USER_KEY);
+        // No authenticated user - clear ALL localStorage to prevent stale state
+        // This handles the case where auth users were deleted from DB
+        const hadPreviousUser = localStorage.getItem(CURRENT_USER_KEY);
+        if (hadPreviousUser) {
+          console.log('[Auth] No session but had previous user - clearing all stale data');
+          clearAllStorage();
+        }
       }
 
       setSession(session);
