@@ -89,7 +89,9 @@ export default function CreateChallengeModal({ isOpen, onClose, initialType = 'i
           setLoading(false);
           return;
         }
-        result = await createHeadToHead(selectedOpponent.id, {
+        // Use user_id for consistency - some friend objects may have id, others user_id
+        const opponentId = selectedOpponent.user_id || selectedOpponent.id;
+        result = await createHeadToHead(opponentId, {
           title: formData.title,
           metricType: formData.metricType,
           targetValue: formData.targetValue,
