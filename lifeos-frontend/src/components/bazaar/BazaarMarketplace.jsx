@@ -1056,6 +1056,11 @@ export default function BazaarMarketplace() {
 
     setPurchaseItem(null);
     setSuccessItem(item);
+    } catch (error) {
+      console.error('[Bazaar] Purchase error:', error);
+      alert(`Purchase failed: ${error.message || 'Unknown error'}`);
+      setPurchaseItem(null);
+    }
   };
 
   return (
