@@ -36,6 +36,18 @@ import { usePurposeStore } from '../stores/purposeStore';  // named export
 import { useQuotesStore } from '../stores/quotesStore';  // named export
 import useDailyTasksStore from '../stores/dailyTasksStore';  // default export
 import { useSocialStore } from '../stores/socialStore';  // named export
+import useBadHabitsStore from '../stores/badHabitsStore';  // default export
+import useBossStore from '../stores/bossStore';  // default export
+import useCustomStreaksStore from '../stores/customStreaksStore';  // default export
+import usePetStore from '../stores/petStore';  // default export
+import usePvpArenaStore from '../stores/pvpArenaStore';  // default export
+import usePvpStore from '../stores/pvpStore';  // default export
+import useQuestsStore from '../stores/questsStore';  // default export
+import useSettingsStore from '../stores/settingsStore';  // default export
+import useModuleMasteryStore from '../stores/moduleMasteryStore';  // default export
+import usePerkStore from '../stores/perkStore';  // default export
+import useNotificationStore from '../stores/notificationStore';  // default export
+import useDashboardStore from '../stores/dashboardStore';  // default export
 
 export function RealtimeProvider({ children, showNotifications = false }) {
   const channelsRef = useRef([]);
@@ -89,6 +101,21 @@ export function RealtimeProvider({ children, showNotifications = false }) {
   const refreshChallenges = useSocialStore(state => state.fetchChallenges);
   const refreshH2HInvites = useSocialStore(state => state.fetchHeadToHeadInvites);
   const refreshActivityFeed = useSocialStore(state => state.fetchActivityFeed);
+
+  // Additional store refresh functions for full system real-time
+  const refreshBadHabits = useBadHabitsStore(state => state.initializeFromSupabase);
+  const refreshBoss = useBossStore(state => state.initializeFromSupabase);
+  const refreshCustomStreaks = useCustomStreaksStore(state => state.initializeFromSupabase);
+  const refreshPets = usePetStore(state => state.initializeFromSupabase);
+  const refreshPvpArena = usePvpArenaStore(state => state.fetchMatchHistory);
+  const refreshPvpArenaStats = usePvpArenaStore(state => state.fetchStats);
+  const refreshPvp = usePvpStore(state => state.fetchActiveBattles);
+  const refreshQuests = useQuestsStore(state => state.initializeFromSupabase);
+  const refreshSettings = useSettingsStore(state => state.initializeFromSupabase);
+  const refreshModuleMastery = useModuleMasteryStore(state => state.initializeFromSupabase);
+  const refreshPerks = usePerkStore(state => state.initializeFromSupabase);
+  const refreshNotifications = useNotificationStore(state => state.fetchNotifications);
+  const refreshDashboard = useDashboardStore(state => state.initializeFromSupabase);
 
   // Helper to show realtime notification (only if enabled)
   const notifyRealtime = (module, eventType) => {
@@ -600,6 +627,394 @@ export function RealtimeProvider({ children, showNotifications = false }) {
       .subscribe(handleSubscriptionStatus('Social'));
     channels.push(socialChannel);
 
+    // ============================================
+    // BAD HABITS - Tracking and relapses
+    // ============================================
+    const badHabitsChannel = supabase
+      .channel('global_bad_habits')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bad_habits',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Bad habit changed:', payload.eventType);
+        refreshBadHabits?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bad_habit_relapses',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Bad habit relapse:', payload.eventType);
+        refreshBadHabits?.();
+      })
+      .subscribe(handleSubscriptionStatus('Bad Habits'));
+    channels.push(badHabitsChannel);
+
+    // ============================================
+    // BOSS BATTLES - Active battles and damage
+    // ============================================
+    const bossChannel = supabase
+      .channel('global_boss')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'boss_battles',
+      }, (payload) => {
+        // Check if user is a participant
+        debug('[Realtime] Boss battle changed:', payload.eventType);
+        refreshBoss?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'boss_battle_participants',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Boss participation changed:', payload.eventType);
+        refreshBoss?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'boss_battle_damage_logs',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Boss damage logged:', payload.eventType);
+        refreshBoss?.();
+      })
+      .subscribe(handleSubscriptionStatus('Boss Battles'));
+    channels.push(bossChannel);
+
+    // ============================================
+    // CUSTOM STREAKS - User-defined streaks
+    // ============================================
+    const streaksChannel = supabase
+      .channel('global_streaks')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'custom_streaks',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Custom streak changed:', payload.eventType);
+        refreshCustomStreaks?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'streak_check_ins',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Streak check-in:', payload.eventType);
+        refreshCustomStreaks?.();
+      })
+      .subscribe(handleSubscriptionStatus('Custom Streaks'));
+    channels.push(streaksChannel);
+
+    // ============================================
+    // PETS - Companions and interactions
+    // ============================================
+    const petsChannel = supabase
+      .channel('global_pets')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_pets',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Pet changed:', payload.eventType);
+        refreshPets?.();
+      })
+      .subscribe(handleSubscriptionStatus('Pets'));
+    channels.push(petsChannel);
+
+    // ============================================
+    // PVP ARENA - Real-time combat matches
+    // ============================================
+    const pvpArenaChannel = supabase
+      .channel('global_pvp_arena')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'pvp_arena_matches',
+        filter: `player1_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] PvP arena match (p1):', payload.eventType);
+        refreshPvpArena?.(userId);
+        refreshPvpArenaStats?.(userId);
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'pvp_arena_matches',
+        filter: `player2_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] PvP arena match (p2):', payload.eventType);
+        refreshPvpArena?.(userId);
+        refreshPvpArenaStats?.(userId);
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'pvp_arena_stats',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] PvP arena stats:', payload.eventType);
+        refreshPvpArenaStats?.(userId);
+      })
+      .subscribe(handleSubscriptionStatus('PvP Arena'));
+    channels.push(pvpArenaChannel);
+
+    // ============================================
+    // PVP DAILY BATTLES - Task-based PvP
+    // ============================================
+    const pvpChannel = supabase
+      .channel('global_pvp')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'pvp_battles',
+        filter: `player1_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] PvP battle (p1):', payload.eventType);
+        refreshPvp?.(userId);
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'pvp_battles',
+        filter: `player2_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] PvP battle (p2):', payload.eventType);
+        refreshPvp?.(userId);
+      })
+      .subscribe(handleSubscriptionStatus('PvP Battles'));
+    channels.push(pvpChannel);
+
+    // ============================================
+    // QUESTS - Main quests, side quests, dailies
+    // ============================================
+    const questsChannel = supabase
+      .channel('global_quests')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'quests',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Quest changed:', payload.eventType);
+        refreshQuests?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_quests',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] User quest progress:', payload.eventType);
+        refreshQuests?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'quest_objectives',
+      }, (payload) => {
+        debug('[Realtime] Quest objective:', payload.eventType);
+        refreshQuests?.();
+      })
+      .subscribe(handleSubscriptionStatus('Quests'));
+    channels.push(questsChannel);
+
+    // ============================================
+    // SETTINGS - User preferences
+    // ============================================
+    const settingsChannel = supabase
+      .channel('global_settings')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_settings',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Settings changed:', payload.eventType);
+        refreshSettings?.();
+      })
+      .subscribe(handleSubscriptionStatus('Settings'));
+    channels.push(settingsChannel);
+
+    // ============================================
+    // MODULE MASTERY - Skill trees per module
+    // ============================================
+    const masteryChannel = supabase
+      .channel('global_mastery')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_module_mastery',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Module mastery changed:', payload.eventType);
+        refreshModuleMastery?.();
+      })
+      .subscribe(handleSubscriptionStatus('Module Mastery'));
+    channels.push(masteryChannel);
+
+    // ============================================
+    // PERKS - Unlocked abilities
+    // ============================================
+    const perksChannel = supabase
+      .channel('global_perks')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_perks',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Perk changed:', payload.eventType);
+        refreshPerks?.();
+        if (payload.eventType === 'INSERT') {
+          toast.success('New perk unlocked!', {
+            title: '✨ Perk Unlocked',
+            duration: 4000,
+          });
+        }
+      })
+      .subscribe(handleSubscriptionStatus('Perks'));
+    channels.push(perksChannel);
+
+    // ============================================
+    // NOTIFICATIONS - System notifications
+    // ============================================
+    const notificationsChannel = supabase
+      .channel('global_notifications')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] New notification:', payload.new);
+        refreshNotifications?.();
+        // Show toast for new notifications
+        const notif = payload.new;
+        if (notif?.title) {
+          toast.info(notif.message || 'New notification', {
+            title: notif.title,
+            duration: 4000,
+          });
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Notification updated:', payload.eventType);
+        refreshNotifications?.();
+      })
+      .subscribe(handleSubscriptionStatus('Notifications'));
+    channels.push(notificationsChannel);
+
+    // ============================================
+    // DASHBOARD - Widget configurations
+    // ============================================
+    const dashboardChannel = supabase
+      .channel('global_dashboard')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'dashboard_widgets',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Dashboard widget changed:', payload.eventType);
+        refreshDashboard?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'dashboard_layouts',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Dashboard layout changed:', payload.eventType);
+        refreshDashboard?.();
+      })
+      .subscribe(handleSubscriptionStatus('Dashboard'));
+    channels.push(dashboardChannel);
+
+    // ============================================
+    // AVATAR & EQUIPMENT - Character customization
+    // ============================================
+    const avatarChannel = supabase
+      .channel('global_avatar')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_avatars',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Avatar changed:', payload.eventType);
+        refreshAvatar?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_equipment',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Equipment changed:', payload.eventType);
+        refreshAvatar?.();
+      })
+      .subscribe(handleSubscriptionStatus('Avatar'));
+    channels.push(avatarChannel);
+
+    // ============================================
+    // JOURNAL - Entries and reflections
+    // ============================================
+    const journalChannel = supabase
+      .channel('global_journal')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'journal_entries',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Journal entry changed:', payload.eventType);
+        // Journal might use knowledge store or its own
+        refreshKnowledge?.();
+      })
+      .subscribe(handleSubscriptionStatus('Journal'));
+    channels.push(journalChannel);
+
+    // ============================================
+    // HABITS - Daily habits tracking
+    // ============================================
+    const habitsChannel = supabase
+      .channel('global_habits')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'habits',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Habit changed:', payload.eventType);
+        refreshDailyTasks?.();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'habit_completions',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Habit completion:', payload.eventType);
+        refreshDailyTasks?.();
+      })
+      .subscribe(handleSubscriptionStatus('Habits'));
+    channels.push(habitsChannel);
+
     channelsRef.current = channels;
 
     console.log(`[Realtime] ${channels.length} channels subscribed`);
@@ -615,6 +1030,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
     };
   }, [
     userId,
+    // Core modules
     refreshSkills,
     refreshTasks,
     refreshWorkouts,
@@ -630,11 +1046,27 @@ export function RealtimeProvider({ children, showNotifications = false }) {
     refreshPurpose,
     refreshQuotes,
     refreshDailyTasks,
+    // Social
     refreshFriends,
     refreshPendingRequests,
     refreshChallenges,
     refreshH2HInvites,
     refreshActivityFeed,
+    // Additional modules
+    refreshBadHabits,
+    refreshBoss,
+    refreshCustomStreaks,
+    refreshPets,
+    refreshPvpArena,
+    refreshPvpArenaStats,
+    refreshPvp,
+    refreshQuests,
+    refreshSettings,
+    refreshModuleMastery,
+    refreshPerks,
+    refreshNotifications,
+    refreshDashboard,
+    // Utilities
     toast,
     showNotifications,
   ]);
