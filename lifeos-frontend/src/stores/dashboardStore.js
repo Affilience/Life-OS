@@ -421,21 +421,43 @@ const useDashboardStore = create(
       hasCompletedOnboardingSetup: false,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ isInitialized: true });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
+          const userId = passedUserId || await getCurrentUserId();
           if (!userId) {
+            clearTimeout(timeoutId);
             set({ isInitialized: true });
             return;
           }
 
-          const { data, error } = await supabase
-            .from('user_profiles')
-            .select('preferences')
-            .eq('id', userId)
-            .maybeSingle();
+          const { data, error } = await withTimeout(
+            supabase
+              .from('user_profiles')
+              .select('preferences')
+              .eq('id', userId)
+              .maybeSingle()
+          );
 
-          if (error) throw error;
+          // Continue with cached data on timeout - don't throw
+          if (error && error !== 'timeout') throw error;
 
           if (data?.preferences?.dashboard) {
             const dashboard = data.preferences.dashboard;
@@ -449,9 +471,12 @@ const useDashboardStore = create(
           } else {
             set({ isInitialized: true });
           }
+          console.log('[DashboardStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing dashboard from Supabase:', error);
+          console.error('[DashboardStore] ❌ Error initializing:', error);
           set({ isInitialized: true });
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -779,10 +804,10 @@ const useDashboardStore = create(
 );
 
 // Initialize dashboard store from Supabase
-export const initializeDashboardStore = async () => {
+export const initializeDashboardStore = async (userId = null) => {
   const store = useDashboardStore.getState();
   if (!store.isInitialized) {
-    await store.initializeFromSupabase();
+    await store.initializeFromSupabase(userId);
   }
 };
 

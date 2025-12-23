@@ -337,16 +337,38 @@ export const useGamificationModeStore = create(
       _isSyncing: false,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
-        if (!userId) return;
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
 
         try {
-          const { data } = await supabase
-            .from('user_profiles')
-            .select('preferences')
-            .eq('id', userId)
-            .maybeSingle();
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
+
+          const { data } = await withTimeout(
+            supabase
+              .from('user_profiles')
+              .select('preferences')
+              .eq('id', userId)
+              .maybeSingle()
+          );
 
           if (data?.preferences?.gamificationMode) {
             const modePrefs = data.preferences.gamificationMode;
@@ -355,8 +377,11 @@ export const useGamificationModeStore = create(
               visibilityOverrides: modePrefs.visibilityOverrides || {},
             });
           }
+          console.log('[GamificationModeStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error loading gamification mode from Supabase:', error);
+          console.error('[GamificationModeStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -534,6 +559,6 @@ export const useGamificationMode = () => {
 };
 
 // Initialize gamification mode store from Supabase
-export const initializeGamificationModeStore = async () => {
-  await useGamificationModeStore.getState().initializeFromSupabase();
+export const initializeGamificationModeStore = async (userId = null) => {
+  await useGamificationModeStore.getState().initializeFromSupabase(userId);
 };

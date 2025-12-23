@@ -32,8 +32,10 @@ export default function OverviewTab() {
     const expenses = getTotalExpenses();
     const net = income - expenses;
     const savingsRate = income > 0 ? Math.round((net / income) * 100) : 0;
+    const hasExpenses = expenses > 0;
+    const hasIncome = income > 0;
 
-    return { income, expenses, net, savingsRate };
+    return { income, expenses, net, savingsRate, hasExpenses, hasIncome };
   }, [getTotalIncome, getTotalExpenses]);
 
   // Calculate net worth from store
@@ -84,7 +86,13 @@ export default function OverviewTab() {
             <div className="summary-label">Net This Month</div>
             <div className="summary-value">£{monthlyData.net.toLocaleString()}</div>
             <div className="summary-meta">
-              Savings Rate: <strong>{monthlyData.savingsRate}%</strong>
+              {!monthlyData.hasIncome ? (
+                <span className="text-white/50">Log income to see savings rate</span>
+              ) : !monthlyData.hasExpenses ? (
+                <span className="text-white/50">No expenses logged yet</span>
+              ) : (
+                <>Savings Rate: <strong>{monthlyData.savingsRate}%</strong></>
+              )}
             </div>
           </div>
         </Card>

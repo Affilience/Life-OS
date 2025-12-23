@@ -513,16 +513,29 @@ function ItemCard({ item, owned, canAfford, onPurchase, level, mode }) {
                 style={{ imageRendering: 'pixelated' }}
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                 }}
               />
             ) : null}
-            <span
-              className="text-2xl items-center justify-center"
-              style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
-            >
-              {item.icon}
-            </span>
+            {/* Fallback: Use pixel art slot icon for gear, or emoji for other items */}
+            {item.slotIcon ? (
+              <img
+                src={item.slotIcon}
+                alt={item.slot || 'item'}
+                className="w-full h-full object-contain"
+                style={{
+                  imageRendering: 'pixelated',
+                  display: getItemSprite(item) ? 'none' : 'block'
+                }}
+              />
+            ) : (
+              <span
+                className="text-2xl items-center justify-center"
+                style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
+              >
+                {item.icon}
+              </span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-white truncate">{item.name}</h4>
@@ -623,16 +636,29 @@ function PurchaseModal({ item, onConfirm, onCancel, credits }) {
                 style={{ imageRendering: 'pixelated' }}
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                 }}
               />
             ) : null}
-            <span
-              className="text-5xl items-center justify-center"
-              style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
-            >
-              {item.icon}
-            </span>
+            {/* Fallback: Use pixel art slot icon for gear, or emoji for other items */}
+            {item.slotIcon ? (
+              <img
+                src={item.slotIcon}
+                alt={item.slot || 'item'}
+                className="w-full h-full object-contain"
+                style={{
+                  imageRendering: 'pixelated',
+                  display: getItemSprite(item) ? 'none' : 'block'
+                }}
+              />
+            ) : (
+              <span
+                className="text-5xl items-center justify-center"
+                style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
+              >
+                {item.icon}
+              </span>
+            )}
           </div>
           <h3 className="text-xl font-bold text-white mb-1">{item.name}</h3>
           <p
@@ -734,16 +760,29 @@ function SuccessModal({ item, onClose }) {
                 style={{ imageRendering: 'pixelated' }}
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
                 }}
               />
             ) : null}
-            <span
-              className="text-6xl items-center justify-center"
-              style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
-            >
-              {item.icon}
-            </span>
+            {/* Fallback: Use pixel art slot icon for gear, or emoji for other items */}
+            {item.slotIcon ? (
+              <img
+                src={item.slotIcon}
+                alt={item.slot || 'item'}
+                className="w-full h-full object-contain"
+                style={{
+                  imageRendering: 'pixelated',
+                  display: getItemSprite(item) ? 'none' : 'block'
+                }}
+              />
+            ) : (
+              <span
+                className="text-6xl items-center justify-center"
+                style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
+              >
+                {item.icon}
+              </span>
+            )}
           </div>
           <div className="absolute -top-2 -right-2 bg-green-500 text-white p-2 rounded-full">
             <Check className="w-5 h-5" />
@@ -818,7 +857,7 @@ export default function BazaarMarketplace() {
         description: pet.description,
         category: 'companions',
         rarity: pet.tier, // Map tier to rarity for display
-        price: pet.unlockRequirement?.price || 0,
+        price: pet.price || 0, // Price comes directly from getPurchasablePets
         icon: '🐾',
         sprite: pet.sprite,
         bonusDescription: pet.bonusDescription,
@@ -829,19 +868,36 @@ export default function BazaarMarketplace() {
 
       // Get purchasable gear from avatar store
       const gear = getPurchasableEquipment();
-      setPurchasableGear(gear.map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        category: 'gear',
-        slot: item.slot,
-        rarity: item.rarity,
-        price: item.unlockRequirement?.price || 0,
-        icon: item.slot === 'helmet' ? '🪖' : item.slot === 'suit' ? '🦺' : item.slot === 'tool' ? '🔧' : '🏅',
-        sprite: `/assets/avatar/equipment/${item.sprite}.png`,
-        stats: item.stats,
-        itemType: 'gear',
-      })));
+      setPurchasableGear(gear.map(item => {
+        // Slot icon paths using PixelLab-generated pixel art icons
+        const slotIconPaths = {
+          helmet: '/assets/equipment/slots/slot_helmet.png',
+          chest: '/assets/equipment/slots/slot_chest.png',
+          suit: '/assets/equipment/slots/slot_chest.png',
+          legs: '/assets/equipment/slots/slot_boots.png',
+          mainHand: '/assets/equipment/slots/slot_weapon.png',
+          offHand: '/assets/equipment/slots/slot_shield.png',
+          cape: '/assets/equipment/slots/slot_cape.png',
+          ring: '/assets/equipment/slots/slot_ring.png',
+          amulet: '/assets/equipment/slots/slot_amulet.png',
+          tool: '/assets/equipment/slots/slot_weapon.png',
+        };
+        // Handle sprite path - can be object { path: '...' } or string
+        const spritePath = item.sprite?.path || item.sprite || `/assets/equipment/${item.slot}s/${item.id}.png`;
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          category: 'gear',
+          slot: item.slot,
+          rarity: item.rarity,
+          price: item.price || 0, // Price comes directly from getPurchasableEquipment
+          slotIcon: slotIconPaths[item.slot] || '/assets/equipment/slots/slot_empty.png',
+          sprite: spritePath,
+          stats: item.stats,
+          itemType: 'gear',
+        };
+      }));
     };
 
     fetchPurchasables();

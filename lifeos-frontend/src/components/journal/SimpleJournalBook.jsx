@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,8 +7,18 @@ import JournalCoverPage from './JournalCoverPage';
 import './SimpleJournalBook.css';
 
 function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) {
-  const [currentSpread, setCurrentSpread] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+
+  // Detect mobile vs desktop for navigation mode
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 900);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Create pages array with cover + entries (oldest first) + empty page at end
   // This mimics a real book where you start from the beginning and write forward
@@ -19,26 +29,39 @@ function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) 
   ];
 
   const totalPages = pages.length;
-  const totalSpreads = Math.ceil(totalPages / 2);
+
+  // On mobile: navigate one page at a time
+  // On desktop: navigate two pages (spread) at a time
+  const pagesPerView = isMobile ? 1 : 2;
+  const totalViews = isMobile ? totalPages : Math.ceil(totalPages / 2);
+  const currentView = isMobile ? currentPage : Math.floor(currentPage / 2);
 
   const nextPage = () => {
-    if (currentSpread < totalSpreads - 1) {
+    const maxPage = isMobile ? totalPages - 1 : (Math.ceil(totalPages / 2) - 1) * 2;
+    if (currentPage < maxPage) {
       setDirection(1);
-      setCurrentSpread(currentSpread + 1);
+      setCurrentPage(currentPage + pagesPerView);
     }
   };
 
   const prevPage = () => {
-    if (currentSpread > 0) {
+    if (currentPage > 0) {
       setDirection(-1);
-      setCurrentSpread(currentSpread - 1);
+      setCurrentPage(Math.max(0, currentPage - pagesPerView));
     }
   };
 
-  const leftPageIndex = currentSpread * 2;
-  const rightPageIndex = currentSpread * 2 + 1;
+  // Calculate which pages to show
+  const leftPageIndex = isMobile ? currentPage : Math.floor(currentPage / 2) * 2;
+  const rightPageIndex = leftPageIndex + 1;
   const leftPageData = pages[leftPageIndex];
-  const rightPageData = rightPageIndex < totalPages ? pages[rightPageIndex] : null;
+  const rightPageData = !isMobile && rightPageIndex < totalPages ? pages[rightPageIndex] : null;
+
+  // Navigation state
+  const canGoPrev = currentPage > 0;
+  const canGoNext = isMobile
+    ? currentPage < totalPages - 1
+    : leftPageIndex + 2 < totalPages;
 
   const variants = {
     enter: (direction) => ({
@@ -109,7 +132,7 @@ function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) 
         <div className="journal-book-view">
           <AnimatePresence initial={false} custom={direction} mode="wait">
             <motion.div
-              key={currentSpread}
+              key={currentPage}
               custom={direction}
               variants={variants}
               initial="enter"
@@ -120,31 +143,22 @@ function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) 
                 opacity: { duration: 0.3 },
                 scale: { duration: 0.3 }
               }}
-              className="journal-page-container"
-              style={{ transformStyle: 'preserve-3d' }}
+              className="journal-spread-container"
+              style={{
+                transformStyle: 'preserve-3d',
+                display: 'contents'
+              }}
             >
-              {renderPage(leftPageData, leftPageIndex)}
-            </motion.div>
+              <div className="journal-page-container">
+                {renderPage(leftPageData, leftPageIndex)}
+              </div>
 
-            {rightPageData && (
-              <motion.div
-                key={`${currentSpread}-right`}
-                custom={direction}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  rotateY: { type: 'spring', stiffness: 100, damping: 20 },
-                  opacity: { duration: 0.3 },
-                  scale: { duration: 0.3 }
-                }}
-                className="journal-page-container"
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                {renderPage(rightPageData, rightPageIndex)}
-              </motion.div>
-            )}
+              {rightPageData && (
+                <div className="journal-page-container">
+                  {renderPage(rightPageData, rightPageIndex)}
+                </div>
+              )}
+            </motion.div>
           </AnimatePresence>
         </div>
       </div>
@@ -154,7 +168,7 @@ function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) 
         <button
           className="control-btn"
           onClick={prevPage}
-          disabled={currentSpread === 0}
+          disabled={!canGoPrev}
           aria-label="Previous page"
         >
           <ChevronLeft size={24} />
@@ -162,13 +176,18 @@ function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) 
 
         <div className="page-indicator">
           <BookOpen size={18} />
-          <span>Pages {leftPageIndex + 1}-{rightPageData ? rightPageIndex + 1 : leftPageIndex + 1} of {totalPages}</span>
+          <span>
+            {isMobile
+              ? `Page ${leftPageIndex + 1} of ${totalPages}`
+              : `Pages ${leftPageIndex + 1}-${rightPageData ? rightPageIndex + 1 : leftPageIndex + 1} of ${totalPages}`
+            }
+          </span>
         </div>
 
         <button
           className="control-btn"
           onClick={nextPage}
-          disabled={currentSpread >= totalSpreads - 1}
+          disabled={!canGoNext}
           aria-label="Next page"
         >
           <ChevronRight size={24} />

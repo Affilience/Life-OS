@@ -9,51 +9,87 @@ import { persist } from 'zustand/middleware';
 import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 
+// Generate UUID for database compatibility
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 // ============================================
 // SUPABASE SYNC HELPERS
 // ============================================
 
 // Initialize store from Supabase
-const initializeFromSupabase = async (set, get) => {
+const initializeFromSupabase = async (set, get, passedUserId = null) => {
+  // Master timeout to prevent hanging
+  const INIT_TIMEOUT_MS = 15000;
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+  }, INIT_TIMEOUT_MS);
+
+  // Helper to wrap queries with timeout
+  const withTimeout = (promise, timeoutMs = 10000) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+      )
+    ]).catch(() => ({ data: null, error: 'timeout' }));
+  };
+
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return;
+    const userId = passedUserId || await getCurrentUserId();
+    if (!userId) {
+      clearTimeout(timeoutId);
+      return;
+    }
 
-    // Load time blocks (limit to last 90 days worth, ~300 blocks)
-    const { data: timeBlocks, error: blocksError } = await supabase
-      .from('calendar_time_blocks')
-      .select('*')
-      .eq('user_id', userId)
-      .order('block_date', { ascending: false })
-      .limit(300);
+    // Run ALL queries in parallel for faster initialization
+    const [
+      { data: timeBlocks, error: blocksError },
+      { data: events, error: eventsError },
+      { data: templates, error: templatesError },
+      { data: profile }
+    ] = await Promise.all([
+      // Load time blocks (limit to last 90 days worth, ~300 blocks)
+      withTimeout(supabase
+        .from('calendar_time_blocks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('block_date', { ascending: false })
+        .limit(300)),
+      // Load events (limit to 500 most recent)
+      withTimeout(supabase
+        .from('calendar_events')
+        .select('*')
+        .eq('user_id', userId)
+        .order('start_time', { ascending: false })
+        .limit(500)),
+      // Load templates
+      withTimeout(supabase
+        .from('calendar_templates')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('active', true)),
+      // Load calendar settings from user_profiles
+      withTimeout(supabase
+        .from('user_profiles')
+        .select('calendar_settings')
+        .eq('id', userId)
+        .maybeSingle())
+    ]);
 
-    if (blocksError) throw blocksError;
-
-    // Load events (limit to 500 most recent)
-    const { data: events, error: eventsError } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .order('start_time', { ascending: false })
-      .limit(500);
-
-    if (eventsError) throw eventsError;
-
-    // Load templates
-    const { data: templates, error: templatesError } = await supabase
-      .from('calendar_templates')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('active', true);
-
-    if (templatesError) throw templatesError;
-
-    // Load calendar settings from user_profiles
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('calendar_settings')
-      .eq('id', userId)
-      .maybeSingle();
+    if (blocksError && blocksError !== 'timeout') throw blocksError;
+    if (eventsError && eventsError !== 'timeout') throw eventsError;
+    if (templatesError && templatesError !== 'timeout') throw templatesError;
 
     // Transform data to match store format
     const transformedBlocks = timeBlocks?.map(b => ({
@@ -122,17 +158,28 @@ const initializeFromSupabase = async (set, get) => {
       set(updates);
     }
 
-    console.log('Calendar store initialized from Supabase');
+    console.log('[CalendarStore] ✅ Initialized');
   } catch (error) {
-    console.error('Error initializing calendar store from Supabase:', error);
+    console.error('[CalendarStore] ❌ Error initializing:', error);
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
 // Sync time block to Supabase
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const syncTimeBlockToSupabase = async (block, action = 'upsert') => {
   try {
     const userId = await getCurrentUserId();
     if (!userId) return;
+
+    // Skip syncing blocks with invalid (non-UUID) IDs - these are legacy blocks
+    if (!block.id || !UUID_REGEX.test(block.id)) {
+      console.warn('[Calendar] Skipping sync for block with invalid ID:', block.id);
+      return;
+    }
 
     if (action === 'delete') {
       await supabase
@@ -146,26 +193,27 @@ const syncTimeBlockToSupabase = async (block, action = 'upsert') => {
         .upsert({
           id: block.id,
           user_id: userId,
-          title: block.title,
+          title: block.title || 'Untitled',
           block_date: block.date,
           planned_start: block.startTime,
           planned_end: block.endTime,
-          planned_duration: block.plannedDuration,
-          actual_duration: block.actualDuration,
-          module: block.module,
-          block_type: block.type,
-          status: block.status,
-          priority: block.priority,
-          energy_level: block.energyLevel,
-          actual_energy_level: block.actualEnergyLevel,
-          notes: block.notes,
-          task_id: block.taskId,
-          project_id: block.projectId,
+          planned_duration: block.plannedDuration || 60,
+          actual_duration: block.actualDuration || null,
+          module: block.module || 'productivity',
+          block_type: block.type || 'deep_work',
+          status: block.status || 'planned',
+          priority: block.priority || 'medium',
+          energy_level: block.energyLevel || 'medium',
+          actual_energy_level: block.actualEnergyLevel || null,
+          notes: block.notes || null,
+          // UUID fields must be valid UUIDs or null, not empty strings
+          task_id: block.taskId && block.taskId.length > 0 ? block.taskId : null,
+          project_id: block.projectId && block.projectId.length > 0 ? block.projectId : null,
           tags: block.tags || [],
           interruptions: block.interruptions || [],
-          actual_start_time: block.actualStartTime,
-          actual_end_time: block.actualEndTime,
-          completed_at: block.completedAt,
+          actual_start_time: block.actualStartTime || null,
+          actual_end_time: block.actualEndTime || null,
+          completed_at: block.completedAt || null,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'id' });
     }
@@ -228,6 +276,12 @@ const syncEventToSupabase = async (event, action = 'upsert') => {
     const userId = await getCurrentUserId();
     if (!userId) return;
 
+    // Skip syncing events with invalid (non-UUID) IDs
+    if (!event.id || !UUID_REGEX.test(event.id)) {
+      console.warn('[Calendar] Skipping sync for event with invalid ID:', event.id);
+      return;
+    }
+
     if (action === 'delete') {
       await supabase
         .from('calendar_events')
@@ -276,7 +330,7 @@ export const useCalendarStore = create(
       bufferPercentage: 20, // 20% buffer time recommended
 
       // Initialize from Supabase
-      initializeFromSupabase: () => initializeFromSupabase(set, get),
+      initializeFromSupabase: (passedUserId = null) => initializeFromSupabase(set, get, passedUserId),
 
       // ============================================
       // TIME BLOCK ACTIONS
@@ -287,7 +341,7 @@ export const useCalendarStore = create(
        */
       createTimeBlock: (blockData) => {
         const newBlock = {
-          id: `block-${Date.now()}`,
+          id: generateUUID(),
           title: blockData.title || 'Untitled Block',
           date: blockData.date || new Date().toISOString().split('T')[0],
           startTime: blockData.startTime, // '09:00'
@@ -471,7 +525,7 @@ export const useCalendarStore = create(
        */
       createEvent: (eventData) => {
         const newEvent = {
-          id: `event-${Date.now()}`,
+          id: generateUUID(),
           title: eventData.title || 'Untitled Event',
           description: eventData.description || '',
           type: eventData.type || 'event', // event, meeting, reminder, deadline
@@ -562,7 +616,7 @@ export const useCalendarStore = create(
        */
       createTemplate: (templateData) => {
         const newTemplate = {
-          id: `template-${Date.now()}`,
+          id: generateUUID(),
           name: templateData.name,
           blocks: templateData.blocks, // Array of block configs
           recurrence: templateData.recurrence || 'none', // daily, weekly, none
@@ -754,7 +808,7 @@ export const useCalendarStore = create(
 );
 
 // Initialize calendar store from Supabase
-export const initializeCalendarStore = async () => {
+export const initializeCalendarStore = async (userId = null) => {
   const store = useCalendarStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };

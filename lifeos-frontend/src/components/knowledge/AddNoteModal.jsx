@@ -72,7 +72,10 @@ const AddNoteModal = ({ isOpen, onClose, onSubmit }) => {
     };
 
     onSubmit(noteData);
-    triggerGamification('noteCreated', { xpOverride: 15, module: 'knowledge' });
+    // Award XP based on content quality - 5 base + 1 per 50 words (max 10 total)
+    const wordCount = noteData.wordCount || 0;
+    const bonusXp = Math.min(5, Math.floor(wordCount / 50));
+    triggerGamification('noteCreated', { xpOverride: 5 + bonusXp, module: 'knowledge' });
     handleClose();
   };
 

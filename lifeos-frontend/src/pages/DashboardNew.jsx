@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useState, forwardRef } from 'react';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { useNavigate } from 'react-router-dom';
 import { Settings, Move, Check, Undo2, Redo2, Plus, LayoutGrid, Home } from 'lucide-react';
@@ -12,16 +12,6 @@ import { WidgetWrapper, WIDGET_COMPONENTS } from '../components/dashboard/widget
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import '../components/dashboard/DashboardGrid.css';
-
-// Grid item wrapper that properly forwards refs for react-grid-layout
-// Named DashboardGridItem to avoid conflicts with react-grid-layout's internal GridItem
-const DashboardGridItem = forwardRef(function DashboardGridItem({ children, style, className, ...props }, ref) {
-  return (
-    <div ref={ref} style={style} className={className} {...props}>
-      {children}
-    </div>
-  );
-});
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -130,16 +120,16 @@ export default function DashboardNew() {
 
       {/* Top Bar */}
       <div className="sticky top-0 z-30 bg-bg-0/95 backdrop-blur-md border-b border-border-subtle">
-        <div className="px-4 py-3 flex items-center justify-between">
+        <div className="px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2">
           <PageHeader
             title="Dashboard"
             subtitle="Your personal command center"
             icon={Home}
             module="default"
             variant="elevated"
-            className="mb-0 flex-1"
+            className="mb-0 flex-1 min-w-0"
           />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Undo/Redo buttons (only in edit mode) */}
             {isEditMode && (
               <>
@@ -203,7 +193,7 @@ export default function DashboardNew() {
             <button
               onClick={toggleEditMode}
               data-tour="edit-dashboard-btn"
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+              className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 min-h-[36px] ${
                 isEditMode
                   ? 'bg-primary-500 text-text-primary shadow-lg shadow-primary hover:bg-primary-600 hover:-translate-y-0.5 active:translate-y-0'
                   : 'bg-bg-2 text-text-secondary hover:bg-bg-hover hover:text-text-primary hover:-translate-y-0.5 active:translate-y-0'
@@ -212,12 +202,12 @@ export default function DashboardNew() {
               {isEditMode ? (
                 <>
                   <Check className="w-4 h-4" />
-                  Done
+                  <span className="hidden xs:inline">Done</span>
                 </>
               ) : (
                 <>
                   <Move className="w-4 h-4" />
-                  Edit
+                  <span className="hidden xs:inline">Edit</span>
                 </>
               )}
             </button>
@@ -287,10 +277,9 @@ export default function DashboardNew() {
               const minW = 1;
 
               return (
-                <DashboardGridItem
+                <div
                   key={widgetId}
                   data-grid={{
-                    // Provide default x, y, w, h values to prevent undefined errors
                     x: existingLayout?.x ?? 0,
                     y: existingLayout?.y ?? (index * defaultH),
                     w: existingLayout?.w ?? defaultW,
@@ -303,7 +292,7 @@ export default function DashboardNew() {
                   <WidgetWrapper widgetId={widgetId}>
                     <WidgetComponent />
                   </WidgetWrapper>
-                </DashboardGridItem>
+                </div>
               );
             })}
         </ResponsiveGridLayout>

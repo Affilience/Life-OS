@@ -107,15 +107,17 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
   const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
 
-  // Animation phase state: 'charging' → 'reveal' → 'content' → 'complete'
-  const [phase, setPhase] = useState('charging');
-  const [chargingProgress, setChargingProgress] = useState(0);
+  // Animation phase state: 'xp-filling' → 'level-transition' → 'reveal' → 'content'
+  const [phase, setPhase] = useState('xp-filling');
+  const [xpProgress, setXpProgress] = useState(0);
+  const [displayedXP, setDisplayedXP] = useState(0);
 
-  // Phased animation sequence
+  // Phased animation sequence with dramatic XP fill and level transition
   useEffect(() => {
     if (!isOpen || !data) {
-      setPhase('charging');
-      setChargingProgress(0);
+      setPhase('xp-filling');
+      setXpProgress(0);
+      setDisplayedXP(0);
       return;
     }
 
@@ -124,40 +126,65 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
       return;
     }
 
-    // Phase 1: Charging (0-500ms) - anticipation build-up
-    const chargingDuration = 500;
-    const chargingStart = Date.now();
+    // Phase 1: XP Filling (0-1200ms) - watch XP bar fill up dramatically
+    const xpFillDuration = 1200;
+    const xpStart = Date.now();
+    const startXP = data.xpBeforeLevelUp || 0;
+    const targetXP = data.xpToNextLevel || 100;
 
     // Play anticipation sound
     try {
-      sounds.pop(); // Subtle start sound
+      sounds.uiClickSound();
     } catch (e) {}
 
-    const chargeInterval = setInterval(() => {
-      const elapsed = Date.now() - chargingStart;
-      const progress = Math.min((elapsed / chargingDuration) * 100, 100);
-      setChargingProgress(progress);
+    const xpInterval = setInterval(() => {
+      const elapsed = Date.now() - xpStart;
+      const progress = Math.min(elapsed / xpFillDuration, 1);
+      // Ease out exponential for dramatic slowdown at the end
+      const eased = 1 - Math.pow(1 - progress, 4);
 
-      if (progress >= 100) {
-        clearInterval(chargeInterval);
-        setPhase('reveal');
+      setXpProgress(eased * 100);
+      setDisplayedXP(Math.floor(startXP + (targetXP - startXP) * eased));
 
-        // Phase 2: Reveal (500ms) - fanfare!
-        feedback.levelUp();
-        celebrations.burst({
-          particleCount: 50,
-          spread: 70,
-          origin: { x: 0.5, y: 0.4 },
-        });
+      if (progress >= 1) {
+        clearInterval(xpInterval);
 
-        // Phase 3: Content (after reveal animation)
+        // Phase 2: Level Transition (600ms) - old level fades, new level appears
+        setPhase('level-transition');
+
+        // Haptic feedback at transition
+        try {
+          haptics.medium();
+        } catch (e) {}
+
         setTimeout(() => {
-          setPhase('content');
-        }, 800);
+          // Phase 3: Reveal - fanfare!
+          setPhase('reveal');
+          feedback.levelUp();
+          celebrations.burst({
+            particleCount: 80,
+            spread: 100,
+            origin: { x: 0.5, y: 0.35 },
+          });
+
+          // Staggered second burst
+          setTimeout(() => {
+            celebrations.burst({
+              particleCount: 40,
+              spread: 60,
+              origin: { x: 0.5, y: 0.4 },
+            });
+          }, 200);
+
+          // Phase 4: Content (after reveal animation)
+          setTimeout(() => {
+            setPhase('content');
+          }, 800);
+        }, 600);
       }
     }, 16);
 
-    return () => clearInterval(chargeInterval);
+    return () => clearInterval(xpInterval);
   }, [isOpen, data, prefersReducedMotion, mode]);
 
   if (!data) return null;
@@ -167,30 +194,38 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
     return null;
   }
 
+  // Extract data with defaults
   const {
-    newLevel,
-    oldLevel,
-    stageTransition,
-    newStage,
-    oldStage,
-    unlocksAvailable,
+    newLevel = 1,
+    oldLevel = 0,
+    stageTransition = false,
+    newStage = 1,
+    oldStage = 0,
+    unlocksAvailable = [],
+    xpBeforeLevelUp = 0,
+    xpToNextLevel = 100,
+    tierUp = false,
   } = data;
 
+  // Safeguard for invalid levels
+  const safeOldLevel = oldLevel || newLevel - 1 || 1;
+  const safeNewLevel = newLevel || safeOldLevel + 1;
+
   // Get level progression info
-  const oldTitle = getLevelTitle(oldLevel);
-  const newTitle = getLevelTitle(newLevel);
+  const oldTitle = getLevelTitle(safeOldLevel);
+  const newTitle = getLevelTitle(safeNewLevel);
   const titleChanged = oldTitle.title !== newTitle.title;
-  const milestone = getMilestoneForLevel(newLevel);
-  const newFrame = getHighestFrame(newLevel);
-  const oldFrame = getHighestFrame(oldLevel);
+  const milestone = getMilestoneForLevel(safeNewLevel);
+  const newFrame = getHighestFrame(safeNewLevel);
+  const oldFrame = getHighestFrame(safeOldLevel);
   const frameUnlocked = newFrame.id !== oldFrame.id && newFrame.id !== 'none';
-  const xpBonus = getLevelXPBonus(newLevel);
+  const xpBonus = getLevelXPBonus(safeNewLevel);
   const xpBonusFormatted = `+${(xpBonus * 100).toFixed(1)}%`;
-  const newPetSlots = getPetSlots(newLevel);
-  const oldPetSlots = getPetSlots(oldLevel);
+  const newPetSlots = getPetSlots(safeNewLevel);
+  const oldPetSlots = getPetSlots(safeOldLevel);
   const petSlotUnlocked = newPetSlots > oldPetSlots;
-  const newInventorySlots = getInventorySlots(newLevel);
-  const oldInventorySlots = getInventorySlots(oldLevel);
+  const newInventorySlots = getInventorySlots(safeNewLevel);
+  const oldInventorySlots = getInventorySlots(safeOldLevel);
   const inventorySlotUnlocked = newInventorySlots > oldInventorySlots;
 
   // Mode-specific styling
@@ -279,8 +314,8 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
         </div>
       )}
 
-      {/* Close button - only after charging */}
-      {phase !== 'charging' && (
+      {/* Close button - only after animation phases */}
+      {(phase === 'reveal' || phase === 'content') && (
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors z-20"
@@ -291,36 +326,149 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
 
       {/* Content */}
       <div className="relative z-10 text-center">
-        {/* CHARGING PHASE */}
         <AnimatePresence mode="wait">
-          {phase === 'charging' && (
+          {/* XP FILLING PHASE - Watch XP bar fill dramatically */}
+          {phase === 'xp-filling' && (
             <motion.div
-              key="charging"
+              key="xp-filling"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 1.2 }}
-              className="py-8"
+              exit={{ opacity: 0 }}
+              className="py-6"
             >
-              {/* Charging ring around level number */}
-              <div className="relative w-24 h-24 mx-auto mb-6">
-                <ChargingRing progress={chargingProgress} size={96} strokeWidth={4} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.span
-                    className="text-white/60 font-bold text-3xl"
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 0.3, repeat: Infinity }}
-                  >
-                    {oldLevel}
-                  </motion.span>
+              {/* Current level and title display */}
+              <motion.div
+                className="mb-4"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <div className="text-white/40 text-xs uppercase tracking-wider mb-1">Current Level</div>
+                <div className="text-2xl font-bold text-white/80">{safeOldLevel}</div>
+                <div className="text-sm mt-1" style={{ color: oldTitle.color }}>
+                  {oldTitle.icon} {oldTitle.title}
+                </div>
+              </motion.div>
+
+              {/* Large animated XP counter */}
+              <div className="relative mb-6">
+                <motion.div
+                  className="text-6xl font-bold text-transparent bg-clip-text tabular-nums"
+                  style={{ backgroundImage: getGradientStyle() }}
+                  animate={{
+                    scale: xpProgress > 90 ? [1, 1.05, 1] : 1,
+                  }}
+                  transition={{ duration: 0.2, repeat: xpProgress > 90 ? Infinity : 0 }}
+                >
+                  {displayedXP.toLocaleString()}
+                </motion.div>
+                <div className="text-white/40 text-sm mt-1">
+                  / {xpToNextLevel.toLocaleString()} XP
                 </div>
               </div>
+
+              {/* XP Progress Bar */}
+              <div className="relative w-64 h-4 mx-auto bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  className="absolute inset-y-0 left-0 rounded-full"
+                  style={{ background: getGradientStyle() }}
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${xpProgress}%` }}
+                  transition={{ duration: 0.1 }}
+                />
+                {/* Shimmer effect */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                />
+              </div>
+
               <motion.p
-                className="text-purple-400 text-sm font-medium"
+                className="text-purple-400 text-sm font-medium mt-4"
                 animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 1, repeat: Infinity }}
+                transition={{ duration: 0.8, repeat: Infinity }}
               >
-                Leveling up...
+                XP Rising...
               </motion.p>
+            </motion.div>
+          )}
+
+          {/* LEVEL TRANSITION PHASE - Old level fades, new level appears with title */}
+          {phase === 'level-transition' && (
+            <motion.div
+              key="level-transition"
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="py-6"
+            >
+              <div className="relative h-40 flex flex-col items-center justify-center">
+                {/* Old level and title fading out */}
+                <motion.div
+                  className="absolute flex flex-col items-center"
+                  initial={{ opacity: 1, scale: 1 }}
+                  animate={{ opacity: 0, scale: 0.3, y: -40 }}
+                  transition={{ duration: 0.5, ease: 'easeIn' }}
+                >
+                  <span className="text-6xl font-bold text-white/60">{safeOldLevel}</span>
+                  <span className="text-sm mt-1" style={{ color: oldTitle.color }}>
+                    {oldTitle.icon} {oldTitle.title}
+                  </span>
+                </motion.div>
+
+                {/* New level exploding in */}
+                <motion.div
+                  className="absolute flex flex-col items-center"
+                  initial={{ opacity: 0, scale: 3, y: 60 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{
+                    delay: 0.3,
+                    duration: 0.4,
+                    type: 'spring',
+                    damping: 12,
+                    stiffness: 200
+                  }}
+                >
+                  <span
+                    className="text-7xl font-bold text-transparent bg-clip-text"
+                    style={{ backgroundImage: getGradientStyle() }}
+                  >
+                    {safeNewLevel}
+                  </span>
+                  <motion.span
+                    className="text-lg font-semibold mt-2"
+                    style={{ color: newTitle.color }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    {newTitle.icon} {newTitle.title}
+                  </motion.span>
+                </motion.div>
+
+                {/* Explosion particles */}
+                {[...Array(12)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-3 h-3 rounded-full"
+                    style={{
+                      background: i % 2 === 0 ? 'var(--level-up-primary)' : 'var(--level-up-secondary)',
+                    }}
+                    initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                    animate={{
+                      opacity: [0, 1, 0],
+                      scale: [0, 1.5, 0],
+                      x: Math.cos((i / 12) * Math.PI * 2) * 100,
+                      y: Math.sin((i / 12) * Math.PI * 2) * 100,
+                    }}
+                    transition={{
+                      delay: 0.3,
+                      duration: 0.6,
+                      ease: 'easeOut',
+                    }}
+                  />
+                ))}
+              </div>
             </motion.div>
           )}
 
@@ -360,7 +508,7 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
                   transition={{ delay: 0.2 }}
                   className="w-20 h-20 rounded-full bg-[#221e2e] flex items-center justify-center border-2 border-gray-600"
                 >
-                  <span className="text-white/60 font-bold text-2xl">{oldLevel}</span>
+                  <span className="text-white/60 font-bold text-2xl">{safeOldLevel}</span>
                 </motion.div>
 
                 {/* Arrow with pulse */}
@@ -389,7 +537,7 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
-                    {newLevel}
+                    {safeNewLevel}
                   </motion.span>
                   {/* Pulsing ring */}
                   <motion.div
@@ -446,7 +594,7 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
                     >
                       <p className="text-amber-400 font-semibold mb-3 flex items-center gap-2">
                         <GiftIcon className="w-5 h-5" />
-                        Level {newLevel} Milestone Rewards!
+                        Level {safeNewLevel} Milestone Rewards!
                       </p>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         {milestone.credits > 0 && (
@@ -643,9 +791,9 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
           transition={{ delay: 0.3 }}
           className="flex items-center justify-center gap-3 mb-4"
         >
-          <span className="text-white/60 text-lg">{terms.level} {oldLevel}</span>
+          <span className="text-white/60 text-lg">{terms.level} {safeOldLevel}</span>
           <ArrowUpIcon className="w-5 h-5 text-blue-400" />
-          <span className="text-blue-400 text-xl font-bold">{terms.level} {newLevel}</span>
+          <span className="text-blue-400 text-xl font-bold">{terms.level} {safeNewLevel}</span>
         </motion.div>
 
         {/* Stage Transition */}
@@ -684,7 +832,7 @@ export default function LevelUpModal({ isOpen, onClose, data, onClaimMilestone }
     >
       <CheckCircleIcon className="w-5 h-5 text-green-400" />
       <span className="text-white text-sm">
-        Level {newLevel} reached
+        Level {safeNewLevel} reached
       </span>
       <button
         onClick={onClose}

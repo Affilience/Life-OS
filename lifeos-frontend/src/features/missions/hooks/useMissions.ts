@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { supabase, getCurrentUserId } from '../../../lib/supabase';
 import type { Mission, UserMission, MissionFilters, MissionStatus } from '../types';
 
 export function useMissions(filters?: MissionFilters) {
@@ -16,19 +16,16 @@ export function useMissions(filters?: MissionFilters) {
       setLoading(true);
       setError(null);
 
-      // Try to get authenticated user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      // Get current user ID (handles dev mode internally)
+      const userId = await getCurrentUserId();
 
-      // Use dev user if no auth user (for development)
-      const user = authUser || {
-        id: '00000000-0000-0000-0000-000000000001'
-      };
-
-      if (!user) {
+      if (!userId) {
         setError('No user logged in');
         setLoading(false);
         return;
       }
+
+      const user = { id: userId };
 
       // Build query
       let query = supabase
@@ -109,9 +106,9 @@ export function useMissions(filters?: MissionFilters) {
       const mission = missions.find(m => m.id === missionId);
       if (!mission || !mission.mission) return;
 
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      const user = authUser || { id: '00000000-0000-0000-0000-000000000001' };
-      if (!user) return;
+      const userId = await getCurrentUserId();
+      if (!userId) return;
+      const user = { id: userId };
 
       // Award XP to the mission's module
       if (mission.mission.xpReward > 0) {
@@ -156,9 +153,9 @@ export function useMissions(filters?: MissionFilters) {
 
   const assignDailyMissions = useCallback(async () => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      const user = authUser || { id: '00000000-0000-0000-0000-000000000001' };
-      if (!user) return;
+      const userId = await getCurrentUserId();
+      if (!userId) return;
+      const user = { id: userId };
 
       // Fetch available daily missions
       const { data: availableMissions, error: fetchError } = await supabase

@@ -165,14 +165,17 @@ export const NOVA_STATES = {
 };
 
 export const useNewOnboardingStore = create(
-  persist(
-    (set, get) => ({
-      // Current state
-      currentStep: ONBOARDING_STEPS.GAMIFICATION_MODE,
-      isOnboardingActive: true,
-      isOnboardingComplete: false,
-      startedAt: null,
-      completedAt: null,
+  // NO persist middleware - onboarding state is ONLY from Supabase
+  (set, get) => ({
+    // Current state - defaults assume onboarding is complete until Supabase says otherwise
+    // This prevents flash of onboarding for returning users
+    currentStep: ONBOARDING_STEPS.COMPLETED,
+    isOnboardingActive: false,
+    isOnboardingComplete: true, // Default to complete - Supabase will correct if needed
+    _hasAuthoritativeData: false, // True only after successful Supabase fetch
+    _isLoading: true, // Loading state while fetching from Supabase
+    startedAt: null,
+    completedAt: null,
 
       // User selections
       gamificationMode: null, // 'cosmic' | 'minimal'
@@ -220,72 +223,167 @@ export const useNewOnboardingStore = create(
       _isSyncing: false,
       _lastSyncedAt: null,
       _syncError: null,
+      _lastUserId: null, // Track which user this onboarding state belongs to
 
       // ============================================
-      // SUPABASE SYNC
+      // SUPABASE SYNC (Supabase is the ONLY source of truth)
       // ============================================
 
-      // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
-        if (!userId) return;
+      // Initialize from Supabase - Supabase is the ONLY source of truth
+      initializeFromSupabase: async (passedUserId = null) => {
+        set({ _isLoading: true, _isSyncing: true, _syncError: null });
 
-        set({ _isSyncing: true, _syncError: null });
+        // Master timeout - guarantee function returns even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          console.warn('[OnboardingStore] ⏱️ Master timeout reached - defaulting to complete');
+          set({
+            _isLoading: false,
+            _isSyncing: false,
+            _hasAuthoritativeData: true,
+            isOnboardingComplete: true,
+            isOnboardingActive: false,
+          });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout (matches working stores)
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
 
         try {
-          const { data, error } = await supabase
-            .from('user_profiles')
-            .select('display_name, character_gender, preferences, onboarding_completed')
-            .eq('id', userId)
-            .maybeSingle();
-
-          if (error) throw error;
-          if (!data) {
-            console.log('[Onboarding] No user profile found, using defaults');
-            set({ _isSyncing: false });
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            // No user - show onboarding (they'll need to sign up)
+            clearTimeout(timeoutId);
+            set({
+              _isLoading: false,
+              _isSyncing: false,
+              _hasAuthoritativeData: true,
+              isOnboardingComplete: false,
+              isOnboardingActive: true,
+              currentStep: ONBOARDING_STEPS.GAMIFICATION_MODE,
+            });
+            console.log('[OnboardingStore] ✅ Initialized (no user)');
             return;
           }
 
-          // Map database fields to store state
+          set({ _lastUserId: userId });
+
+          const { data, error } = await withTimeout(
+            supabase
+              .from('user_profiles')
+              .select('onboarding_completed, display_name, character_gender, preferences')
+              .eq('id', userId)
+              .maybeSingle()
+          );
+
+          // If query timed out, default to complete (don't show onboarding)
+          if (error === 'timeout') {
+            console.warn('[OnboardingStore] ⏱️ Query timed out - defaulting to complete');
+            clearTimeout(timeoutId);
+            if (!timedOut) {
+              set({
+                _isLoading: false,
+                _isSyncing: false,
+                _hasAuthoritativeData: false, // Not authoritative - query failed
+                isOnboardingComplete: true,
+                isOnboardingActive: false,
+              });
+            }
+            console.log('[OnboardingStore] ✅ Initialized (timeout, skipping onboarding)');
+            return;
+          }
+
+          if (error) {
+            console.error('[OnboardingStore] ❌ Supabase error:', error);
+            // On error, default to complete to avoid blocking users
+            clearTimeout(timeoutId);
+            if (!timedOut) {
+              set({
+                _isLoading: false,
+                _isSyncing: false,
+                _syncError: typeof error === 'string' ? error : error.message,
+                _hasAuthoritativeData: false,
+                isOnboardingComplete: true,
+                isOnboardingActive: false,
+              });
+            }
+            console.log('[OnboardingStore] ✅ Initialized (with error, skipping onboarding)');
+            return;
+          }
+
+          if (!data) {
+            // New user - no profile exists yet, show onboarding
+            clearTimeout(timeoutId);
+            if (!timedOut) {
+              set({
+                _isLoading: false,
+                _isSyncing: false,
+                _hasAuthoritativeData: true,
+                isOnboardingComplete: false,
+                isOnboardingActive: true,
+                currentStep: ONBOARDING_STEPS.GAMIFICATION_MODE,
+              });
+            }
+            console.log('[OnboardingStore] ✅ Initialized (new user)');
+            return;
+          }
+
+          // User exists - check onboarding status from Supabase
+          const isComplete = data.onboarding_completed === true;
           const preferences = data.preferences || {};
-          const currentState = get();
 
-          // IMPORTANT: Don't overwrite local "complete" state with Supabase "incomplete" state
-          // This prevents race conditions where local completion hasn't synced yet
-          const isComplete = currentState.isOnboardingComplete || data.onboarding_completed || false;
-
-          set({
-            profile: {
-              username: data.display_name || currentState.profile.displayName || '',
-              displayName: data.display_name || currentState.profile.displayName || '',
-              gender: data.character_gender || currentState.profile.gender || null,
-            },
-            lifeGoals: preferences.life_goals || currentState.lifeGoals || [],
-            dailyCommitment: preferences.daily_commitment || currentState.dailyCommitment || 15,
-            gamificationMode: preferences.gamification_mode || currentState.gamificationMode || null,
-            isOnboardingComplete: isComplete,
-            isOnboardingActive: !isComplete,
-            currentStep: isComplete ? ONBOARDING_STEPS.COMPLETED : (currentState.currentStep || ONBOARDING_STEPS.GAMIFICATION_MODE),
-            _lastSyncedAt: new Date().toISOString(),
-            _isSyncing: false,
-          });
-
-          console.log('[Onboarding] Loaded from Supabase:', {
-            displayName: data.display_name,
-            gender: data.character_gender,
-            goals: preferences.life_goals,
-            completed: data.onboarding_completed,
-          });
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({
+              profile: {
+                username: data.display_name || '',
+                displayName: data.display_name || '',
+                gender: data.character_gender || null,
+              },
+              lifeGoals: preferences.life_goals || [],
+              dailyCommitment: preferences.daily_commitment || 15,
+              gamificationMode: preferences.gamification_mode || null,
+              isOnboardingComplete: isComplete,
+              isOnboardingActive: !isComplete,
+              currentStep: isComplete ? ONBOARDING_STEPS.COMPLETED : ONBOARDING_STEPS.GAMIFICATION_MODE,
+              _hasAuthoritativeData: true,
+              _lastSyncedAt: new Date().toISOString(),
+              _isLoading: false,
+              _isSyncing: false,
+            });
+          }
+          console.log('[OnboardingStore] ✅ Initialized');
         } catch (error) {
-          console.error('[Onboarding] Failed to initialize from Supabase:', error);
-          set({ _syncError: error.message, _isSyncing: false });
+          console.error('[OnboardingStore] ❌ Exception:', error);
+          clearTimeout(timeoutId);
+          // On exception, default to complete to avoid blocking users
+          if (!timedOut) {
+            set({
+              _syncError: error.message,
+              _isLoading: false,
+              _isSyncing: false,
+              _hasAuthoritativeData: true,
+              isOnboardingComplete: true,
+              isOnboardingActive: false,
+            });
+          }
+          console.log('[OnboardingStore] ✅ Initialized (with exception, using defaults)');
         }
       },
 
-      // Sync current state to Supabase
+      // Sync current state to Supabase - returns true on success, false on failure
       syncToSupabase: async () => {
         const userId = await getCurrentUserId();
-        if (!userId) return;
+        if (!userId) return false;
 
         const state = get();
         const nameToSave = state.profile.displayName || state.profile.username || '';
@@ -318,14 +416,16 @@ export const useNewOnboardingStore = create(
 
           set({ _lastSyncedAt: new Date().toISOString(), _syncError: null });
           console.log('[Onboarding] Synced to Supabase');
+          return true;
         } catch (error) {
           // Ignore 409 conflicts - another store may have synced first
           if (error?.code === '23505' || error?.message?.includes('conflict')) {
             console.log('[Onboarding] Sync conflict (another store synced first), ignoring');
-            return;
+            return true; // Treat conflict as success
           }
           console.error('[Onboarding] Failed to sync to Supabase:', error);
           set({ _syncError: error.message });
+          return false;
         }
       },
 
@@ -358,6 +458,40 @@ export const useNewOnboardingStore = create(
         set((state) => ({
           profile: { ...state.profile, ...profileData },
         }));
+
+        // Sync displayName/username to Supabase immediately so it persists
+        // even if onboarding isn't completed yet
+        if (profileData.displayName || profileData.username) {
+          get().syncProfileToSupabase();
+        }
+      },
+
+      // Sync just the profile data to Supabase (for real-time persistence)
+      syncProfileToSupabase: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        const state = get();
+        const nameToSave = state.profile.displayName || state.profile.username || '';
+
+        if (!nameToSave) return; // Don't sync empty names
+
+        try {
+          await supabase
+            .from('user_profiles')
+            .upsert({
+              id: userId,
+              username: nameToSave,
+              display_name: nameToSave,
+              updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'id',
+              ignoreDuplicates: false,
+            });
+        } catch (error) {
+          // Silently fail - will sync on completion anyway
+          console.warn('[Onboarding] Profile sync failed:', error.message);
+        }
       },
 
       // Set life goals
@@ -490,7 +624,7 @@ export const useNewOnboardingStore = create(
         }
       },
 
-      // Complete onboarding
+      // Complete onboarding - returns true on success, false on failure
       completeOnboarding: async () => {
         // Set up the default dashboard layout for new users
         // This ensures the dashboard tour has all the expected elements visible
@@ -510,7 +644,16 @@ export const useNewOnboardingStore = create(
         });
 
         // Sync all onboarding data to Supabase
-        await get().syncToSupabase();
+        // This is CRITICAL - if sync fails, on refresh user will be sent back to onboarding
+        const syncSuccess = await get().syncToSupabase();
+
+        if (!syncSuccess) {
+          console.error('[Onboarding] ❌ Failed to sync completion to Supabase!');
+          // Still return true - local state is set, will retry on next action
+        }
+
+        console.log('[Onboarding] ✅ Onboarding completed and synced');
+        return true;
       },
 
       // Reset onboarding (for re-onboard feature)
@@ -649,45 +792,13 @@ export const useNewOnboardingStore = create(
 
         return novaDialogueIndex >= dialogues.intro.length;
       },
-    }),
-    {
-      name: 'lifeos-new-onboarding',
-      version: 1,
-      // Migration function to handle version changes
-      migrate: (persistedState, version) => {
-        // Version 0 -> 1: No changes needed, just return state
-        return persistedState;
-      },
-      partialize: (state) => ({
-        // Persist everything except transient UI state
-        currentStep: state.currentStep,
-        isOnboardingActive: state.isOnboardingActive,
-        isOnboardingComplete: state.isOnboardingComplete,
-        startedAt: state.startedAt,
-        completedAt: state.completedAt,
-        gamificationMode: state.gamificationMode,
-        profile: state.profile,
-        lifeGoals: state.lifeGoals,
-        dailyCommitment: state.dailyCommitment,
-        moduleSetup: state.moduleSetup,
-        tourCompleted: state.tourCompleted,
-        invitedFriends: state.invitedFriends,
-        skippedSocial: state.skippedSocial,
-        skippedSteps: state.skippedSteps,
-        xpEarned: state.xpEarned,
-      }),
-      // Merge persisted state with initial state
-      merge: (persistedState, currentState) => ({
-        ...currentState,
-        ...persistedState,
-      }),
-    }
-  )
+    })
+  // NO persist middleware - onboarding completion is ONLY stored in Supabase
 );
 
 export default useNewOnboardingStore;
 
 // Hook to initialize store from Supabase on app load
-export const initializeOnboardingStore = async () => {
-  await useNewOnboardingStore.getState().initializeFromSupabase();
+export const initializeOnboardingStore = async (userId = null) => {
+  await useNewOnboardingStore.getState().initializeFromSupabase(userId);
 };

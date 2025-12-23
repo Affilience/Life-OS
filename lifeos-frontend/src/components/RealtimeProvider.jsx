@@ -7,14 +7,17 @@
  * - No need to refresh the page to see updates
  */
 
-import { useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { useEffect, useRef, useState } from 'react';
+import { supabase, getCachedUserId } from '../lib/supabase';
 import { useToast } from '../components/ui/Toast';
 import { initSyncNotifications } from '../utils/syncNotifications';
 
 // Debug logging - only in development
 const debug = import.meta.env.DEV ? console.log.bind(console) : () => {};
+
+// Track WebSocket errors to avoid console spam
+let wsErrorCount = 0;
+let lastWsErrorLog = 0;
 
 // Import stores for updating (mixed export styles)
 import useSkillsStore from '../stores/skillsStore';  // default export
@@ -36,12 +39,31 @@ import useDailyTasksStore from '../stores/dailyTasksStore';  // default export
 export function RealtimeProvider({ children, showNotifications = false }) {
   const channelsRef = useRef([]);
   const isSetupRef = useRef(false);
+  const hasLoggedWaiting = useRef(false);
+  const [userId, setUserId] = useState(null);
   const { toast } = useToast();
 
   // Initialize sync notifications with toast
   useEffect(() => {
     initSyncNotifications(toast);
   }, [toast]);
+
+  // Get current user ID on mount - use cached value (instant, doesn't hang)
+  useEffect(() => {
+    // Try cached value first (instant)
+    const cachedId = getCachedUserId();
+    if (cachedId) {
+      setUserId(cachedId);
+    }
+
+    // Also listen for auth changes to update user ID
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const id = session?.user?.id || null;
+      setUserId(id);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Get store refresh functions
   const refreshSkills = useSkillsStore(state => state.initializeFromSupabase);
@@ -75,13 +97,40 @@ export function RealtimeProvider({ children, showNotifications = false }) {
   };
 
   useEffect(() => {
+    // Don't set up subscriptions until we have a user ID
+    if (!userId) {
+      // Only log once to avoid console spam
+      if (!hasLoggedWaiting.current) {
+        debug('[Realtime] Waiting for user authentication...');
+        hasLoggedWaiting.current = true;
+      }
+      return;
+    }
+    hasLoggedWaiting.current = false; // Reset for next auth cycle
+
     // Prevent double setup in React StrictMode
     if (isSetupRef.current) return;
     isSetupRef.current = true;
 
-    debug('[Realtime] Setting up global subscriptions...');
+    debug('[Realtime] Setting up global subscriptions for user:', userId);
 
     const channels = [];
+
+    // Helper to handle subscription status with error suppression
+    const handleSubscriptionStatus = (channelName) => (status, err) => {
+      if (status === 'SUBSCRIBED') {
+        debug(`[Realtime] ${channelName} channel active`);
+        wsErrorCount = 0; // Reset on success
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        wsErrorCount++;
+        const now = Date.now();
+        // Only log errors once per minute to avoid console spam
+        if (now - lastWsErrorLog > 60000) {
+          console.warn(`[Realtime] WebSocket connection issue (${wsErrorCount} errors). Real-time sync may be unavailable.`);
+          lastWsErrorLog = now;
+        }
+      }
+    };
 
     // ============================================
     // SKILLS - Practice logs and skill updates
@@ -92,7 +141,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'skills',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Skills changed:', payload.eventType);
         refreshSkills?.();
@@ -101,14 +150,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'skill_practice_logs',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Practice logged:', payload.eventType);
         refreshSkills?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Skills channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Skills'));
     channels.push(skillsChannel);
 
     // ============================================
@@ -120,7 +167,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'productivity_tasks',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Task changed:', payload.eventType);
         refreshTasks?.();
@@ -129,14 +176,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'productivity_projects',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Project changed:', payload.eventType);
         refreshTasks?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Productivity channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Productivity'));
     channels.push(productivityChannel);
 
     // ============================================
@@ -148,14 +193,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'health_workouts',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Workout changed:', payload.eventType);
         refreshWorkouts?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Workouts channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Workouts'));
     channels.push(workoutsChannel);
 
     // ============================================
@@ -167,7 +210,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'financial_transactions',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Transaction changed:', payload.eventType);
         refreshFinancial?.();
@@ -176,14 +219,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'financial_goals',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Goal changed:', payload.eventType);
         refreshFinancial?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Financial channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Financial'));
     channels.push(financialChannel);
 
     // ============================================
@@ -195,7 +236,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'calendar_time_blocks',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Time block changed:', payload.eventType);
         refreshCalendar?.();
@@ -204,14 +245,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'calendar_events',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Event changed:', payload.eventType);
         refreshCalendar?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Calendar channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Calendar'));
     channels.push(calendarChannel);
 
     // ============================================
@@ -223,7 +262,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'knowledge_notes',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Note changed:', payload.eventType);
         refreshKnowledge?.();
@@ -232,14 +271,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'knowledge_media',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Media changed:', payload.eventType);
         refreshKnowledge?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Knowledge channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Knowledge'));
     channels.push(knowledgeChannel);
 
     // ============================================
@@ -251,7 +288,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'health_nutrition_logs',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Nutrition changed:', payload.eventType);
         refreshHealth?.();
@@ -260,7 +297,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'health_water_logs',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Water changed:', payload.eventType);
         refreshHealth?.();
@@ -269,7 +306,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'health_recipes',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Recipe changed:', payload.eventType);
         refreshHealth?.();
@@ -278,14 +315,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'health_supplements',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Supplement changed:', payload.eventType);
         refreshHealth?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Health channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Health'));
     channels.push(healthChannel);
 
     // ============================================
@@ -297,7 +332,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: 'UPDATE',
         schema: 'public',
         table: 'user_profiles',
-        filter: `id=eq.${DEV_USER_ID}`,
+        filter: `id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Profile updated (possible level up):', payload.new);
         refreshAvatar?.();
@@ -314,7 +349,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: 'INSERT',
         schema: 'public',
         table: 'user_discoveries',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Achievement unlocked!', payload.new);
         refreshAchievements?.();
@@ -330,14 +365,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'user_cosmic_currency',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Cosmic credits changed:', payload.eventType);
         refreshGamification?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Gamification channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Gamification'));
     channels.push(gamificationChannel);
 
     // ============================================
@@ -349,7 +382,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'user_resolutions',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Resolution changed:', payload.eventType);
         refreshResolutions?.();
@@ -358,14 +391,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'user_resolution_check_ins',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Resolution check-in:', payload.eventType);
         refreshResolutions?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Resolutions channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Resolutions'));
     channels.push(resolutionsChannel);
 
     // ============================================
@@ -377,14 +408,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'content_items',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Content changed:', payload.eventType);
         refreshContent?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Content channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Content'));
     channels.push(contentChannel);
 
     // ============================================
@@ -396,7 +425,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'user_purpose',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Purpose changed:', payload.eventType);
         refreshPurpose?.();
@@ -405,7 +434,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'user_values',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Values changed:', payload.eventType);
         refreshPurpose?.();
@@ -414,7 +443,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'user_decisions',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Decisions changed:', payload.eventType);
         refreshPurpose?.();
@@ -423,14 +452,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'user_identity_checkins',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Identity check-in changed:', payload.eventType);
         refreshPurpose?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Purpose channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Purpose'));
     channels.push(purposeChannel);
 
     // ============================================
@@ -442,14 +469,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'user_quotes',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Quote changed:', payload.eventType);
         refreshQuotes?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Quotes channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Quotes'));
     channels.push(quotesChannel);
 
     // ============================================
@@ -461,7 +486,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'daily_tasks',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Daily task changed:', payload.eventType);
         refreshDailyTasks?.();
@@ -470,14 +495,12 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         event: '*',
         schema: 'public',
         table: 'daily_task_templates',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Task template changed:', payload.eventType);
         refreshDailyTasks?.();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') debug('[Realtime] Daily tasks channel active');
-      });
+      .subscribe(handleSubscriptionStatus('Daily Tasks'));
     channels.push(dailyTasksChannel);
 
     channelsRef.current = channels;
@@ -494,6 +517,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
       isSetupRef.current = false;
     };
   }, [
+    userId,
     refreshSkills,
     refreshTasks,
     refreshWorkouts,

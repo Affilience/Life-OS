@@ -14,16 +14,36 @@ import { triggerGamification } from '../hooks/useGamification';
 import { useGamificationStore } from './gamificationStore';
 import { feedback, haptics, sounds } from '../services/microInteractions';
 
-// Helper to get current user ID
-const getCurrentUserId = async () => {
+// Helper to get current user ID - checks store first, then falls back to auth with timeout
+const getCurrentUserId = async (timeoutMs = 3000) => {
   if (isDevMode()) {
     return DEV_USER_ID;
   }
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || null;
+
+  // Check if userId is already stored (set during initialization)
+  const storedUserId = useBossStore.getState().currentUserId;
+  if (storedUserId) {
+    return storedUserId;
+  }
+
+  try {
+    // Fallback: fetch from auth with timeout
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Auth timeout')), timeoutMs)
+    );
+    const authPromise = supabase.auth.getUser();
+    const { data: { user } } = await Promise.race([authPromise, timeoutPromise]);
+    return user?.id || null;
+  } catch (error) {
+    console.warn('[BossStore] getCurrentUserId error:', error.message);
+    return null;
+  }
 };
 
 const initialState = {
+  // Current user ID (cached to avoid auth calls)
+  currentUserId: null,
+
   // Current battle state
   currentBattle: null,
   isBattleActive: false,
@@ -73,19 +93,65 @@ export const useBossStore = create(
       // INITIALIZATION
       // ============================================
 
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
-        if (!userId) return;
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Use passed userId if available, otherwise try to fetch
+        const userId = passedUserId || await getCurrentUserId();
+        if (!userId) {
+          console.log('[BossStore] No user ID, skipping initialization');
+          return;
+        }
 
-        set({ isLoading: true });
+        // Store userId so sub-functions can use it without calling auth
+        set({ currentUserId: userId, isLoading: true });
+
+        // Master timeout - ensure loading is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ isLoading: false });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = async (queryFn, timeoutMs = 10000) => {
+          try {
+            return await Promise.race([
+              queryFn(),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('timeout')), timeoutMs)
+              )
+            ]);
+          } catch (e) {
+            return { data: null, error: e.message };
+          }
+        };
 
         try {
-          // Load battle stats
-          const { data: stats } = await supabase
-            .from('boss_battle_stats')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle();
+          // Run all queries in parallel
+          const [
+            { data: stats },
+            { data: activeBattle },
+            { data: recentBattles }
+          ] = await Promise.all([
+            withTimeout(() => supabase
+              .from('boss_battle_stats')
+              .select('*')
+              .eq('user_id', userId)
+              .maybeSingle()),
+            withTimeout(() => supabase
+              .from('boss_battles')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('status', 'active')
+              .maybeSingle()),
+            withTimeout(() => supabase
+              .from('boss_battles')
+              .select('*')
+              .eq('user_id', userId)
+              .neq('status', 'active')
+              .order('ended_at', { ascending: false })
+              .limit(10))
+          ]);
 
           if (stats) {
             set({
@@ -103,14 +169,6 @@ export const useBossStore = create(
               },
             });
           }
-
-          // Check for any active battle
-          const { data: activeBattle } = await supabase
-            .from('boss_battles')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('status', 'active')
-            .maybeSingle();
 
           if (activeBattle) {
             const boss = BOSS_DATABASE[activeBattle.boss_id];
@@ -133,15 +191,6 @@ export const useBossStore = create(
             });
           }
 
-          // Load recent battles
-          const { data: recentBattles } = await supabase
-            .from('boss_battles')
-            .select('*')
-            .eq('user_id', userId)
-            .neq('status', 'active')
-            .order('ended_at', { ascending: false })
-            .limit(10);
-
           if (recentBattles) {
             set({
               recentBattles: recentBattles.map(b => ({
@@ -150,11 +199,17 @@ export const useBossStore = create(
               })),
             });
           }
+
+          console.log('[BossStore] ✅ Initialized');
         } catch (error) {
           console.error('Error loading boss battle data:', error);
           set({ error: error.message });
         } finally {
-          set({ isLoading: false });
+          clearTimeout(timeoutId);
+          // Always set loading to false (unless timeout already did it)
+          if (!timedOut) {
+            set({ isLoading: false });
+          }
         }
       },
 
@@ -354,7 +409,7 @@ export const useBossStore = create(
       // ============================================
 
       endBattle: async (status) => {
-        const { currentBattle, battleStartTime, battleStats, isEndingBattle } = get();
+        const { currentBattle, battleStartTime, battleStats, isEndingBattle, playerStats } = get();
 
         // Prevent concurrent calls - if already ending, return early
         if (isEndingBattle || !currentBattle) {
@@ -414,7 +469,7 @@ export const useBossStore = create(
           };
 
           // Upsert stats to Supabase
-          await supabase
+          const { error: statsError } = await supabase
             .from('boss_battle_stats')
             .upsert({
               user_id: userId,
@@ -423,7 +478,6 @@ export const useBossStore = create(
               defeats: newStats.defeats,
               total_damage_dealt: newStats.totalDamageDealt,
               total_taps: newStats.totalTaps,
-              total_crits: newStats.totalCrits,
               boss_victories: newStats.bossVictories,
               fastest_victory_seconds: newStats.fastestVictory,
               highest_damage_single_battle: newStats.highestDamage,
@@ -431,6 +485,10 @@ export const useBossStore = create(
             }, {
               onConflict: 'user_id',
             });
+
+          if (statsError) {
+            console.error('Error upserting battle stats:', statsError);
+          }
 
           // Award XP and credits on victory
           if (isVictory) {
@@ -567,9 +625,9 @@ export const useBossStore = create(
   )
 );
 
-// Initialize function for app startup
-export const initializeBossStore = async () => {
-  await useBossStore.getState().initializeFromSupabase();
+// Initialize function for app startup - accepts userId to avoid race conditions
+export const initializeBossStore = async (userId = null) => {
+  await useBossStore.getState().initializeFromSupabase(userId);
 };
 
 export default useBossStore;

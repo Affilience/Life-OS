@@ -38,6 +38,7 @@ import PageHeader from '../components/shared/PageHeader';
 import Card from '../components/ui/Card';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { useSocialStore } from '../stores/socialStore';
+import { useAvatarStore, COSMETIC_DEFINITIONS } from '../stores/avatarStore';
 import GuildManagement from '../components/social/GuildManagement';
 import CreateChallengeModal from '../components/social/CreateChallengeModal';
 import HeadToHeadChallenges from '../components/social/HeadToHeadChallenges';
@@ -69,9 +70,12 @@ export default function Social() {
   const [showArena, setShowArena] = useState(false);
 
   // Connect to gamification store for user's own stats
-  const { level, totalXP, globalStreak, odoo } = useGamificationStore();
+  const { level, totalXP, globalStreak, userId } = useGamificationStore();
   const currentStreak = globalStreak?.current_streak || 0;
-  const userId = odoo;
+
+  // Get user's active cosmetic title
+  const { getActiveTitle } = useAvatarStore();
+  const activeTitle = getActiveTitle();
 
   // Connect to PvP store (daily task-based)
   const {
@@ -95,7 +99,7 @@ export default function Social() {
 
   const [pvpBattleHistory, setPvpBattleHistory] = useState([]);
 
-  // Connect to social store
+  // Connect to social store (initialized by App.jsx on startup)
   const {
     socialProfile,
     friends,
@@ -113,7 +117,6 @@ export default function Social() {
     availableChallenges,
     myChallenges,
     loading,
-    initializeSocial,
     fetchActivityFeed,
     fetchGuilds,
     fetchChallenges,
@@ -126,10 +129,8 @@ export default function Social() {
     joinChallenge,
   } = useSocialStore();
 
-  // Initialize social data on mount
-  useEffect(() => {
-    initializeSocial();
-  }, []);
+  // Social store is initialized by App.jsx on startup
+  // The store has a guard to prevent duplicate initialization
 
   // Initialize PvP data
   useEffect(() => {
@@ -210,6 +211,13 @@ export default function Social() {
     return date.toLocaleDateString();
   };
 
+  // Helper to get title name from friend's active_cosmetics
+  const getFriendTitle = (activeCosmetics) => {
+    if (!activeCosmetics?.title) return null;
+    const def = COSMETIC_DEFINITIONS[activeCosmetics.title];
+    return def?.name || null;
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <PageHeader
@@ -268,10 +276,18 @@ export default function Social() {
             <div className="space-y-6" data-tour="social-feed-section">
               {/* Your Daily Summary */}
               <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-400" />
-                  Your Today
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Star className="w-5 h-5 text-yellow-400" />
+                    Your Today
+                  </h3>
+                  {/* Show active cosmetic title */}
+                  {activeTitle && (
+                    <span className="text-xs font-semibold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded-full px-3 py-1">
+                      ✦ {activeTitle} ✦
+                    </span>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-white">{userStats.level}</div>
@@ -1019,7 +1035,9 @@ export default function Social() {
                     Pending Requests ({pendingRequests.length})
                   </h3>
                   <div className="space-y-2">
-                    {pendingRequests.map((request) => (
+                    {pendingRequests.map((request) => {
+                      const requesterTitle = getFriendTitle(request.requester?.active_cosmetics);
+                      return (
                       <div key={request.id} className="bg-[#1a1724] border border-yellow-500/30 rounded-xl p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -1031,6 +1049,12 @@ export default function Social() {
                               )}
                             </div>
                             <div>
+                              {/* Requester's cosmetic title */}
+                              {requesterTitle && (
+                                <p className="text-[10px] font-semibold text-yellow-400 tracking-wide">
+                                  ✦ {requesterTitle} ✦
+                                </p>
+                              )}
                               <p className="font-medium text-white">{request.requester?.display_name || 'User'}</p>
                               <p className="text-sm text-white/50">Level {request.requester?.current_level || 1}</p>
                             </div>
@@ -1051,7 +1075,7 @@ export default function Social() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                    );})}
                   </div>
                 </div>
               )}
@@ -1092,6 +1116,7 @@ export default function Social() {
                   <div className="space-y-2">
                     {friends.map((friend) => {
                       const isOnline = onlineFriends.includes(friend.user_id);
+                      const friendTitle = getFriendTitle(friend.active_cosmetics);
 
                       return (
                         <div key={friend.friendshipId} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
@@ -1110,6 +1135,12 @@ export default function Social() {
                                 )}
                               </div>
                               <div>
+                                {/* Friend's cosmetic title */}
+                                {friendTitle && (
+                                  <p className="text-[10px] font-semibold text-yellow-400 tracking-wide">
+                                    ✦ {friendTitle} ✦
+                                  </p>
+                                )}
                                 <p className="font-medium text-white flex items-center gap-2">
                                   {friend.display_name || 'Friend'}
                                   {isOnline && <span className="text-xs text-green-400">Online</span>}

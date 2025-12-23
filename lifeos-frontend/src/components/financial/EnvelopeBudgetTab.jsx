@@ -548,8 +548,8 @@ export default function EnvelopeBudgetTab() {
         );
       })}
 
-      {/* Savings Rate */}
-      {summary.savingsRate > 0 && (
+      {/* Savings Rate - only show when we have both income AND expenses */}
+      {summary.totalIncome > 0 && summary.totalExpenses > 0 && (
         <Card className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

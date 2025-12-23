@@ -228,21 +228,27 @@ export default function LibraryView() {
 
     // Transform media (courses, videos, podcasts)
     (media || []).forEach(m => {
+      // Map media status to display status
+      // Media statuses: 'want-to-watch', 'in-progress', 'completed', 'abandoned'
+      const getDisplayStatus = (status) => {
+        if (status === 'completed') return 'completed';
+        if (status === 'in-progress' || status === 'watching' || status === 'listening') return 'reading';
+        return 'wishlist'; // want-to-watch, abandoned, or unknown
+      };
+
       items.push({
         id: m.id,
         type: m.type || 'video',
         title: m.title,
         author: m.author || m.creator || 'Unknown',
         genre: m.tags?.[0] || m.category || 'General',
-        coverUrl: m.thumbnail || m.coverImage,
+        coverUrl: m.thumbnail || m.thumbnailUrl || m.coverImage,
         progress: m.progress?.total > 0
           ? Math.round((m.progress.current / m.progress.total) * 100)
           : 0,
-        status: m.status === 'completed' ? 'completed'
-          : m.status === 'watching' || m.status === 'listening' ? 'reading'
-          : 'wishlist',
+        status: getDisplayStatus(m.status),
         rating: m.rating,
-        dateCompleted: m.completedAt,
+        dateCompleted: m.completedAt || m.watchedAt,
         addedDate: m.createdAt,
       });
     });

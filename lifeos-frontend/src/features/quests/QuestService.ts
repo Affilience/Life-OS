@@ -4,20 +4,25 @@
  */
 
 import { Quest } from './QuestTypes';
-import { supabase } from '../../lib/supabase';
-import { DEV_USER_ID } from '../../lib/dev-auth';
+import { supabase, getCurrentUserId } from '../../lib/supabase';
 
 /**
  * Load today's quests from Supabase
  */
 export async function loadToday(): Promise<Quest[]> {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.warn('[QuestService] No user ID available, returning seed quests');
+      return getSeedQuests();
+    }
+
     const today = new Date().toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('daily_quests')
       .select('*')
-      .eq('user_id', DEV_USER_ID)
+      .eq('user_id', userId)
       .eq('quest_date', today)
       .order('quest_order', { ascending: true });
 
@@ -66,13 +71,19 @@ export async function saveToday(quests: Quest[]): Promise<void> {
  */
 async function saveQuests(quests: Quest[]): Promise<void> {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.warn('[QuestService] No user ID available, skipping save');
+      return;
+    }
+
     const today = new Date().toISOString().split('T')[0];
 
     // Delete all existing quests for today first (to handle removals)
     await supabase
       .from('daily_quests')
       .delete()
-      .eq('user_id', DEV_USER_ID)
+      .eq('user_id', userId)
       .eq('quest_date', today);
 
     if (quests.length === 0) return;
@@ -80,7 +91,7 @@ async function saveQuests(quests: Quest[]): Promise<void> {
     // Insert all current quests
     const dbQuests = quests.map((quest, index) => ({
       id: quest.id,
-      user_id: DEV_USER_ID,
+      user_id: userId,
       title: quest.title,
       notes: quest.notes || null,
       kind: quest.kind,

@@ -172,11 +172,12 @@ export const TASK_CATEGORIES = {
 };
 
 // Priority levels with XP rewards
+// Daily task XP values (EASY tier: 5-10 XP, Critical slightly higher)
 export const PRIORITY_LEVELS = {
-  low: { label: 'Low', xp: 10, color: 'text-slate-400' },
-  medium: { label: 'Medium', xp: 20, color: 'text-blue-400' },
-  high: { label: 'High', xp: 35, color: 'text-orange-400' },
-  critical: { label: 'Critical', xp: 50, color: 'text-red-400' },
+  low: { label: 'Low', xp: 5, color: 'text-slate-400' },
+  medium: { label: 'Medium', xp: 8, color: 'text-blue-400' },
+  high: { label: 'High', xp: 10, color: 'text-orange-400' },
+  critical: { label: 'Critical', xp: 15, color: 'text-red-400' },
 };
 
 const useDailyTasksStore = create(
@@ -186,10 +187,31 @@ const useDailyTasksStore = create(
       tasksByDate: {},
 
       // Initialize from Supabase - merges with local data and syncs unsynced tasks
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          // Use passed userId to avoid slow supabase.auth.getUser() call
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
           const currentState = get();
           const localTasksByDate = currentState.tasksByDate || {};
@@ -201,23 +223,31 @@ const useDailyTasksStore = create(
           const endDate = new Date(today);
           endDate.setDate(endDate.getDate() + 7);
 
-          const { data: tasksData, error: tasksError } = await supabase
-            .from('daily_tasks')
-            .select('*')
-            .eq('user_id', userId)
-            .gte('task_date', getDateString(startDate))
-            .lte('task_date', getDateString(endDate))
-            .order('task_order', { ascending: true });
+          // Run both queries in parallel for faster initialization
+          const [
+            { data: tasksData, error: tasksError },
+            { data: templatesData, error: templatesError }
+          ] = await Promise.all([
+            withTimeout(
+              supabase
+                .from('daily_tasks')
+                .select('*')
+                .eq('user_id', userId)
+                .gte('task_date', getDateString(startDate))
+                .lte('task_date', getDateString(endDate))
+                .order('task_order', { ascending: true })
+            ),
+            withTimeout(
+              supabase
+                .from('daily_task_templates')
+                .select('*')
+                .eq('user_id', userId)
+            )
+          ]);
 
-          if (tasksError) throw tasksError;
-
-          // Load templates
-          const { data: templatesData, error: templatesError } = await supabase
-            .from('daily_task_templates')
-            .select('*')
-            .eq('user_id', userId);
-
-          if (templatesError) throw templatesError;
+          // Continue with empty data on timeout - don't throw
+          if (tasksError && tasksError !== 'timeout') throw tasksError;
+          if (templatesError && templatesError !== 'timeout') throw templatesError;
 
           // Build map of Supabase tasks by ID for quick lookup
           const supabaseTaskIds = new Set();
@@ -248,18 +278,13 @@ const useDailyTasksStore = create(
             });
           }
 
-          // Merge: keep Supabase data as source of truth, but sync any local-only tasks
+          // Merge: keep Supabase data as source of truth
           const mergedTasksByDate = { ...tasksByDateFromSupabase };
 
-          // Find local tasks that aren't in Supabase and sync them
+          // Add any local-only tasks to merged result (sync happens later on user action)
           for (const [date, tasks] of Object.entries(localTasksByDate)) {
             for (const task of tasks) {
               if (!supabaseTaskIds.has(task.id)) {
-                // This task exists locally but not in Supabase - sync it
-                console.log(`[DailyTasks] Syncing local task to Supabase: ${task.title}`);
-                await syncTaskToSupabase(task, date);
-
-                // Add to merged result
                 if (!mergedTasksByDate[date]) {
                   mergedTasksByDate[date] = [];
                 }
@@ -280,9 +305,11 @@ const useDailyTasksStore = create(
           }
 
           set(updates);
-          console.log('[DailyTasks] Store initialized from Supabase');
+          console.log('[DailyTasksStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing daily tasks from Supabase:', error);
+          console.error('[DailyTasksStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -841,9 +868,9 @@ const useDailyTasksStore = create(
 );
 
 // Initialize daily tasks store from Supabase
-export const initializeDailyTasksStore = async () => {
+export const initializeDailyTasksStore = async (userId = null) => {
   const store = useDailyTasksStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };
 
 export default useDailyTasksStore;

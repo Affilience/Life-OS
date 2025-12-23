@@ -135,16 +135,17 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
         haptics.impact('medium');
       }
 
-      // 3. Sound effect based on rarity
+      // 3. Sound effect based on rarity (using audio files)
       setTimeout(() => {
-        if (rarity === 'legendary') {
-          feedback.achievement();
-        } else if (rarity === 'epic') {
-          feedback.achievement();
+        if (rarity === 'legendary' || rarity === 'epic') {
+          // Big achievements get the fanfare
+          sounds.levelUpSound();
         } else if (rarity === 'rare') {
-          sounds.success();
+          // Rare gets the unlock sound
+          sounds.achievementSound();
         } else {
-          sounds.pop();
+          // Common/uncommon get the subtle pop
+          sounds.taskCompleteSound();
         }
       }, config.soundDelay);
 

@@ -275,10 +275,12 @@ export default function FinancialGoalsTab() {
       const weeksUntil = Math.max(1, Math.ceil(daysUntil / 7));
       const monthsUntil = Math.max(1, Math.ceil(daysUntil / 30));
 
-      // Calculate required payments
+      // Calculate required payments based on daily rate
+      // This gives more meaningful breakdowns regardless of time remaining
       const dailyPayment = daysUntil > 0 ? remaining / daysUntil : remaining;
-      const weeklyPayment = weeksUntil > 0 ? remaining / weeksUntil : remaining;
-      const monthlyPayment = monthsUntil > 0 ? remaining / monthsUntil : remaining;
+      // Weekly/monthly show how much you'd save at the daily rate over those periods
+      const weeklyPayment = dailyPayment * 7;
+      const monthlyPayment = dailyPayment * 30;
 
       // Determine if on track
       const totalDays = Math.ceil((deadline - new Date(goal.createdAt || Date.now())) / (1000 * 60 * 60 * 24));
@@ -857,21 +859,21 @@ export default function FinancialGoalsTab() {
                       const target = parseFloat(newGoal.target) || 0;
                       const deadline = new Date(newGoal.deadline);
                       const days = Math.max(1, Math.ceil((deadline - new Date()) / (1000 * 60 * 60 * 24)));
-                      const weeks = Math.max(1, Math.ceil(days / 7));
-                      const months = Math.max(1, Math.ceil(days / 30));
+                      // Calculate daily rate, then derive weekly/monthly from that
+                      const dailyRate = target / days;
 
                       return (
                         <>
                           <div>
-                            <div className="text-lg font-bold text-white">£{(target / days).toFixed(0)}</div>
+                            <div className="text-lg font-bold text-white">£{dailyRate.toFixed(0)}</div>
                             <div className="text-xs text-slate-500">per day</div>
                           </div>
                           <div className="border-x border-slate-700/50">
-                            <div className="text-lg font-bold text-purple-400">£{(target / weeks).toFixed(0)}</div>
+                            <div className="text-lg font-bold text-purple-400">£{(dailyRate * 7).toFixed(0)}</div>
                             <div className="text-xs text-slate-500">per week</div>
                           </div>
                           <div>
-                            <div className="text-lg font-bold text-white">£{(target / months).toFixed(0)}</div>
+                            <div className="text-lg font-bold text-white">£{(dailyRate * 30).toFixed(0)}</div>
                             <div className="text-xs text-slate-500">per month</div>
                           </div>
                         </>

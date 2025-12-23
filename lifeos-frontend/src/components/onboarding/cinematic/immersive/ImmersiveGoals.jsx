@@ -15,7 +15,7 @@
  * - Constellation solidifies and exits
  */
 
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo, useLayoutEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { feedback } from '../../../../services/microInteractions';
@@ -23,6 +23,9 @@ import { feedback } from '../../../../services/microInteractions';
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
+
+// Base container size (matches CSS default)
+const BASE_CONTAINER_SIZE = 450;
 
 const GOALS = [
   { id: 'productivity', icon: '⚡', label: 'Productivity', description: 'Master your time', color: '#fbbf24' },
@@ -63,6 +66,7 @@ export default function ImmersiveGoals({
   const [hasCompleted, setHasCompleted] = useState(false);
   const [rotation, setRotation] = useState(0);
   const lastWheelTime = useRef(0);
+  const [containerSize, setContainerSize] = useState(BASE_CONTAINER_SIZE);
 
   const maxGoals = 3;
   const canSelectMore = selectedGoals.length < maxGoals;
@@ -79,6 +83,22 @@ export default function ImmersiveGoals({
 
   // Track if section is in view
   const [isInView, setIsInView] = useState(false);
+
+  // Track container size for responsive SVG line positioning
+  useLayoutEffect(() => {
+    if (!orbsContainerRef.current) return;
+
+    const updateSize = () => {
+      const rect = orbsContainerRef.current?.getBoundingClientRect();
+      if (rect) {
+        setContainerSize(rect.width);
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   // Auto-play entrance animation when section comes into view
   useEffect(() => {
@@ -288,6 +308,14 @@ export default function ImmersiveGoals({
     }
   }, [selectedGoals, setSelectedGoals, canSelectMore, maxGoals]);
 
+  // Calculate scaled ORB_RADIUS for SVG lines to match GSAP orb positions
+  // The SVG scales with container, but GSAP positions are absolute pixels
+  // So we need to compensate by scaling up the SVG coordinates
+  const svgOrbRadius = useMemo(() => {
+    const scaleFactor = BASE_CONTAINER_SIZE / containerSize;
+    return ORB_RADIUS * scaleFactor;
+  }, [containerSize]);
+
   // Generate constellation lines
   const constellationLines = useMemo(() => {
     if (selectedGoals.length < 2) return [];
@@ -362,10 +390,10 @@ export default function ImmersiveGoals({
             {constellationLines.map(({ key, start, end }) => (
               <g key={key}>
                 <line
-                  x1={CENTER + start.x * ORB_RADIUS}
-                  y1={CENTER - start.y * ORB_RADIUS}
-                  x2={CENTER + end.x * ORB_RADIUS}
-                  y2={CENTER - end.y * ORB_RADIUS}
+                  x1={CENTER + start.x * svgOrbRadius}
+                  y1={CENTER - start.y * svgOrbRadius}
+                  x2={CENTER + end.x * svgOrbRadius}
+                  y2={CENTER - end.y * svgOrbRadius}
                   stroke="url(#goalEnergyGradient)"
                   strokeWidth="6"
                   strokeLinecap="round"
@@ -373,10 +401,10 @@ export default function ImmersiveGoals({
                   filter="url(#goalGlow)"
                 />
                 <line
-                  x1={CENTER + start.x * ORB_RADIUS}
-                  y1={CENTER - start.y * ORB_RADIUS}
-                  x2={CENTER + end.x * ORB_RADIUS}
-                  y2={CENTER - end.y * ORB_RADIUS}
+                  x1={CENTER + start.x * svgOrbRadius}
+                  y1={CENTER - start.y * svgOrbRadius}
+                  x2={CENTER + end.x * svgOrbRadius}
+                  y2={CENTER - end.y * svgOrbRadius}
                   stroke="url(#goalEnergyGradient)"
                   strokeWidth="2"
                   strokeLinecap="round"

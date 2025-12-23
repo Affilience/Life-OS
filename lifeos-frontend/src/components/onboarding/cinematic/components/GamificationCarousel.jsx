@@ -423,15 +423,35 @@ export default function GamificationCarousel({ isActive, onComplete, scrollProgr
           }
 
           .carousel-indicators {
-            gap: 0.35rem;
+            gap: 0.25rem;
           }
 
           .indicator {
-            padding: 0.3rem 0.5rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 12px;
+          }
+
+          .indicator-icon {
+            font-size: 0.7rem;
           }
 
           .indicator-label {
             display: none;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .carousel-indicators {
+            gap: 0.2rem;
+          }
+
+          .indicator {
+            padding: 0.15rem 0.3rem;
+            border-radius: 10px;
+          }
+
+          .indicator-icon {
+            font-size: 0.6rem;
           }
         }
       `}</style>

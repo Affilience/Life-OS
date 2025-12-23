@@ -57,28 +57,67 @@ const useLevelProgressionStore = create(
       /**
        * Initialize store with user's level
        */
-      initialize: async (level = 1) => {
+      initialize: async (level = 1, passedUserId = null) => {
         set({ isLoading: true });
 
+        // Master timeout - guarantee function returns
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          console.warn('[LevelProgressionStore] ⏱️ Master timeout reached - using defaults');
+          const title = getLevelTitle(level);
+          const frame = getHighestFrame(level);
+          set({
+            currentTitle: title,
+            currentFrame: frame,
+            petSlots: getPetSlots(level),
+            equipmentSetSlots: getEquipmentSetSlots(level),
+            inventorySlots: getInventorySlots(level),
+            levelXPBonus: getLevelXPBonus(level),
+            isInitialized: true,
+            isLoading: false,
+          });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
+          const userId = passedUserId || await getCurrentUserId();
           if (!userId) {
-            set({ isLoading: false });
+            clearTimeout(timeoutId);
+            set({ isLoading: false, isInitialized: true });
+            console.log('[LevelProgressionStore] ✅ Initialized (no user)');
             return;
           }
 
           // Fetch user's level progression data from Supabase
-          const { data: progressionData } = await supabase
-            .from('user_level_progression')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle();
+          const { data: progressionData } = await withTimeout(
+            supabase
+              .from('user_level_progression')
+              .select('*')
+              .eq('user_id', userId)
+              .maybeSingle()
+          );
 
           // Fetch claimed milestones
-          const { data: claimedData } = await supabase
-            .from('user_claimed_milestones')
-            .select('*')
-            .eq('user_id', userId);
+          const { data: claimedData } = await withTimeout(
+            supabase
+              .from('user_claimed_milestones')
+              .select('*')
+              .eq('user_id', userId)
+          );
+
+          clearTimeout(timeoutId);
+          if (timedOut) return;
 
           // Calculate current values based on level
           const title = getLevelTitle(level);
@@ -101,22 +140,25 @@ const useLevelProgressionStore = create(
           });
 
           // Ensure user has a progression record (use upsert to avoid conflicts)
-          if (!progressionData) {
-            const userId = await getCurrentUserId();
-            if (userId) {
-              await supabase.from('user_level_progression').upsert({
-                user_id: userId,
-                selected_frame: frame.id,
-                pet_slots: getPetSlots(level),
-                equipment_set_slots: getEquipmentSetSlots(level),
-                inventory_slots: getInventorySlots(level),
-                level_xp_bonus: xpBonus,
-              }, { onConflict: 'user_id' });
-            }
+          if (!progressionData && userId) {
+            // Fire and forget - don't block on this
+            supabase.from('user_level_progression').upsert({
+              user_id: userId,
+              selected_frame: frame.id,
+              pet_slots: getPetSlots(level),
+              equipment_set_slots: getEquipmentSetSlots(level),
+              inventory_slots: getInventorySlots(level),
+              level_xp_bonus: xpBonus,
+            }, { onConflict: 'user_id' }).then(() => {}).catch(() => {});
           }
+
+          console.log('[LevelProgressionStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing level progression:', error);
-          set({ isLoading: false });
+          console.error('[LevelProgressionStore] Error initializing:', error);
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({ isLoading: false, isInitialized: true });
+          }
         }
       },
 
@@ -357,8 +399,8 @@ const useLevelProgressionStore = create(
 );
 
 // Export initialization function
-export const initializeLevelProgressionStore = async (level = 1) => {
-  return useLevelProgressionStore.getState().initialize(level);
+export const initializeLevelProgressionStore = async (level = 1, userId = null) => {
+  return useLevelProgressionStore.getState().initialize(level, userId);
 };
 
 export default useLevelProgressionStore;

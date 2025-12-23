@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
@@ -29,6 +30,9 @@ import ImmersiveLaunch from './immersive/ImmersiveLaunch';
 // Avatar store for character gender
 import { useAvatarStore } from '../../../stores/avatarStore';
 
+// Social store for saving to database
+import { useSocialStore } from '../../../stores/socialStore';
+
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -43,9 +47,8 @@ const BASE_SECTIONS = [
 // Cosmic mode sections (full gamification experience)
 const COSMIC_SECTIONS = [
   { id: 'hero', component: ImmersiveHeroSelect, requiresInteraction: true },
-  // Note: Color customization step removed - users can customize later in Character page
-  { id: 'gamification', component: ImmersiveGamification, requiresInteraction: true },
   { id: 'identity', component: ImmersiveIdentity, requiresInteraction: true },
+  { id: 'gamification', component: ImmersiveGamification, requiresInteraction: true },
   { id: 'goals', component: ImmersiveGoals, requiresInteraction: true },
   { id: 'launch', component: ImmersiveLaunch },
 ];
@@ -71,15 +74,18 @@ export default function ImmersiveOnboarding() {
   const [currentSection, setCurrentSection] = useState(0);
   const [isScrollLocked, setIsScrollLocked] = useState(false);
 
+  // Navigation
+  const navigate = useNavigate();
+
   // Store connections
   const {
     completeOnboarding,
     profile,
-    updateProfile,
     lifeGoals,
     setLifeGoals,
     gamificationMode,
     setGamificationMode,
+    updateProfile,
   } = useNewOnboardingStore();
 
   const { setMode } = useGamificationModeStore();
@@ -87,14 +93,30 @@ export default function ImmersiveOnboarding() {
   // Avatar store for character gender and skin tone
   const { characterGender, setCharacterGender, skinTone, setSkinTone } = useAvatarStore();
 
+  // Social store for saving username/display_name to database
+  const { updateSocialProfile, updateUsername } = useSocialStore();
+
   // Dynamic sections based on selected mode
   const sections = useMemo(() => getSections(gamificationMode), [gamificationMode]);
 
   // Derived values
   const username = profile?.username || profile?.displayName || '';
-  const setUsername = useCallback((name) => {
+
+  // Handler to save username/display_name to both local store AND database
+  const setUsername = useCallback(async (name) => {
+    console.log('[Onboarding] Saving username to database:', name);
+
+    // Update local onboarding store
     updateProfile({ username: name, displayName: name });
-  }, [updateProfile]);
+
+    // Save to database - both username and display_name
+    try {
+      await updateSocialProfile({ display_name: name, username: name });
+      console.log('[Onboarding] ✅ Username saved to database');
+    } catch (error) {
+      console.error('[Onboarding] Failed to save username to database:', error);
+    }
+  }, [updateProfile, updateSocialProfile]);
   const selectedGoals = lifeGoals || [];
   const setSelectedGoals = setLifeGoals;
 
@@ -211,14 +233,21 @@ export default function ImmersiveOnboarding() {
     }
   }, [scrollToSection, sections]);
 
-  // Handle final launch
-  const handleLaunch = useCallback(() => {
+  // Handle final launch - async to ensure Supabase sync completes before navigating
+  const handleLaunch = useCallback(async () => {
     feedback.achievement();
     const finalMode = gamificationMode || 'cosmic';
     setGamificationMode(finalMode);
     setMode(finalMode);
-    completeOnboarding();
-  }, [completeOnboarding, setGamificationMode, setMode, gamificationMode]);
+
+    // CRITICAL: Await completion to ensure Supabase sync finishes
+    // This prevents the race condition where localStorage is set but DB isn't synced
+    await completeOnboarding();
+
+    // Navigate to dashboard after successful completion
+    console.log('[Onboarding] ✨ Launch complete! Navigating to dashboard...');
+    navigate('/', { replace: true });
+  }, [completeOnboarding, setGamificationMode, setMode, gamificationMode, navigate]);
 
   // Track current section for progress indicator
   const handleSectionEnter = useCallback((sectionId) => {
@@ -255,9 +284,10 @@ export default function ImmersiveOnboarding() {
       {/* Skip button */}
       <button
         className="immersive-skip"
-        onClick={() => {
+        onClick={async () => {
           if (window.confirm('Skip the onboarding experience?')) {
-            completeOnboarding();
+            await completeOnboarding();
+            navigate('/', { replace: true });
           }
         }}
       >
@@ -460,13 +490,13 @@ export default function ImmersiveOnboarding() {
 
         @media (max-width: 768px) {
           .immersive-progress {
-            right: 0.5rem;
-            gap: 4px;
+            right: 0.35rem;
+            gap: 6px;
           }
 
           .progress-dot {
-            width: 3px;
-            height: 3px;
+            width: 4px;
+            height: 4px;
           }
 
           .immersive-skip {
@@ -480,16 +510,20 @@ export default function ImmersiveOnboarding() {
         @media (max-width: 480px) {
           .immersive-progress {
             right: 0.25rem;
-            gap: 3px;
+            gap: 5px;
           }
 
           .progress-dot {
-            width: 2px;
-            height: 2px;
+            width: 3px;
+            height: 3px;
+          }
+
+          .dot-pulse {
+            display: none;
           }
 
           .progress-dot.active .dot-inner {
-            box-shadow: 0 0 2px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 3px rgba(139, 92, 246, 0.5);
           }
 
           .immersive-skip {

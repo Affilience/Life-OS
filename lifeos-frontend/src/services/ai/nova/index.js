@@ -253,13 +253,18 @@ export async function buildContext(userQuery, options = {}) {
     maxTokens = tokenManager.CONTEXT_BUDGET.TOTAL_MAX,
     forceQuickMode = false,
     skipSemanticCache = false,
-    userId = 'dev-user'
+    userId
   } = options;
 
   const startTime = Date.now();
 
+  // Warn if userId not provided - caching will be disabled
+  if (!userId) {
+    console.warn('buildContext called without userId - caching disabled');
+  }
+
   // 1. Check semantic cache first (fastest path)
-  if (!skipSemanticCache) {
+  if (!skipSemanticCache && userId) {
     try {
       const cachedResponse = await findSimilarCachedResponse(userQuery, userId);
       if (cachedResponse) {
@@ -612,7 +617,11 @@ export {
  * Invalidate cached context for a user
  * Call this when significant user data changes
  */
-export async function invalidateCache(userId = 'dev-user') {
+export async function invalidateCache(userId) {
+  if (!userId) {
+    console.warn('invalidateCache called without userId - skipping');
+    return false;
+  }
   try {
     await invalidateSummaryCache(userId);
     console.log(`Cache invalidated for user ${userId}`);

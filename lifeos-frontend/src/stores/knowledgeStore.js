@@ -13,57 +13,83 @@ import { triggerGamification } from '../hooks/useGamification';
 // SUPABASE SYNC HELPERS
 // ============================================
 
-const initializeFromSupabase = async (set, get) => {
+const initializeFromSupabase = async (set, get, passedUserId = null) => {
+  // Master timeout to prevent hanging
+  const INIT_TIMEOUT_MS = 15000;
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    set({ isInitialized: true });
+  }, INIT_TIMEOUT_MS);
+
+  // Helper to wrap queries with timeout
+  const withTimeout = (promise, timeoutMs = 10000) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+      )
+    ]).catch(() => ({ data: null }));
+  };
+
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return;
+    const userId = passedUserId || await getCurrentUserId();
+    if (!userId) {
+      clearTimeout(timeoutId);
+      return;
+    }
 
-    // Load notes (limit to 500 most recent)
-    const { data: notes } = await supabase
-      .from('knowledge_notes')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('archived', false)
-      .order('updated_at', { ascending: false })
-      .limit(500);
-
-    // Load books (limit to 200)
-    const { data: books } = await supabase
-      .from('knowledge_books')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(200);
-
-    // Load media (limit to 200)
-    const { data: media } = await supabase
-      .from('knowledge_media')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(200);
-
-    // Load tags (limit to 500)
-    const { data: tags } = await supabase
-      .from('knowledge_tags')
-      .select('*')
-      .eq('user_id', userId)
-      .limit(500);
-
-    // Load collections (limit to 100)
-    const { data: collections } = await supabase
-      .from('knowledge_collections')
-      .select('*')
-      .eq('user_id', userId)
-      .limit(100);
-
-    // Load projects (limit to 100)
-    const { data: projects } = await supabase
-      .from('knowledge_projects')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(100);
+    // Run ALL queries in parallel for faster initialization
+    const [
+      { data: notes },
+      { data: books },
+      { data: media },
+      { data: tags },
+      { data: collections },
+      { data: projects }
+    ] = await Promise.all([
+      // Load notes (limit to 500 most recent)
+      withTimeout(supabase
+        .from('knowledge_notes')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('archived', false)
+        .order('updated_at', { ascending: false })
+        .limit(500)),
+      // Load books (limit to 200)
+      withTimeout(supabase
+        .from('knowledge_books')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(200)),
+      // Load media (limit to 200)
+      withTimeout(supabase
+        .from('knowledge_media')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(200)),
+      // Load tags (limit to 500)
+      withTimeout(supabase
+        .from('knowledge_tags')
+        .select('*')
+        .eq('user_id', userId)
+        .limit(500)),
+      // Load collections (limit to 100)
+      withTimeout(supabase
+        .from('knowledge_collections')
+        .select('*')
+        .eq('user_id', userId)
+        .limit(100)),
+      // Load projects (limit to 100)
+      withTimeout(supabase
+        .from('knowledge_projects')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(100))
+    ]);
 
     // Transform data
     const transformedNotes = notes?.map(n => ({
@@ -171,10 +197,14 @@ const initializeFromSupabase = async (set, get) => {
       isInitialized: true,
     });
 
-    console.log('Knowledge store initialized from Supabase');
+    console.log('[KnowledgeStore] ✅ Initialized');
   } catch (error) {
-    console.error('Error initializing knowledge store from Supabase:', error);
-    set({ isInitialized: true }); // Mark as initialized even on error to prevent infinite retries
+    console.error('[KnowledgeStore] ❌ Error initializing:', error);
+  } finally {
+    clearTimeout(timeoutId);
+    if (!timedOut) {
+      set({ isInitialized: true });
+    }
   }
 };
 
@@ -463,7 +493,7 @@ export const useKnowledgeStore = create(
       isSearching: false,
 
       // Initialize from Supabase
-      initializeFromSupabase: () => initializeFromSupabase(set, get),
+      initializeFromSupabase: (passedUserId = null) => initializeFromSupabase(set, get, passedUserId),
 
       // ============================================
       // NOTES ACTIONS
@@ -493,11 +523,8 @@ export const useKnowledgeStore = create(
         }));
         syncNoteToSupabase(newNote);
 
-        // Award XP for creating a note
-        triggerGamification('noteCreated', {
-          xpOverride: 15,
-          module: 'knowledge',
-        });
+        // XP is awarded when note is saved with content, not on creation
+        // This prevents XP farming by creating empty notes
 
         return newNote.id;
       },
@@ -506,6 +533,11 @@ export const useKnowledgeStore = create(
        * Update an existing note
        */
       updateNote: (noteId, updates) => {
+        const oldNote = get().notes.find(n => n.id === noteId);
+        const wasEmpty = !oldNote?.content || oldNote.content.trim().length < 20;
+        const newContent = updates.content || oldNote?.content || '';
+        const nowHasContent = newContent.trim().length >= 20;
+
         set((state) => ({
           notes: state.notes.map((note) =>
             note.id === noteId
@@ -517,8 +549,22 @@ export const useKnowledgeStore = create(
               : note
           ),
         }));
+
         const note = get().notes.find(n => n.id === noteId);
         if (note) syncNoteToSupabase(note);
+
+        // Award XP once when note first gets meaningful content (20+ chars)
+        // Only if it was previously empty/minimal and hasn't been awarded yet
+        if (wasEmpty && nowHasContent && !oldNote?.xpAwarded) {
+          // Mark as awarded to prevent duplicate XP
+          set((state) => ({
+            notes: state.notes.map((n) =>
+              n.id === noteId ? { ...n, xpAwarded: true } : n
+            ),
+          }));
+          // 5 XP for writing a note with content
+          triggerGamification('noteCreated', { xpOverride: 5, module: 'knowledge' });
+        }
       },
 
       /**
@@ -653,8 +699,8 @@ export const useKnowledgeStore = create(
         }));
         syncBookToSupabase(newBook);
 
-        // Award XP for adding a book to your library
-        triggerGamification('ideaCaptured', { xpOverride: 10, module: 'knowledge' });
+        // Award XP for adding a book to your library (EASY tier: 5-10 XP)
+        triggerGamification('ideaCaptured', { xpOverride: 5, module: 'knowledge' });
 
         return newBook.id;
       },
@@ -674,9 +720,9 @@ export const useKnowledgeStore = create(
               }
               if (updates.status === 'completed' && !book.completedAt) {
                 updatedBook.completedAt = new Date().toISOString();
-                // Award XP for completing a book
+                // Award XP for completing a book (HARD tier: 25-40 XP)
                 triggerGamification('bookCompleted', {
-                  xpOverride: 50,
+                  xpOverride: 35,
                   module: 'knowledge',
                 });
               }
@@ -799,14 +845,15 @@ export const useKnowledgeStore = create(
         // Award XP when media is newly completed
         if (!wasCompleted && nowCompleted) {
           const mediaType = originalItem?.type || 'video';
+          // XP by media type - courses take more effort so give more
           const xpAmounts = {
-            video: 20,
-            course: 50,  // Courses get more XP
-            podcast: 15,
-            article: 10
+            video: 15,     // MEDIUM tier
+            course: 35,    // HARD tier
+            podcast: 10,   // MEDIUM tier
+            article: 8     // EASY tier
           };
           triggerGamification('mediaCompleted', {
-            xpOverride: xpAmounts[mediaType] || 20,
+            xpOverride: xpAmounts[mediaType] || 15,
             module: 'knowledge'
           });
         }
@@ -1258,7 +1305,7 @@ export const useKnowledgeStore = create(
 );
 
 // Initialize knowledge store from Supabase
-export const initializeKnowledgeStore = async () => {
+export const initializeKnowledgeStore = async (userId = null) => {
   const store = useKnowledgeStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };

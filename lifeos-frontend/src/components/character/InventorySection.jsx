@@ -17,6 +17,24 @@ const RARITY_COLORS = {
   rare: '#3b82f6',
   epic: '#a855f7',
   legendary: '#f59e0b',
+  mythical: '#ff00ff',
+};
+
+// Check if rarity should have an aura effect
+const hasAuraEffect = (rarity) => rarity === 'legendary' || rarity === 'mythical';
+
+// Get aura glow styles for equipment icons
+const getAuraStyles = (rarity, itemEffects) => {
+  if (!hasAuraEffect(rarity)) return {};
+
+  // Use item's own color if defined, otherwise use rarity default
+  const color = itemEffects?.[0]?.color || RARITY_COLORS[rarity];
+  const intensity = rarity === 'mythical' ? 1.5 : 1;
+
+  return {
+    boxShadow: `0 0 ${15 * intensity}px ${color}80, 0 0 ${25 * intensity}px ${color}40, 0 0 ${35 * intensity}px ${color}20`,
+    animation: 'equipment-aura-pulse 2s ease-in-out infinite',
+  };
 };
 
 // Helper to get sprite path from equipment item
@@ -308,8 +326,14 @@ export default function InventorySection() {
 
                             {/* Item Icon */}
                             <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center mb-2 mx-auto"
-                              style={{ backgroundColor: `${rarityColor}20` }}
+                              className={`w-12 h-12 rounded-lg flex items-center justify-center mb-2 mx-auto transition-all ${
+                                hasAuraEffect(item.rarity) ? 'ring-2 ring-offset-2 ring-offset-transparent' : ''
+                              }`}
+                              style={{
+                                backgroundColor: `${rarityColor}20`,
+                                ...getAuraStyles(item.rarity, item.effects),
+                                ringColor: hasAuraEffect(item.rarity) ? `${rarityColor}60` : undefined,
+                              }}
                             >
                               {getSpritePath(item) ? (
                                 <img

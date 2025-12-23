@@ -10,6 +10,16 @@ import { create } from 'zustand';
 const shownAchievementIds = new Set();
 const recentXPGains = []; // Track recent XP gains to merge quick successive gains
 
+// Helper to add to notification history (imported dynamically to avoid circular deps)
+let addToHistory = null;
+const getHistoryStore = async () => {
+  if (!addToHistory) {
+    const { useNotificationHistoryStore } = await import('../components/notifications/NotificationCenter');
+    addToHistory = useNotificationHistoryStore.getState().addNotification;
+  }
+  return addToHistory;
+};
+
 export const useNotificationStore = create((set, get) => ({
   // Achievement notifications queue
   achievementQueue: [],
@@ -27,7 +37,7 @@ export const useNotificationStore = create((set, get) => ({
   // ==========================================
 
   // Add an achievement notification
-  addAchievementNotification: (achievement) => {
+  addAchievementNotification: async (achievement) => {
     // Deduplicate: Don't show same achievement twice in one session
     if (shownAchievementIds.has(achievement.id)) {
       console.log('[NotificationStore] Skipping duplicate achievement:', achievement.id);
@@ -35,13 +45,35 @@ export const useNotificationStore = create((set, get) => ({
     }
     shownAchievementIds.add(achievement.id);
 
+    const notificationData = {
+      ...achievement,
+      timestamp: Date.now(),
+      notificationId: `${achievement.id}-${Date.now()}`,
+    };
+
     set(state => ({
-      achievementQueue: [...state.achievementQueue, {
-        ...achievement,
-        timestamp: Date.now(),
-        notificationId: `${achievement.id}-${Date.now()}`,
-      }],
+      achievementQueue: [...state.achievementQueue, notificationData],
     }));
+
+    // Add to persistent history
+    try {
+      const addFn = await getHistoryStore();
+      if (addFn) {
+        addFn({
+          id: notificationData.notificationId,
+          type: 'achievement',
+          title: achievement.title || achievement.name,
+          message: achievement.description,
+          data: {
+            xp: achievement.xp_reward,
+            credits: achievement.credit_reward,
+            rarity: achievement.rarity,
+          },
+        });
+      }
+    } catch (err) {
+      console.warn('[NotificationStore] Could not add to history:', err);
+    }
 
     // If nothing is currently showing, show this one
     if (!get().currentAchievement) {
@@ -148,15 +180,39 @@ export const useNotificationStore = create((set, get) => ({
   // LEVEL UP NOTIFICATIONS
   // ==========================================
 
-  // Show level up notification
-  showLevelUp: (newLevel, tierUp = false) => {
+  // Show level up notification with full data
+  showLevelUp: async (data) => {
+    const timestamp = Date.now();
+
+    // Handle both old format (newLevel, tierUp) and new format (object)
+    const levelData = typeof data === 'object' ? data : {
+      newLevel: data,
+      oldLevel: data - 1,
+      tierUp: false,
+    };
+
     set({
       levelUpNotification: {
-        level: newLevel,
-        tierUp,
-        timestamp: Date.now(),
+        ...levelData,
+        timestamp,
       }
     });
+
+    // Add to persistent history
+    try {
+      const addFn = await getHistoryStore();
+      if (addFn) {
+        addFn({
+          id: `level-${levelData.newLevel}-${timestamp}`,
+          type: 'levelUp',
+          title: levelData.tierUp ? 'New Tier Unlocked!' : 'Level Up!',
+          message: `You reached Level ${levelData.newLevel}${levelData.tierUp ? ' - New abilities unlocked!' : ''}`,
+          data: levelData,
+        });
+      }
+    } catch (err) {
+      console.warn('[NotificationStore] Could not add level up to history:', err);
+    }
   },
 
   // Dismiss level up notification

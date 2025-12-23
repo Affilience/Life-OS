@@ -552,34 +552,58 @@ export const usePetStore = create(
   persist(
     (set, get) => ({
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ _isInitialized: true });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
+          const userId = passedUserId || await getCurrentUserId();
           if (!userId) {
+            clearTimeout(timeoutId);
             set({ _isInitialized: true });
             return;
           }
 
           // Load user's pets and profile (for max_pet_slots)
           const [petsResult, profileResult] = await Promise.all([
-            supabase
-              .from('user_pets')
-              .select(`
-                *,
-                pet:pets (*)
-              `)
-              .eq('user_id', userId),
-            supabase
-              .from('user_profiles')
-              .select('max_pet_slots')
-              .eq('id', userId)
-              .maybeSingle(),
+            withTimeout(
+              supabase
+                .from('user_pets')
+                .select(`
+                  *,
+                  pet:pets (*)
+                `)
+                .eq('user_id', userId)
+            ),
+            withTimeout(
+              supabase
+                .from('user_profiles')
+                .select('max_pet_slots')
+                .eq('id', userId)
+                .maybeSingle()
+            ),
           ]);
 
           const { data: userPets, error: petsError } = petsResult;
           const { data: profile } = profileResult;
 
-          if (petsError) throw petsError;
+          // Continue with empty data on timeout - don't throw
+          if (petsError && petsError !== 'timeout') throw petsError;
 
           // Load max slots from profile
           if (profile?.max_pet_slots) {
@@ -598,10 +622,12 @@ export const usePetStore = create(
 
           // Mark as initialized after loading from Supabase
           set({ _isInitialized: true });
-          console.log('[PetStore] Initialized from Supabase');
+          console.log('[PetStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing pets from Supabase:', error);
+          console.error('[PetStore] ❌ Error initializing:', error);
           set({ _isInitialized: true }); // Still mark initialized even on error
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -1138,6 +1164,6 @@ export const usePetStore = create(
 );
 
 // Export initialization function for App.jsx
-export const initializePetStore = async () => {
-  return usePetStore.getState().initializeFromSupabase();
+export const initializePetStore = async (userId = null) => {
+  return usePetStore.getState().initializeFromSupabase(userId);
 };

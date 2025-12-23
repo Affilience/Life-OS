@@ -506,6 +506,20 @@ body {
 }
 
 /* ============================================================================
+   EQUIPMENT AURA EFFECTS - Glowing effect for legendary/mythical items
+   ============================================================================ */
+@keyframes equipment-aura-pulse {
+  0%, 100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.15);
+    transform: scale(1.02);
+  }
+}
+
+/* ============================================================================
    RECHARTS GLOBAL FIX - Prevent chart overflow on mobile
    ============================================================================ */
 .recharts-responsive-container {

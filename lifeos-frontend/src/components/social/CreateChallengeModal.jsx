@@ -18,8 +18,11 @@ import {
   Heart,
   Flame,
   Star,
+  Coins,
+  AlertCircle,
 } from 'lucide-react';
 import { useSocialStore } from '../../stores/socialStore';
+import { useGamificationStore } from '../../stores/gamificationStore';
 
 const METRIC_TYPES = [
   { id: 'total_xp', label: 'Total XP', icon: Zap, description: 'Earn XP from any activity' },
@@ -40,8 +43,12 @@ const DURATION_OPTIONS = [
   { days: 30, label: '1 Month' },
 ];
 
+// Common wager amounts for quick selection
+const WAGER_PRESETS = [0, 50, 100, 250, 500];
+
 export default function CreateChallengeModal({ isOpen, onClose, initialType = 'individual', opponent = null }) {
   const { createChallenge, createHeadToHead, friends } = useSocialStore();
+  const { cosmicCredits } = useGamificationStore();
 
   const [challengeType, setChallengeType] = useState(initialType);
   const [selectedOpponent, setSelectedOpponent] = useState(opponent);
@@ -53,9 +60,13 @@ export default function CreateChallengeModal({ isOpen, onClose, initialType = 'i
     durationDays: 7,
     xpReward: 100,
     icon: '🎯',
+    wagerAmount: 0, // Credit wager for H2H
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Check if user has enough credits for the wager
+  const hasEnoughCredits = cosmicCredits >= formData.wagerAmount;
 
   if (!isOpen) return null;
 
@@ -73,12 +84,18 @@ export default function CreateChallengeModal({ isOpen, onClose, initialType = 'i
           setLoading(false);
           return;
         }
+        if (formData.wagerAmount > 0 && !hasEnoughCredits) {
+          setError(`Insufficient credits. You have ${cosmicCredits} but need ${formData.wagerAmount}`);
+          setLoading(false);
+          return;
+        }
         result = await createHeadToHead(selectedOpponent.id, {
           title: formData.title,
           metricType: formData.metricType,
           targetValue: formData.targetValue,
           durationDays: formData.durationDays,
           xpReward: formData.xpReward,
+          wagerAmount: formData.wagerAmount,
         });
       } else {
         result = await createChallenge({
@@ -360,6 +377,77 @@ export default function CreateChallengeModal({ isOpen, onClose, initialType = 'i
               </div>
             </div>
           </div>
+
+          {/* Credit Wager (H2H only) */}
+          {challengeType === 'head_to_head' && (
+            <div className="p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-xl">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-medium text-amber-400 flex items-center gap-2">
+                  <Coins className="w-4 h-4" />
+                  Credit Wager (Optional)
+                </label>
+                <div className="text-xs text-white/50">
+                  Your Balance: <span className="text-amber-400 font-medium">{cosmicCredits?.toLocaleString() || 0}</span>
+                </div>
+              </div>
+
+              {/* Preset amounts */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {WAGER_PRESETS.map(amount => (
+                  <button
+                    key={amount}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, wagerAmount: amount })}
+                    disabled={amount > cosmicCredits}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      formData.wagerAmount === amount
+                        ? 'bg-amber-500/30 border-amber-500 text-amber-400 border'
+                        : amount > cosmicCredits
+                        ? 'bg-white/5 border-white/5 text-white/30 border cursor-not-allowed'
+                        : 'bg-white/5 border-white/10 text-white/60 border hover:bg-white/10'
+                    }`}
+                  >
+                    {amount === 0 ? 'No Wager' : `${amount}`}
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom amount input */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={formData.wagerAmount}
+                  onChange={(e) => setFormData({ ...formData, wagerAmount: Math.max(0, parseInt(e.target.value) || 0) })}
+                  min={0}
+                  max={cosmicCredits}
+                  placeholder="Custom amount"
+                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                />
+                <span className="text-amber-400 text-sm">credits</span>
+              </div>
+
+              {/* Wager info */}
+              {formData.wagerAmount > 0 && (
+                <div className="mt-3 p-2 bg-white/5 rounded-lg">
+                  <div className="flex items-start gap-2 text-xs">
+                    <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-white/60">
+                      <p>Both players wager <span className="text-amber-400 font-medium">{formData.wagerAmount}</span> credits.</p>
+                      <p className="mt-1">Winner takes all: <span className="text-green-400 font-medium">+{formData.wagerAmount * 2}</span> credits!</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Insufficient credits warning */}
+              {formData.wagerAmount > cosmicCredits && (
+                <div className="mt-2 p-2 bg-red-500/20 border border-red-500/30 rounded-lg flex items-center gap-2 text-xs text-red-400">
+                  <AlertCircle className="w-4 h-4" />
+                  Insufficient credits
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Error */}
           {error && (

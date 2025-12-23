@@ -93,7 +93,7 @@ export function renderEquipmentLayer(ctx, sprite, x, y, size, effects = {}, dyeC
       subtle: 5,
       medium: 10,
       strong: 15,
-      intense: 20,
+      intense: 25,
     }[effects.glow] || 0;
 
     if (glowStrength > 0) {
@@ -160,24 +160,28 @@ export function renderEquipmentParticles(ctx, x, y, particleConfig, time) {
 }
 
 /**
- * Render aura effect for legendary equipment
+ * Render aura effect for legendary/mythical equipment
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {number} x - Center X position
  * @param {number} y - Center Y position
  * @param {number} radius - Aura radius
  * @param {string} color - Aura color
  * @param {number} time - Current timestamp for pulsing animation
+ * @param {number} intensity - Aura intensity multiplier (default 1.0)
  */
-export function renderEquipmentAura(ctx, x, y, radius, color, time) {
+export function renderEquipmentAura(ctx, x, y, radius, color, time, intensity = 1.0) {
   const pulsePhase = time / 1000; // 1 cycle per second
-  const alpha = 0.2 + Math.sin(pulsePhase * 2) * 0.1; // Pulse between 0.1 and 0.3
-  const currentRadius = radius + Math.sin(pulsePhase * 2) * 3;
+  // Much more visible alpha: pulse between 0.4 and 0.7 (scaled by intensity)
+  const baseAlpha = 0.4 + Math.sin(pulsePhase * 2) * 0.15;
+  const alpha = Math.min(1, baseAlpha * intensity);
+  const currentRadius = radius + Math.sin(pulsePhase * 2) * 5;
 
   ctx.save();
 
   const gradient = ctx.createRadialGradient(x, y, 0, x, y, currentRadius);
   gradient.addColorStop(0, `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`);
-  gradient.addColorStop(0.5, `${color}${Math.floor(alpha * 0.5 * 255).toString(16).padStart(2, '0')}`);
+  gradient.addColorStop(0.4, `${color}${Math.floor(alpha * 0.6 * 255).toString(16).padStart(2, '0')}`);
+  gradient.addColorStop(0.7, `${color}${Math.floor(alpha * 0.3 * 255).toString(16).padStart(2, '0')}`);
   gradient.addColorStop(1, `${color}00`);
 
   ctx.fillStyle = gradient;
@@ -333,7 +337,17 @@ export function getRarityEffects(rarity) {
       hasParticles: true,
       particleCount: 5,
       hasAura: true,
-      auraRadius: 30,
+      auraRadius: 35,
+      auraIntensity: 1.0,
+    },
+    mythical: {
+      glow: 'intense',
+      glowColor: '#ffd700', // Golden for mythical (divine glow)
+      hasParticles: true,
+      particleCount: 8,
+      hasAura: true,
+      auraRadius: 50,
+      auraIntensity: 1.5, // 50% stronger aura
     },
   };
 

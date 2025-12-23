@@ -181,30 +181,59 @@ const useSkillsStore = create(
       isInitialized: false,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ isInitialized: true });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          // Use passed userId to avoid slow supabase.auth.getUser() call
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
           // Store current skills to preserve local data like goals and milestones
           const currentSkills = get().skills;
 
-          // Load skills
-          const { data: skillsData, error: skillsError } = await supabase
-            .from('skills')
-            .select('*')
-            .eq('user_id', userId);
+          // Run both queries in parallel for faster initialization
+          const [
+            { data: skillsData, error: skillsError },
+            { data: logsData, error: logsError }
+          ] = await Promise.all([
+            withTimeout(
+              supabase
+                .from('skills')
+                .select('*')
+                .eq('user_id', userId)
+            ),
+            withTimeout(
+              supabase
+                .from('skill_practice_logs')
+                .select('*')
+                .eq('user_id', userId)
+                .order('practice_date', { ascending: false })
+            )
+          ]);
 
-          if (skillsError) throw skillsError;
-
-          // Load practice logs for all skills
-          const { data: logsData, error: logsError } = await supabase
-            .from('skill_practice_logs')
-            .select('*')
-            .eq('user_id', userId)
-            .order('practice_date', { ascending: false });
-
-          if (logsError) throw logsError;
+          // Continue with empty data on timeout - don't throw
+          if (skillsError && skillsError !== 'timeout') throw skillsError;
+          if (logsError && logsError !== 'timeout') throw logsError;
 
           // Transform skills from DB format to store format
           const skills = (skillsData || []).map(skill => {
@@ -238,9 +267,12 @@ const useSkillsStore = create(
           });
 
           set({ skills, isInitialized: true });
+          console.log('[SkillsStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing skills from Supabase:', error);
+          console.error('[SkillsStore] ❌ Error initializing:', error);
           set({ isInitialized: true }); // Mark as initialized even on error to prevent infinite retries
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -270,8 +302,8 @@ const useSkillsStore = create(
         // Sync to Supabase
         syncSkillToSupabase(newSkill);
 
-        // Award XP for adding a new skill to track
-        triggerGamification('skillAdded', { xpOverride: 15, module: 'skills' });
+        // Award XP for adding a new skill to track (EASY tier: 5-10 XP)
+        triggerGamification('skillAdded', { xpOverride: 8, module: 'skills' });
 
         return newSkill;
       },
@@ -340,10 +372,10 @@ const useSkillsStore = create(
           syncSkillToSupabase(updatedSkill);
         }
 
-        // Trigger unified gamification for practice session
+        // Trigger unified gamification for practice session (minimum 5 XP)
         // Include duration for perk bonuses (flow state, etc.)
         triggerGamification('practiceSession', {
-          xpOverride: Math.max(10, xpEarned),
+          xpOverride: Math.max(5, xpEarned),
           module: 'skills',
           durationMinutes: parseInt(minutes),
         });
@@ -352,9 +384,9 @@ const useSkillsStore = create(
         const oldLevel = getProficiencyLevel(updatedSkill.xp - xpEarned);
         const newLevel = getProficiencyLevel(updatedSkill.xp);
         if (oldLevel.id !== newLevel.id) {
-          triggerGamification('skillLevelUp', { xpOverride: 25 });
+          triggerGamification('skillLevelUp', { xpOverride: 15 }); // MEDIUM tier
           if (newLevel.id === 'expert') {
-            triggerGamification('skillMastered', { xpOverride: 100 });
+            triggerGamification('skillMastered', { xpOverride: 60 }); // EPIC tier
           }
         }
 
@@ -464,9 +496,9 @@ const useSkillsStore = create(
           syncSkillToSupabase(updatedSkill);
         }
 
-        // Award XP only when completing a goal (not uncompleting)
+        // Award XP only when completing a goal (not uncompleting) - MEDIUM tier
         if (isCompleting) {
-          triggerGamification('goalCompleted', { xpOverride: 20, module: 'skills' });
+          triggerGamification('goalCompleted', { xpOverride: 10, module: 'skills' });
         }
       },
 
@@ -486,8 +518,8 @@ const useSkillsStore = create(
           syncSkillToSupabase(updatedSkill);
         }
 
-        // Award XP for recording a milestone achievement
-        triggerGamification('milestoneAchieved', { xpOverride: 30, module: 'skills' });
+        // Award XP for recording a milestone achievement (MEDIUM tier: 10-20 XP)
+        triggerGamification('milestoneAchieved', { xpOverride: 15, module: 'skills' });
       },
     }),
     {
@@ -500,9 +532,9 @@ const useSkillsStore = create(
 );
 
 // Initialize skills store from Supabase
-export const initializeSkillsStore = async () => {
+export const initializeSkillsStore = async (userId = null) => {
   const store = useSkillsStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };
 
 export default useSkillsStore;

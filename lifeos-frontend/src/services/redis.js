@@ -1,9 +1,26 @@
 /**
  * Redis Service for LifeOS
  * Uses Upstash Redis for leaderboards and caching
+ *
+ * SECURITY: User IDs are hashed before use in cache keys to prevent:
+ * - Enumeration attacks (guessing user IDs)
+ * - Cache key prediction
  */
 
 const REDIS_URL = 'redis://default:AZPyAAIncDJmYjY1OWFjNDQ2MTk0ZThhOGMzZDhjYjhjNDBmNmY4M3AyMzc4NzQ@major-ghoul-37874.upstash.io:6379';
+
+// Simple hash function for cache key security (not cryptographic, just obfuscation)
+// Uses djb2 algorithm - fast and gives good distribution
+function hashUserId(userId) {
+  if (!userId) return 'anonymous';
+  let hash = 5381;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) + hash) + userId.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  // Convert to hex string with prefix for readability
+  return 'u_' + Math.abs(hash).toString(16);
+}
 
 // Parse Redis URL for REST API
 const getRestConfig = () => {
@@ -43,12 +60,19 @@ async function redisCommand(command, ...args) {
     return data.result;
   } catch (error) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      console.warn('Redis command timed out');
-    } else {
-      console.error('Redis command failed:', error);
+    // Log warning only once per minute to avoid console spam
+    const now = Date.now();
+    const lastWarning = redisCommand._lastWarning || 0;
+    if (now - lastWarning > 60000) {
+      if (error.name === 'AbortError') {
+        console.warn('[Redis] Command timed out - leaderboards/presence may be unavailable');
+      } else {
+        console.warn('[Redis] Connection issue:', error.message);
+      }
+      redisCommand._lastWarning = now;
     }
-    throw error;
+    // Return null instead of throwing - allows graceful degradation
+    return null;
   }
 }
 
@@ -80,12 +104,15 @@ async function redisPipeline(commands) {
     return data.map(r => r.result);
   } catch (error) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      console.warn('Redis pipeline timed out');
-    } else {
-      console.error('Redis pipeline failed:', error);
+    // Log warning only once per minute to avoid console spam
+    const now = Date.now();
+    const lastWarning = redisPipeline._lastWarning || 0;
+    if (now - lastWarning > 60000) {
+      console.warn('[Redis] Pipeline issue - leaderboards may be unavailable');
+      redisPipeline._lastWarning = now;
     }
-    throw error;
+    // Return empty array instead of throwing
+    return commands.map(() => null);
   }
 }
 
@@ -136,6 +163,11 @@ export async function getLeaderboardScore(leaderboardKey, userId) {
  */
 export async function getLeaderboardTop(leaderboardKey, count = 100) {
   const results = await redisCommand('ZREVRANGE', leaderboardKey, '0', String(count - 1), 'WITHSCORES');
+
+  // Handle null/undefined results (Redis unavailable or timeout)
+  if (!results || !Array.isArray(results)) {
+    return [];
+  }
 
   // Parse results into array of {userId, score}
   const entries = [];
@@ -368,21 +400,31 @@ function extractQueryTerms(query) {
 
 /**
  * Generate a semantic key based on query intent and key terms
+ * SECURITY: userId is hashed to prevent cache key enumeration
  */
-function generateSemanticKey(query, userId = 'dev-user') {
+function generateSemanticKey(query, userId) {
+  if (!userId) {
+    console.warn('generateSemanticKey called without userId');
+    return null;
+  }
   const terms = extractQueryTerms(query);
   const queryHash = hashQuery(query);
+  const hashedUserId = hashUserId(userId); // Hash userId for security
 
   // Create a key that groups similar queries
   const termKey = terms.join('_') || 'general';
-  return `${SEMANTIC_CACHE_KEY}:${userId}:${termKey}:${queryHash}`;
+  return `${SEMANTIC_CACHE_KEY}:${hashedUserId}:${termKey}:${queryHash}`;
 }
 
 /**
  * Find similar cached responses
  * Returns cached response if a similar query was recently asked
  */
-export async function findSimilarCachedResponse(query, userId = 'dev-user') {
+export async function findSimilarCachedResponse(query, userId) {
+  if (!userId) {
+    console.warn('findSimilarCachedResponse called without userId - skipping cache');
+    return null;
+  }
   try {
     const terms = extractQueryTerms(query);
     if (terms.length === 0) return null;
@@ -395,7 +437,8 @@ export async function findSimilarCachedResponse(query, userId = 'dev-user') {
     }
 
     // Try term-based key (without hash) for broader matching
-    const termKey = `${SEMANTIC_CACHE_KEY}:${userId}:${terms.join('_')}`;
+    const hashedUserId = hashUserId(userId);
+    const termKey = `${SEMANTIC_CACHE_KEY}:${hashedUserId}:${terms.join('_')}`;
 
     // Get all keys matching this pattern using SCAN
     // Since Upstash doesn't support SCAN well via REST, we'll use a different approach:
@@ -404,7 +447,7 @@ export async function findSimilarCachedResponse(query, userId = 'dev-user') {
     if (termIndex && Array.isArray(termIndex.hashes)) {
       // Try each cached hash
       for (const hash of termIndex.hashes.slice(-5)) { // Check last 5 similar queries
-        const cachedKey = `${SEMANTIC_CACHE_KEY}:${userId}:${terms.join('_')}:${hash}`;
+        const cachedKey = `${SEMANTIC_CACHE_KEY}:${hashedUserId}:${terms.join('_')}:${hash}`;
         const cached = await getCache(cachedKey);
         if (cached && Date.now() - cached.timestamp < SEMANTIC_CACHE_TTL * 1000) {
           return { ...cached, matchType: 'similar' };
@@ -422,7 +465,11 @@ export async function findSimilarCachedResponse(query, userId = 'dev-user') {
 /**
  * Cache a Nova response with semantic indexing
  */
-export async function cacheSemanticResponse(query, response, userId = 'dev-user') {
+export async function cacheSemanticResponse(query, response, userId) {
+  if (!userId) {
+    console.warn('cacheSemanticResponse called without userId - skipping cache');
+    return false;
+  }
   try {
     const terms = extractQueryTerms(query);
     const queryHash = hashQuery(query);
@@ -441,7 +488,8 @@ export async function cacheSemanticResponse(query, response, userId = 'dev-user'
 
     // Update the term index for similarity matching
     if (terms.length > 0) {
-      const termKey = `${SEMANTIC_CACHE_KEY}:${userId}:${terms.join('_')}`;
+      const hashedUserId = hashUserId(userId);
+      const termKey = `${SEMANTIC_CACHE_KEY}:${hashedUserId}:${terms.join('_')}`;
       const existingIndex = await getCache(termKey) || { hashes: [] };
 
       // Add this hash to the index (keep last 10)
@@ -459,7 +507,11 @@ export async function cacheSemanticResponse(query, response, userId = 'dev-user'
 /**
  * Clear semantic cache for a user (call after significant data changes)
  */
-export async function clearSemanticCache(userId = 'dev-user') {
+export async function clearSemanticCache(userId) {
+  if (!userId) {
+    console.warn('clearSemanticCache called without userId - skipping');
+    return false;
+  }
   // Since we can't easily scan keys, we'll just let them expire
   // For more aggressive clearing, we'd need to track keys in a set
   console.log(`Semantic cache will expire naturally for user ${userId}`);
@@ -475,25 +527,31 @@ const CONTEXT_CACHE_TTL = 60; // 1 minute - context changes frequently
 
 /**
  * Cache user's context summary
+ * SECURITY: userId is hashed in cache key
  */
 export async function cacheContextSummary(userId, summary) {
-  const key = `${CONTEXT_CACHE_KEY}:${userId}`;
+  const hashedUserId = hashUserId(userId);
+  const key = `${CONTEXT_CACHE_KEY}:${hashedUserId}`;
   return setCache(key, summary, CONTEXT_CACHE_TTL);
 }
 
 /**
  * Get cached context summary
+ * SECURITY: userId is hashed in cache key
  */
 export async function getCachedContextSummary(userId) {
-  const key = `${CONTEXT_CACHE_KEY}:${userId}`;
+  const hashedUserId = hashUserId(userId);
+  const key = `${CONTEXT_CACHE_KEY}:${hashedUserId}`;
   return getCache(key);
 }
 
 /**
  * Invalidate context cache (call when user data changes)
+ * SECURITY: userId is hashed in cache key
  */
 export async function invalidateContextCache(userId) {
-  const key = `${CONTEXT_CACHE_KEY}:${userId}`;
+  const hashedUserId = hashUserId(userId);
+  const key = `${CONTEXT_CACHE_KEY}:${hashedUserId}`;
   return deleteCache(key);
 }
 

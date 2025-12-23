@@ -8,6 +8,22 @@ import { supabase } from '../lib/supabase';
 import { calculatePlayerStats } from '../data/bossDatabase';
 import { EQUIPMENT_DATABASE } from '../data/equipmentDatabase';
 import { useGamificationStore } from './gamificationStore';
+import { calculateEloChange, getRankTier } from '../utils/pvpCalculations';
+
+// Helper to get current user ID with timeout protection
+const getCurrentUserId = async (timeoutMs = 3000) => {
+  try {
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Auth timeout')), timeoutMs)
+    );
+    const authPromise = supabase.auth.getUser();
+    const { data: { user } } = await Promise.race([authPromise, timeoutPromise]);
+    return user?.id || null;
+  } catch (error) {
+    console.warn('[PvpArenaStore] getCurrentUserId error:', error.message);
+    return null;
+  }
+};
 
 const usePvpArenaStore = create((set, get) => ({
   // === STATE ===
@@ -51,17 +67,34 @@ const usePvpArenaStore = create((set, get) => ({
   initialize: async (userId) => {
     if (!userId) return;
 
-    try {
-      // Fetch or create arena stats
-      await get().fetchArenaStats(userId);
+    // Helper to wrap queries with timeout (silent - only log final success/fail)
+    const withTimeout = async (queryFn, name, timeoutMs = 10000) => {
+      try {
+        return await Promise.race([
+          queryFn(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`${name} timeout`)), timeoutMs)
+          )
+        ]);
+      } catch (e) {
+        return { data: null };
+      }
+    };
 
-      // Check if already in queue
-      const { data: queueEntry } = await supabase
-        .from('pvp_arena_queue')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('status', 'waiting')
-        .single();
+    try {
+      // Fetch or create arena stats with timeout
+      await withTimeout(() => get().fetchArenaStats(userId), 'fetchArenaStats');
+
+      // Check if already in queue with timeout
+      const { data: queueEntry } = await withTimeout(
+        () => supabase
+          .from('pvp_arena_queue')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'waiting')
+          .single(),
+        'checkQueue'
+      );
 
       if (queueEntry) {
         set({
@@ -71,18 +104,23 @@ const usePvpArenaStore = create((set, get) => ({
         get().subscribeToQueue(userId);
       }
 
-      // Check if in active match
-      const { data: activeMatch } = await supabase
-        .from('pvp_arena_matches')
-        .select('*')
-        .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-        .eq('status', 'active')
-        .single();
+      // Check if in active match with timeout
+      const { data: activeMatch } = await withTimeout(
+        () => supabase
+          .from('pvp_arena_matches')
+          .select('*')
+          .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+          .eq('status', 'active')
+          .single(),
+        'checkActiveMatch'
+      );
 
       if (activeMatch) {
         set({ currentMatch: activeMatch, isInMatch: true });
         get().subscribeToMatch(activeMatch.channel_id, userId);
       }
+
+      console.log('[PvpArenaStore] ✅ Initialized');
     } catch (error) {
       console.error('Arena initialization error:', error);
     }
@@ -499,7 +537,19 @@ const usePvpArenaStore = create((set, get) => ({
     const loserCredits = currentMatch.match_type === 'ranked' ? 15 : 10;
 
     try {
-      // Update match in database
+      // Fetch both players' current ELO for proper calculation
+      const [winnerStats, loserStats] = await Promise.all([
+        supabase.from('pvp_arena_stats').select('arena_elo').eq('user_id', winnerId).single(),
+        supabase.from('pvp_arena_stats').select('arena_elo').eq('user_id', loserId).single(),
+      ]);
+
+      const winnerElo = winnerStats.data?.arena_elo || 1000;
+      const loserElo = loserStats.data?.arena_elo || 1000;
+
+      // Calculate proper ELO changes using the formula
+      const eloChanges = calculateEloChange(winnerElo, loserElo);
+
+      // Update match in database with ELO changes
       await supabase
         .from('pvp_arena_matches')
         .update({
@@ -516,6 +566,8 @@ const usePvpArenaStore = create((set, get) => ({
           winner_credits: winnerCredits,
           loser_xp: loserXp,
           loser_credits: loserCredits,
+          winner_elo_change: eloChanges.winnerChange,
+          loser_elo_change: eloChanges.loserChange,
         })
         .eq('id', matchId);
 
@@ -524,13 +576,13 @@ const usePvpArenaStore = create((set, get) => ({
         await matchChannel.send({
           type: 'broadcast',
           event: 'match_end',
-          payload: { winnerId, matchId },
+          payload: { winnerId, matchId, eloChanges },
         });
       }
 
-      // Update arena stats for both players
-      await get().updateArenaStats(winnerId, true, myDamageDealt, myTaps);
-      await get().updateArenaStats(loserId, false, opponentDamageDealt, opponentTaps);
+      // Update arena stats for both players with calculated ELO changes
+      await get().updateArenaStats(winnerId, true, myDamageDealt, myTaps, eloChanges.winnerChange);
+      await get().updateArenaStats(loserId, false, opponentDamageDealt, opponentTaps, eloChanges.loserChange);
 
       // Clean up queue entries
       await supabase
@@ -539,8 +591,7 @@ const usePvpArenaStore = create((set, get) => ({
         .in('user_id', [currentMatch.player1_id, currentMatch.player2_id]);
 
       // Get current user ID to determine if we're the winner
-      const { data: authData } = await supabase.auth.getUser();
-      const currentUserId = authData?.user?.id;
+      const currentUserId = await getCurrentUserId();
 
       // Award XP and credits to the current user via gamificationStore
       if (currentUserId) {
@@ -577,7 +628,7 @@ const usePvpArenaStore = create((set, get) => ({
     }
   },
 
-  updateArenaStats: async (userId, isWinner, damageDealt, taps) => {
+  updateArenaStats: async (userId, isWinner, damageDealt, taps, eloChange = null) => {
     try {
       const { data: currentStats } = await supabase
         .from('pvp_arena_stats')
@@ -587,35 +638,33 @@ const usePvpArenaStore = create((set, get) => ({
 
       if (!currentStats) return;
 
-      const eloChange = isWinner ? 25 : -20;
-      const newElo = Math.max(0, currentStats.arena_elo + eloChange);
+      // Use provided ELO change (from proper calculation) or fall back to simple values
+      const actualEloChange = eloChange !== null ? eloChange : (isWinner ? 25 : -20);
+      const newElo = Math.max(0, currentStats.arena_elo + actualEloChange);
 
-      // Determine rank tier
-      let rankTier = 'bronze';
-      if (newElo >= 2200) rankTier = 'champion';
-      else if (newElo >= 1800) rankTier = 'diamond';
-      else if (newElo >= 1500) rankTier = 'platinum';
-      else if (newElo >= 1200) rankTier = 'gold';
-      else if (newElo >= 900) rankTier = 'silver';
+      // Determine rank tier using the utility function
+      const rankTier = getRankTier(newElo);
 
       await supabase
         .from('pvp_arena_stats')
         .update({
           arena_elo: newElo,
-          season_high_elo: Math.max(currentStats.season_high_elo, newElo),
+          season_high_elo: Math.max(currentStats.season_high_elo || 0, newElo),
           rank_tier: rankTier,
           total_matches: currentStats.total_matches + 1,
           wins: isWinner ? currentStats.wins + 1 : currentStats.wins,
           losses: isWinner ? currentStats.losses : currentStats.losses + 1,
           current_win_streak: isWinner ? currentStats.current_win_streak + 1 : 0,
           longest_win_streak: isWinner
-            ? Math.max(currentStats.longest_win_streak, currentStats.current_win_streak + 1)
-            : currentStats.longest_win_streak,
-          total_taps: currentStats.total_taps + taps,
-          total_damage_dealt: currentStats.total_damage_dealt + damageDealt,
+            ? Math.max(currentStats.longest_win_streak || 0, currentStats.current_win_streak + 1)
+            : currentStats.longest_win_streak || 0,
+          total_taps: (currentStats.total_taps || 0) + taps,
+          total_damage_dealt: (currentStats.total_damage_dealt || 0) + damageDealt,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', userId);
+
+      console.log(`[PvP Arena] Updated ELO for ${userId}: ${currentStats.arena_elo} → ${newElo} (${actualEloChange > 0 ? '+' : ''}${actualEloChange})`);
     } catch (error) {
       console.error('Update arena stats error:', error);
     }

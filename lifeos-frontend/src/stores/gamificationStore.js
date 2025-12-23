@@ -221,16 +221,34 @@ export const useGamificationStore = create(
 
       /**
        * Initialize store with user data from Supabase
+       * ALWAYS fetches fresh data to ensure Supabase is source of truth
        */
-      initialize: async (userId) => {
-        if (get().isInitialized && get().userId === userId) {
-          return; // Already initialized
-        }
-
+      initialize: async (passedUserId = null) => {
+        // Always fetch fresh data from Supabase - don't skip even for same user
+        // This ensures data stays in sync across devices/sessions
+        const userId = passedUserId || await getCurrentUserId();
         set({ isLoading: true, userId });
 
+        // Master timeout - ensure loading is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ isLoading: false, isInitialized: true });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          // Fetch all user gamification data in parallel
+          // Fetch all user gamification data in parallel with timeouts
           const [
             progressData,
             creditsData,
@@ -245,83 +263,83 @@ export const useGamificationStore = create(
             moduleMasteryData,
           ] = await Promise.all([
             // 1. User progress (level, stage, XP, stats)
-            supabase
+            withTimeout(supabase
               .from('user_module_progress')
               .select('*')
               .eq('user_id', userId)
               .eq('module_id', 'cosmic_evolution')
-              .maybeSingle(),
+              .maybeSingle()),
 
             // 2. Cosmic credits
-            supabase
+            withTimeout(supabase
               .from('user_cosmic_currency')
               .select('*')
               .eq('user_id', userId)
-              .maybeSingle(),
+              .maybeSingle()),
 
             // 3. Equipment (owned + equipped)
-            supabase
+            withTimeout(supabase
               .from('user_equipment')
               .select(`
                 *,
                 equipment_items (*)
               `)
-              .eq('user_id', userId),
+              .eq('user_id', userId)),
 
             // 4. Streaks (active = current_streak > 0)
-            supabase
+            withTimeout(supabase
               .from('momentum_chains')
               .select('*')
               .eq('user_id', userId)
-              .gt('current_streak', 0),
+              .gt('current_streak', 0)),
 
             // 5. Missions
-            supabase
+            withTimeout(supabase
               .from('user_missions')
               .select('*, missions(*)')
               .eq('user_id', userId)
-              .eq('status', 'active'),
+              .eq('status', 'active')),
 
             // 6. Achievements
-            supabase
+            withTimeout(supabase
               .from('achievement_progress')
               .select(`
                 *,
                 discoveries (*)
               `)
-              .eq('user_id', userId),
+              .eq('user_id', userId)),
 
             // 7. Constellations
-            supabase
+            withTimeout(supabase
               .from('user_constellation_progress')
               .select('*')
-              .eq('user_id', userId),
+              .eq('user_id', userId)),
 
             // 8. Unlocked perks (no join - perk definitions are in frontend)
-            supabase
+            withTimeout(supabase
               .from('user_perks')
               .select('*')
-              .eq('user_id', userId),
+              .eq('user_id', userId)),
 
             // 9. Inventory (consumable items)
-            supabase
+            withTimeout(supabase
               .from('user_inventory')
               .select('*')
-              .eq('user_id', userId),
+              .eq('user_id', userId)),
 
             // 10. Active boosts (cleanup expired first)
-            supabase
+            withTimeout(supabase
               .from('user_active_boosts')
               .select('*')
               .eq('user_id', userId)
-              .gt('expires_at', new Date().toISOString()),
+              .gt('expires_at', new Date().toISOString())),
 
             // 11. Module mastery (module XP)
-            supabase
+            withTimeout(supabase
               .from('user_module_mastery')
               .select('*')
               .eq('user_id', userId)
-              .maybeSingle(),
+              .maybeSingle()),
           ]);
 
           // Process user progress
@@ -462,10 +480,14 @@ export const useGamificationStore = create(
             lastSyncedAt: new Date().toISOString(),
           });
 
-          console.log('✅ Gamification store initialized');
+          console.log('[GamificationStore] ✅ Initialized');
         } catch (error) {
-          console.error('❌ Error initializing gamification store:', error);
-          set({ isLoading: false });
+          console.error('[GamificationStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({ isLoading: false, isInitialized: true });
+          }
         }
       },
 
@@ -481,6 +503,10 @@ export const useGamificationStore = create(
       addXP: async (amount, source = 'manual', options = {}) => {
         const { userId, totalXP, xpMultiplier, activeBoosts } = get();
         const { skipAvatarSync = false } = options;
+
+        // Skip database sync if userId is null (store not initialized yet)
+        // Local state will still update for UI responsiveness
+        const shouldSyncToDatabase = !!userId;
 
         // Calculate total multiplier including active boosts (like Double XP Scroll)
         let totalMultiplier = xpMultiplier;
@@ -531,21 +557,27 @@ export const useGamificationStore = create(
           }
         }
 
-        // Update database
-        await supabase
-          .from('user_module_progress')
-          .upsert({
-            user_id: userId,
-            module_id: 'cosmic_evolution',
-            level: newLevel,
-            current_xp: newCurrentXP,
-            total_xp_earned: newTotalXP,
-            xp_to_next_level: newXPToNext,
-            current_stage: get().currentStage,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'user_id,module_id' });
+        // Update database (only if userId is available)
+        if (shouldSyncToDatabase) {
+          try {
+            await supabase
+              .from('user_module_progress')
+              .upsert({
+                user_id: userId,
+                module_id: 'cosmic_evolution',
+                level: newLevel,
+                current_xp: newCurrentXP,
+                total_xp_earned: newTotalXP,
+                xp_to_next_level: newXPToNext,
+                current_stage: get().currentStage,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,module_id' });
+          } catch (error) {
+            console.warn('[GamificationStore] Failed to sync XP to database:', error.message);
+          }
+        }
 
-        // Log event
+        // Log event (only if userId is available - logEvent checks for this)
         get().logEvent('xp_gained', source, {
           amount: adjustedAmount,
           baseAmount: amount,
@@ -579,7 +611,17 @@ export const useGamificationStore = create(
           if (leveledUp) {
             // Check if it's a tier up (every 10 levels)
             const tierUp = newLevel % 10 === 0;
-            notifStore.showLevelUp(newLevel, tierUp);
+            notifStore.showLevelUp({
+              newLevel,
+              oldLevel,
+              tierUp,
+              stageTransition,
+              newStage,
+              oldStage,
+              xpBeforeLevelUp: totalXP, // XP before this gain
+              xpToNextLevel: newXPToNext,
+              xpGained: adjustedAmount,
+            });
           }
         })();
 
@@ -989,27 +1031,37 @@ export const useGamificationStore = create(
       updateStreak: async (module, success = true) => {
         const { userId, streaks } = get();
 
+        // Skip if userId is null (store not initialized)
+        if (!userId) {
+          console.warn('[GamificationStore] Skipping streak update - userId not initialized');
+          return;
+        }
+
         const streak = streaks.find(s => s.module_id === module);
 
         if (!streak) {
           // Create new streak
-          const { data: newStreak } = await supabase
-            .from('momentum_chains')
-            .insert({
-              user_id: userId,
-              module_id: module,
-              chain_type: module,
-              current_streak: success ? 1 : 0,
-              longest_streak: success ? 1 : 0,
-              total_days_active: success ? 1 : 0,
-              streak_started_at: success ? new Date().toISOString() : null,
-              last_activity_at: new Date().toISOString(),
-            })
-            .select()
-            .single();
+          try {
+            const { data: newStreak } = await supabase
+              .from('momentum_chains')
+              .insert({
+                user_id: userId,
+                module_id: module,
+                chain_type: module,
+                current_streak: success ? 1 : 0,
+                longest_streak: success ? 1 : 0,
+                total_days_active: success ? 1 : 0,
+                streak_started_at: success ? new Date().toISOString() : null,
+                last_activity_at: new Date().toISOString(),
+              })
+              .select()
+              .single();
 
-          if (newStreak) {
-            set({ streaks: [...streaks, newStreak] });
+            if (newStreak) {
+              set({ streaks: [...streaks, newStreak] });
+            }
+          } catch (error) {
+            console.warn('[GamificationStore] Failed to create streak:', error.message);
           }
         } else {
           // Update existing streak
@@ -1028,18 +1080,22 @@ export const useGamificationStore = create(
             }
           }
 
-          await supabase
-            .from('momentum_chains')
-            .update({
-              current_streak: newStreakCount,
-              shield_count: Math.max(0, streak.shield_count - shieldsUsed),
-              longest_streak: Math.max(streak.longest_streak, newStreakCount),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', streak.id);
+          try {
+            await supabase
+              .from('momentum_chains')
+              .update({
+                current_streak: newStreakCount,
+                shield_count: Math.max(0, streak.shield_count - shieldsUsed),
+                longest_streak: Math.max(streak.longest_streak, newStreakCount),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', streak.id);
 
-          // Refresh streaks
-          get().refreshStreaks();
+            // Refresh streaks
+            get().refreshStreaks();
+          } catch (error) {
+            console.warn('[GamificationStore] Failed to update streak:', error.message);
+          }
         }
 
         // Recalculate XP multiplier
@@ -1051,6 +1107,9 @@ export const useGamificationStore = create(
        */
       refreshStreaks: async () => {
         const { userId } = get();
+
+        // Skip if userId is null
+        if (!userId) return;
 
         // Get all streaks (including inactive ones for history)
         const { data: streaks } = await supabase
@@ -1477,10 +1536,10 @@ export function formatXP(xp) {
 }
 
 // Export initialization function for App.jsx
-export const initializeGamificationStore = async () => {
-  const userId = await getCurrentUserId();
-  if (!userId) return;
-  return useGamificationStore.getState().initialize(userId);
+export const initializeGamificationStore = async (userId = null) => {
+  const effectiveUserId = userId || await getCurrentUserId();
+  if (!effectiveUserId) return;
+  return useGamificationStore.getState().initialize(effectiveUserId);
 };
 
 export default useGamificationStore;

@@ -5,8 +5,12 @@
  * This service aggregates data from all Zustand stores for use by Nova AI.
  *
  * Nova should have visibility into EVERY data point the user has entered.
+ *
+ * SECURITY: Stores are cleared on auth changes (signIn/signOut/signUp) via useAuth.js
+ * This ensures data isolation between users in the same browser session.
  */
 
+import { getCurrentUserId } from '../../lib/supabase';
 import useGamificationStore from '../../stores/gamificationStore';
 import useProductivityStore from '../../stores/productivityStore';
 import { useHealthStore } from '../../stores/healthStore';
@@ -1099,4 +1103,64 @@ export function getModuleData(moduleName) {
   return moduleMap[moduleName] || null;
 }
 
-export default { getCrossModuleContext, generateContextSummary, getModuleData };
+/**
+ * Secure version of getCrossModuleContext that validates user auth
+ * Use this for any context that will be sent to external services
+ *
+ * @returns {Promise<Object|null>} Context object or null if not authenticated
+ */
+export async function getCrossModuleContextSecure() {
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    console.warn('[CrossModuleData] getCrossModuleContextSecure called without authenticated user');
+    return null;
+  }
+
+  // Get the context - stores are already user-isolated via localStorage clearing on auth change
+  const context = getCrossModuleContext();
+
+  // Add user verification metadata
+  return {
+    ...context,
+    _meta: {
+      userId,
+      fetchedAt: new Date().toISOString(),
+      verified: true,
+    },
+  };
+}
+
+/**
+ * Check if context data appears to be stale or from wrong user
+ * Call this as a safety check before using context data
+ */
+export function validateContextFreshness(context, expectedUserId) {
+  if (!context?._meta) {
+    // Legacy context without metadata - allow but warn
+    console.warn('[CrossModuleData] Context without metadata - cannot verify user');
+    return true;
+  }
+
+  if (context._meta.userId !== expectedUserId) {
+    console.error('[CrossModuleData] Context userId mismatch! Potential data leak.');
+    return false;
+  }
+
+  // Check if context is older than 5 minutes
+  const fetchedAt = new Date(context._meta.fetchedAt);
+  const ageMs = Date.now() - fetchedAt.getTime();
+  if (ageMs > 5 * 60 * 1000) {
+    console.warn('[CrossModuleData] Context is stale (> 5 minutes old)');
+  }
+
+  return true;
+}
+
+export default {
+  getCrossModuleContext,
+  getCrossModuleContextSecure,
+  validateContextFreshness,
+  generateContextSummary,
+  getModuleData
+};

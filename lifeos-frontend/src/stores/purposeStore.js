@@ -148,38 +148,71 @@ export const usePurposeStore = create(
       // Example check-in: { id, date, identityStatement, reflections, changesFromLast }
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
-          // Load purpose/vision
-          const { data: purposeData } = await supabase
-            .from('user_purpose')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle();
-
-          // Load values
-          const { data: valuesData } = await supabase
-            .from('user_values')
-            .select('*')
-            .eq('user_id', userId)
-            .order('importance', { ascending: false });
-
-          // Load decisions
-          const { data: decisionsData } = await supabase
-            .from('user_decisions')
-            .select('*')
-            .eq('user_id', userId)
-            .order('decision_date', { ascending: false });
-
-          // Load identity check-ins
-          const { data: checkInsData } = await supabase
-            .from('user_identity_checkins')
-            .select('*')
-            .eq('user_id', userId)
-            .order('checkin_date', { ascending: false });
+          // Run all queries in parallel for faster initialization
+          const [
+            { data: purposeData },
+            { data: valuesData },
+            { data: decisionsData },
+            { data: checkInsData }
+          ] = await Promise.all([
+            // Load purpose/vision
+            withTimeout(
+              supabase
+                .from('user_purpose')
+                .select('*')
+                .eq('user_id', userId)
+                .maybeSingle()
+            ),
+            // Load values
+            withTimeout(
+              supabase
+                .from('user_values')
+                .select('*')
+                .eq('user_id', userId)
+                .order('importance', { ascending: false })
+            ),
+            // Load decisions
+            withTimeout(
+              supabase
+                .from('user_decisions')
+                .select('*')
+                .eq('user_id', userId)
+                .order('decision_date', { ascending: false })
+            ),
+            // Load identity check-ins
+            withTimeout(
+              supabase
+                .from('user_identity_checkins')
+                .select('*')
+                .eq('user_id', userId)
+                .order('checkin_date', { ascending: false })
+            )
+          ]);
 
           const updates = {};
 
@@ -246,8 +279,11 @@ export const usePurposeStore = create(
           if (Object.keys(updates).length > 0) {
             set(updates);
           }
+          console.log('[PurposeStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing purpose from Supabase:', error);
+          console.error('[PurposeStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -319,9 +355,9 @@ export const usePurposeStore = create(
         // Sync to Supabase
         syncValueToSupabase(newValue);
 
-        // Award XP for defining a core value
+        // Award XP for defining a core value (MEDIUM tier: 10-20 XP)
         triggerGamification('valueCreated', {
-          xpOverride: 20,
+          xpOverride: 10,
           module: 'knowledge', // Values relate to self-knowledge
         });
 
@@ -466,9 +502,9 @@ export const usePurposeStore = create(
           syncDecisionToSupabase(updatedDecision);
         }
 
-        // Award XP for reviewing a decision and extracting lessons
+        // Award XP for reviewing a decision and extracting lessons (MEDIUM tier)
         triggerGamification('decisionReviewed', {
-          xpOverride: 20,
+          xpOverride: 10,
           module: 'knowledge',
         });
       },
@@ -518,9 +554,9 @@ export const usePurposeStore = create(
         // Sync to Supabase
         syncCheckInToSupabase(newCheckIn);
 
-        // Award XP for identity reflection
+        // Award XP for identity reflection (MEDIUM tier: 10-20 XP)
         triggerGamification('identityCheckIn', {
-          xpOverride: 30,
+          xpOverride: 15,
           module: 'knowledge',
         });
 
@@ -631,7 +667,7 @@ export const usePurposeStore = create(
 );
 
 // Initialize purpose store from Supabase
-export const initializePurposeStore = async () => {
+export const initializePurposeStore = async (userId = null) => {
   const store = usePurposeStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };

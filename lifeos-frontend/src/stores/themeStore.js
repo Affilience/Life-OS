@@ -68,16 +68,38 @@ const useThemeStore = create(
       _isSyncing: false,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
-        if (!userId) return;
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
 
         try {
-          const { data } = await supabase
-            .from('user_profiles')
-            .select('preferences')
-            .eq('id', userId)
-            .maybeSingle();
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
+
+          const { data } = await withTimeout(
+            supabase
+              .from('user_profiles')
+              .select('preferences')
+              .eq('id', userId)
+              .maybeSingle()
+          );
 
           if (data?.preferences?.theme) {
             const themePrefs = data.preferences.theme;
@@ -97,8 +119,11 @@ const useThemeStore = create(
               applyThemeToDocument(themePrefs.currentTheme);
             }
           }
+          console.log('[ThemeStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error loading theme from Supabase:', error);
+          console.error('[ThemeStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -239,11 +264,11 @@ const useThemeStore = create(
 );
 
 // Initialize function for App.jsx
-export async function initializeThemeStore() {
+export async function initializeThemeStore(userId = null) {
   const store = useThemeStore.getState();
 
   // Load theme from Supabase first
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 
   // Apply current theme
   const { currentTheme, checkTimeBasedTheme } = useThemeStore.getState();

@@ -94,10 +94,10 @@ export function useMicroInteractions() {
   const wrappedFeedback = useMemo(() => ({
     ...feedbackService,
 
-    // Task interactions
+    // Task interactions - uses subtle pop sound (frequent action)
     taskComplete: (options = {}) => {
       haptics.presets.taskComplete();
-      sounds.pop();
+      sounds.taskCompleteSound(); // Audio file: pop-alert.mp3
       if (!prefersReducedMotion && options.celebrate) {
         if (options.position) {
           celebrations.sparkle(options.position.x, options.position.y);
@@ -107,26 +107,28 @@ export function useMicroInteractions() {
       }
     },
 
-    // Achievements (always show visual feedback for these)
+    // Achievements - uses gaming lock sound (rewarding moment)
     achievement: () => {
       haptics.presets.achievement();
-      sounds.achievement();
+      sounds.achievementSound(); // Audio file: gaming-lock.wav
       if (!prefersReducedMotion) {
         celebrations.presets.achievementUnlock();
       }
     },
 
+    // Level up - uses big fanfare sound (major milestone)
     levelUp: () => {
       haptics.presets.levelUp();
-      sounds.levelUp();
+      sounds.levelUpSound(); // Audio file: confirmation.wav
       if (!prefersReducedMotion) {
         celebrations.presets.levelUp();
       }
     },
 
+    // Streak milestone - uses gaming lock sound
     streakMilestone: (days) => {
       haptics.presets.streakMilestone();
-      sounds.streak();
+      sounds.streakSound(); // Audio file: gaming-lock.wav
       if (!prefersReducedMotion) {
         if (days >= 100) {
           celebrations.presets.streakDay100();

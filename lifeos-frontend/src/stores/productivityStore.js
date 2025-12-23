@@ -182,50 +182,72 @@ const useProductivityStore = create(
       // ============================================================
       // INITIALIZE FROM SUPABASE
       // ============================================================
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
-          // Load sessions (limit to 200 most recent)
-          const { data: sessionsData, error: sessionsError } = await supabase
-            .from('productivity_sessions')
-            .select('*')
-            .eq('user_id', userId)
-            .order('started_at', { ascending: false })
-            .limit(200);
+          // Run ALL queries in parallel for faster initialization
+          const [
+            { data: sessionsData, error: sessionsError },
+            { data: projectsData, error: projectsError },
+            { data: tasksData, error: tasksError },
+            { data: incomeData, error: incomeError }
+          ] = await Promise.all([
+            // Load sessions (limit to 200 most recent)
+            withTimeout(supabase
+              .from('productivity_sessions')
+              .select('*')
+              .eq('user_id', userId)
+              .order('started_at', { ascending: false })
+              .limit(200)),
+            // Load projects (limit to 100)
+            withTimeout(supabase
+              .from('productivity_projects')
+              .select('*')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+              .limit(100)),
+            // Load tasks (limit to 500, includes incomplete and recent completed)
+            withTimeout(supabase
+              .from('productivity_tasks')
+              .select('*')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+              .limit(500)),
+            // Load income (limit to 200 most recent)
+            withTimeout(supabase
+              .from('productivity_income')
+              .select('*')
+              .eq('user_id', userId)
+              .order('income_date', { ascending: false })
+              .limit(200))
+          ]);
 
-          if (sessionsError) throw sessionsError;
-
-          // Load projects (limit to 100)
-          const { data: projectsData, error: projectsError } = await supabase
-            .from('productivity_projects')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(100);
-
-          if (projectsError) throw projectsError;
-
-          // Load tasks (limit to 500, includes incomplete and recent completed)
-          const { data: tasksData, error: tasksError } = await supabase
-            .from('productivity_tasks')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(500);
-
-          if (tasksError) throw tasksError;
-
-          // Load income (limit to 200 most recent)
-          const { data: incomeData, error: incomeError } = await supabase
-            .from('productivity_income')
-            .select('*')
-            .eq('user_id', userId)
-            .order('income_date', { ascending: false })
-            .limit(200);
-
-          if (incomeError) throw incomeError;
+          if (sessionsError && sessionsError !== 'timeout') throw sessionsError;
+          if (projectsError && projectsError !== 'timeout') throw projectsError;
+          if (tasksError && tasksError !== 'timeout') throw tasksError;
+          if (incomeError && incomeError !== 'timeout') throw incomeError;
 
           // Transform data from DB format to store format
           const sessions = (sessionsData || []).map(s => ({
@@ -287,8 +309,11 @@ const useProductivityStore = create(
           }));
 
           set({ sessions, projects, tasks, incomeTransactions });
+          console.log('[ProductivityStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing productivity from Supabase:', error);
+          console.error('[ProductivityStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -639,8 +664,8 @@ const useProductivityStore = create(
           projects: [newProject, ...state.projects],
         }));
         syncProjectToSupabase(newProject);
-        // Award XP for creating a new project
-        triggerGamification('projectCreated', { xpOverride: 15, module: 'productivity' });
+        // Award XP for creating a new project (EASY tier: 5-10 XP)
+        triggerGamification('projectCreated', { xpOverride: 8, module: 'productivity' });
         // Return the new project ID so callers can use it for initial tasks
         return newProject.id;
       },
@@ -718,9 +743,9 @@ const useProductivityStore = create(
 
           // Award XP when completing a task (not when uncompleting)
           if (nowCompleted) {
-            // Base XP by priority: High = 30, Medium = 20, Low = 15
-            const xpByPriority = { high: 30, medium: 20, low: 15 };
-            const xpEarned = xpByPriority[task.priority] || 20;
+            // Base XP by priority (EASY tier: 5-10 XP)
+            const xpByPriority = { high: 10, medium: 8, low: 5 };
+            const xpEarned = xpByPriority[task.priority] || 8;
 
             // Trigger unified gamification (XP + achievement stats + pet/equipment unlocks)
             triggerGamification('taskCompleted', {
@@ -823,10 +848,10 @@ const useProductivityStore = create(
           const wasCompleted = subtask.status === 'completed';
           const nowCompleted = !wasCompleted;
 
-          // Award XP when completing a subtask (half of regular task XP)
+          // Award XP when completing a subtask (TRIVIAL tier: 2-5 XP)
           if (nowCompleted) {
-            const xpByPriority = { high: 15, medium: 10, low: 8 };
-            const xpEarned = xpByPriority[subtask.priority] || 10;
+            const xpByPriority = { high: 5, medium: 4, low: 3 };
+            const xpEarned = xpByPriority[subtask.priority] || 4;
 
             triggerGamification('taskCompleted', {
               xpOverride: xpEarned,
@@ -889,8 +914,8 @@ const useProductivityStore = create(
         }));
         syncIncomeToSupabase(newTransaction);
 
-        // Award XP for logging income
-        triggerGamification('incomeLogged', { xpOverride: 10, module: 'productivity' });
+        // Award XP for logging income (EASY tier: 5-10 XP)
+        triggerGamification('incomeLogged', { xpOverride: 5, module: 'productivity' });
       },
 
       updateIncomeTransaction: (transactionId, updates) => {
@@ -1066,8 +1091,8 @@ const useProductivityStore = create(
 );
 
 // Initialize function for App.jsx
-export const initializeProductivityStore = async () => {
-  return useProductivityStore.getState().initializeFromSupabase();
+export const initializeProductivityStore = async (userId = null) => {
+  return useProductivityStore.getState().initializeFromSupabase(userId);
 };
 
 export default useProductivityStore;

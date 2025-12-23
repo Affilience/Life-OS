@@ -261,80 +261,100 @@ const calculateContributionStreak = (contributions, newContribution) => {
 // ============================================================
 
 // Initialize store from Supabase
-const initializeFromSupabase = async (set, get) => {
+const initializeFromSupabase = async (set, get, passedUserId = null) => {
+  // Master timeout to prevent hanging
+  const INIT_TIMEOUT_MS = 15000;
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+  }, INIT_TIMEOUT_MS);
+
+  // Helper to wrap queries with timeout
+  const withTimeout = (promise, timeoutMs = 10000) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+      )
+    ]).catch(() => ({ data: null, error: 'timeout' }));
+  };
+
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return;
+    const userId = passedUserId || await getCurrentUserId();
+    if (!userId) {
+      clearTimeout(timeoutId);
+      return;
+    }
 
-    // Load transactions (limit to last 500 for performance, user can load more on demand)
-    const { data: transactions, error: txnError } = await supabase
-      .from('financial_transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('transaction_date', { ascending: false })
-      .limit(500);
+    // Run ALL queries in parallel for faster initialization
+    const [
+      { data: transactions, error: txnError },
+      { data: budgets, error: budgetError },
+      { data: goals, error: goalsError },
+      { data: contributions, error: contribError },
+      { data: accounts, error: accountsError },
+      { data: envelopes, error: envelopesError },
+      { data: sinkingFunds, error: fundsError },
+      { data: profile, error: profileError }
+    ] = await Promise.all([
+      // Load transactions (limit to last 500 for performance)
+      withTimeout(supabase
+        .from('financial_transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('transaction_date', { ascending: false })
+        .limit(500)),
+      // Load budgets
+      withTimeout(supabase
+        .from('financial_budgets')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)),
+      // Load savings goals
+      withTimeout(supabase
+        .from('financial_goals')
+        .select('*')
+        .eq('user_id', userId)),
+      // Load goal contributions (limit to last 200)
+      withTimeout(supabase
+        .from('financial_goal_contributions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(200)),
+      // Load accounts
+      withTimeout(supabase
+        .from('financial_accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('active', true)),
+      // Load envelope budgets
+      withTimeout(supabase
+        .from('financial_envelope_budgets')
+        .select('*')
+        .eq('user_id', userId)),
+      // Load sinking funds
+      withTimeout(supabase
+        .from('financial_sinking_funds')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)),
+      // Load financial settings from user_profiles
+      withTimeout(supabase
+        .from('user_profiles')
+        .select('financial_settings')
+        .eq('id', userId)
+        .maybeSingle())
+    ]);
 
-    if (txnError) throw txnError;
-
-    // Load budgets
-    const { data: budgets, error: budgetError } = await supabase
-      .from('financial_budgets')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true);
-
-    if (budgetError) throw budgetError;
-
-    // Load savings goals
-    const { data: goals, error: goalsError } = await supabase
-      .from('financial_goals')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (goalsError) throw goalsError;
-
-    // Load goal contributions (limit to last 200)
-    const { data: contributions, error: contribError } = await supabase
-      .from('financial_goal_contributions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(200);
-
-    if (contribError) throw contribError;
-
-    // Load accounts
-    const { data: accounts, error: accountsError } = await supabase
-      .from('financial_accounts')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('active', true);
-
-    if (accountsError) throw accountsError;
-
-    // Load envelope budgets
-    const { data: envelopes, error: envelopesError } = await supabase
-      .from('financial_envelope_budgets')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (envelopesError) throw envelopesError;
-
-    // Load sinking funds
-    const { data: sinkingFunds, error: fundsError } = await supabase
-      .from('financial_sinking_funds')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true);
-
-    if (fundsError) throw fundsError;
-
-    // Load financial settings from user_profiles
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('financial_settings')
-      .eq('id', userId)
-      .maybeSingle();
+    // Check for errors (skip timeout errors as they're handled gracefully)
+    if (txnError && txnError !== 'timeout') throw txnError;
+    if (budgetError && budgetError !== 'timeout') throw budgetError;
+    if (goalsError && goalsError !== 'timeout') throw goalsError;
+    if (contribError && contribError !== 'timeout') throw contribError;
+    if (accountsError && accountsError !== 'timeout') throw accountsError;
+    if (envelopesError && envelopesError !== 'timeout') throw envelopesError;
+    if (fundsError && fundsError !== 'timeout') throw fundsError;
 
     // Transform data to match store format
     const transformedTransactions = transactions?.map(t => ({
@@ -440,9 +460,11 @@ const initializeFromSupabase = async (set, get) => {
 
     set(updates);
 
-    console.log('Financial store initialized from Supabase');
+    console.log('[FinancialStore] ✅ Initialized');
   } catch (error) {
-    console.error('Error initializing financial store from Supabase:', error);
+    console.error('[FinancialStore] ❌ Error initializing:', error);
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
@@ -707,7 +729,7 @@ export const useFinancialStore = create(
       sinkingFunds: [], // For irregular expenses
 
       // Initialize from Supabase
-      initializeFromSupabase: () => initializeFromSupabase(set, get),
+      initializeFromSupabase: (passedUserId = null) => initializeFromSupabase(set, get, passedUserId),
 
       // Transaction CRUD
       addTransaction: (transaction) => {
@@ -722,10 +744,10 @@ export const useFinancialStore = create(
         // Sync to Supabase
         syncTransactionToSupabase(newTransaction);
 
-        // Award XP for logging transactions
+        // Award XP for logging transactions (TRIVIAL tier: 2-5 XP)
         const isIncome = transaction.type === 'income';
         triggerGamification(isIncome ? 'incomeLogged' : 'expenseLogged', {
-          xpOverride: isIncome ? 10 : 5,
+          xpOverride: isIncome ? 5 : 3,
           module: 'financial',
         });
       },
@@ -763,8 +785,8 @@ export const useFinancialStore = create(
         }));
         // Sync to Supabase
         syncBudgetToSupabase(newBudget);
-        // Award XP for creating a budget
-        triggerGamification('budgetCreated', { xpOverride: 20, module: 'financial' });
+        // Award XP for creating a budget (EASY tier: 5-10 XP)
+        triggerGamification('budgetCreated', { xpOverride: 8, module: 'financial' });
       },
 
       updateBudget: (id, updates) => {
@@ -800,9 +822,9 @@ export const useFinancialStore = create(
         // Sync to Supabase
         syncGoalToSupabase(newGoal);
 
-        // Award XP for creating a savings goal
+        // Award XP for creating a savings goal (EASY tier: 5-10 XP)
         triggerGamification('savingsGoalCreated', {
-          xpOverride: 15,
+          xpOverride: 8,
           module: 'financial',
         });
       },
@@ -820,9 +842,9 @@ export const useFinancialStore = create(
         // Check if goal just got completed
         const updatedGoal = get().savingsGoals.find(g => g.id === id);
         if (updatedGoal && !wasCompleted && updatedGoal.current >= updatedGoal.target) {
-          // Award XP for completing a savings goal
+          // Award XP for completing a savings goal (EPIC tier: 50-75 XP)
           triggerGamification('savingsGoalCompleted', {
-            xpOverride: 75,
+            xpOverride: 50,
             module: 'financial',
           });
         }
@@ -927,9 +949,9 @@ export const useFinancialStore = create(
           achievementsStore.updateStat('savingsStreakWeeks', goal.contributionStreak);
         }
 
-        // Trigger gamification for XP
+        // Trigger gamification for XP (EASY tier: 5-10 XP)
         triggerGamification('savingsContribution', {
-          xpOverride: 15,
+          xpOverride: 5,
           module: 'financial',
         });
 
@@ -1424,8 +1446,8 @@ export const useFinancialStore = create(
         }));
         // Sync to Supabase
         syncSinkingFundToSupabase(newFund);
-        // Award XP for creating a sinking fund
-        triggerGamification('sinkingFundCreated', { xpOverride: 15, module: 'financial' });
+        // Award XP for creating a sinking fund (EASY tier: 5-10 XP)
+        triggerGamification('sinkingFundCreated', { xpOverride: 8, module: 'financial' });
 
         return newFund.id;
       },
@@ -1461,9 +1483,9 @@ export const useFinancialStore = create(
         const fund = get().sinkingFunds.find(f => f.id === id);
         if (fund) {
           syncSinkingFundToSupabase(fund);
-          // Award XP for contributing to sinking fund
-          triggerGamification('sinkingFundContribution', { xpOverride: 10, module: 'financial' });
-          // Check if fund was just completed
+          // Award XP for contributing to sinking fund (EASY tier: 5-10 XP)
+          triggerGamification('sinkingFundContribution', { xpOverride: 5, module: 'financial' });
+          // Check if fund was just completed (EPIC tier: 50-75 XP)
           if (fundBefore && fundBefore.currentAmount < fundBefore.targetAmount &&
               fund.currentAmount >= fund.targetAmount) {
             triggerGamification('sinkingFundCompleted', { xpOverride: 50, module: 'financial' });
@@ -1604,7 +1626,7 @@ export const useFinancialStore = create(
 export { getMonthKey };
 
 // Initialize financial store from Supabase
-export const initializeFinancialStore = async () => {
+export const initializeFinancialStore = async (userId = null) => {
   const store = useFinancialStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };

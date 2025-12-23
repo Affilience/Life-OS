@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   Zap,
   Moon,
-  Sun,
   TrendingUp,
 } from 'lucide-react';
 import CosmicTimeBlock from './CosmicTimeBlock';
@@ -28,7 +27,6 @@ export default function CosmicWeekView({ onNavigateToDay }) {
     getEventsForDate,
     getBufferPercentage,
     getPlanningAccuracy,
-    getEnergyPatterns,
     getThisWeeksBlocks
   } = useCalendarStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -51,25 +49,6 @@ export default function CosmicWeekView({ onNavigateToDay }) {
       ? Math.round(Math.min(100, Math.max(0, (1 - Math.abs(1 - accuracy.ratio)) * 100)))
       : null;
 
-    // Peak energy time from patterns
-    const energyPatterns = getEnergyPatterns();
-    let peakEnergyTime = null;
-    let maxHighEnergy = 0;
-
-    Object.entries(energyPatterns).forEach(([hour, data]) => {
-      if (data.high > maxHighEnergy) {
-        maxHighEnergy = data.high;
-        peakEnergyTime = parseInt(hour);
-      }
-    });
-
-    // Format peak energy time range
-    let peakEnergyDisplay = '—';
-    if (peakEnergyTime !== null) {
-      const endHour = peakEnergyTime + 2;
-      peakEnergyDisplay = `${peakEnergyTime}-${endHour > 12 ? endHour - 12 : endHour} ${endHour >= 12 ? 'PM' : 'AM'}`;
-    }
-
     // Average buffer time for the week
     const today = new Date();
     let totalBuffer = 0;
@@ -91,11 +70,10 @@ export default function CosmicWeekView({ onNavigateToDay }) {
     return {
       deepWorkHours,
       accuracyPercent,
-      peakEnergyDisplay,
       avgBuffer,
       hasData: weekBlocks.length > 0
     };
-  }, [timeBlocks, getThisWeeksBlocks, getPlanningAccuracy, getEnergyPatterns, getBlocksForDate, getBufferPercentage]);
+  }, [timeBlocks, getThisWeeksBlocks, getPlanningAccuracy, getBlocksForDate, getBufferPercentage]);
 
   // Get start of week (Monday)
   const getWeekStart = (date) => {
@@ -250,19 +228,7 @@ export default function CosmicWeekView({ onNavigateToDay }) {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-bg-elevated/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
-              <Sun className="w-3 h-3" />
-              <span>Peak Energy</span>
-            </div>
-            <div className="text-lg font-bold text-text-primary">
-              {weeklyStats.peakEnergyDisplay}
-            </div>
-            {!weeklyStats.hasData && (
-              <div className="text-xs text-text-muted mt-0.5">Track blocks to learn</div>
-            )}
-          </div>
+        <div className="grid grid-cols-3 gap-3">
           <div className="bg-bg-elevated/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
             <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
               <Zap className="w-3 h-3" />

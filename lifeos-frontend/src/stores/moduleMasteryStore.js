@@ -42,20 +42,38 @@ export const useModuleMasteryStore = create(
       ...DEFAULT_STATE,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
+      initializeFromSupabase: async (passedUserId = null) => {
+        const userId = passedUserId || await getCurrentUserId();
         if (!userId) return;
 
         set({ _isLoading: true, _error: null });
 
+        // Master timeout - ensure loading is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ _isLoading: false });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const { data, error } = await supabase
+          const { data, error } = await withTimeout(supabase
             .from('user_module_mastery')
             .select('*')
             .eq('user_id', userId)
-            .maybeSingle();
+            .maybeSingle());
 
-          if (error) throw error;
+          if (error && error !== 'timeout') throw error;
 
           if (data) {
             set({
@@ -85,14 +103,17 @@ export const useModuleMasteryStore = create(
                   level: data.skills_mastery_level || 1,
                 },
               },
-              _isLoading: false,
             });
-          } else {
+          }
+          console.log('[ModuleMasteryStore] ✅ Initialized');
+        } catch (error) {
+          console.error('[ModuleMasteryStore] Failed to load:', error);
+          set({ _error: error.message });
+        } finally {
+          clearTimeout(timeoutId);
+          if (!timedOut) {
             set({ _isLoading: false });
           }
-        } catch (error) {
-          console.error('Failed to load module mastery:', error);
-          set({ _error: error.message, _isLoading: false });
         }
       },
 
@@ -215,8 +236,8 @@ export const useModuleMasteryStore = create(
   )
 );
 
-export const initializeModuleMasteryStore = async () => {
-  await useModuleMasteryStore.getState().initializeFromSupabase();
+export const initializeModuleMasteryStore = async (userId = null) => {
+  await useModuleMasteryStore.getState().initializeFromSupabase(userId);
 };
 
 export default useModuleMasteryStore;

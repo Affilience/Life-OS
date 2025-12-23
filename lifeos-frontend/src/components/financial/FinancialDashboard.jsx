@@ -82,7 +82,7 @@ const FinancialDashboard = () => {
   return (
     <div className="financial-page min-h-screen bg-[#0c0a10]">
       {/* Page Header */}
-      <div className="px-4 pt-6 overflow-visible">
+      <div className="px-4 pt-6 pb-4 relative z-50">
         <PageHeader
           title="Finances"
           subtitle="Track spending, manage budgets, and reach your savings goals"
@@ -104,11 +104,11 @@ const FinancialDashboard = () => {
                 <>
                   {/* Backdrop */}
                   <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-[60]"
                     onClick={() => setShowCurrencyDropdown(false)}
                   />
                   {/* Dropdown */}
-                  <div className="absolute right-0 top-full mt-2 w-64 bg-[#12101a] border border-white/10 rounded-xl shadow-2xl z-50 max-h-80 overflow-y-auto">
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-[#12101a] border border-white/10 rounded-xl shadow-2xl z-[70] max-h-80 overflow-y-auto">
                     <div className="p-2 border-b border-white/10">
                       <p className="text-xs text-white/50 px-2">Select Currency</p>
                     </div>
@@ -170,7 +170,7 @@ const FinancialDashboard = () => {
       </div>
 
       {/* Active Tab Content */}
-      <div className="tab-content">
+      <div className="tab-content px-4 py-6">
         {activeTab === 'budget' && <UnifiedBudgetTab />}
         {activeTab === 'goals' && <FinancialGoalsTab />}
       </div>

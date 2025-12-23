@@ -443,17 +443,8 @@ export default function AvatarRenderer({
           const renderWidth = equipSprite.width * pos.scale * scaleFactor;
           const renderHeight = equipSprite.height * pos.scale * scaleFactor;
 
-          // Render aura first (if legendary and effects enabled)
-          if (effects.hasAura && showAvatarEffects) {
-            renderEquipmentAura(
-              ctx,
-              renderX + renderWidth / 2,
-              renderY + renderHeight / 2,
-              effects.auraRadius || 30,
-              effects.glowColor || eq.item.effects?.[0]?.color || '#ff8000',
-              timestamp
-            );
-          }
+          // Aura rendering disabled for performance
+          // Equipment auras are shown on inventory icons instead
 
           // Render equipment layer with position
           ctx.save();

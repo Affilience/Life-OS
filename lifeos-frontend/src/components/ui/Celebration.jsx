@@ -32,22 +32,145 @@ import { SKILL_POINTS_PER_LEVEL } from '../../utils/statsSystem';
 const CelebrationContext = createContext(null);
 
 /**
- * Confetti Particle
+ * Confetti Particle - Multiple shapes for variety
  */
-function ConfettiParticle({ style }) {
+function ConfettiParticle({ style, shape = 'square' }) {
+  const shapeClass = {
+    square: 'w-3 h-3 rounded-sm',
+    circle: 'w-3 h-3 rounded-full',
+    star: 'w-4 h-4',
+    ribbon: 'w-1 h-6 rounded-full',
+    diamond: 'w-3 h-3 rotate-45',
+  }[shape] || 'w-3 h-3 rounded-sm';
+
+  if (shape === 'star') {
+    return (
+      <div
+        className="absolute animate-confetti"
+        style={{
+          ...style,
+          fontSize: '16px',
+        }}
+      >
+        ★
+      </div>
+    );
+  }
+
   return (
     <div
-      className="absolute w-2 h-2 rounded-sm animate-confetti"
+      className={`absolute ${shapeClass} animate-confetti`}
       style={style}
     />
   );
 }
 
 /**
- * Confetti - Burst of colorful particles
+ * Firework Particle - Explodes outward in a spherical pattern
  */
-const DEFAULT_COLORS = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'];
+function FireworkParticle({ x, y, color, delay, duration }) {
+  return (
+    <div
+      className="absolute w-2 h-2 rounded-full animate-firework"
+      style={{
+        left: `${x}%`,
+        top: `${y}%`,
+        backgroundColor: color,
+        boxShadow: `0 0 6px ${color}, 0 0 12px ${color}`,
+        animationDelay: `${delay}ms`,
+        animationDuration: `${duration}ms`,
+      }}
+    />
+  );
+}
+
+/**
+ * Screen Flash - Full screen flash effect
+ */
+export function ScreenFlash({ active, color = '#ffffff', intensity = 0.6 }) {
+  const [isFlashing, setIsFlashing] = useState(false);
+
+  useEffect(() => {
+    if (active) {
+      setIsFlashing(true);
+      const timer = setTimeout(() => setIsFlashing(false), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [active]);
+
+  if (!isFlashing) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 pointer-events-none z-[9998] animate-screen-flash"
+      style={{
+        backgroundColor: color,
+        opacity: intensity,
+      }}
+    />,
+    document.body
+  );
+}
+
+/**
+ * Starburst - Radiating star pattern effect
+ */
+export function Starburst({ active, x = 50, y = 50, color = '#fbbf24', rays = 12 }) {
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    if (active) {
+      setIsActive(true);
+      const timer = setTimeout(() => setIsActive(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [active]);
+
+  if (!isActive) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+      <div
+        className="absolute"
+        style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+      >
+        {/* Central glow */}
+        <div
+          className="absolute w-20 h-20 rounded-full animate-starburst-center"
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
+            boxShadow: `0 0 60px ${color}, 0 0 100px ${color}`,
+          }}
+        />
+        {/* Radiating rays */}
+        {Array.from({ length: rays }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-32 origin-bottom animate-starburst-ray"
+            style={{
+              left: '50%',
+              bottom: '50%',
+              transform: `translateX(-50%) rotate(${(360 / rays) * i}deg)`,
+              background: `linear-gradient(to top, ${color}, transparent)`,
+              animationDelay: `${i * 20}ms`,
+            }}
+          />
+        ))}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/**
+ * Confetti - Burst of colorful particles with multiple shapes
+ */
+const DEFAULT_COLORS = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
 const DEFAULT_ORIGIN = { x: 0.5, y: 0.5 };
+const SHAPES = ['square', 'circle', 'star', 'ribbon', 'diamond'];
 
 export function Confetti({
   active,
@@ -56,6 +179,7 @@ export function Confetti({
   colors = DEFAULT_COLORS,
   spread = 180,
   origin = DEFAULT_ORIGIN,
+  intensity = 'normal', // 'subtle', 'normal', 'epic'
   onComplete,
 }) {
   const [particles, setParticles] = useState([]);
@@ -64,6 +188,13 @@ export function Confetti({
   // Memoize values to prevent infinite loops
   const originX = origin?.x ?? 0.5;
   const originY = origin?.y ?? 0.5;
+
+  // Adjust particle count based on intensity
+  const adjustedCount = {
+    subtle: Math.floor(particleCount * 0.5),
+    normal: particleCount,
+    epic: Math.floor(particleCount * 2.5),
+  }[intensity] || particleCount;
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -76,22 +207,25 @@ export function Confetti({
     }
 
     const colorArray = colors || DEFAULT_COLORS;
-    const newParticles = Array.from({ length: particleCount }, (_, i) => {
+    const newParticles = Array.from({ length: adjustedCount }, (_, i) => {
       const angle = (Math.random() * spread - spread / 2) * (Math.PI / 180);
-      const velocity = 300 + Math.random() * 400;
+      const velocity = 300 + Math.random() * 500;
       const color = colorArray[Math.floor(Math.random() * colorArray.length)];
+      const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
 
       return {
         id: i,
         x: originX * 100,
         y: originY * 100,
         vx: Math.sin(angle) * velocity,
-        vy: -Math.cos(angle) * velocity - 200,
+        vy: -Math.cos(angle) * velocity - 250,
         color,
+        shape,
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 720,
-        scale: 0.5 + Math.random() * 0.5,
+        scale: 0.6 + Math.random() * 0.6,
         opacity: 1,
+        delay: Math.random() * 150, // Staggered launch
       };
     });
 
@@ -103,7 +237,7 @@ export function Confetti({
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [active, particleCount, duration, spread, originX, originY]);
+  }, [active, adjustedCount, duration, spread, originX, originY]);
 
   if (particles.length === 0) return null;
 
@@ -112,15 +246,19 @@ export function Confetti({
       {particles.map((p) => (
         <ConfettiParticle
           key={p.id}
+          shape={p.shape}
           style={{
             left: `${p.x}%`,
             top: `${p.y}%`,
-            backgroundColor: p.color,
+            backgroundColor: p.shape !== 'star' ? p.color : undefined,
+            color: p.shape === 'star' ? p.color : undefined,
             transform: `rotate(${p.rotation}deg) scale(${p.scale})`,
             '--vx': `${p.vx}px`,
             '--vy': `${p.vy}px`,
             '--rotation': `${p.rotationSpeed}deg`,
             animationDuration: `${duration}ms`,
+            animationDelay: `${p.delay}ms`,
+            textShadow: p.shape === 'star' ? `0 0 8px ${p.color}` : undefined,
           }}
         />
       ))}
@@ -130,15 +268,97 @@ export function Confetti({
 }
 
 /**
- * LevelUpOverlay - Full screen level up celebration
+ * Fireworks - Multiple firework explosions
+ */
+export function Fireworks({ active, burstCount = 5, duration = 2000 }) {
+  const [bursts, setBursts] = useState([]);
+
+  useEffect(() => {
+    if (!active) {
+      setBursts([]);
+      return;
+    }
+
+    const colors = ['#ff0000', '#ffd700', '#00ff00', '#00bfff', '#ff00ff', '#ff6600'];
+    const newBursts = Array.from({ length: burstCount }, (_, i) => ({
+      id: i,
+      x: 20 + Math.random() * 60, // Keep centered-ish
+      y: 20 + Math.random() * 40, // Upper portion of screen
+      color: colors[Math.floor(Math.random() * colors.length)],
+      delay: i * 300 + Math.random() * 200,
+      particleCount: 20 + Math.floor(Math.random() * 15),
+    }));
+
+    setBursts(newBursts);
+
+    const timer = setTimeout(() => {
+      setBursts([]);
+    }, duration + burstCount * 400);
+
+    return () => clearTimeout(timer);
+  }, [active, burstCount, duration]);
+
+  if (bursts.length === 0) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+      {bursts.map((burst) => (
+        <div key={burst.id}>
+          {Array.from({ length: burst.particleCount }).map((_, i) => {
+            const angle = (360 / burst.particleCount) * i;
+            const distance = 80 + Math.random() * 40;
+            const endX = burst.x + Math.cos(angle * Math.PI / 180) * distance / 4;
+            const endY = burst.y + Math.sin(angle * Math.PI / 180) * distance / 4;
+
+            return (
+              <div
+                key={i}
+                className="absolute w-2 h-2 rounded-full animate-firework-particle"
+                style={{
+                  left: `${burst.x}%`,
+                  top: `${burst.y}%`,
+                  backgroundColor: burst.color,
+                  boxShadow: `0 0 6px ${burst.color}, 0 0 12px ${burst.color}`,
+                  '--end-x': `${(endX - burst.x)}vw`,
+                  '--end-y': `${(endY - burst.y)}vh`,
+                  animationDelay: `${burst.delay}ms`,
+                  animationDuration: '800ms',
+                }}
+              />
+            );
+          })}
+          {/* Central flash */}
+          <div
+            className="absolute w-8 h-8 rounded-full animate-firework-flash"
+            style={{
+              left: `${burst.x}%`,
+              top: `${burst.y}%`,
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: burst.color,
+              boxShadow: `0 0 30px ${burst.color}, 0 0 60px ${burst.color}`,
+              animationDelay: `${burst.delay}ms`,
+            }}
+          />
+        </div>
+      ))}
+    </div>,
+    document.body
+  );
+}
+
+/**
+ * LevelUpOverlay - Full screen level up celebration with epic effects
  */
 export function LevelUpOverlay({
   show,
   level,
   onComplete,
-  duration = 3000,
+  duration = 4000,
 }) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [showStarburst, setShowStarburst] = useState(false);
+  const [screenShake, setScreenShake] = useState(false);
   const onCompleteRef = React.useRef(onComplete);
 
   // Keep ref updated
@@ -149,6 +369,19 @@ export function LevelUpOverlay({
   useEffect(() => {
     if (show) {
       setIsAnimating(true);
+
+      // Screen shake on entry
+      setScreenShake(true);
+      setTimeout(() => setScreenShake(false), 500);
+
+      // Starburst after a short delay
+      setTimeout(() => setShowStarburst(true), 200);
+      setTimeout(() => setShowStarburst(false), 1000);
+
+      // Fireworks after initial animation
+      setTimeout(() => setShowFireworks(true), 600);
+      setTimeout(() => setShowFireworks(false), 2500);
+
       const timer = setTimeout(() => {
         setIsAnimating(false);
         onCompleteRef.current?.();
@@ -163,46 +396,79 @@ export function LevelUpOverlay({
     <div
       className={`
         fixed inset-0 z-[9999] flex items-center justify-center
-        bg-black/80 backdrop-blur-sm
+        bg-black/85 backdrop-blur-md
         ${isAnimating ? 'animate-fade-in' : 'animate-fade-out'}
+        ${screenShake ? 'animate-screen-shake' : ''}
       `}
       onClick={onComplete}
     >
-      {/* Radial glow */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-64 h-64 rounded-full bg-violet-500/30 blur-3xl animate-pulse" />
+      {/* Multiple radial glows */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute w-96 h-96 rounded-full bg-violet-500/20 blur-3xl animate-pulse" />
+        <div className="absolute w-64 h-64 rounded-full bg-amber-500/30 blur-3xl animate-pulse" style={{ animationDelay: '200ms' }} />
+        <div className="absolute w-48 h-48 rounded-full bg-pink-500/20 blur-3xl animate-pulse" style={{ animationDelay: '400ms' }} />
+      </div>
+
+      {/* Rotating ring effect */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-80 h-80 border-4 border-amber-400/20 rounded-full animate-spin-slow" />
+        <div className="absolute w-72 h-72 border-2 border-violet-400/30 rounded-full animate-spin-reverse" />
+        <div className="absolute w-64 h-64 border border-pink-400/20 rounded-full animate-spin-slow" style={{ animationDelay: '1s' }} />
       </div>
 
       {/* Content */}
-      <div className="relative text-center animate-scale-in">
-        {/* Crown icon */}
-        <div className="flex justify-center mb-4">
+      <div className="relative text-center animate-scale-in-bounce">
+        {/* Crown icon with enhanced glow */}
+        <div className="flex justify-center mb-6">
           <div className="relative">
-            <Crown className="w-20 h-20 text-amber-400 animate-bounce-slow" />
-            <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-amber-300 animate-ping" />
+            <div className="absolute inset-0 w-28 h-28 bg-amber-400/40 rounded-full blur-2xl animate-pulse" />
+            <Crown className="relative w-24 h-24 text-amber-400 animate-float drop-shadow-[0_0_30px_rgba(251,191,36,0.8)]" />
+            <Sparkles className="absolute -top-3 -right-3 w-8 h-8 text-amber-300 animate-ping" />
+            <Sparkles className="absolute -bottom-2 -left-2 w-6 h-6 text-amber-200 animate-ping" style={{ animationDelay: '300ms' }} />
+            <Star className="absolute top-0 -left-4 w-5 h-5 text-yellow-300 animate-twinkle" />
+            <Star className="absolute -top-2 right-4 w-4 h-4 text-yellow-200 animate-twinkle" style={{ animationDelay: '500ms' }} />
           </div>
         </div>
 
-        {/* Level up text */}
-        <p className="text-violet-300 text-lg font-medium mb-2 animate-slide-up">
-          LEVEL UP!
+        {/* Level up text with glow */}
+        <p className="text-violet-300 text-2xl font-black tracking-widest mb-3 animate-slide-up drop-shadow-[0_0_20px_rgba(139,92,246,0.8)]">
+          ⚡ LEVEL UP! ⚡
         </p>
 
-        {/* Level number */}
+        {/* Level number with epic styling */}
         <div className="relative">
-          <span className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-amber-600 animate-glow">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-9xl font-black text-amber-400/20 blur-xl">{level}</span>
+          </div>
+          <span className="relative text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-amber-600 animate-glow drop-shadow-[0_0_40px_rgba(251,191,36,0.6)]">
             {level}
           </span>
         </div>
 
-        {/* Subtitle */}
-        <p className="text-white/60 mt-4 animate-fade-in-delay">
-          Keep going! You're doing great.
+        {/* Motivational subtitle */}
+        <p className="text-white/70 mt-6 text-lg animate-fade-in-delay font-medium">
+          ✨ You're becoming unstoppable! ✨
         </p>
+
+        {/* XP bar animation hint */}
+        <div className="mt-4 flex justify-center gap-2 animate-fade-in-delay" style={{ animationDelay: '600ms' }}>
+          <div className="px-4 py-2 bg-gradient-to-r from-violet-500/20 to-pink-500/20 rounded-full border border-violet-500/30">
+            <span className="text-sm text-violet-300">New abilities unlocked!</span>
+          </div>
+        </div>
       </div>
 
-      {/* Confetti */}
-      <Confetti active={isAnimating} particleCount={100} />
+      {/* Epic Confetti burst */}
+      <Confetti active={isAnimating} particleCount={80} intensity="epic" duration={3500} />
+
+      {/* Fireworks */}
+      <Fireworks active={showFireworks} burstCount={6} duration={2000} />
+
+      {/* Central starburst */}
+      <Starburst active={showStarburst} x={50} y={50} color="#fbbf24" rays={16} />
+
+      {/* Screen flash on entry */}
+      <ScreenFlash active={show} color="#fbbf24" intensity={0.4} />
     </div>,
     document.body
   );
@@ -783,6 +1049,128 @@ export const celebrationStyles = `
   }
 }
 
+/* New enhanced animations */
+@keyframes screen-flash {
+  0% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  10% { transform: translateX(-8px) translateY(-4px); }
+  20% { transform: translateX(8px) translateY(4px); }
+  30% { transform: translateX(-6px) translateY(-3px); }
+  40% { transform: translateX(6px) translateY(3px); }
+  50% { transform: translateX(-4px) translateY(-2px); }
+  60% { transform: translateX(4px) translateY(2px); }
+  70% { transform: translateX(-2px) translateY(-1px); }
+  80% { transform: translateX(2px) translateY(1px); }
+  90% { transform: translateX(-1px) translateY(0); }
+}
+
+@keyframes firework-particle {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--end-x, 50px), var(--end-y, 50px)) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes firework-flash {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes starburst-center {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes starburst-ray {
+  0% {
+    transform: translateX(-50%) rotate(var(--rotation, 0deg)) scaleY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) rotate(var(--rotation, 0deg)) scaleY(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(-50%) rotate(var(--rotation, 0deg)) scaleY(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(-5deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(5deg);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes scale-in-bounce {
+  0% {
+    transform: scale(0) rotate(-10deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(3deg);
+  }
+  70% {
+    transform: scale(0.95) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
 .animate-confetti {
   animation: confetti var(--duration, 3s) ease-out forwards;
 }
@@ -826,6 +1214,51 @@ export const celebrationStyles = `
 
 .animate-fade-out {
   animation: fadeIn 0.3s ease-in reverse forwards;
+}
+
+/* New animation classes */
+.animate-screen-flash {
+  animation: screen-flash 0.2s ease-out forwards;
+}
+
+.animate-screen-shake {
+  animation: screen-shake 0.5s ease-out;
+}
+
+.animate-firework-particle {
+  animation: firework-particle 0.8s ease-out forwards;
+}
+
+.animate-firework-flash {
+  animation: firework-flash 0.4s ease-out forwards;
+}
+
+.animate-starburst-center {
+  animation: starburst-center 0.8s ease-out forwards;
+}
+
+.animate-starburst-ray {
+  animation: starburst-ray 0.8s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle 1.5s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 15s linear infinite;
+}
+
+.animate-scale-in-bounce {
+  animation: scale-in-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 `;
 

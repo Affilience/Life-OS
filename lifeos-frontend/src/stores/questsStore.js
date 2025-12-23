@@ -450,21 +450,44 @@ const useQuestsStore = create(
       // ============================================================
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
           // Load user's mission progress
-          const { data: userMissions, error: missionsError } = await supabase
-            .from('user_missions')
-            .select(`
-              *,
-              mission:missions (*)
-            `)
-            .eq('user_id', userId);
+          const { data: userMissions, error: missionsError } = await withTimeout(
+            supabase
+              .from('user_missions')
+              .select(`
+                *,
+                mission:missions (*)
+              `)
+              .eq('user_id', userId)
+          );
 
-          if (missionsError) throw missionsError;
+          // Continue with empty data on timeout - don't throw
+          if (missionsError && missionsError !== 'timeout') throw missionsError;
 
           // Calculate stats from completed missions
           const completedMissions = (userMissions || []).filter(m => m.status === 'completed');
@@ -480,8 +503,11 @@ const useQuestsStore = create(
               totalCreditsEarned: totalCredits,
             },
           }));
+          console.log('[QuestsStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing quests from Supabase:', error);
+          console.error('[QuestsStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -1213,8 +1239,8 @@ const useQuestsStore = create(
 );
 
 // Initialize function for App.jsx
-export const initializeQuestsStore = async () => {
-  return useQuestsStore.getState().initializeFromSupabase();
+export const initializeQuestsStore = async (userId = null) => {
+  return useQuestsStore.getState().initializeFromSupabase(userId);
 };
 
 export default useQuestsStore;

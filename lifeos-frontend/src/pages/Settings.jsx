@@ -4,8 +4,6 @@ import {
   Bell,
   Lock,
   ChevronRight,
-  Download,
-  Trash2,
   Shield,
   Gamepad2,
   Check,
@@ -30,11 +28,9 @@ import {
   PartyPopper,
   Music,
   Cog,
+  Zap,
 } from 'lucide-react';
 import PageHeader from '../components/shared/PageHeader';
-import {
-  downloadLocalStorageBackup,
-} from '../utils/dataMigration';
 import {
   useGamificationModeStore,
   GAMIFICATION_MODES,
@@ -53,8 +49,9 @@ import {
   getMicroInteractionSettings,
   setMicroInteractionSettings,
 } from '../services/microInteractions';
+import { useCelebration } from '../components/ui/Celebration';
 import { useSignOut } from '../hooks/useAuth';
-import { LogOut } from 'lucide-react';
+import { LogOut, ChevronDown } from 'lucide-react';
 
 const SETTINGS_SECTIONS = [
   {
@@ -103,28 +100,12 @@ const SETTINGS_SECTIONS = [
 
 const DANGER_ZONE = [
   {
-    id: 'export-data',
-    label: 'Export All Data',
-    description: 'Download your complete data archive',
-    icon: Download,
-    color: 'blue',
-    action: 'export'
-  },
-  {
     id: 'reset-onboarding',
     label: 'Reset Onboarding',
     description: 'Start the setup flow again',
     icon: RefreshCw,
     color: 'yellow',
     action: 'reset-onboarding'
-  },
-  {
-    id: 'delete-account',
-    label: 'Delete Account',
-    description: 'Permanently delete all data',
-    icon: Trash2,
-    color: 'red',
-    action: 'delete'
   },
 ];
 
@@ -211,76 +192,6 @@ function GamificationModeSelector() {
         })}
       </div>
 
-      {/* Advanced Settings Toggle */}
-      <button
-        onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex items-center gap-2 text-sm text-primary-400 hover:text-primary-300 transition-colors"
-      >
-        <ChevronRight className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-90' : ''}`} />
-        Advanced Visibility Settings
-      </button>
-
-      {/* Advanced Visibility Settings */}
-      {showAdvanced && (
-        <div className="bg-bg-1 border border-border rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-            <div>
-              <h4 className="text-text-primary font-semibold">Visibility Overrides</h4>
-              <p className="text-xs text-text-muted mt-1">
-                Customize which elements are visible
-              </p>
-            </div>
-            <button
-              onClick={resetVisibility}
-              className="text-xs px-3 py-1.5 bg-bg-hover border border-border rounded-lg text-text-muted hover:bg-bg-2 transition-colors"
-            >
-              Reset to Defaults
-            </button>
-          </div>
-
-          <div className="divide-y divide-border-subtle">
-            {Object.entries(VISIBILITY_LABELS).map(([key, { label, description }]) => {
-              const isEnabled = visibilitySettings[key];
-              const defaultValue = VISIBILITY[mode][key];
-              const isOverridden = isEnabled !== defaultValue;
-
-              return (
-                <div
-                  key={key}
-                  className="px-5 py-4 flex items-center justify-between hover:bg-bg-hover transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-text-primary font-medium">{label}</span>
-                      {isOverridden && (
-                        <span className="text-xs px-2 py-0.5 bg-primary-500/20 text-primary-400 rounded">
-                          Modified
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-text-muted mt-0.5">{description}</div>
-                  </div>
-
-                  <button
-                    onClick={() => toggleVisibility(key)}
-                    className={`
-                      relative w-12 h-6 rounded-full transition-colors
-                      ${isEnabled ? 'bg-primary-500' : 'bg-bg-3'}
-                    `}
-                  >
-                    <div
-                      className={`
-                        absolute top-0.5 w-5 h-5 rounded-full bg-text-primary transition-transform
-                        ${isEnabled ? 'translate-x-6' : 'translate-x-0.5'}
-                      `}
-                    />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -328,154 +239,47 @@ function SettingSelect({ value, onChange, options, disabled = false }) {
 // Account & Profile Settings Panel
 function AccountSettingsPanel() {
   const { settings, updateSettings } = useSettingsStore();
-  const { socialProfile, updateUsername, checkUsernameAvailable, fetchSocialProfile } = useSocialStore();
+  const { socialProfile, updateDisplayName, fetchSocialProfile } = useSocialStore();
   const [localState, setLocalState] = useState({
-    displayName: settings.account.displayName || '',
+    displayName: '',
   });
   const [isSaving, setIsSaving] = useState(false);
-
-  // Username editing state
-  const [usernameInput, setUsernameInput] = useState('');
-  const [isEditingUsername, setIsEditingUsername] = useState(false);
-  const [usernameStatus, setUsernameStatus] = useState({ checking: false, available: null, error: null });
-  const [savingUsername, setSavingUsername] = useState(false);
 
   useEffect(() => {
     fetchSocialProfile();
   }, []);
 
-  // Check username availability with debounce
+  // Sync display name from socialProfile when it loads
   useEffect(() => {
-    if (!isEditingUsername || !usernameInput || usernameInput.length < 3) {
-      setUsernameStatus({ checking: false, available: null, error: usernameInput && usernameInput.length < 3 ? 'Min 3 characters' : null });
-      return;
+    if (socialProfile?.display_name) {
+      setLocalState({ displayName: socialProfile.display_name });
     }
-
-    if (usernameInput.toLowerCase() === socialProfile?.username?.toLowerCase()) {
-      setUsernameStatus({ checking: false, available: true, error: null });
-      return;
-    }
-
-    setUsernameStatus({ checking: true, available: null, error: null });
-
-    const timeoutId = setTimeout(async () => {
-      const result = await checkUsernameAvailable(usernameInput);
-      setUsernameStatus({ checking: false, available: result.available, error: result.error });
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [usernameInput, isEditingUsername, socialProfile?.username, checkUsernameAvailable]);
-
-  const handleSaveUsername = async () => {
-    if (!usernameStatus.available || savingUsername) return;
-
-    setSavingUsername(true);
-    const result = await updateUsername(usernameInput);
-    setSavingUsername(false);
-
-    if (!result.error) {
-      setIsEditingUsername(false);
-    } else {
-      setUsernameStatus({ checking: false, available: false, error: result.error });
-    }
-  };
+  }, [socialProfile?.display_name]);
 
   const handleSave = async () => {
     setIsSaving(true);
+
+    // Update in socialStore (syncs to Supabase user_profiles)
+    if (updateDisplayName) {
+      await updateDisplayName(localState.displayName);
+    }
+
+    // Also update in settings store
     updateSettings('account', {
       displayName: localState.displayName,
     });
+
     setTimeout(() => setIsSaving(false), 500);
   };
 
   return (
     <div className="p-5 space-y-4">
-      {/* Username */}
-      <div>
-        <label className="block text-sm font-medium text-text-primary mb-2 flex items-center gap-2">
-          <AtSign className="w-4 h-4 text-blue-400" />
-          Username
-        </label>
-        {isEditingUsername ? (
-          <div className="space-y-2">
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">@</span>
-              <input
-                type="text"
-                value={usernameInput}
-                onChange={(e) => setUsernameInput(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30))}
-                placeholder="username"
-                className={`w-full pl-8 pr-10 bg-bg-0 border rounded-lg px-4 py-3 text-text-primary placeholder-text-muted focus:outline-none ${
-                  usernameStatus.error
-                    ? 'border-red-500/50 focus:border-red-500'
-                    : usernameStatus.available
-                      ? 'border-green-500/50 focus:border-green-500'
-                      : 'border-border focus:border-primary-500'
-                }`}
-                autoFocus
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {usernameStatus.checking ? (
-                  <Loader2 className="w-5 h-5 text-text-muted animate-spin" />
-                ) : usernameStatus.available ? (
-                  <Check className="w-5 h-5 text-green-500" />
-                ) : usernameStatus.error ? (
-                  <X className="w-5 h-5 text-red-500" />
-                ) : null}
-              </div>
-            </div>
-            {usernameStatus.error && (
-              <p className="text-sm text-red-400">{usernameStatus.error}</p>
-            )}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSaveUsername}
-                disabled={!usernameStatus.available || savingUsername}
-                className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition-all ${
-                  usernameStatus.available && !savingUsername
-                    ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                    : 'bg-bg-2 text-text-muted cursor-not-allowed'
-                }`}
-              >
-                {savingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                Save
-              </button>
-              <button
-                onClick={() => {
-                  setIsEditingUsername(false);
-                  setUsernameInput('');
-                  setUsernameStatus({ checking: false, available: null, error: null });
-                }}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-bg-2 text-text-muted hover:bg-bg-hover transition-all"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between bg-bg-0 border border-border rounded-lg px-4 py-3">
-            <span className="text-text-primary">
-              {socialProfile?.username ? `@${socialProfile.username}` : 'Not set'}
-            </span>
-            <button
-              onClick={() => {
-                setUsernameInput(socialProfile?.username || '');
-                setIsEditingUsername(true);
-              }}
-              className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
-            >
-              {socialProfile?.username ? 'Change' : 'Set Username'}
-            </button>
-          </div>
-        )}
-        <p className="text-xs text-text-muted mt-1">
-          Friends can find you by your username
-        </p>
-      </div>
-
       {/* Display Name */}
       <div>
-        <label className="block text-sm font-medium text-text-primary mb-2">Display Name</label>
+        <label className="block text-sm font-medium text-text-primary mb-2 flex items-center gap-2">
+          <User className="w-4 h-4 text-purple-400" />
+          Display Name
+        </label>
         <input
           type="text"
           value={localState.displayName}
@@ -483,6 +287,9 @@ function AccountSettingsPanel() {
           placeholder="Enter your name"
           className="w-full bg-bg-0 border border-border rounded-lg px-4 py-3 text-text-primary placeholder-text-muted focus:border-primary-500 focus:outline-none"
         />
+        <p className="text-xs text-text-muted mt-1">
+          This is how you'll appear throughout the app
+        </p>
       </div>
 
       {/* Timezone */}
@@ -524,36 +331,6 @@ function AccountSettingsPanel() {
             { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
             { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
             { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
-          ]}
-        />
-      </div>
-
-      {/* Time Format */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-text-primary font-medium">Time Format</div>
-        </div>
-        <SettingSelect
-          value={settings.account.timeFormat}
-          onChange={(val) => updateSettings('account', { timeFormat: val })}
-          options={[
-            { value: '12h', label: '12-hour' },
-            { value: '24h', label: '24-hour' },
-          ]}
-        />
-      </div>
-
-      {/* Week Starts On */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-text-primary font-medium">Week Starts On</div>
-        </div>
-        <SettingSelect
-          value={settings.account.weekStartsOn}
-          onChange={(val) => updateSettings('account', { weekStartsOn: val })}
-          options={[
-            { value: 'sunday', label: 'Sunday' },
-            { value: 'monday', label: 'Monday' },
           ]}
         />
       </div>
@@ -640,6 +417,44 @@ function NotificationsSettingsPanel() {
         />
       </div>
 
+      {/* XP Toast */}
+      <div className="px-5 py-4 flex items-center justify-between">
+        <div className="flex-1">
+          <div className="text-text-primary font-medium flex items-center gap-2">
+            <Zap className="w-4 h-4 text-cyan-400" />
+            XP Gain Notifications
+          </div>
+          <div className="text-sm text-text-muted mt-0.5">Show floating XP when earned</div>
+        </div>
+        <SettingToggle
+          enabled={settings.notifications.xpToastEnabled ?? true}
+          onToggle={() => toggleSetting('notifications.xpToastEnabled')}
+        />
+      </div>
+
+      {/* XP Toast Threshold - Only show if XP toast is enabled */}
+      {settings.notifications.xpToastEnabled !== false && (
+        <div className="px-5 py-4 bg-bg-hover">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-text-primary font-medium text-sm">Minimum XP to Show</div>
+            <span className="text-cyan-400 font-medium">{settings.notifications.xpToastMinThreshold ?? 15} XP</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="50"
+            step="5"
+            value={settings.notifications.xpToastMinThreshold ?? 15}
+            onChange={(e) => updateSettings('notifications', { xpToastMinThreshold: parseInt(e.target.value) })}
+            className="w-full h-2 bg-bg-2 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+          />
+          <div className="flex justify-between text-xs text-text-muted mt-1">
+            <span>Show all</span>
+            <span>50+ only</span>
+          </div>
+        </div>
+      )}
+
       {/* Sound */}
       <div className="px-5 py-4 flex items-center justify-between">
         <div className="flex-1">
@@ -702,8 +517,48 @@ function NotificationsSettingsPanel() {
 }
 
 // Privacy Settings Panel
+// All privacy settings are synced to user_profiles.preferences for other users to check
 function PrivacySettingsPanel() {
   const { settings, updateSettings, toggleSetting } = useSettingsStore();
+  const { socialProfile, updateSocialProfile, fetchSocialProfile } = useSocialStore();
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Fetch latest profile on mount to ensure we have current settings
+  useEffect(() => {
+    fetchSocialProfile();
+  }, []);
+
+  // Handle leaderboard toggle - this updates the actual DB column, not just preferences
+  const handleLeaderboardToggle = async () => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+
+    const newValue = !socialProfile?.show_on_leaderboards;
+    await updateSocialProfile({ show_on_leaderboards: newValue });
+
+    // Also update the settings store for consistency
+    updateSettings('privacy', { showOnLeaderboards: newValue });
+
+    setIsUpdating(false);
+  };
+
+  // Handle profile visibility change - syncs to both stores
+  const handleProfileVisibilityChange = (val) => {
+    updateSettings('privacy', { profileVisibility: val });
+    // The settingsStore automatically syncs to user_profiles.preferences
+  };
+
+  // Handle activity status toggle - syncs to both stores
+  const handleActivityStatusToggle = () => {
+    toggleSetting('privacy.showActivityStatus');
+    // The settingsStore automatically syncs to user_profiles.preferences
+  };
+
+  // Handle friend requests toggle - syncs to both stores
+  const handleAllowFriendRequestsToggle = () => {
+    toggleSetting('privacy.allowFriendRequests');
+    // The settingsStore automatically syncs to user_profiles.preferences
+  };
 
   return (
     <div className="divide-y divide-border-subtle">
@@ -714,11 +569,11 @@ function PrivacySettingsPanel() {
             <Eye className="w-4 h-4 text-green-400" />
             Profile Visibility
           </div>
-          <div className="text-sm text-text-muted mt-0.5">Who can see your profile</div>
+          <div className="text-sm text-text-muted mt-0.5">Who can see your profile in search</div>
         </div>
         <SettingSelect
           value={settings.privacy.profileVisibility}
-          onChange={(val) => updateSettings('privacy', { profileVisibility: val })}
+          onChange={handleProfileVisibilityChange}
           options={[
             { value: 'public', label: 'Public' },
             { value: 'friends', label: 'Friends Only' },
@@ -731,11 +586,11 @@ function PrivacySettingsPanel() {
       <div className="px-5 py-4 flex items-center justify-between">
         <div className="flex-1">
           <div className="text-text-primary font-medium">Show Activity Status</div>
-          <div className="text-sm text-text-muted mt-0.5">Let others see when you're online</div>
+          <div className="text-sm text-text-muted mt-0.5">Let friends see when you're online</div>
         </div>
         <SettingToggle
           enabled={settings.privacy.showActivityStatus}
-          onToggle={() => toggleSetting('privacy.showActivityStatus')}
+          onToggle={handleActivityStatusToggle}
         />
       </div>
 
@@ -747,15 +602,15 @@ function PrivacySettingsPanel() {
         </div>
         <SettingToggle
           enabled={settings.privacy.allowFriendRequests}
-          onToggle={() => toggleSetting('privacy.allowFriendRequests')}
+          onToggle={handleAllowFriendRequestsToggle}
         />
       </div>
 
-      {/* Show on Leaderboards */}
+      {/* Show on Leaderboards - uses actual DB column via socialStore */}
       <div className="px-5 py-4 flex items-center justify-between">
         <div className="flex-1">
           <div className="text-text-primary font-medium flex items-center gap-2">
-            {settings.privacy.showOnLeaderboards ? (
+            {socialProfile?.show_on_leaderboards ? (
               <Eye className="w-4 h-4 text-purple-400" />
             ) : (
               <EyeOff className="w-4 h-4 text-text-muted" />
@@ -765,30 +620,67 @@ function PrivacySettingsPanel() {
           <div className="text-sm text-text-muted mt-0.5">Appear in public rankings</div>
         </div>
         <SettingToggle
-          enabled={settings.privacy.showOnLeaderboards}
-          onToggle={() => toggleSetting('privacy.showOnLeaderboards')}
+          enabled={socialProfile?.show_on_leaderboards ?? false}
+          onToggle={handleLeaderboardToggle}
+          disabled={isUpdating}
         />
+      </div>
+
+      {/* Privacy Info */}
+      <div className="px-5 py-4 bg-primary-500/5">
+        <div className="flex items-start gap-3">
+          <Shield className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="text-text-primary font-medium text-sm">Your Privacy Matters</div>
+            <div className="text-xs text-text-muted mt-1">
+              Private profiles won't appear in search results. Friends-only shows your profile only to friends.
+              Activity status controls whether friends can see you online.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
+// Celebration types for testing
+const CELEBRATION_TYPES = [
+  { id: 'confetti', label: 'Confetti Burst', icon: '🎊' },
+  { id: 'levelUp', label: 'Level Up', icon: '⬆️' },
+  { id: 'achievement', label: 'Achievement Toast', icon: '🏆' },
+  { id: 'streak', label: 'Streak Celebration', icon: '🔥' },
+  { id: 'questComplete', label: 'Quest Complete', icon: '✅' },
+  { id: 'epicConfetti', label: 'Epic Confetti', icon: '🎉' },
+];
+
 // Feedback & Sounds Settings Panel
 function FeedbackSettingsPanel() {
-  const [settings, setSettings] = useState(() => getMicroInteractionSettings());
+  const { settings, updateSettings } = useSettingsStore();
+  const feedback = settings.feedback || {};
   const [testPlaying, setTestPlaying] = useState(false);
+  const [selectedCelebration, setSelectedCelebration] = useState('confetti');
+  const [showCelebrationDropdown, setShowCelebrationDropdown] = useState(false);
+  const celebrate = useCelebration();
 
-  const updateSetting = (key, value) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    setMicroInteractionSettings({ [key]: value });
+  // Sync to actual micro-interaction systems when settings change
+  useEffect(() => {
+    setMicroInteractionSettings({
+      haptics: feedback.hapticsEnabled ?? true,
+      sounds: feedback.soundsEnabled ?? true,
+      soundVolume: feedback.soundVolume ?? 0.3,
+      celebrations: feedback.celebrationsEnabled ?? true,
+    });
+  }, [feedback]);
+
+  const updateFeedbackSetting = (key, value) => {
+    updateSettings('feedback', { [key]: value });
   };
 
-  const testSound = () => {
+  const testSoundFn = () => {
     if (testPlaying) return;
     setTestPlaying(true);
-    sounds.success();
-    setTimeout(() => setTestPlaying(false), 500);
+    sounds.testSound();
+    setTimeout(() => setTestPlaying(false), 800);
   };
 
   const testHaptic = async () => {
@@ -796,8 +688,46 @@ function FeedbackSettingsPanel() {
   };
 
   const testCelebration = () => {
-    celebrations.burst({ particleCount: 30 });
+    switch (selectedCelebration) {
+      case 'confetti':
+        celebrations.burst({ particleCount: 50 });
+        break;
+      case 'levelUp':
+        celebrate.levelUp({
+          newLevel: 10,
+          oldLevel: 9,
+          skillPointsAwarded: 2,
+        });
+        break;
+      case 'achievement':
+        celebrate.achievement({
+          title: 'Test Achievement!',
+          description: 'You tested the celebration system',
+          variant: 'gold',
+          duration: 3000,
+        });
+        break;
+      case 'streak':
+        celebrate.streak(7);
+        break;
+      case 'questComplete':
+        celebrate.questCompleted({
+          quest: {
+            title: 'Complete 5 Tasks',
+            xpReward: 50,
+            creditsReward: 25,
+          },
+        });
+        break;
+      case 'epicConfetti':
+        celebrations.burst({ particleCount: 100, intensity: 'epic' });
+        break;
+      default:
+        celebrations.burst({ particleCount: 30 });
+    }
   };
+
+  const selectedType = CELEBRATION_TYPES.find(t => t.id === selectedCelebration);
 
   return (
     <div className="divide-y divide-border-subtle">
@@ -818,8 +748,8 @@ function FeedbackSettingsPanel() {
             Test
           </button>
           <SettingToggle
-            enabled={settings.haptics}
-            onToggle={() => updateSetting('haptics', !settings.haptics)}
+            enabled={feedback.hapticsEnabled ?? true}
+            onToggle={() => updateFeedbackSetting('hapticsEnabled', !(feedback.hapticsEnabled ?? true))}
           />
         </div>
       </div>
@@ -835,57 +765,95 @@ function FeedbackSettingsPanel() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={testSound}
+            onClick={testSoundFn}
             disabled={testPlaying}
             className="text-xs px-3 py-1.5 bg-bg-hover border border-border rounded-lg text-text-muted hover:bg-bg-2 transition-colors disabled:opacity-50"
           >
             Test
           </button>
           <SettingToggle
-            enabled={settings.sounds}
-            onToggle={() => updateSetting('sounds', !settings.sounds)}
+            enabled={feedback.soundsEnabled ?? true}
+            onToggle={() => updateFeedbackSetting('soundsEnabled', !(feedback.soundsEnabled ?? true))}
           />
         </div>
       </div>
 
       {/* Sound Volume */}
-      {settings.sounds && (
+      {(feedback.soundsEnabled ?? true) && (
         <div className="px-5 py-4 bg-bg-hover flex items-center justify-between">
           <div className="flex-1">
             <div className="text-text-primary font-medium">Volume</div>
-            <div className="text-sm text-text-muted mt-0.5">{Math.round(settings.soundVolume * 100)}%</div>
+            <div className="text-sm text-text-muted mt-0.5">{Math.round((feedback.soundVolume ?? 0.3) * 100)}%</div>
           </div>
           <input
             type="range"
             min="0"
             max="100"
-            value={settings.soundVolume * 100}
-            onChange={(e) => updateSetting('soundVolume', parseInt(e.target.value) / 100)}
+            value={(feedback.soundVolume ?? 0.3) * 100}
+            onChange={(e) => updateFeedbackSetting('soundVolume', parseInt(e.target.value) / 100)}
             className="w-32 accent-primary-500"
           />
         </div>
       )}
 
       {/* Celebrations */}
-      <div className="px-5 py-4 flex items-center justify-between">
-        <div className="flex-1">
-          <div className="text-text-primary font-medium flex items-center gap-2">
-            <PartyPopper className="w-4 h-4 text-yellow-400" />
-            Celebration Effects
+      <div className="px-5 py-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex-1">
+            <div className="text-text-primary font-medium flex items-center gap-2">
+              <PartyPopper className="w-4 h-4 text-yellow-400" />
+              Celebration Effects
+            </div>
+            <div className="text-sm text-text-muted mt-0.5">Confetti and particles for achievements</div>
           </div>
-          <div className="text-sm text-text-muted mt-0.5">Confetti and particles for achievements</div>
+          <SettingToggle
+            enabled={feedback.celebrationsEnabled ?? true}
+            onToggle={() => updateFeedbackSetting('celebrationsEnabled', !(feedback.celebrationsEnabled ?? true))}
+          />
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* Celebration Type Selector & Test */}
+        <div className="flex items-center gap-2 mt-3">
+          <div className="relative flex-1">
+            <button
+              onClick={() => setShowCelebrationDropdown(!showCelebrationDropdown)}
+              className="w-full flex items-center justify-between px-3 py-2 bg-bg-0 border border-border rounded-lg text-sm text-text-primary hover:bg-bg-hover transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <span>{selectedType?.icon}</span>
+                <span>{selectedType?.label}</span>
+              </span>
+              <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${showCelebrationDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showCelebrationDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-bg-1 border border-border rounded-lg shadow-xl z-50 overflow-hidden max-h-48 overflow-y-auto">
+                {CELEBRATION_TYPES.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => {
+                      setSelectedCelebration(type.id);
+                      setShowCelebrationDropdown(false);
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-bg-hover transition-colors ${
+                      selectedCelebration === type.id ? 'bg-primary-500/10 text-primary-400' : 'text-text-primary'
+                    }`}
+                  >
+                    <span>{type.icon}</span>
+                    <span>{type.label}</span>
+                    {selectedCelebration === type.id && <Check className="w-4 h-4 ml-auto" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={testCelebration}
-            className="text-xs px-3 py-1.5 bg-bg-hover border border-border rounded-lg text-text-muted hover:bg-bg-2 transition-colors"
+            className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm font-medium rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg shadow-yellow-500/20"
           >
             Test
           </button>
-          <SettingToggle
-            enabled={settings.celebrations}
-            onToggle={() => updateSetting('celebrations', !settings.celebrations)}
-          />
         </div>
       </div>
 
@@ -896,7 +864,7 @@ function FeedbackSettingsPanel() {
           <div>
             <div className="text-text-primary font-medium text-sm">Satisfying Interactions</div>
             <div className="text-xs text-text-muted mt-1">
-              These settings control the micro-interactions throughout the app. Haptics work best on mobile devices, while sounds and celebrations work on all platforms.
+              These settings sync to your account and work across all your devices. Haptics work best on mobile devices, while sounds and celebrations work on all platforms.
             </div>
           </div>
         </div>
@@ -1059,11 +1027,11 @@ export default function Settings() {
     initializeSettingsStore();
   }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     const confirmed = window.confirm('Are you sure you want to sign out?');
     if (confirmed) {
-      await signOut();
-      window.location.href = '/auth';
+      // signOut() handles clearing storage and redirect internally
+      signOut();
     }
   };
 
@@ -1170,24 +1138,12 @@ export default function Settings() {
               const Icon = item.icon;
 
               const handleDangerAction = () => {
-                if (item.action === 'export') {
-                  try {
-                    downloadLocalStorageBackup();
-                  } catch (error) {
-                    console.error('Export failed:', error);
-                    alert('Export failed. Please try again.');
-                  }
-                } else if (item.action === 'reset-onboarding') {
+                if (item.action === 'reset-onboarding') {
                   const confirmed = window.confirm('Reset the onboarding flow?\n\nThis will restart the setup experience. Your data will not be deleted.');
                   if (confirmed) {
                     useNewOnboardingStore.getState().resetOnboarding();
                     useOnboardingStore.getState().resetOnboarding();
                     window.location.href = '/';
-                  }
-                } else if (item.action === 'delete') {
-                  const confirmed = window.confirm('Delete your account?\n\nThis action is irreversible and will permanently delete all your data.');
-                  if (confirmed) {
-                    alert('Account deletion coming soon.');
                   }
                 }
               };

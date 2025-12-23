@@ -17,6 +17,36 @@ let audioContext = null;
 let soundsEnabled = true;
 let masterVolume = 0.3; // Keep sounds subtle
 
+// Audio file cache
+const audioCache = new Map();
+
+/**
+ * Play an audio file from the assets folder
+ * @param {string} filename - Filename in /assets/sounds/
+ * @param {number} volume - Volume multiplier (0-1)
+ */
+function playAudioFile(filename, volume = 1) {
+  if (!soundsEnabled) return;
+
+  try {
+    const path = `/assets/sounds/${filename}`;
+
+    // Get or create cached audio element
+    let audio = audioCache.get(filename);
+    if (!audio) {
+      audio = new Audio(path);
+      audioCache.set(filename, audio);
+    }
+
+    // Clone for overlapping plays
+    const clone = audio.cloneNode();
+    clone.volume = masterVolume * volume;
+    clone.play().catch(err => console.warn('Audio playback failed:', err));
+  } catch (error) {
+    console.warn('Audio file playback failed:', error);
+  }
+}
+
 export function setSoundsEnabled(enabled) {
   soundsEnabled = enabled;
   localStorage.setItem('soundsEnabled', JSON.stringify(enabled));
@@ -1161,6 +1191,117 @@ export function perfectDay() {
 }
 
 /**
+ * ULTRA SATISFYING test sound
+ * Designed for maximum dopamine hit - use for sound testing
+ * Combines: deep bass punch, mid pop, harmonic shimmer, and sparkle cascade
+ */
+export function ultraSatisfying() {
+  if (!soundsEnabled) return;
+
+  try {
+    const ctx = getAudioContext();
+
+    // Layer 1: Deep bass PUNCH - physical impact you can feel
+    const bass = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+    bass.type = 'sine';
+    bass.frequency.setValueAtTime(80, ctx.currentTime);
+    bass.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+    bassGain.gain.setValueAtTime(masterVolume * 0.9, ctx.currentTime);
+    bassGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    bass.connect(bassGain);
+    bassGain.connect(ctx.destination);
+    bass.start(ctx.currentTime);
+    bass.stop(ctx.currentTime + 0.15);
+
+    // Layer 2: Mid-range "POP" with upward sweep - the satisfying click
+    const pop = ctx.createOscillator();
+    const popGain = ctx.createGain();
+    pop.type = 'sine';
+    pop.frequency.setValueAtTime(300, ctx.currentTime);
+    pop.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.06);
+    pop.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.1);
+    popGain.gain.setValueAtTime(0, ctx.currentTime);
+    popGain.gain.linearRampToValueAtTime(masterVolume * 0.7, ctx.currentTime + 0.015);
+    popGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
+    pop.connect(popGain);
+    popGain.connect(ctx.destination);
+    pop.start(ctx.currentTime);
+    pop.stop(ctx.currentTime + 0.18);
+
+    // Layer 3: Bright harmonic shimmer - the "ding" of success
+    const shimmer = ctx.createOscillator();
+    const shimmerGain = ctx.createGain();
+    shimmer.type = 'sine';
+    shimmer.frequency.setValueAtTime(1047, ctx.currentTime + 0.03); // C6
+    shimmerGain.gain.setValueAtTime(0, ctx.currentTime);
+    shimmerGain.gain.linearRampToValueAtTime(masterVolume * 0.35, ctx.currentTime + 0.05);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    shimmer.connect(shimmerGain);
+    shimmerGain.connect(ctx.destination);
+    shimmer.start(ctx.currentTime + 0.03);
+    shimmer.stop(ctx.currentTime + 0.35);
+
+    // Layer 4: High sparkle overtone - the magic dust
+    const sparkle = ctx.createOscillator();
+    const sparkleGain = ctx.createGain();
+    sparkle.type = 'sine';
+    sparkle.frequency.setValueAtTime(2093, ctx.currentTime + 0.05); // C7
+    sparkle.frequency.exponentialRampToValueAtTime(2637, ctx.currentTime + 0.12); // E7
+    sparkleGain.gain.setValueAtTime(0, ctx.currentTime);
+    sparkleGain.gain.linearRampToValueAtTime(masterVolume * 0.2, ctx.currentTime + 0.07);
+    sparkleGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+    sparkle.connect(sparkleGain);
+    sparkleGain.connect(ctx.destination);
+    sparkle.start(ctx.currentTime + 0.05);
+    sparkle.stop(ctx.currentTime + 0.25);
+
+    // Layer 5: Sub-bass thump reinforcement
+    const subBass = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    subBass.type = 'sine';
+    subBass.frequency.setValueAtTime(50, ctx.currentTime);
+    subBass.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.1);
+    subGain.gain.setValueAtTime(masterVolume * 0.5, ctx.currentTime);
+    subGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+    subBass.connect(subGain);
+    subGain.connect(ctx.destination);
+    subBass.start(ctx.currentTime);
+    subBass.stop(ctx.currentTime + 0.12);
+
+  } catch (error) {
+    console.warn('Sound playback failed:', error);
+  }
+
+  // Delayed sparkle cascade - the cherry on top
+  setTimeout(() => {
+    if (!soundsEnabled) return;
+    try {
+      const ctx = getAudioContext();
+
+      // Triple ascending sparkle
+      [0, 40, 80].forEach((delay, i) => {
+        setTimeout(() => {
+          if (!soundsEnabled) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1318 + (i * 250), ctx.currentTime); // E6, G6, B6
+          gain.gain.setValueAtTime(masterVolume * (0.15 - i * 0.03), ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.15);
+        }, delay);
+      });
+    } catch (error) {
+      console.warn('Sound playback failed:', error);
+    }
+  }, 120);
+}
+
+/**
  * Delete/undo sound
  */
 export function remove() {
@@ -1203,6 +1344,76 @@ export function toggleOff() {
   playTone(500, 0.06, 'sine', masterVolume * 0.4);
 }
 
+// ============================================================================
+// AUDIO FILE-BASED SOUNDS
+// ============================================================================
+
+// Sound file mapping - centralized for easy swapping
+const SOUND_FILES = {
+  // Quick, subtle - for frequent actions
+  pop: 'pop-alert.mp3',
+  click: 'test-sound.wav',
+
+  // Rewarding - for achievements/unlocks
+  unlock: 'gaming-lock.wav',
+
+  // Big moment - for level ups/milestones
+  fanfare: 'confirmation.wav',
+};
+
+/**
+ * Task complete - subtle pop (used frequently)
+ */
+export function taskCompleteSound() {
+  playAudioFile(SOUND_FILES.pop, 1);
+}
+
+/**
+ * XP gain - quick sci-fi click
+ */
+export function xpGainSound() {
+  playAudioFile(SOUND_FILES.click, 0.8);
+}
+
+/**
+ * Achievement unlocked - rewarding lock sound
+ */
+export function achievementSound() {
+  playAudioFile(SOUND_FILES.unlock, 1);
+}
+
+/**
+ * Level up - big satisfying confirmation
+ */
+export function levelUpSound() {
+  playAudioFile(SOUND_FILES.fanfare, 1);
+}
+
+/**
+ * Streak milestone - same as achievement
+ */
+export function streakSound() {
+  playAudioFile(SOUND_FILES.unlock, 0.9);
+}
+
+/**
+ * UI click - quick feedback
+ */
+export function uiClickSound() {
+  playAudioFile(SOUND_FILES.click, 0.6);
+}
+
+/**
+ * Test sound - plays the fanfare for settings preview
+ */
+export function testSound() {
+  playAudioFile(SOUND_FILES.fanfare, 1);
+}
+
+// Legacy exports for compatibility
+export const sciFiClick = () => playAudioFile(SOUND_FILES.click, 1);
+export const sciFiConfirmation = () => playAudioFile(SOUND_FILES.fanfare, 1);
+
 // Presets mapping for common actions
 export const soundPresets = {
   // UI interactions
@@ -1234,6 +1445,20 @@ export const soundPresets = {
   notification,
   error,
   remove,
+
+  // Test sounds
+  ultraSatisfying,
+
+  // Audio file sounds (mapped by action)
+  taskCompleteSound,
+  xpGainSound,
+  achievementSound,
+  levelUpSound,
+  streakSound,
+  uiClickSound,
+  testSound,
+  sciFiClick,
+  sciFiConfirmation,
 };
 
 // Export as service object
@@ -1271,6 +1496,18 @@ export const sounds = {
   meteorImpact,
   soulDrain,
   abilityReady,
+  // Test sounds
+  ultraSatisfying,
+  // Audio file sounds (mapped by action)
+  taskCompleteSound,
+  xpGainSound,
+  achievementSound,
+  levelUpSound,
+  streakSound,
+  uiClickSound,
+  testSound,
+  sciFiClick,
+  sciFiConfirmation,
   setEnabled: setSoundsEnabled,
   isEnabled: getSoundsEnabled,
   setVolume,

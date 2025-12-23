@@ -20,6 +20,13 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1, onEdit })
     useCalendarStore();
   const [showActions, setShowActions] = useState(false);
 
+  // Toggle actions on tap (for mobile)
+  const handleTap = (e) => {
+    // Don't toggle if clicking on a button
+    if (e.target.closest('button')) return;
+    setShowActions(prev => !prev);
+  };
+
   // Calculate position and height
   const startHour = parseInt(block.startTime.split(':')[0]);
   const startMinute = parseInt(block.startTime.split(':')[1]);
@@ -101,6 +108,7 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1, onEdit })
         borderLeft: `3px solid ${color.border}`,
         boxShadow: `0 0 20px ${color.glow}40`,
       }}
+      onClick={handleTap}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -135,17 +143,20 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1, onEdit })
             />
           </div>
 
-          {/* Status indicator */}
+          {/* Status indicator - always visible, tap to change status */}
           <button
-            onClick={handleToggleStatus}
-            className="flex-shrink-0 hover:scale-110 transition-transform"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleStatus(e);
+            }}
+            className="flex-shrink-0 p-1 -m-1 rounded hover:bg-white/10 active:bg-white/20 transition-colors"
           >
             {block.status === 'completed' ? (
-              <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
             ) : block.status === 'in_progress' ? (
-              <Circle className="w-4 h-4 text-purple-400 animate-pulse" />
+              <Circle className="w-5 h-5 text-purple-400 animate-pulse fill-purple-400/30" />
             ) : (
-              <Circle className="w-4 h-4 text-zinc-600 hover:text-purple-400" />
+              <Circle className="w-5 h-5 text-white/30" />
             )}
           </button>
         </div>
@@ -181,23 +192,50 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1, onEdit })
           )}
         </div>
 
-        {/* Hover Actions */}
+        {/* Hover Actions - positioned at bottom to not block tick button */}
         {showActions && (
-          <div className="absolute top-1 right-1 flex gap-1 bg-[#12101a]/90 backdrop-blur-sm rounded-lg p-1 border border-white/10">
+          <div className="absolute bottom-1 right-1 flex gap-1 bg-[#12101a]/90 backdrop-blur-sm rounded-lg p-1 border border-white/10 z-10">
+            <button
+              onClick={handleToggleStatus}
+              className={`p-1.5 rounded transition-all ${
+                block.status === 'completed'
+                  ? 'bg-green-500/20'
+                  : block.status === 'in_progress'
+                    ? 'bg-purple-500/20'
+                    : 'hover:bg-purple-500/20'
+              }`}
+              title={
+                block.status === 'completed'
+                  ? 'Completed!'
+                  : block.status === 'in_progress'
+                    ? 'Click to complete'
+                    : 'Click to start'
+              }
+            >
+              {block.status === 'completed' ? (
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
+              ) : block.status === 'in_progress' ? (
+                <Circle className="w-4 h-4 text-purple-400 fill-purple-400/30" />
+              ) : (
+                <Circle className="w-4 h-4 text-white/60" />
+              )}
+            </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.(block);
               }}
-              className="p-1 hover:bg-[#1a1724] rounded transition-all"
+              className="p-1.5 hover:bg-[#1a1724] rounded transition-all"
+              title="Edit"
             >
-              <Edit2 className="w-3 h-3 text-white/60" />
+              <Edit2 className="w-4 h-4 text-white/60" />
             </button>
             <button
               onClick={handleDelete}
-              className="p-1 hover:bg-red-500/20 rounded transition-all"
+              className="p-1.5 hover:bg-red-500/20 rounded transition-all"
+              title="Delete"
             >
-              <Trash2 className="w-3 h-3 text-red-400" />
+              <Trash2 className="w-4 h-4 text-red-400" />
             </button>
           </div>
         )}

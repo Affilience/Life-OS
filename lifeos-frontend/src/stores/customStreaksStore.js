@@ -191,46 +191,66 @@ const useCustomStreaksStore = create(
       initialized: false,
 
       // Initialize from Supabase
-      initialize: async () => {
-        const userId = await getCurrentUserId();
+      initialize: async (passedUserId = null) => {
+        const userId = passedUserId || await getCurrentUserId();
         if (!userId) return;
         set({ isLoading: true });
 
+        // Master timeout - ensure loading is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ isLoading: false, initialized: true });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          // Fetch custom streaks
-          const { data: streaks, error } = await supabase
-            .from('custom_streaks')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-
-          if (error && error.code !== 'PGRST116') {
-            console.error('Error fetching custom streaks:', error);
-          }
-
-          // Fetch recent completions (last 365 days)
           const startDate = new Date();
           startDate.setDate(startDate.getDate() - 365);
 
-          const { data: completions, error: compError } = await supabase
-            .from('custom_streak_completions')
-            .select('*')
-            .eq('user_id', userId)
-            .gte('completed_date', startDate.toISOString().split('T')[0]);
+          // Run both queries in parallel for faster initialization
+          const [
+            { data: streaks, error },
+            { data: completions, error: compError }
+          ] = await Promise.all([
+            // Fetch custom streaks with timeout
+            withTimeout(supabase
+              .from('custom_streaks')
+              .select('*')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })),
+            // Fetch recent completions (last 365 days) with timeout
+            withTimeout(supabase
+              .from('custom_streak_completions')
+              .select('*')
+              .eq('user_id', userId)
+              .gte('completed_date', startDate.toISOString().split('T')[0]))
+          ]);
 
-          if (compError && compError.code !== 'PGRST116') {
-            console.error('Error fetching completions:', compError);
-          }
+          // Continue with empty data on timeout/error - don't log intermediate errors
 
           set({
             streaks: streaks || [],
             completions: completions || [],
-            isLoading: false,
-            initialized: true,
           });
+          console.log('[CustomStreaksStore] ✅ Initialized');
         } catch (err) {
-          console.error('Error initializing custom streaks:', err);
-          set({ isLoading: false, initialized: true });
+          console.error('[CustomStreaksStore] Error initializing:', err);
+        } finally {
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({ isLoading: false, initialized: true });
+          }
         }
       },
 
@@ -296,8 +316,8 @@ const useCustomStreaksStore = create(
             isLoading: false,
           }));
 
-          // Award XP for creating a new habit streak
-          triggerGamification('streakMaintained', { xpOverride: 15, module: 'habits' });
+          // Award XP for creating a new habit streak (EASY tier: 5-10 XP)
+          triggerGamification('streakMaintained', { xpOverride: 5, module: 'habits' });
 
           return { success: true, streak: data };
         } catch (err) {
@@ -717,8 +737,8 @@ const useCustomStreaksStore = create(
 );
 
 // Export initialization function for App.jsx
-export const initializeCustomStreaksStore = async () => {
-  return useCustomStreaksStore.getState().initialize();
+export const initializeCustomStreaksStore = async (userId = null) => {
+  return useCustomStreaksStore.getState().initialize(userId);
 };
 
 export default useCustomStreaksStore;

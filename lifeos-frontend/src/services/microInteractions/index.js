@@ -175,22 +175,21 @@ export const feedback = {
   achievement: (rarity = 'rare') => {
     hapticPresets.achievement();
 
-    // Play rarity-appropriate sound
+    // Play rarity-appropriate sound (using audio files)
     switch (rarity) {
       case 'legendary':
-        sounds.achievementLegendary();
-        break;
       case 'epic':
-        sounds.achievementEpic();
+        // Big achievements get the fanfare (confirmation.wav)
+        sounds.levelUpSound();
         break;
       case 'rare':
-        sounds.achievementRare();
+        // Rare gets the unlock sound (gaming-lock.wav)
+        sounds.achievementSound();
         break;
       case 'uncommon':
-        sounds.success();
-        break;
       default:
-        sounds.achievementCommon();
+        // Common/uncommon get the subtle pop (pop-alert.mp3)
+        sounds.taskCompleteSound();
     }
 
     // Tier-based celebration
@@ -203,7 +202,7 @@ export const feedback = {
    */
   achievementUnlock: () => {
     haptics.notification('success');
-    sounds.achievementCommon();
+    sounds.achievementSound(); // Audio file: gaming-lock.wav
   },
 
   /**
@@ -219,7 +218,7 @@ export const feedback = {
    */
   levelUp: (level = 1) => {
     hapticPresets.levelUp();
-    sounds.levelUp();
+    sounds.levelUpSound(); // Audio file: confirmation.wav (big fanfare)
 
     // Use level-appropriate celebration tier
     const tier = getTierForContext({ type: 'level', value: level });
@@ -240,11 +239,11 @@ export const feedback = {
   // -------------------------------------------------------------------------
 
   /**
-   * Streak milestone reached
+   * Streak milestone reached - uses gaming lock sound
    */
   streakMilestone: (days) => {
     hapticPresets.streakMilestone();
-    sounds.streak();
+    sounds.streakSound(); // Audio file: gaming-lock.wav
 
     if (days >= 100) {
       celebrationPresets.streakDay100();
@@ -258,11 +257,11 @@ export const feedback = {
   },
 
   /**
-   * Daily streak continued (subtle)
+   * Daily streak continued (subtle) - uses quick click
    */
   streakContinued: () => {
     haptics.impact('light');
-    sounds.xpGain();
+    sounds.xpGainSound(); // Audio file: test-sound.wav
   },
 
   /**
@@ -270,7 +269,7 @@ export const feedback = {
    */
   streakContinue: (days) => {
     haptics.impact('medium');
-    sounds.pop();
+    sounds.taskCompleteSound(); // Audio file: pop-alert.mp3
     if (days >= 7) {
       celebrations.burst({ particleCount: 15, colors: celebrations.PALETTES?.warm || ['#F59E0B', '#D97706'] });
     }
@@ -320,11 +319,11 @@ export const feedback = {
   // -------------------------------------------------------------------------
 
   /**
-   * XP gained
+   * XP gained - uses quick sci-fi click sound
    */
   xpGain: (amount = 10) => {
     haptics.impact('light');
-    sounds.xpGain();
+    sounds.xpGainSound(); // Audio file: test-sound.wav (sci-fi click)
     celebrationPresets.xpGain(amount);
   },
 

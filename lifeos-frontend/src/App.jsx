@@ -1,12 +1,13 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuth } from './hooks/useAuth';
+import { useAuth, AuthProvider } from './hooks/useAuth';
 import MainLayout from './components/layout/MainLayout';
 
 // Capacitor native services
 import { initializeNativeServices } from './services/nativeService';
 import LoadingScreen from './components/shared/LoadingScreen';
+import InitialLoadingScreen from './components/shared/InitialLoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/Toast';
 import { CommandPalette } from './components/ui/CommandPalette';
@@ -24,6 +25,9 @@ import EnhancedOnboarding from './components/onboarding/EnhancedOnboarding';
 import ImprovedOnboarding from './components/onboarding/ImprovedOnboarding';
 import { ImmersiveOnboarding } from './components/onboarding/cinematic';
 import { useNewOnboardingStore, initializeOnboardingStore } from './stores/newOnboardingStore';
+
+// Early auth initialization - CRITICAL for preventing hanging queries
+import { initializeSupabaseAuth, getCachedUserId } from './lib/supabase';
 
 // Onboarding Page wrapper component
 const OnboardingPage = lazy(() => Promise.resolve({
@@ -58,8 +62,15 @@ const OnboardingPage = lazy(() => Promise.resolve({
   }
 }));
 
-// Helper function to check if onboarding is needed (called once at app init)
-function shouldShowOnboarding() {
+// Helper function to check if onboarding is needed
+// IMPORTANT: This should only be called AFTER stores have initialized from Supabase
+function shouldShowOnboarding(onboardingState) {
+  // If we have the store state, use it (synced from Supabase)
+  if (onboardingState !== undefined) {
+    return onboardingState.isOnboardingActive && !onboardingState.isOnboardingComplete;
+  }
+
+  // Fallback to localStorage only if store state not available
   try {
     const stored = localStorage.getItem('lifeos-new-onboarding');
     if (stored) {
@@ -69,8 +80,8 @@ function shouldShowOnboarding() {
       // Only show onboarding if not complete AND actively in onboarding
       return !isComplete && isActive;
     } else {
-      // No stored state means first time user
-      return true;
+      // No stored state means first time user - but wait for Supabase to confirm
+      return false; // Don't redirect yet, wait for store init
     }
   } catch {
     return false;
@@ -93,7 +104,7 @@ import { initializeWorkoutStore } from './stores/workoutStore';
 import { initializeQuestsStore } from './stores/questsStore';
 import { initializeAchievementsStore } from './stores/achievementsStore';
 import { initializePetStore } from './stores/petStore';
-import { initializeGamificationStore } from './stores/gamificationStore';
+import { initializeGamificationStore, useGamificationStore } from './stores/gamificationStore';
 import { initializeContentStore } from './stores/contentStore';
 import { initializePurposeStore } from './stores/purposeStore';
 import { initializeQuotesStore } from './stores/quotesStore';
@@ -107,6 +118,12 @@ import { initializeModuleMasteryStore } from './stores/moduleMasteryStore';
 import { initializeSkillPointsStore } from './stores/skillPointsStore';
 import { initializeBossStore } from './stores/bossStore';
 import { initializeCustomStreaksStore } from './stores/customStreaksStore';
+import { initializeGamificationModeStore } from './stores/gamificationModeStore';
+import { initializeSettingsStore } from './stores/settingsStore';
+import { initializeTourStore } from './stores/tourStore';
+import { initializeLevelProgressionStore } from './stores/levelProgressionStore';
+// Note: PvP stores are lazy-loaded on Social page for faster initial load
+import { initializeNotificationService } from './services/notificationService';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -179,23 +196,62 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-function App() {
+// Inner app content that uses useAuth (must be inside AuthProvider)
+function AppContent() {
   // Legacy welcome modal state (kept for potential fallback)
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
+  // Track authenticated user for store re-initialization
+  const { user, loading: authLoading } = useAuth();
+  const [hasInitialized, setHasInitialized] = useState(false);
+
   // Note: Onboarding now uses route-based approach (/onboarding) instead of overlay
 
-  // Redirect to onboarding for first-time users
+  // Get onboarding state from store (synced from Supabase)
+  const { isOnboardingActive, isOnboardingComplete } = useNewOnboardingStore();
+
+  // Redirect to onboarding for first-time users - ONLY after stores have initialized
   useEffect(() => {
-    // Check if we should show onboarding (first-time user or incomplete onboarding)
-    if (shouldShowOnboarding()) {
-      // Only redirect if not already on onboarding page
-      if (!window.location.pathname.includes('/onboarding')) {
+    // Wait for auth to finish loading first
+    if (authLoading) return;
+
+    // Only check onboarding if user is authenticated
+    if (!user) return;
+
+    // CRITICAL: Wait for stores to initialize from Supabase before checking onboarding
+    // This prevents race condition where stale localStorage triggers incorrect redirect
+    if (!hasInitialized) return;
+
+    // Get FRESH values directly from the store (not from React render cycle)
+    // This avoids race condition where React has stale values from localStorage
+    const storeState = useNewOnboardingStore.getState();
+    const freshIsOnboardingActive = storeState.isOnboardingActive;
+    const freshIsOnboardingComplete = storeState.isOnboardingComplete;
+    const hasAuthoritativeData = storeState._hasAuthoritativeData;
+
+    console.log('[App] Checking onboarding:', {
+      freshIsOnboardingActive,
+      freshIsOnboardingComplete,
+      hasAuthoritativeData
+    });
+
+    // CRITICAL: Only redirect if we have authoritative data from Supabase
+    // If data timed out, we keep localStorage state but DON'T redirect (might be stale)
+    if (!hasAuthoritativeData) {
+      console.log('[App] ⚠️ No authoritative data yet, skipping onboarding redirect');
+      return;
+    }
+
+    // Check if we should show onboarding using FRESH store state (synced from Supabase)
+    const needsOnboarding = freshIsOnboardingActive && !freshIsOnboardingComplete;
+    if (needsOnboarding) {
+      // Only redirect if not already on onboarding page or auth page
+      if (!window.location.pathname.includes('/onboarding') && !window.location.pathname.includes('/auth')) {
         console.log('🎯 First-time user detected, redirecting to onboarding...');
         window.location.href = '/onboarding';
       }
     }
-  }, []);
+  }, [user, authLoading, hasInitialized]);
 
   // Enable dark mode and initialize native services on app load
   useEffect(() => {
@@ -205,46 +261,131 @@ function App() {
     initializeNativeServices();
   }, []);
 
-  // Initialize Supabase stores on app load
+  // Initialize/re-initialize stores when auth state changes
+  // This ensures stores load user data after sign-in (localStorage was cleared)
   useEffect(() => {
     const initStores = async () => {
+      // Wait for auth to finish loading before initializing stores
+      if (authLoading) {
+        console.log('[App] Waiting for auth to load...');
+        return;
+      }
+
+      // Only initialize if we have a user OR on first mount (for dev mode)
+      if (!user && hasInitialized) return;
+
+      // Helper to wrap store init with logging AND timeout
+      // This guarantees each store completes within 20s even if something hangs
+      const initWithLog = async (name, initFn) => {
+        const STORE_TIMEOUT_MS = 20000;
+        try {
+          const startTime = Date.now();
+          await Promise.race([
+            initFn(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error(`${name} timed out after ${STORE_TIMEOUT_MS}ms`)), STORE_TIMEOUT_MS)
+            )
+          ]);
+          const elapsed = Date.now() - startTime;
+          console.log(`[App] ✅ ${name} (${elapsed}ms)`);
+        } catch (error) {
+          console.error(`[App] ❌ ${name}:`, error.message);
+          // Don't re-throw - we want to continue even if a store fails
+        }
+      };
+
       try {
+        const startTime = Date.now();
+
+        // CRITICAL: Initialize Supabase auth using onAuthStateChange (event-based, doesn't hang)
+        // This caches the session so stores can use getCachedUserId() instead of calling getSession()
+        console.log('[App] 🔐 Initializing Supabase auth (event-based)...');
+        const authResult = await initializeSupabaseAuth();
+        console.log('[App] 🔐 Auth initialized:', authResult.timedOut ? 'TIMED OUT' : 'OK');
+
+        // Use cached user ID (instant, doesn't hang) or fall back to user.id from useAuth
+        const userId = getCachedUserId() || user?.id;
+        console.log('[App] 🚀 Starting store initialization for user:', userId || 'NO_USER_ID');
+
+        if (!userId) {
+          console.warn('[App] ⚠️ No userId - stores will use defaults without Supabase queries');
+        }
+
+        // Initialize OnboardingStore FIRST (alone) to check if user needs onboarding
+        console.log('[App] 🎯 Step 1: Initializing OnboardingStore...');
+        await initWithLog('OnboardingStore', () => initializeOnboardingStore(userId));
+
+        // Initialize all other stores in parallel
+        console.log('[App] 📦 Initializing other stores in parallel...');
         await Promise.all([
-          initializeAvatarStore(),
-          initializeHealthStore(),
-          initializeFinancialStore(),
-          initializeCalendarStore(),
-          initializeKnowledgeStore(),
-          initializeSkillsStore(),
-          initializeResolutionStore(),
-          initializeProductivityStore(),
-          initializeWorkoutStore(),
-          initializeQuestsStore(),
-          initializeAchievementsStore(),
-          initializePetStore(),
-          initializeGamificationStore(),
-          initializeContentStore(),
-          initializePurposeStore(),
-          initializeQuotesStore(),
-          initializeDailyTasksStore(),
-          initializeDashboardStore(),
-          initializeThemeStore(),
-          initializeBadHabitsStore(),
-          initializeSocialStore(),
-          initializeModuleMasteryStore(),
-          initializeSkillPointsStore(),
-          initializeOnboardingStore(),
-          initializeBossStore(),
-          initializeCustomStreaksStore(),
+          // Critical UI stores
+          initWithLog('ThemeStore', () => initializeThemeStore(userId)),
+          initWithLog('DashboardStore', () => initializeDashboardStore(userId)),
+          initWithLog('AvatarStore', () => initializeAvatarStore(userId)),
+          initWithLog('GamificationStore', () => initializeGamificationStore(userId)),
+          initWithLog('GamificationModeStore', () => initializeGamificationModeStore(userId)),
+          initWithLog('SettingsStore', () => initializeSettingsStore(userId)),
+          // Module stores
+          initWithLog('HealthStore', () => initializeHealthStore(userId)),
+          initWithLog('FinancialStore', () => initializeFinancialStore(userId)),
+          initWithLog('CalendarStore', () => initializeCalendarStore(userId)),
+          initWithLog('ProductivityStore', () => initializeProductivityStore(userId)),
+          initWithLog('KnowledgeStore', () => initializeKnowledgeStore(userId)),
+          initWithLog('DailyTasksStore', () => initializeDailyTasksStore(userId)),
+          // Feature stores
+          initWithLog('SkillsStore', () => initializeSkillsStore(userId)),
+          initWithLog('ResolutionStore', () => initializeResolutionStore(userId)),
+          initWithLog('WorkoutStore', () => initializeWorkoutStore(userId)),
+          initWithLog('QuestsStore', () => initializeQuestsStore(userId)),
+          initWithLog('AchievementsStore', () => initializeAchievementsStore(userId)),
+          initWithLog('PetStore', () => initializePetStore(userId)),
+          // Secondary stores
+          initWithLog('ContentStore', () => initializeContentStore(userId)),
+          initWithLog('PurposeStore', () => initializePurposeStore(userId)),
+          initWithLog('QuotesStore', () => initializeQuotesStore(userId)),
+          initWithLog('BadHabitsStore', () => initializeBadHabitsStore(userId)),
+          initWithLog('SocialStore', () => initializeSocialStore(userId)),
+          initWithLog('ModuleMasteryStore', () => initializeModuleMasteryStore(userId)),
+          initWithLog('SkillPointsStore', () => initializeSkillPointsStore(userId)),
+          initWithLog('BossStore', () => initializeBossStore(userId)),
+          initWithLog('CustomStreaksStore', () => initializeCustomStreaksStore(userId)),
+          initWithLog('TourStore', () => initializeTourStore(userId)),
         ]);
-        // Initialize perk store after other stores (needs stats data)
-        await initializePerkStore();
+
+        // Stores that depend on others being initialized first
+        await initWithLog('PerkStore', () => initializePerkStore(userId));
+        const gamificationState = useGamificationStore?.getState?.();
+        await initWithLog('LevelProgressionStore', () => initializeLevelProgressionStore(gamificationState?.level || 1, userId));
+
+        // Initialize notification service after settings are loaded
+        initializeNotificationService();
+
+        // DEBUG: Check onboarding state right after init
+        const onboardingState = useNewOnboardingStore.getState();
+        console.log('[App] 🔍 Onboarding state after init:', {
+          isOnboardingActive: onboardingState.isOnboardingActive,
+          isOnboardingComplete: onboardingState.isOnboardingComplete,
+          currentStep: onboardingState.currentStep,
+        });
+
+        const elapsed = Date.now() - startTime;
+        console.log(`[App] 🚀 All stores initialized in ${elapsed}ms`);
+        setHasInitialized(true);
       } catch (error) {
-        console.error('Failed to initialize stores from Supabase:', error);
+        console.error('[App] Failed to initialize stores:', error);
+        setHasInitialized(true);
       }
     };
     initStores();
-  }, []);
+  }, [user, authLoading]);
+
+  // Show loading screen while stores are initializing for authenticated users
+  // CRITICAL: This must show BEFORE any routes render to prevent flash of empty dashboard
+  // The check is simple: if user exists and stores aren't ready, show loading
+  // Auth page handles its own state, but once user is authenticated we need stores
+  if (user && !hasInitialized && !authLoading) {
+    return <InitialLoadingScreen message="Preparing your journey" />;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -371,6 +512,15 @@ function App() {
         </CelebrationProvider>
       </ToastProvider>
     </QueryClientProvider>
+  );
+}
+
+// Main App component - wraps everything in AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

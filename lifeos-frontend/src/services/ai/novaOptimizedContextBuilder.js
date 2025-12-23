@@ -75,11 +75,16 @@ export function resetPerformanceStats() {
 export async function buildNovaContextOptimized(query, options = {}) {
   const startTime = performance.now();
   const {
-    userId = 'dev-user',
+    userId,
     skipCache = false,
     includeSystemKnowledge = true,
     verbose = false,
   } = options;
+
+  // Validate userId for proper multi-user isolation
+  if (!userId) {
+    console.warn('buildNovaContextOptimized called without userId - cache disabled');
+  }
 
   // Track this build
   performanceStats.totalBuilds++;
@@ -168,8 +173,12 @@ export async function buildNovaContextOptimized(query, options = {}) {
  * Quick context for simple interactions
  * Bypasses heavy analysis for greetings and simple questions
  */
-export async function buildQuickContext(query, userId = 'dev-user') {
+export async function buildQuickContext(query, userId) {
   const startTime = performance.now();
+
+  if (!userId) {
+    console.warn('buildQuickContext called without userId');
+  }
 
   // Get hot summary
   const summary = generateHotSummary();
@@ -196,8 +205,12 @@ export async function buildQuickContext(query, userId = 'dev-user') {
  * Streaming-friendly context builder
  * Returns context in chunks for progressive rendering
  */
-export async function* buildContextStream(query, userId = 'dev-user') {
+export async function* buildContextStream(query, userId) {
   const startTime = performance.now();
+
+  if (!userId) {
+    console.warn('buildContextStream called without userId');
+  }
 
   // First yield: hot summary (immediate)
   const summary = generateHotSummary();
@@ -245,7 +258,11 @@ export async function* buildContextStream(query, userId = 'dev-user') {
  * Pre-warm the cache for a user
  * Call this on app load or login to reduce first-query latency
  */
-export async function prewarmCache(userId = 'dev-user') {
+export async function prewarmCache(userId) {
+  if (!userId) {
+    console.warn('prewarmCache called without userId - skipping');
+    return false;
+  }
   try {
     const summary = generateHotSummary();
     await cacheContextSummary(userId, summary);

@@ -138,8 +138,8 @@ export function generateHotSummary() {
   const hasActiveFocusSession = !!productivity.activeSession;
 
   return {
-    // Identity
-    userId: 'dev-user', // TODO: Get from auth
+    // Identity - userId populated by caller for caching
+    userId: null,
     displayName: avatar.displayName || gamification.displayName || 'User',
 
     // Progress
@@ -505,7 +505,11 @@ export function warmContextToText(contexts) {
 /**
  * Get cached summary or generate fresh one
  */
-export async function getCachedSummary(userId = 'dev-user') {
+export async function getCachedSummary(userId) {
+  if (!userId) {
+    // No userId means no caching - generate fresh each time
+    return generateHotSummary();
+  }
   try {
     const cached = await getCache(CACHE_KEYS.USER_SUMMARY(userId));
     if (cached) {
@@ -531,7 +535,11 @@ export async function getCachedSummary(userId = 'dev-user') {
 /**
  * Invalidate user's cached summary (call after data changes)
  */
-export async function invalidateSummaryCache(userId = 'dev-user') {
+export async function invalidateSummaryCache(userId) {
+  if (!userId) {
+    console.warn('invalidateSummaryCache called without userId - skipping');
+    return;
+  }
   try {
     const { deleteCache } = await import('../redis');
     await deleteCache(CACHE_KEYS.USER_SUMMARY(userId));
@@ -544,8 +552,12 @@ export async function invalidateSummaryCache(userId = 'dev-user') {
  * Build optimized context based on query
  * This is the main entry point for the optimized context system
  */
-export async function buildOptimizedContext(query, userId = 'dev-user') {
+export async function buildOptimizedContext(query, userId) {
   const startTime = Date.now();
+
+  if (!userId) {
+    console.warn('buildOptimizedContext called without userId - caching disabled');
+  }
 
   // Classify the query
   const intent = classifyQueryIntent(query);

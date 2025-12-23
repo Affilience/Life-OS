@@ -52,22 +52,23 @@
   display: flex;
   align-items: center;
   gap: 24px;
-  background: rgba(30, 30, 40, 0.8);
+  background: rgba(30, 30, 40, 0.95);
   backdrop-filter: blur(10px);
   padding: 16px 32px;
   border-radius: 50px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: relative;
-  z-index: 100;
+  z-index: 1000;
+  pointer-events: auto;
 }
 
 .control-btn {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  color: rgba(139, 92, 246, 0.9);
+  background: rgba(139, 92, 246, 0.2);
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  color: rgba(139, 92, 246, 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -76,6 +77,13 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
+}
+
+.control-btn svg {
+  pointer-events: none;
 }
 
 .control-btn:hover:not(:disabled) {
@@ -140,35 +148,91 @@
 }
 
 @media (max-width: 768px) {
+  .simple-journal-container {
+    padding: 30px 16px;
+    padding-bottom: 120px;
+  }
+
   .journal-book-view {
     width: 100%;
     max-width: 500px;
-    height: 700px;
+    height: 600px;
+  }
+
+  .simple-journal-wrapper {
+    margin-bottom: 30px;
   }
 
   .journal-controls {
-    padding: 12px 20px;
+    padding: 12px 24px;
     gap: 16px;
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    pointer-events: auto;
   }
 
   .control-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .page-indicator {
     font-size: 13px;
-    min-width: 150px;
+    min-width: 140px;
   }
 }
 
 @media (max-width: 480px) {
+  .simple-journal-container {
+    padding: 20px 12px;
+    padding-bottom: 140px;
+  }
+
   .journal-book-view {
     max-width: 100%;
-    height: 600px;
+    height: 500px;
+  }
+
+  .simple-journal-wrapper {
+    margin-bottom: 10px;
+  }
+
+  .journal-controls {
+    padding: 10px 16px;
+    gap: 12px;
+    border-radius: 40px;
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    pointer-events: auto;
+  }
+
+  .control-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .page-indicator {
+    min-width: auto;
+    font-size: 12px;
+    gap: 6px;
   }
 
   .page-indicator span {
-    font-size: 12px;
+    font-size: 11px;
+  }
+
+  .page-indicator svg {
+    width: 14px;
+    height: 14px;
   }
 }

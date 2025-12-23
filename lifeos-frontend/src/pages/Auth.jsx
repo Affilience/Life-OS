@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useSignIn, useSignUp } from '../hooks/useAuth';
-import { Sparkles, Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Sparkles, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -12,7 +12,6 @@ export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -28,9 +27,8 @@ export default function Auth() {
     setMessage('');
 
     if (isSignUp) {
-      const { data, error } = await signUp(email, password, {
-        display_name: displayName || email.split('@')[0],
-      });
+      // No metadata passed - username/display name will be set in onboarding
+      const { data, error } = await signUp(email, password);
 
       if (error) {
         setMessage(error.message);
@@ -114,23 +112,6 @@ export default function Auth() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Display Name (Sign Up only) */}
-            {isSignUp && (
-              <div>
-                <label className="block text-sm text-white/70 mb-2">Display Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Your name"
-                    className="w-full pl-10 pr-4 py-3 bg-[#0a0a0f] border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
-                  />
-                </div>
-              </div>
-            )}
-
             {/* Email */}
             <div>
               <label className="block text-sm text-white/70 mb-2">Email</label>

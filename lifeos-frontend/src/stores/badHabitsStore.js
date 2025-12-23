@@ -163,9 +163,9 @@ const useBadHabitsStore = create(
         // Sync to Supabase
         get().syncHabitToSupabase(newHabit);
 
-        // Award XP for committing to quit a bad habit
+        // Award XP for committing to quit a bad habit (MEDIUM tier: 10-20 XP)
         triggerGamification('badHabitStarted', {
-          xpOverride: 20,
+          xpOverride: 10,
           module: 'health',
         });
 
@@ -411,35 +411,53 @@ const useBadHabitsStore = create(
       },
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
         set({ isLoading: true });
 
+        // Master timeout - ensure loading is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ isLoading: false });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
+          const userId = passedUserId || await getCurrentUserId();
           if (!userId) {
+            clearTimeout(timeoutId);
             set({ isLoading: false });
             return;
           }
 
-          // Fetch habits
-          const { data: habitsData, error: habitsError } = await supabase
-            .from('bad_habits')
-            .select('*')
-            .eq('user_id', userId);
+          // Run both queries in parallel for faster initialization
+          const [
+            { data: habitsData, error: habitsError },
+            { data: relapsesData, error: relapsesError }
+          ] = await Promise.all([
+            // Fetch habits with timeout
+            withTimeout(supabase
+              .from('bad_habits')
+              .select('*')
+              .eq('user_id', userId)),
+            // Fetch relapses with timeout
+            withTimeout(supabase
+              .from('bad_habit_relapses')
+              .select('*')
+              .eq('user_id', userId))
+          ]);
 
-          if (habitsError) {
-            console.error('Error fetching bad habits:', habitsError);
-          }
-
-          // Fetch relapses
-          const { data: relapsesData, error: relapsesError } = await supabase
-            .from('bad_habit_relapses')
-            .select('*')
-            .eq('user_id', userId);
-
-          if (relapsesError) {
-            console.error('Error fetching relapses:', relapsesError);
-          }
+          // Continue with empty data on timeout/error - don't log intermediate errors
 
           if (habitsData) {
             const habits = habitsData.map(h => ({
@@ -481,10 +499,14 @@ const useBadHabitsStore = create(
 
             set({ habits, relapses, unlockedMilestones });
           }
+          console.log('[BadHabitsStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing bad habits from Supabase:', error);
+          console.error('[BadHabitsStore] Error initializing:', error);
         } finally {
-          set({ isLoading: false });
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({ isLoading: false });
+          }
         }
       },
     }),
@@ -500,8 +522,8 @@ const useBadHabitsStore = create(
 );
 
 // Initialize store
-export const initializeBadHabitsStore = async () => {
-  await useBadHabitsStore.getState().initializeFromSupabase();
+export const initializeBadHabitsStore = async (userId = null) => {
+  await useBadHabitsStore.getState().initializeFromSupabase(userId);
 };
 
 export default useBadHabitsStore;

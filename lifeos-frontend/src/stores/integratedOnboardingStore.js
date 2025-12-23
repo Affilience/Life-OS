@@ -181,6 +181,7 @@ const useIntegratedOnboardingStore = create(
   persist(
     (set, get) => ({
       // State
+      currentUserId: null, // Track which user's data this is
       hasSeenWelcome: false,
       selectedGoals: [],
       modulesCompleted: {},
@@ -316,11 +317,22 @@ const useIntegratedOnboardingStore = create(
         tourStep: 0,
         isOnboardingComplete: false,
         setupData: {}
-      })
+      }),
+
+      // Initialize with user ID - clears data if different user logs in
+      initializeForUser: (userId) => {
+        const { currentUserId, resetOnboarding } = get();
+        if (currentUserId && currentUserId !== userId) {
+          // Different user - reset onboarding state
+          console.log('[IntegratedOnboarding] User changed, resetting state');
+          resetOnboarding();
+        }
+        set({ currentUserId: userId });
+      }
     }),
     {
       name: 'lifeos-integrated-onboarding',
-      version: 1
+      version: 2 // Bump version for new field
     }
   )
 );

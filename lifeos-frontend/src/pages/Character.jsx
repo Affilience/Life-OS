@@ -645,14 +645,7 @@ export default function Character() {
                   <span className="text-xs text-text-muted">{terms.level} {currentLevel}</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {/* XP Bonus */}
-                  <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-3 text-center">
-                    <div className="text-2xl mb-1">⚡</div>
-                    <div className="text-lg font-bold text-green-400">+{(levelXPBonus * 100).toFixed(1)}%</div>
-                    <div className="text-[10px] text-text-muted">XP Bonus</div>
-                  </div>
-
+                <div className="grid grid-cols-2 gap-3">
                   {/* Pet Slots */}
                   <div className="bg-gradient-to-br from-pink-500/10 to-rose-500/10 border border-pink-500/20 rounded-xl p-3 text-center">
                     <div className="text-2xl mb-1">🐾</div>
@@ -665,13 +658,6 @@ export default function Character() {
                     <div className="text-2xl mb-1">🎒</div>
                     <div className="text-lg font-bold text-blue-400">{inventorySlots}</div>
                     <div className="text-[10px] text-text-muted">Inventory</div>
-                  </div>
-
-                  {/* Equipment Sets */}
-                  <div className="bg-gradient-to-br from-purple-500/10 to-violet-500/10 border border-purple-500/20 rounded-xl p-3 text-center">
-                    <div className="text-2xl mb-1">⚔️</div>
-                    <div className="text-lg font-bold text-purple-400">{Math.floor(currentLevel / 25) + 1}</div>
-                    <div className="text-[10px] text-text-muted">Gear Sets</div>
                   </div>
                 </div>
 

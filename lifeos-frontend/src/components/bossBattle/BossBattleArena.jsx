@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Swords, Heart, Zap, Trophy, Skull, Star, Sparkles } from 'lucide-react';
+import { X, Swords, Heart, Zap, Trophy, Skull, Star, Sparkles, Flame, AlertTriangle } from 'lucide-react';
 import { animate, stagger } from 'animejs';
 import { useBossStore } from '../../stores/bossStore';
 import { useAvatarStore } from '../../stores/avatarStore';
@@ -18,6 +18,7 @@ import { ABILITY_TYPES, getWeaponAbility, isAbilityReady, calculateAbilityDamage
 import { sounds } from '../../services/microInteractions';
 import AvatarRenderer from '../avatar/AvatarRenderer';
 import AbilityAnimation from '../combat/AbilityAnimation';
+import { Confetti, Fireworks, ScreenFlash, Starburst } from '../ui/Celebration';
 
 // Custom hook for anime.js screen shake
 const useScreenShake = (containerRef) => {
@@ -804,6 +805,224 @@ const ScreenShake = ({ shake, children }) => {
   );
 };
 
+// Rage Mode Overlay - pulsing red vignette when boss is enraged
+const RageModeOverlay = ({ active, intensity = 1 }) => {
+  if (!active) return null;
+
+  return (
+    <motion.div
+      className="absolute inset-0 pointer-events-none z-30"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0.3, 0.6, 0.3] }}
+      transition={{ duration: 0.5, repeat: Infinity }}
+    >
+      {/* Red vignette */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(circle at center, transparent 30%, rgba(220, 38, 38, ${0.4 * intensity}) 100%)`,
+        }}
+      />
+      {/* Pulsing border */}
+      <div
+        className="absolute inset-0 border-4 border-red-500/50"
+        style={{
+          boxShadow: 'inset 0 0 60px rgba(220, 38, 38, 0.4)',
+        }}
+      />
+      {/* Floating rage particles */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-2 h-2 bg-red-500 rounded-full"
+          style={{
+            left: `${10 + Math.random() * 80}%`,
+            bottom: '0%',
+          }}
+          animate={{
+            y: [0, -200 - Math.random() * 200],
+            opacity: [0.8, 0],
+            scale: [1, 0.3],
+          }}
+          transition={{
+            duration: 1.5 + Math.random(),
+            repeat: Infinity,
+            delay: i * 0.2,
+          }}
+        />
+      ))}
+    </motion.div>
+  );
+};
+
+// Rage Mode Warning - appears when boss enters rage
+const RageModeWarning = ({ show, bossName }) => {
+  if (!show) return null;
+
+  return (
+    <motion.div
+      className="absolute top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-900/90 to-red-700/90 rounded-xl border-2 border-red-500"
+      initial={{ opacity: 0, y: -50, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ type: 'spring', duration: 0.5 }}
+    >
+      <motion.div
+        animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
+        transition={{ duration: 0.5, repeat: 3 }}
+      >
+        <Flame className="w-6 h-6 text-orange-400" />
+      </motion.div>
+      <div className="text-center">
+        <p className="text-red-300 text-xs font-medium uppercase tracking-wider">Rage Mode Activated!</p>
+        <p className="text-white font-bold">{bossName} grows stronger!</p>
+      </div>
+      <motion.div
+        animate={{ rotate: [0, 10, -10, 10, -10, 0] }}
+        transition={{ duration: 0.5, repeat: 3 }}
+      >
+        <AlertTriangle className="w-6 h-6 text-yellow-400" />
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// Boss Disintegration Effect - when boss is defeated
+const BossDisintegration = ({ active, bossSprite, onComplete }) => {
+  const containerRef = useRef(null);
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    if (!active) return;
+
+    // Create disintegration particles
+    const newParticles = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      x: 40 + Math.random() * 80,
+      y: 40 + Math.random() * 80,
+      size: 4 + Math.random() * 8,
+      delay: Math.random() * 0.5,
+      duration: 1 + Math.random() * 0.5,
+      angle: Math.random() * 360,
+      distance: 50 + Math.random() * 100,
+    }));
+
+    setParticles(newParticles);
+
+    const timer = setTimeout(() => {
+      setParticles([]);
+      onComplete?.();
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [active, onComplete]);
+
+  if (!active || particles.length === 0) return null;
+
+  return (
+    <div ref={containerRef} className="absolute inset-0 pointer-events-none z-40">
+      {/* Fading boss sprite */}
+      <motion.img
+        src={bossSprite}
+        alt="Defeated boss"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 object-contain"
+        style={{ imageRendering: 'pixelated' }}
+        initial={{ opacity: 1, filter: 'brightness(1)' }}
+        animate={{
+          opacity: [1, 1, 0],
+          filter: ['brightness(1)', 'brightness(3)', 'brightness(0)'],
+          scale: [1, 1.1, 0.8],
+        }}
+        transition={{ duration: 1.5 }}
+      />
+
+      {/* Disintegration particles */}
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-sm"
+          style={{
+            left: `${p.x}px`,
+            top: `${p.y}px`,
+            width: p.size,
+            height: p.size,
+            background: 'linear-gradient(135deg, #ff6b6b, #ffa500, #ff0000)',
+          }}
+          initial={{ opacity: 0.8, scale: 1 }}
+          animate={{
+            x: Math.cos(p.angle * Math.PI / 180) * p.distance,
+            y: Math.sin(p.angle * Math.PI / 180) * p.distance - 50,
+            opacity: 0,
+            scale: 0,
+            rotate: p.angle * 2,
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            ease: 'easeOut',
+          }}
+        />
+      ))}
+
+      {/* Central explosion flash */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-60 h-60 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(255,200,0,0.8) 0%, rgba(255,100,0,0.4) 40%, transparent 70%)',
+        }}
+        initial={{ scale: 0, opacity: 1 }}
+        animate={{ scale: [0, 2, 3], opacity: [1, 0.6, 0] }}
+        transition={{ duration: 0.8 }}
+      />
+    </div>
+  );
+};
+
+// Epic Victory Celebration Overlay
+const VictoryCelebration = ({ active }) => {
+  if (!active) return null;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-45">
+      {/* Golden rays */}
+      {Array.from({ length: 12 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute left-1/2 top-1/2 w-2 h-40 origin-bottom"
+          style={{
+            background: 'linear-gradient(to top, rgba(251,191,36,0.6), transparent)',
+            transform: `rotate(${(360 / 12) * i}deg)`,
+          }}
+          initial={{ scaleY: 0, opacity: 0 }}
+          animate={{ scaleY: 1, opacity: [0, 0.8, 0] }}
+          transition={{ duration: 1.5, delay: 0.3 + i * 0.05 }}
+        />
+      ))}
+
+      {/* Floating coins/stars */}
+      {Array.from({ length: 15 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-2xl"
+          style={{
+            left: `${10 + Math.random() * 80}%`,
+            top: `${60 + Math.random() * 30}%`,
+          }}
+          initial={{ y: 0, opacity: 0 }}
+          animate={{
+            y: -300 - Math.random() * 200,
+            opacity: [0, 1, 1, 0],
+            rotate: [0, 360],
+          }}
+          transition={{ duration: 2 + Math.random(), delay: i * 0.1 }}
+        >
+          {i % 3 === 0 ? '⭐' : i % 3 === 1 ? '🪙' : '✨'}
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
 // Health bar component
 const HealthBar = ({ current, max, label, isPlayer = false }) => {
   const percentage = Math.max(0, Math.min(100, (current / max) * 100));
@@ -951,72 +1170,190 @@ const CountdownOverlay = ({ countdown, boss, characterGender, equipped }) => (
   </motion.div>
 );
 
-// Victory/Defeat overlay
+// Victory/Defeat overlay - Enhanced with epic effects
 const BattleResultOverlay = ({ isVictory, rewards, boss, onClose }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
-    className="absolute inset-0 bg-black/90 flex items-center justify-center z-50"
+    className="absolute inset-0 bg-black/90 flex items-center justify-center z-50 overflow-hidden"
   >
+    {/* Background particles for victory */}
+    {isVictory && (
+      <div className="absolute inset-0 pointer-events-none">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0, 1, 0],
+              scale: [0, 1.5, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+      </div>
+    )}
+
+    {/* Rotating light rays for victory */}
+    {isVictory && (
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+      >
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute left-1/2 top-1/2 w-1 h-96 origin-bottom opacity-20"
+            style={{
+              background: 'linear-gradient(to top, rgba(251,191,36,0.5), transparent)',
+              transform: `rotate(${(360 / 8) * i}deg) translateY(-50%)`,
+            }}
+          />
+        ))}
+      </motion.div>
+    )}
+
     <motion.div
       initial={{ scale: 0.5, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: 0.2, type: 'spring' }}
-      className="text-center p-8 max-w-sm"
+      transition={{ delay: 0.2, type: 'spring', bounce: 0.4 }}
+      className="text-center p-8 max-w-sm relative"
     >
       {isVictory ? (
         <>
-          <motion.div
-            animate={{ rotate: [0, -10, 10, -10, 10, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <Trophy className="w-28 h-28 mx-auto text-yellow-400 mb-4 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]" />
-          </motion.div>
-          <h2 className="text-5xl font-black text-yellow-400 mb-2 drop-shadow-lg">VICTORY!</h2>
-          <p className="text-white/70 mb-6 text-lg">{boss?.name} has been defeated!</p>
-
-          <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl p-5 mb-6 border border-yellow-500/30">
-            <h3 className="text-lg font-semibold text-white mb-4">Rewards Earned</h3>
-            <div className="flex justify-center gap-8">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-purple-400">
-                  <Star className="w-6 h-6" />
-                  <span className="text-3xl font-black">+{rewards?.xp || 0}</span>
-                </div>
-                <span className="text-xs text-white/50">XP</span>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-yellow-400">
-                  <Zap className="w-6 h-6" />
-                  <span className="text-3xl font-black">+{rewards?.credits || 0}</span>
-                </div>
-                <span className="text-xs text-white/50">Credits</span>
-              </div>
-            </div>
+          {/* Glowing backdrop */}
+          <div className="absolute inset-0 -z-10">
+            <motion.div
+              className="absolute left-1/2 top-1/4 -translate-x-1/2 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
           </div>
+
+          {/* Trophy with sparkles */}
+          <motion.div
+            className="relative"
+            animate={{ rotate: [0, -5, 5, -5, 5, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+            >
+              {Array.from({ length: 6 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-3 h-3 text-yellow-300"
+                  style={{
+                    transform: `rotate(${(360 / 6) * i}deg) translateY(-60px)`,
+                  }}
+                  animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
+                >
+                  ✦
+                </motion.div>
+              ))}
+            </motion.div>
+            <Trophy className="w-32 h-32 mx-auto text-yellow-400 mb-4 drop-shadow-[0_0_40px_rgba(250,204,21,0.8)]" />
+          </motion.div>
+
+          <motion.h2
+            className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 mb-2 drop-shadow-lg"
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            VICTORY!
+          </motion.h2>
+          <p className="text-white/70 mb-6 text-lg">{boss?.name} has been vanquished!</p>
+
+          <motion.div
+            className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl p-6 mb-6 border-2 border-yellow-500/40 backdrop-blur-sm"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <h3 className="text-lg font-bold text-yellow-300 mb-4 flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5" />
+              Rewards Earned
+              <Sparkles className="w-5 h-5" />
+            </h3>
+            <div className="flex justify-center gap-10">
+              <motion.div
+                className="text-center"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.7, type: 'spring', bounce: 0.5 }}
+              >
+                <div className="flex items-center justify-center gap-2 text-purple-400">
+                  <Star className="w-7 h-7" />
+                  <span className="text-4xl font-black">+{rewards?.xp || 0}</span>
+                </div>
+                <span className="text-sm text-white/60">Experience</span>
+              </motion.div>
+              <motion.div
+                className="text-center"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.9, type: 'spring', bounce: 0.5 }}
+              >
+                <div className="flex items-center justify-center gap-2 text-yellow-400">
+                  <Zap className="w-7 h-7" />
+                  <span className="text-4xl font-black">+{rewards?.credits || 0}</span>
+                </div>
+                <span className="text-sm text-white/60">Credits</span>
+              </motion.div>
+            </div>
+          </motion.div>
         </>
       ) : (
         <>
+          {/* Red glow for defeat */}
+          <div className="absolute inset-0 -z-10">
+            <motion.div
+              className="absolute left-1/2 top-1/4 -translate-x-1/2 w-48 h-48 rounded-full bg-red-500/20 blur-3xl"
+              animate={{ opacity: [0.2, 0.4, 0.2] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </div>
+
           <motion.div
-            animate={{ y: [0, -5, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            animate={{ y: [0, -8, 0], rotate: [0, -3, 3, 0] }}
+            transition={{ duration: 3, repeat: Infinity }}
           >
-            <Skull className="w-28 h-28 mx-auto text-red-500 mb-4 drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
+            <Skull className="w-32 h-32 mx-auto text-red-500 mb-4 drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]" />
           </motion.div>
-          <h2 className="text-5xl font-black text-red-500 mb-2">DEFEAT</h2>
-          <p className="text-white/70 mb-6 text-lg">{boss?.name} was too powerful...</p>
-          <p className="text-white/40 text-sm">Level up and try again!</p>
+          <h2 className="text-6xl font-black text-red-500 mb-2 drop-shadow-lg">DEFEAT</h2>
+          <p className="text-white/70 mb-4 text-lg">{boss?.name} was too powerful...</p>
+          <p className="text-white/50 text-sm mb-2">Don't give up! Train harder and return stronger.</p>
+          <div className="flex items-center justify-center gap-2 text-red-400/60 text-xs">
+            <Heart className="w-4 h-4" />
+            <span>Your progress is still saved</span>
+          </div>
         </>
       )}
 
       <motion.button
         onClick={onClose}
-        whileHover={{ scale: 1.05 }}
+        whileHover={{ scale: 1.08, boxShadow: '0 0 30px rgba(168,85,247,0.5)' }}
         whileTap={{ scale: 0.95 }}
-        className="mt-6 px-10 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-bold text-white text-lg shadow-lg shadow-purple-500/30"
+        className={`mt-6 px-12 py-4 rounded-2xl font-bold text-white text-lg shadow-xl transition-all ${
+          isVictory
+            ? 'bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 shadow-amber-500/30'
+            : 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-purple-500/30'
+        }`}
       >
-        Continue
+        {isVictory ? 'Claim Victory' : 'Try Again'}
       </motion.button>
     </motion.div>
   </motion.div>
@@ -1059,6 +1396,15 @@ export default function BossBattleArena({ bossId, onClose }) {
   const [playerProjectiles, setPlayerProjectiles] = useState([]);
   const [bossProjectiles, setBossProjectiles] = useState([]);
   const [impactEffects, setImpactEffects] = useState([]);
+
+  // Epic battle effects state
+  const [isRageMode, setIsRageMode] = useState(false);
+  const [showRageWarning, setShowRageWarning] = useState(false);
+  const [showBossDisintegration, setShowBossDisintegration] = useState(false);
+  const [showVictoryCelebration, setShowVictoryCelebration] = useState(false);
+  const [showVictoryConfetti, setShowVictoryConfetti] = useState(false);
+  const [showVictoryFireworks, setShowVictoryFireworks] = useState(false);
+  const [showVictoryFlash, setShowVictoryFlash] = useState(false);
 
   const bossRef = useRef(null);
   const battleIntervalRef = useRef(null);
@@ -1218,6 +1564,25 @@ export default function BossBattleArena({ bossId, onClose }) {
     };
   }, [isBattleActive, isCountdown, battleEnded, getCooldownProgress, canAttack]);
 
+  // Check for rage mode (boss below 30% health)
+  useEffect(() => {
+    if (!currentBattle || battleEnded) return;
+
+    const healthPercent = currentBattle.bossCurrentHealth / currentBattle.bossMaxHealth;
+
+    // Trigger rage mode at 30% health
+    if (healthPercent <= 0.3 && healthPercent > 0 && !isRageMode) {
+      setIsRageMode(true);
+      setShowRageWarning(true);
+
+      // Heavy screen shake when entering rage
+      triggerShake('heavy');
+
+      // Flash the screen red
+      setTimeout(() => setShowRageWarning(false), 3000);
+    }
+  }, [currentBattle, battleEnded, isRageMode, triggerShake]);
+
   // Check for battle end and explicitly end it
   useEffect(() => {
     if (!currentBattle || battleEnded) return;
@@ -1232,17 +1597,49 @@ export default function BossBattleArena({ bossId, onClose }) {
         battleIntervalRef.current = null;
       }
 
-      // Call endBattle in the store to properly close it
-      const result = await endBattle(isVictory ? 'victory' : 'defeat');
+      if (isVictory) {
+        // Epic victory sequence
+        // 1. Screen flash
+        setShowVictoryFlash(true);
 
-      // Set local result for UI
-      setBattleResult({
-        isVictory,
-        rewards: isVictory ? {
-          xp: currentBattle.boss.xpReward,
-          credits: currentBattle.boss.creditsReward,
-        } : null,
-      });
+        // 2. Boss disintegration
+        setTimeout(() => setShowBossDisintegration(true), 200);
+
+        // 3. Victory celebration
+        setTimeout(() => {
+          setShowVictoryCelebration(true);
+          setShowVictoryConfetti(true);
+        }, 800);
+
+        // 4. Fireworks
+        setTimeout(() => setShowVictoryFireworks(true), 1200);
+
+        // 5. Heavy screen shake
+        triggerShake('crit');
+
+        // 6. Show result after animations
+        setTimeout(async () => {
+          const result = await endBattle('victory');
+
+          setBattleResult({
+            isVictory: true,
+            rewards: {
+              xp: currentBattle.boss.xpReward,
+              credits: currentBattle.boss.creditsReward,
+            },
+          });
+        }, 2000);
+      } else {
+        // Defeat sequence
+        triggerShake('heavy');
+
+        const result = await endBattle('defeat');
+
+        setBattleResult({
+          isVictory: false,
+          rewards: null,
+        });
+      }
     };
 
     if (currentBattle.bossCurrentHealth <= 0) {
@@ -1250,7 +1647,7 @@ export default function BossBattleArena({ bossId, onClose }) {
     } else if (currentBattle.playerCurrentHealth <= 0) {
       handleBattleEnd(false);
     }
-  }, [currentBattle, battleEnded, endBattle]);
+  }, [currentBattle, battleEnded, endBattle, triggerShake]);
 
   // Handle player attack via button
   const handleAttack = useCallback(() => {
@@ -1456,6 +1853,22 @@ export default function BossBattleArena({ bossId, onClose }) {
       {/* Background effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.1),transparent_70%)]" />
 
+      {/* Rage Mode Overlay - pulsing red when boss is enraged */}
+      <RageModeOverlay active={isRageMode && !battleEnded} intensity={1} />
+
+      {/* Rage Mode Warning */}
+      <AnimatePresence>
+        {showRageWarning && (
+          <RageModeWarning show={showRageWarning} bossName={boss?.name} />
+        )}
+      </AnimatePresence>
+
+      {/* Victory Effects */}
+      <ScreenFlash active={showVictoryFlash} color="#fbbf24" intensity={0.5} />
+      <VictoryCelebration active={showVictoryCelebration} />
+      <Confetti active={showVictoryConfetti} particleCount={100} intensity="epic" duration={4000} />
+      <Fireworks active={showVictoryFireworks} burstCount={8} duration={3000} />
+
       {/* Close button */}
       <button
         onClick={handleClose}
@@ -1558,20 +1971,59 @@ export default function BossBattleArena({ bossId, onClose }) {
               ref={bossRef}
               className="relative select-none"
             >
-              <motion.div
-                animate={!battleResult ? { y: [0, -8, 0] } : {}}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                <img
-                  src={boss?.sprite}
-                  alt={boss?.name}
-                  className="w-40 h-40 sm:w-52 sm:h-52 object-contain drop-shadow-[0_0_30px_rgba(255,0,0,0.3)]"
-                  style={{ imageRendering: 'pixelated' }}
-                  onError={(e) => {
-                    e.target.src = '/assets/icons/placeholder.png';
-                  }}
+              {/* Boss Disintegration Effect */}
+              {showBossDisintegration && (
+                <BossDisintegration
+                  active={showBossDisintegration}
+                  bossSprite={boss?.sprite}
+                  onComplete={() => setShowBossDisintegration(false)}
                 />
-              </motion.div>
+              )}
+
+              {/* Boss sprite - hidden when disintegrating */}
+              {!showBossDisintegration && (
+                <motion.div
+                  animate={!battleResult ? {
+                    y: [0, -8, 0],
+                    // Rage mode: faster bounce, red glow
+                    ...(isRageMode && !battleEnded ? {
+                      scale: [1, 1.05, 1],
+                    } : {}),
+                  } : {}}
+                  transition={{
+                    duration: isRageMode ? 0.8 : 1.5,
+                    repeat: Infinity,
+                  }}
+                >
+                  <img
+                    src={boss?.sprite}
+                    alt={boss?.name}
+                    className={`w-40 h-40 sm:w-52 sm:h-52 object-contain ${
+                      isRageMode && !battleEnded
+                        ? 'drop-shadow-[0_0_40px_rgba(255,0,0,0.6)]'
+                        : 'drop-shadow-[0_0_30px_rgba(255,0,0,0.3)]'
+                    }`}
+                    style={{
+                      imageRendering: 'pixelated',
+                      filter: isRageMode && !battleEnded ? 'brightness(1.2) saturate(1.3)' : undefined,
+                    }}
+                    onError={(e) => {
+                      e.target.src = '/assets/icons/placeholder.png';
+                    }}
+                  />
+                  {/* Rage aura effect */}
+                  {isRageMode && !battleEnded && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: 'radial-gradient(circle, transparent 40%, rgba(255,0,0,0.3) 100%)',
+                      }}
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                      transition={{ duration: 0.5, repeat: Infinity }}
+                    />
+                  )}
+                </motion.div>
+              )}
 
               {/* Attack effects */}
               <AnimatePresence>

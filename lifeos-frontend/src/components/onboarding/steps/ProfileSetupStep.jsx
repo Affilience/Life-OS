@@ -16,7 +16,7 @@ export default function ProfileSetupStep({ onNext, onPrev, isTransitioning }) {
   } = useNewOnboardingStore();
 
   const { setCharacterGender, getHeroSpritePath } = useAvatarStore();
-  const { checkUsernameAvailable, updateUsername } = useSocialStore();
+  const { checkUsernameAvailable, updateUsername, updateSocialProfile } = useSocialStore();
 
   const [username, setUsername] = useState(profile.username || '');
   const [displayName, setDisplayName] = useState(profile.displayName || '');
@@ -89,15 +89,20 @@ export default function ProfileSetupStep({ onNext, onPrev, isTransitioning }) {
       return;
     }
 
-    // Save username to database
+    // Save username and display name to database
     try {
       const result = await updateUsername(username);
       if (!result.success) {
         setUsernameError(result.error || 'Failed to save username');
         return;
       }
+
+      // Also save display_name to database
+      const nameToSave = displayName || username;
+      await updateSocialProfile({ display_name: nameToSave });
+      console.log('[Onboarding] Saved display_name to database:', nameToSave);
     } catch (err) {
-      console.error('Error saving username:', err);
+      console.error('Error saving profile:', err);
       // Continue anyway - the username will be saved in local state
     }
 

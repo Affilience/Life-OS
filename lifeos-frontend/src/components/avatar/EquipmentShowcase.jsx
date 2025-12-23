@@ -467,6 +467,7 @@ function PaperdollSlot({ slotId, slot, equippedItem, onSelect, getItemSpriteUrl 
             : rarity?.glow
             ? `0 0 15px ${rarity.glow}`
             : 'none',
+          animation: rarity?.hasParticles ? 'equipment-aura-pulse 2s ease-in-out infinite' : 'none',
         }}
         onClick={onSelect}
       >
@@ -676,6 +677,7 @@ function InventoryModal({
                     boxShadow: rarity?.hasParticles
                       ? `0 0 20px ${rarity.glow}`
                       : `0 0 10px ${rarity?.glow || 'transparent'}`,
+                    animation: rarity?.hasParticles ? 'equipment-aura-pulse 2s ease-in-out infinite' : 'none',
                   }}
                   onClick={() => onEquip(item.id)}
                 >

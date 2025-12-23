@@ -370,23 +370,56 @@ const usePerkStore = create(
       isSynced: false,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
         set({ isLoading: true });
+
+        // Master timeout - ensure loading is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ isLoading: false, isSynced: true });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
+          // Use passed userId to avoid slow supabase.auth.getUser() call
+          const userId = passedUserId || await getCurrentUserId();
           if (!userId) {
             console.warn('No user ID found, using localStorage only');
+            clearTimeout(timeoutId);
             set({ isLoading: false });
             return;
           }
 
-          // Load user's perks from database
-          const { data: userPerks, error } = await supabase
-            .from('user_perks')
-            .select('*')
-            .eq('user_id', userId);
+          // Run both queries in parallel for faster initialization
+          const [
+            { data: userPerks, error },
+            { data: userStats, error: statsError }
+          ] = await Promise.all([
+            // Load user's perks from database with timeout
+            withTimeout(supabase
+              .from('user_perks')
+              .select('*')
+              .eq('user_id', userId)),
+            // Load stat levels from user_stats with timeout
+            withTimeout(supabase
+              .from('user_stats')
+              .select('*')
+              .eq('user_id', userId)
+              .maybeSingle())
+          ]);
 
-          if (error) throw error;
+          if (error && error !== 'timeout') throw error;
 
           if (userPerks && userPerks.length > 0) {
             // Convert database records to our format
@@ -409,13 +442,6 @@ const usePerkStore = create(
               }
             });
 
-            // Load stat levels from user_stats if available
-            const { data: userStats, error: statsError } = await supabase
-              .from('user_stats')
-              .select('*')
-              .eq('user_id', userId)
-              .maybeSingle();
-
             const newStatLevels = { ...DEFAULT_STATS };
             if (userStats && !statsError) {
               if (userStats.body) newStatLevels.body = userStats.body;
@@ -433,14 +459,18 @@ const usePerkStore = create(
               statLevels: newStatLevels,
               activeEffects,
               isSynced: true,
-              isLoading: false,
             });
           } else {
-            set({ isSynced: true, isLoading: false });
+            set({ isSynced: true });
           }
+          console.log('[PerkStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing perks from Supabase:', error);
-          set({ isLoading: false });
+          console.error('[PerkStore] Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({ isLoading: false });
+          }
         }
       },
 
@@ -914,11 +944,11 @@ const usePerkStore = create(
 );
 
 // Export initialization function - loads from Supabase first, then applies any provided stats
-export const initializePerkStore = async (stats) => {
+export const initializePerkStore = async (userId = null, stats = null) => {
   const store = usePerkStore.getState();
 
   // First, load from Supabase
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 
   // Then apply any additional stats if provided
   if (stats) {

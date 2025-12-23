@@ -25,20 +25,38 @@ export const useSkillPointsStore = create(
       ...DEFAULT_STATE,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
+      initializeFromSupabase: async (passedUserId = null) => {
+        const userId = passedUserId || await getCurrentUserId();
         if (!userId) return;
 
         set({ _isLoading: true, _error: null });
 
+        // Master timeout - ensure loading is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ _isLoading: false });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const { data, error } = await supabase
+          const { data, error } = await withTimeout(supabase
             .from('user_skill_points')
             .select('*')
             .eq('user_id', userId)
-            .maybeSingle();
+            .maybeSingle());
 
-          if (error) throw error;
+          if (error && error !== 'timeout') throw error;
 
           if (data) {
             set({
@@ -53,15 +71,17 @@ export const useSkillPointsStore = create(
               totalPointsEarned: data.total_points_earned || 0,
               pointsResetCount: data.points_reset_count || 0,
               lastAllocationAt: data.last_allocation_at,
-              _isLoading: false,
             });
-          } else {
-            // No record exists - will be created on first allocation
+          }
+          console.log('[SkillPointsStore] ✅ Initialized');
+        } catch (error) {
+          console.error('[SkillPointsStore] Failed to load:', error);
+          set({ _error: error.message });
+        } finally {
+          clearTimeout(timeoutId);
+          if (!timedOut) {
             set({ _isLoading: false });
           }
-        } catch (error) {
-          console.error('Failed to load skill points:', error);
-          set({ _error: error.message, _isLoading: false });
         }
       },
 
@@ -322,8 +342,8 @@ export const useSkillPointsStore = create(
 );
 
 // Export initialization function
-export const initializeSkillPointsStore = async () => {
-  await useSkillPointsStore.getState().initializeFromSupabase();
+export const initializeSkillPointsStore = async (userId = null) => {
+  await useSkillPointsStore.getState().initializeFromSupabase(userId);
 };
 
 export default useSkillPointsStore;

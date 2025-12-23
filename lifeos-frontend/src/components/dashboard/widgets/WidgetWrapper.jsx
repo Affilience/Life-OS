@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { GripVertical, X, Maximize2, Minimize2 } from 'lucide-react';
 import useDashboardStore, { DASHBOARD_WIDGETS } from '../../../stores/dashboardStore';
 
@@ -16,7 +16,20 @@ const WIDGET_TOUR_MAP = {
   dailyQuote: 'widget-area',
 };
 
-export default function WidgetWrapper({ widgetId, children, className = '' }) {
+// forwardRef is required for react-grid-layout to work correctly
+const WidgetWrapper = forwardRef(function WidgetWrapper({
+  widgetId,
+  children,
+  className = '',
+  style,
+  // Extract react-grid-layout props that shouldn't be spread to DOM
+  'data-grid': dataGrid,
+  onMouseDown,
+  onMouseUp,
+  onTouchEnd,
+  onTouchStart,
+  ...restProps
+}, ref) {
   const { isEditMode, toggleWidget } = useDashboardStore();
   const widget = DASHBOARD_WIDGETS[widgetId];
   const [isHovered, setIsHovered] = useState(false);
@@ -27,9 +40,15 @@ export default function WidgetWrapper({ widgetId, children, className = '' }) {
 
   return (
     <div
+      ref={ref}
+      style={style}
       className={`relative h-full group ${className} ${isDragging ? 'z-50' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
+      onTouchEnd={onTouchEnd}
+      onTouchStart={onTouchStart}
       {...(tourAttribute && { 'data-tour': tourAttribute })}
     >
       {/* Edit mode UI */}
@@ -111,14 +130,14 @@ export default function WidgetWrapper({ widgetId, children, className = '' }) {
             }
           `} />
 
-          {/* Resize indicator corners - visual hint */}
+          {/* Resize indicator corners - visual hint (hidden on mobile) */}
           {isHovered && !isDragging && (
-            <>
+            <div className="hidden sm:contents">
               <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-primary-400/60 rounded-br pointer-events-none" />
               <div className="absolute bottom-1 left-1 w-3 h-3 border-l-2 border-b-2 border-primary-400/60 rounded-bl pointer-events-none" />
               <div className="absolute top-10 right-1 w-3 h-3 border-r-2 border-t-2 border-primary-400/60 rounded-tr pointer-events-none" />
               <div className="absolute top-10 left-1 w-3 h-3 border-l-2 border-t-2 border-primary-400/60 rounded-tl pointer-events-none" />
-            </>
+            </div>
           )}
         </>
       )}
@@ -133,4 +152,6 @@ export default function WidgetWrapper({ widgetId, children, className = '' }) {
       </div>
     </div>
   );
-}
+});
+
+export default WidgetWrapper;

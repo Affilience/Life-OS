@@ -1,5 +1,13 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, createContext, useContext } from 'react';
 import { supabase } from '../lib/supabase';
+import { clearAllNovaState } from '../services/ai/nova/novaService';
+
+// Shared auth state context - ensures all components see the same auth state
+const AuthContext = createContext(null);
+
+// Key to track which user's data is currently in localStorage
+// This is separate from zustand stores and survives their clearing
+const CURRENT_USER_KEY = 'lifeos-current-user-id';
 
 // All zustand persist storage keys - cleared on sign out AND sign up for fresh user experience
 const STORAGE_KEYS = [
@@ -41,33 +49,99 @@ const STORAGE_KEYS = [
   'lifeos-tours',
 ];
 
+// IndexedDB databases that need to be cleared on user switch
+const INDEXED_DB_NAMES = [
+  'QuantaJournalDB', // Journal entries stored locally
+];
+
 /**
- * Clear all localStorage for a fresh start
+ * Clear all localStorage, IndexedDB, and in-memory state for a fresh start
+ * SECURITY: Prevents data leakage between users
  */
 function clearAllStorage() {
   console.log('[Auth] Clearing all local storage for fresh start...');
   STORAGE_KEYS.forEach(key => {
     localStorage.removeItem(key);
   });
+  // Also clear the user tracking key
+  localStorage.removeItem(CURRENT_USER_KEY);
   console.log('[Auth] Local storage cleared');
+
+  // Clear IndexedDB databases (Journal, etc.)
+  // SECURITY: Prevents journal entries from leaking between users
+  INDEXED_DB_NAMES.forEach(dbName => {
+    try {
+      const request = indexedDB.deleteDatabase(dbName);
+      request.onsuccess = () => console.log(`[Auth] Cleared IndexedDB: ${dbName}`);
+      request.onerror = () => console.warn(`[Auth] Failed to clear IndexedDB: ${dbName}`);
+    } catch (e) {
+      console.warn(`[Auth] Could not clear IndexedDB ${dbName}:`, e);
+    }
+  });
+
+  // Clear Nova's in-memory caches (conversation history, context, etc.)
+  // This prevents previous user's data from being shown to new user
+  try {
+    clearAllNovaState();
+  } catch (e) {
+    console.warn('[Auth] Could not clear Nova state:', e);
+  }
+}
+
+/**
+ * Check if the current user differs from the last known user
+ * If different, clear all storage and reload to prevent data leakage
+ * @param {string} newUserId - The user ID to check against
+ * @returns {boolean} - True if user changed and reload is happening
+ */
+function handleUserChange(newUserId) {
+  const lastUserId = localStorage.getItem(CURRENT_USER_KEY);
+
+  // If no previous user or same user, just update the tracking
+  if (!lastUserId || lastUserId === newUserId) {
+    if (newUserId) {
+      localStorage.setItem(CURRENT_USER_KEY, newUserId);
+    }
+    return false;
+  }
+
+  // Different user detected - clear everything and reload
+  console.log('[Auth] User change detected:', lastUserId, '->', newUserId);
+  console.log('[Auth] Clearing all data and reloading for security...');
+
+  // Clear all storage
+  clearAllStorage();
+
+  // Set the new user ID
+  if (newUserId) {
+    localStorage.setItem(CURRENT_USER_KEY, newUserId);
+  }
+
+  // Force page reload to clear all in-memory zustand state
+  // This is the nuclear option but guarantees no data leakage
+  window.location.reload();
+  return true;
 }
 
 /**
  * Initialize all required data for a new user
  * This ensures the user has all necessary records across all tables
+ * Note: display_name and username are NOT set here - they are set during onboarding
  */
-async function initializeNewUser(userId, email, displayName) {
-  const username = email.split('@')[0];
+async function initializeNewUser(userId, email) {
   const now = new Date().toISOString();
+
+  console.log('[Auth] Initializing new user:', { userId, email });
 
   try {
     // 1. Create user profile (main table with level, XP, equipment, social settings)
+    // Note: display_name and username will be set during onboarding
+    console.log('[Auth] Creating user profile...');
     const { error: profileError } = await supabase
       .from('user_profiles')
       .upsert({
         id: userId,
-        display_name: displayName || username,
-        username: username,
+        // display_name and username intentionally omitted - set in onboarding
         // Level/XP initialization
         current_level: 1,
         current_xp: 0,
@@ -105,9 +179,14 @@ async function initializeNewUser(userId, email, displayName) {
         updated_at: now,
       }, { onConflict: 'id' });
 
-    if (profileError) console.error('Profile creation error:', profileError);
+    if (profileError) {
+      console.error('[Auth] ❌ Profile creation error:', profileError);
+      throw profileError;
+    }
+    console.log('[Auth] ✅ User profile created');
 
     // 2. Initialize cosmic currency (starting credits)
+    console.log('[Auth] Creating cosmic currency...');
     const { error: currencyError } = await supabase
       .from('user_cosmic_currency')
       .upsert({
@@ -119,89 +198,170 @@ async function initializeNewUser(userId, email, displayName) {
         updated_at: now,
       }, { onConflict: 'user_id' });
 
-    if (currencyError) console.error('Currency creation error:', currencyError);
+    if (currencyError) {
+      console.error('[Auth] ❌ Currency creation error:', currencyError);
+      // Don't throw - profile is more important
+    } else {
+      console.log('[Auth] ✅ Cosmic currency created');
+    }
 
-    // 3. Initialize user stats (all zeros to start)
-    // Note: total_power and balance_score are GENERATED columns in PostgreSQL - do not insert them
-    const { error: statsError } = await supabase
-      .from('user_stats')
-      .upsert({
-        user_id: userId,
-        strength: 0,
-        vitality: 0,
-        intelligence: 0,
-        wisdom: 0,
-        defense: 0,
-        // Equipment bonuses
-        strength_equipment: 0,
-        vitality_equipment: 0,
-        intelligence_equipment: 0,
-        wisdom_equipment: 0,
-        defense_equipment: 0,
-        // Pet bonuses
-        strength_pets: 0,
-        vitality_pets: 0,
-        intelligence_pets: 0,
-        wisdom_pets: 0,
-        defense_pets: 0,
-        // Perk bonuses
-        strength_perks: 0,
-        vitality_perks: 0,
-        intelligence_perks: 0,
-        wisdom_perks: 0,
-        defense_perks: 0,
-        // Achievement bonuses
-        strength_achievements: 0,
-        vitality_achievements: 0,
-        intelligence_achievements: 0,
-        wisdom_achievements: 0,
-        defense_achievements: 0,
-        // Level bonuses
-        strength_levels: 0,
-        vitality_levels: 0,
-        intelligence_levels: 0,
-        wisdom_levels: 0,
-        defense_levels: 0,
-        created_at: now,
-        updated_at: now,
-      }, { onConflict: 'user_id' });
+    // Note: Skipping user_stats - it has generated columns that require a missing function
+    // Stats will be created on-demand when needed
 
-    if (statsError) console.error('Stats creation error:', statsError);
-
-    console.log(`[Auth] Initialized all data for new user: ${userId}`);
+    console.log(`[Auth] ✅ Initialized all data for new user: ${userId}`);
     return { success: true };
   } catch (error) {
-    console.error('[Auth] Error initializing new user:', error);
+    console.error('[Auth] ❌ Error initializing new user:', error);
     return { success: false, error };
   }
 }
 
-export function useAuth() {
+/**
+ * Safe wrapper for getSession that won't hang indefinitely
+ * Uses Promise.race with a timeout to guarantee resolution
+ */
+async function safeGetSession(timeoutMs = 5000) {
+  try {
+    const result = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise((resolve) =>
+        setTimeout(() => {
+          console.warn(`[Auth] getSession timed out after ${timeoutMs}ms`);
+          resolve({ data: { session: null }, error: null, timedOut: true });
+        }, timeoutMs)
+      ),
+    ]);
+    return result;
+  } catch (error) {
+    console.error('[Auth] getSession error:', error);
+    return { data: { session: null }, error, timedOut: false };
+  }
+}
+
+/**
+ * AuthProvider - Provides shared auth state to all child components
+ * This ensures all useAuth() calls see the same state
+ */
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isReloading = useRef(false);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let isMounted = true;
+    let authResolved = false;
+
+    // Hard timeout - if auth never resolves after 10s, assume offline/error
+    // Reduced from 30s because we now have safeGetSession with its own timeout
+    const hardTimeoutId = setTimeout(() => {
+      if (isMounted && !authResolved) {
+        console.error('[Auth] Hard timeout (10s) - auth service unresponsive, assuming no session');
+        authResolved = true;
+        setLoading(false);
+      }
+    }, 10000);
+
+    // Get initial session with safe timeout wrapper
+    console.log('[Auth] Starting session check...');
+    safeGetSession(5000).then((result) => {
+      const { data, timedOut } = result;
+      const session = data?.session;
+
+      if (!isMounted) {
+        console.log('[Auth] Component unmounted, ignoring session result');
+        return;
+      }
+      if (authResolved) {
+        console.log('[Auth] Auth already resolved, ignoring duplicate session result');
+        return;
+      }
+      authResolved = true;
+      clearTimeout(hardTimeoutId);
+
+      if (timedOut) {
+        console.warn('[Auth] Session check timed out - continuing without session');
+      }
+
+      const newUser = session?.user ?? null;
+      console.log('[Auth] Session check complete:', newUser ? `User found: ${newUser.id}` : 'No user');
+
+      // Check for user change on initial load
+      if (newUser && !isReloading.current) {
+        const didReload = handleUserChange(newUser.id);
+        if (didReload) {
+          isReloading.current = true;
+          return;
+        }
+      } else if (!newUser) {
+        localStorage.removeItem(CURRENT_USER_KEY);
+      }
+
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(newUser);
+      setLoading(false);
+    }).catch((error) => {
+      if (!isMounted) return;
+      authResolved = true;
+      clearTimeout(hardTimeoutId);
+      console.error('[Auth] Session check error:', error);
       setLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
+      // Mark auth as resolved to prevent timeout
+      if (!authResolved) {
+        authResolved = true;
+        clearTimeout(hardTimeoutId);
+      }
+
+      const newUser = session?.user ?? null;
+      console.log('[Auth] Auth state changed:', event, newUser ? 'User found' : 'No user');
+
+      // CRITICAL: Detect user change and force reload for security
+      if (newUser && !isReloading.current) {
+        const didReload = handleUserChange(newUser.id);
+        if (didReload) {
+          isReloading.current = true;
+          return;
+        }
+      } else if (!newUser && event === 'SIGNED_OUT') {
+        localStorage.removeItem(CURRENT_USER_KEY);
+      }
+
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(newUser);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(hardTimeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
-  return { user, session, loading };
+  return React.createElement(
+    AuthContext.Provider,
+    { value: { user, session, loading } },
+    children
+  );
+}
+
+/**
+ * useAuth hook - returns shared auth state from AuthProvider
+ */
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === null) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
 
 export function useSignUp() {
@@ -228,11 +388,15 @@ export function useSignUp() {
 
       // Initialize all user data for new signups
       if (data.user) {
-        await initializeNewUser(
-          data.user.id,
-          email,
-          metadata.display_name
-        );
+        // Track this user as the current user
+        localStorage.setItem(CURRENT_USER_KEY, data.user.id);
+
+        await initializeNewUser(data.user.id, email);
+
+        // Force reload to ensure completely fresh state for new user
+        // This clears all in-memory zustand state
+        window.location.href = '/onboarding';
+        return { data, error: null };
       }
 
       return { data, error: null };
@@ -256,12 +420,31 @@ export function useSignIn() {
       setLoading(true);
       setError(null);
 
+      // Check if signing in as a different user
+      const previousUserId = localStorage.getItem(CURRENT_USER_KEY);
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
+
+      // If different user, clear everything and reload
+      if (data.user && previousUserId && previousUserId !== data.user.id) {
+        console.log('[Auth] Different user signing in, clearing all data...');
+        clearAllStorage();
+        localStorage.setItem(CURRENT_USER_KEY, data.user.id);
+        // Force full page reload to clear all in-memory state
+        window.location.href = '/';
+        return { data, error: null };
+      }
+
+      // Same user or no previous user - just track and continue
+      if (data.user) {
+        localStorage.setItem(CURRENT_USER_KEY, data.user.id);
+      }
+
       return { data, error: null };
     } catch (err) {
       setError(err.message);
@@ -278,18 +461,37 @@ export function useSignOut() {
   const [loading, setLoading] = useState(false);
 
   const signOut = async () => {
+    setLoading(true);
+
+    // Set a timeout to force redirect even if Supabase hangs
+    const timeoutId = setTimeout(() => {
+      console.warn('[Auth] Sign out timeout - forcing redirect');
+      clearAllStorage();
+      window.location.href = '/auth';
+    }, 3000); // 3 second timeout
+
     try {
-      setLoading(true);
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      clearTimeout(timeoutId);
+
+      if (error) {
+        console.error('[Auth] Sign out error:', error);
+      }
 
       // Clear all localStorage to prevent data leakage between users
       clearAllStorage();
+
+      // Force redirect to auth page with full page reload
+      // This ensures all in-memory state is completely cleared
+      window.location.href = '/auth';
     } catch (err) {
-      console.error('Sign out error:', err);
-    } finally {
-      setLoading(false);
+      clearTimeout(timeoutId);
+      console.error('[Auth] Sign out error:', err);
+      // Even on error, try to clear storage and redirect
+      clearAllStorage();
+      window.location.href = '/auth';
     }
+    // Note: No finally block needed since we're redirecting
   };
 
   return { signOut, loading };

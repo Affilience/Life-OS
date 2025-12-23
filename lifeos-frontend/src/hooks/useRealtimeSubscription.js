@@ -6,9 +6,8 @@
  * the frontend automatically updates without refreshing.
  */
 
-import { useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
-import { DEV_USER_ID } from '../lib/dev-auth';
+import { useEffect, useRef, useState } from 'react';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 
 /**
  * Subscribe to real-time changes on a Supabase table
@@ -19,7 +18,7 @@ import { DEV_USER_ID } from '../lib/dev-auth';
  * @param {Function} options.onUpdate - Callback when a row is updated
  * @param {Function} options.onDelete - Callback when a row is deleted
  * @param {string} options.filter - Optional filter column (defaults to 'user_id')
- * @param {string} options.filterValue - Optional filter value (defaults to DEV_USER_ID)
+ * @param {string} options.filterValue - Optional filter value (will use current user ID if not provided)
  * @param {boolean} options.enabled - Whether subscription is active (default: true)
  */
 export function useRealtimeSubscription(table, options = {}) {
@@ -28,9 +27,22 @@ export function useRealtimeSubscription(table, options = {}) {
     onUpdate,
     onDelete,
     filter = 'user_id',
-    filterValue = DEV_USER_ID,
+    filterValue: providedFilterValue,
     enabled = true,
   } = options;
+
+  // Get current user ID if not provided
+  const [userId, setUserId] = useState(null);
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await getCurrentUserId();
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+  // Use provided filterValue or fall back to current user ID
+  const filterValue = providedFilterValue || userId;
 
   const channelRef = useRef(null);
 
@@ -126,11 +138,21 @@ export function useRealtimeSubscription(table, options = {}) {
 export function useMultipleRealtimeSubscriptions(subscriptions, enabled = true) {
   const channelsRef = useRef([]);
 
+  // Get current user ID
+  const [userId, setUserId] = useState(null);
   useEffect(() => {
-    if (!enabled) return;
+    const fetchUserId = async () => {
+      const id = await getCurrentUserId();
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+  useEffect(() => {
+    if (!enabled || !userId) return;
 
     const channels = subscriptions.map(({ table, onInsert, onUpdate, onDelete, filter = 'user_id' }) => {
-      const channelName = `${table}_${DEV_USER_ID}_${Date.now()}`;
+      const channelName = `${table}_${userId}_${Date.now()}`;
       const channel = supabase.channel(channelName);
 
       if (onInsert) {
@@ -138,7 +160,7 @@ export function useMultipleRealtimeSubscriptions(subscriptions, enabled = true) 
           event: 'INSERT',
           schema: 'public',
           table,
-          filter: `${filter}=eq.${DEV_USER_ID}`,
+          filter: `${filter}=eq.${userId}`,
         }, (payload) => onInsert(payload.new));
       }
 
@@ -147,7 +169,7 @@ export function useMultipleRealtimeSubscriptions(subscriptions, enabled = true) 
           event: 'UPDATE',
           schema: 'public',
           table,
-          filter: `${filter}=eq.${DEV_USER_ID}`,
+          filter: `${filter}=eq.${userId}`,
         }, (payload) => onUpdate(payload.new, payload.old));
       }
 
@@ -156,7 +178,7 @@ export function useMultipleRealtimeSubscriptions(subscriptions, enabled = true) 
           event: 'DELETE',
           schema: 'public',
           table,
-          filter: `${filter}=eq.${DEV_USER_ID}`,
+          filter: `${filter}=eq.${userId}`,
         }, (payload) => onDelete(payload.old));
       }
 
@@ -170,7 +192,7 @@ export function useMultipleRealtimeSubscriptions(subscriptions, enabled = true) 
       channels.forEach(channel => supabase.removeChannel(channel));
       channelsRef.current = [];
     };
-  }, [subscriptions, enabled]);
+  }, [subscriptions, enabled, userId]);
 
   return channelsRef.current;
 }
@@ -178,8 +200,15 @@ export function useMultipleRealtimeSubscriptions(subscriptions, enabled = true) 
 /**
  * Global realtime manager - subscribes to all important tables
  * Call this once at app level for automatic syncing
+ * @param {Object} storeCallbacks - Callbacks for store updates
+ * @param {string} userId - The current user's ID (required for filtering)
  */
-export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
+export function setupGlobalRealtimeSubscriptions(storeCallbacks, userId) {
+  if (!userId) {
+    console.warn('[Realtime] No userId provided, skipping subscriptions');
+    return () => {}; // Return empty cleanup function
+  }
+
   const {
     onSkillChange,
     onTaskChange,
@@ -202,13 +231,13 @@ export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
         event: '*',
         schema: 'public',
         table: 'skills',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onSkillChange)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'skill_practice_logs',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onSkillChange)
       .subscribe();
     channels.push(skillChannel);
@@ -222,7 +251,7 @@ export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
         event: '*',
         schema: 'public',
         table: 'productivity_tasks',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onTaskChange)
       .subscribe();
     channels.push(taskChannel);
@@ -236,7 +265,7 @@ export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
         event: '*',
         schema: 'public',
         table: 'health_workouts',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onWorkoutChange)
       .subscribe();
     channels.push(workoutChannel);
@@ -250,7 +279,7 @@ export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
         event: '*',
         schema: 'public',
         table: 'financial_transactions',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onTransactionChange)
       .subscribe();
     channels.push(financeChannel);
@@ -264,13 +293,13 @@ export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
         event: '*',
         schema: 'public',
         table: 'calendar_time_blocks',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onTimeBlockChange)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'calendar_events',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onTimeBlockChange)
       .subscribe();
     channels.push(calendarChannel);
@@ -284,7 +313,7 @@ export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
         event: '*',
         schema: 'public',
         table: 'knowledge_notes',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onNoteChange)
       .subscribe();
     channels.push(knowledgeChannel);
@@ -298,7 +327,7 @@ export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
         event: '*',
         schema: 'public',
         table: 'journal_entries',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onJournalChange)
       .subscribe();
     channels.push(journalChannel);
@@ -312,13 +341,13 @@ export function setupGlobalRealtimeSubscriptions(storeCallbacks) {
         event: 'INSERT',
         schema: 'public',
         table: 'user_discoveries',
-        filter: `user_id=eq.${DEV_USER_ID}`,
+        filter: `user_id=eq.${userId}`,
       }, onAchievementUnlock)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'user_profiles',
-        filter: `id=eq.${DEV_USER_ID}`,
+        filter: `id=eq.${userId}`,
       }, onLevelUp)
       .subscribe();
     channels.push(gamificationChannel);

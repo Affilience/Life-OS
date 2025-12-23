@@ -181,13 +181,13 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
             )}
 
             <div
-              className={`max-w-[80%] md:max-w-[60%] rounded-lg px-4 py-3 ${
+              className={`max-w-[85%] sm:max-w-[80%] md:max-w-[60%] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 overflow-hidden ${
                 msg.role === 'user'
                   ? 'bg-blue-600 text-white'
                   : 'bg-[#1a1724] text-gray-100 border border-[#2a2a2a]'
               }`}
             >
-              <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+              <p className="whitespace-pre-wrap break-words text-sm sm:text-base overflow-wrap-anywhere" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{msg.content}</p>
               <p className="text-xs mt-2 opacity-50">
                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
@@ -203,12 +203,12 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
 
         {/* Streaming message */}
         {streamingText && (
-          <div className="flex gap-3 justify-start">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-              <Bot size={16} className="text-white" />
+          <div className="flex gap-2 sm:gap-3 justify-start">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+              <Bot size={14} className="text-white sm:w-4 sm:h-4" />
             </div>
-            <div className="max-w-[80%] md:max-w-[60%] rounded-lg px-4 py-3 bg-[#1a1724] text-gray-100 border border-[#2a2a2a]">
-              <p className="whitespace-pre-wrap break-words">{streamingText}</p>
+            <div className="max-w-[85%] sm:max-w-[80%] md:max-w-[60%] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 bg-[#1a1724] text-gray-100 border border-[#2a2a2a] overflow-hidden">
+              <p className="whitespace-pre-wrap break-words text-sm sm:text-base" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{streamingText}</p>
               <div className="flex items-center gap-1 mt-2">
                 <Loader2 size={12} className="animate-spin text-blue-400" />
                 <span className="text-xs text-blue-400">Typing...</span>
@@ -221,7 +221,7 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-[#2a2a2a] bg-[#12101a] px-4 py-4">
+      <div className="border-t border-[#2a2a2a] bg-[#12101a] px-3 sm:px-4 py-3 sm:py-4 pb-safe">
         <div className="max-w-4xl mx-auto flex gap-2">
           <input
             ref={inputRef}
@@ -229,23 +229,23 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about LifeOS..."
+            placeholder="Ask me anything..."
             disabled={isLoading}
-            className="flex-1 bg-[#1a1724] text-white border border-[#2a2a2a] rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-w-0 bg-[#1a1724] text-white text-sm sm:text-base border border-[#2a2a2a] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-[#221e2e] disabled:cursor-not-allowed text-white rounded-lg px-6 py-3 font-medium transition-colors flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-[#221e2e] disabled:cursor-not-allowed text-white rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-medium transition-colors flex items-center justify-center min-w-[48px] sm:min-w-[56px]"
           >
             {isLoading ? (
-              <Loader2 size={20} className="animate-spin" />
+              <Loader2 size={18} className="animate-spin sm:w-5 sm:h-5" />
             ) : (
-              <Send size={20} />
+              <Send size={18} className="sm:w-5 sm:h-5" />
             )}
           </button>
         </div>
-        <p className="text-xs text-white/50 text-center mt-2">
+        <p className="text-[10px] sm:text-xs text-white/50 text-center mt-2">
           Powered by Claude 3.5 Sonnet
         </p>
       </div>

@@ -12,17 +12,175 @@ import { initializeSocialRealtime, cleanupSocialRealtime } from '../services/soc
 import { DEV_USER_ID, isDevMode } from '../lib/dev-auth';
 import { triggerGamification } from '../hooks/useGamification';
 
-// Helper to get current user ID (supports dev mode)
-const getCurrentUserId = async () => {
+// Helper to get current user ID - checks store first, then falls back to auth
+const getCurrentUserId = async (timeoutMs = 3000) => {
   if (isDevMode()) {
     return DEV_USER_ID;
   }
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || null;
+
+  // Check if userId is already stored (set during initialization)
+  const storedUserId = useSocialStore.getState().currentUserId;
+  if (storedUserId) {
+    return storedUserId;
+  }
+
+  try {
+    // Fallback: fetch from auth with timeout
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Auth timeout')), timeoutMs)
+    );
+
+    const authPromise = supabase.auth.getUser();
+    const { data: { user } } = await Promise.race([authPromise, timeoutPromise]);
+    return user?.id || null;
+  } catch (error) {
+    console.warn('[SocialStore] getCurrentUserId error:', error.message);
+    return null;
+  }
+};
+
+// ============================================
+// CREDIT WAGER HELPER FUNCTIONS
+// ============================================
+
+// Check if user has enough credits for a wager
+const checkUserCredits = async (userId, amount) => {
+  const { data, error } = await supabase
+    .from('user_cosmic_currency')
+    .select('cosmic_credits')
+    .eq('user_id', userId)
+    .single();
+
+  if (error) return { hasEnough: false, balance: 0, error: error.message };
+  return { hasEnough: data.cosmic_credits >= amount, balance: data.cosmic_credits };
+};
+
+// Deduct credits from a user (for wagers)
+const deductCredits = async (userId, amount, description, relatedChallengeId) => {
+  // Get current balance
+  const { data: currency, error: fetchError } = await supabase
+    .from('user_cosmic_currency')
+    .select('cosmic_credits, lifetime_credits_spent')
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchError) return { success: false, error: fetchError.message };
+  if (currency.cosmic_credits < amount) return { success: false, error: 'Insufficient credits' };
+
+  // Deduct credits
+  const { data: updated, error: updateError } = await supabase
+    .from('user_cosmic_currency')
+    .update({
+      cosmic_credits: currency.cosmic_credits - amount,
+      lifetime_credits_spent: (currency.lifetime_credits_spent || 0) + amount,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+  if (updateError) return { success: false, error: updateError.message };
+
+  // Log transaction
+  await supabase
+    .from('currency_transactions')
+    .insert({
+      user_id: userId,
+      amount: -amount,
+      transaction_type: 'wager',
+      description,
+      related_entity_id: relatedChallengeId,
+      related_entity_type: 'challenge',
+      balance_after: updated.cosmic_credits,
+    });
+
+  return { success: true, newBalance: updated.cosmic_credits };
+};
+
+// Award credits to a user (for winning wagers)
+const awardCredits = async (userId, amount, description, relatedChallengeId) => {
+  // Get current balance
+  const { data: currency, error: fetchError } = await supabase
+    .from('user_cosmic_currency')
+    .select('cosmic_credits, lifetime_credits_earned')
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchError) return { success: false, error: fetchError.message };
+
+  // Award credits
+  const { data: updated, error: updateError } = await supabase
+    .from('user_cosmic_currency')
+    .update({
+      cosmic_credits: currency.cosmic_credits + amount,
+      lifetime_credits_earned: (currency.lifetime_credits_earned || 0) + amount,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+  if (updateError) return { success: false, error: updateError.message };
+
+  // Log transaction
+  await supabase
+    .from('currency_transactions')
+    .insert({
+      user_id: userId,
+      amount: amount,
+      transaction_type: 'wager_win',
+      description,
+      related_entity_id: relatedChallengeId,
+      related_entity_type: 'challenge',
+      balance_after: updated.cosmic_credits,
+    });
+
+  return { success: true, newBalance: updated.cosmic_credits };
+};
+
+// Refund credits (for cancelled challenges)
+const refundCredits = async (userId, amount, description, relatedChallengeId) => {
+  const { data: currency, error: fetchError } = await supabase
+    .from('user_cosmic_currency')
+    .select('cosmic_credits, lifetime_credits_spent')
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchError) return { success: false, error: fetchError.message };
+
+  const { data: updated, error: updateError } = await supabase
+    .from('user_cosmic_currency')
+    .update({
+      cosmic_credits: currency.cosmic_credits + amount,
+      lifetime_credits_spent: Math.max(0, (currency.lifetime_credits_spent || 0) - amount),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+  if (updateError) return { success: false, error: updateError.message };
+
+  await supabase
+    .from('currency_transactions')
+    .insert({
+      user_id: userId,
+      amount: amount,
+      transaction_type: 'wager_refund',
+      description,
+      related_entity_id: relatedChallengeId,
+      related_entity_type: 'challenge',
+      balance_after: updated.cosmic_credits,
+    });
+
+  return { success: true, newBalance: updated.cosmic_credits };
 };
 
 // Initial state
 const initialState = {
+  // Current user ID (set during initialization to avoid repeated auth calls)
+  currentUserId: null,
+
   // Profile
   socialProfile: null,
 
@@ -95,8 +253,9 @@ export const useSocialStore = create(
       // PROFILE ACTIONS
       // ============================================
 
-      fetchSocialProfile: async () => {
-        const userId = await getCurrentUserId();
+      fetchSocialProfile: async (passedUserId = null) => {
+        const userId = passedUserId || await getCurrentUserId();
+        console.log('[SocialStore] fetchSocialProfile - userId:', userId);
         if (!userId) return;
 
         const { data, error } = await supabase
@@ -106,10 +265,11 @@ export const useSocialStore = create(
           .maybeSingle();
 
         if (error) {
-          console.error('Error fetching social profile:', error);
+          console.error('[SocialStore] Error fetching social profile:', error);
           return;
         }
 
+        console.log('[SocialStore] Profile fetched:', data?.display_name || 'NO PROFILE');
         // Profile might not exist yet for new users - that's okay
         set({ socialProfile: data || null });
       },
@@ -132,6 +292,7 @@ export const useSocialStore = create(
       },
 
       // Search for users to add as friends (by username or display name)
+      // Respects privacy settings - only shows users with public/friends visibility
       searchUsers: async (query) => {
         if (!query || query.length < 2) return [];
 
@@ -142,12 +303,13 @@ export const useSocialStore = create(
         const escapedQuery = query.replace(/[%_\\]/g, '\\$&');
 
         // Search by username (exact prefix match prioritized) OR display name
+        // Include preferences to check privacy settings
         const { data, error } = await supabase
           .from('user_profiles')
-          .select('id, username, display_name, avatar_url, current_level, total_xp')
+          .select('id, username, display_name, avatar_url, current_level, total_xp, preferences')
           .neq('id', userId) // Exclude self
           .or(`username.ilike.${escapedQuery}%,display_name.ilike.%${escapedQuery}%`)
-          .limit(10);
+          .limit(20); // Fetch more to account for privacy filtering
 
         if (error) {
           console.error('Error searching users:', error);
@@ -163,21 +325,42 @@ export const useSocialStore = create(
 
         const excludeIds = [...friendIds, ...pendingIds, ...sentIds, ...blockedIds];
 
-        // Sort: exact username matches first, then prefix matches, then display name matches
-        const filteredResults = (data || []).filter(u => u.id && !excludeIds.includes(u.id));
-        return filteredResults.sort((a, b) => {
-          const queryLower = query.toLowerCase();
-          const aUsernameExact = a.username?.toLowerCase() === queryLower;
-          const bUsernameExact = b.username?.toLowerCase() === queryLower;
-          const aUsernamePrefix = a.username?.toLowerCase().startsWith(queryLower);
-          const bUsernamePrefix = b.username?.toLowerCase().startsWith(queryLower);
+        // Filter results based on privacy settings and existing relationships
+        const filteredResults = (data || []).filter(u => {
+          if (!u.id || excludeIds.includes(u.id)) return false;
 
-          if (aUsernameExact && !bUsernameExact) return -1;
-          if (!aUsernameExact && bUsernameExact) return 1;
-          if (aUsernamePrefix && !bUsernamePrefix) return -1;
-          if (!aUsernamePrefix && bUsernamePrefix) return 1;
-          return 0;
+          // Check profile visibility privacy setting
+          const profileVisibility = u.preferences?.privacy?.profileVisibility || 'public';
+
+          // Private profiles are never shown in search
+          if (profileVisibility === 'private') return false;
+
+          // Friends-only profiles are only shown if they're already friends (but we exclude friends from search)
+          // So friends-only profiles won't appear in search results for non-friends
+          if (profileVisibility === 'friends') return false;
+
+          // Public profiles are shown
+          return true;
         });
+
+        // Sort: exact username matches first, then prefix matches, then display name matches
+        // Remove preferences from returned data (not needed by UI)
+        return filteredResults
+          .map(({ preferences, ...user }) => user)
+          .sort((a, b) => {
+            const queryLower = query.toLowerCase();
+            const aUsernameExact = a.username?.toLowerCase() === queryLower;
+            const bUsernameExact = b.username?.toLowerCase() === queryLower;
+            const aUsernamePrefix = a.username?.toLowerCase().startsWith(queryLower);
+            const bUsernamePrefix = b.username?.toLowerCase().startsWith(queryLower);
+
+            if (aUsernameExact && !bUsernameExact) return -1;
+            if (!aUsernameExact && bUsernameExact) return 1;
+            if (aUsernamePrefix && !bUsernamePrefix) return -1;
+            if (!aUsernamePrefix && bUsernamePrefix) return 1;
+            return 0;
+          })
+          .slice(0, 10); // Return max 10 results
       },
 
       // Check if a username is available
@@ -249,15 +432,40 @@ export const useSocialStore = create(
         return { success: !error, data, error: error?.message };
       },
 
+      // Update display name
+      updateDisplayName: async (displayName) => {
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
+
+        // Validate display name
+        const validation = validateDisplayName(displayName);
+        if (!validation.valid) {
+          return { error: validation.reason || 'Invalid display name' };
+        }
+
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .update({ display_name: displayName })
+          .eq('id', userId)
+          .select()
+          .single();
+
+        if (!error && data) {
+          set({ socialProfile: { ...get().socialProfile, display_name: data.display_name } });
+        }
+
+        return { success: !error, data, error: error?.message };
+      },
+
       // ============================================
       // FRIENDS ACTIONS
       // ============================================
 
-      fetchFriends: async () => {
-        const userId = await getCurrentUserId();
+      fetchFriends: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
         if (!userId) return;
 
-        // Get accepted friendships
+        // Get accepted friendships - include preferences for privacy checks
         const { data: friendships } = await supabase
           .from('friendships')
           .select(`
@@ -265,8 +473,8 @@ export const useSocialStore = create(
             requester_id,
             addressee_id,
             accepted_at,
-            requester:user_profiles!friendships_requester_id_fkey(id, display_name, avatar_url, current_level, total_xp),
-            addressee:user_profiles!friendships_addressee_id_fkey(id, display_name, avatar_url, current_level, total_xp)
+            requester:user_profiles!friendships_requester_id_fkey(id, display_name, avatar_url, current_level, total_xp, active_cosmetics, preferences),
+            addressee:user_profiles!friendships_addressee_id_fkey(id, display_name, avatar_url, current_level, total_xp, active_cosmetics, preferences)
           `)
           .eq('status', 'accepted')
           .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
@@ -285,8 +493,8 @@ export const useSocialStore = create(
         }
       },
 
-      fetchPendingRequests: async () => {
-        const userId = await getCurrentUserId();
+      fetchPendingRequests: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
         if (!userId) return;
 
         // Requests sent TO me
@@ -295,7 +503,7 @@ export const useSocialStore = create(
           .select(`
             id,
             created_at,
-            requester:user_profiles!friendships_requester_id_fkey(id, display_name, avatar_url, current_level)
+            requester:user_profiles!friendships_requester_id_fkey(id, display_name, avatar_url, current_level, active_cosmetics)
           `)
           .eq('addressee_id', userId)
           .eq('status', 'pending');
@@ -332,6 +540,18 @@ export const useSocialStore = create(
           return { error: 'Cannot send friend request' };
         }
 
+        // Check if target user allows friend requests (privacy setting)
+        const { data: targetProfile } = await supabase
+          .from('user_profiles')
+          .select('preferences')
+          .eq('id', targetUserId)
+          .single();
+
+        const allowFriendRequests = targetProfile?.preferences?.privacy?.allowFriendRequests ?? true;
+        if (!allowFriendRequests) {
+          return { error: 'This user is not accepting friend requests' };
+        }
+
         const { data, error } = await supabase
           .from('friendships')
           .insert({
@@ -362,8 +582,8 @@ export const useSocialStore = create(
         if (!error) {
           get().fetchFriends();
           get().fetchPendingRequests();
-          // Award XP for making a new friend
-          triggerGamification('friendAdded', { xpOverride: 15, module: 'social' });
+          // Award XP for making a new friend (EASY tier: 5-10 XP)
+          triggerGamification('friendAdded', { xpOverride: 5, module: 'social' });
         }
         return { data, error };
       },
@@ -436,8 +656,8 @@ export const useSocialStore = create(
         return { error };
       },
 
-      fetchBlockedUsers: async () => {
-        const userId = await getCurrentUserId();
+      fetchBlockedUsers: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
         if (!userId) return;
 
         const { data } = await supabase
@@ -468,8 +688,8 @@ export const useSocialStore = create(
         set({ availableGuilds: data || [] });
       },
 
-      fetchMyGuild: async () => {
-        const userId = await getCurrentUserId();
+      fetchMyGuild: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
         if (!userId) return;
 
         try {
@@ -776,8 +996,8 @@ export const useSocialStore = create(
         return { data, error };
       },
 
-      fetchMyGuildInvites: async () => {
-        const userId = await getCurrentUserId();
+      fetchMyGuildInvites: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
         if (!userId) return;
 
         const { data } = await supabase
@@ -827,25 +1047,67 @@ export const useSocialStore = create(
       // ACTIVITY FEED ACTIONS
       // ============================================
 
+      // Fetch activity feed with privacy filtering
+      // Only shows activities from users with public profiles or friends with friends-only visibility
       fetchActivityFeed: async (page = 0, limit = 20) => {
         set({ feedLoading: true });
 
+        const userId = await getCurrentUserId();
+        const { friends } = get();
+        const friendIds = (friends || []).map(f => f.id || f.user_id).filter(Boolean);
+
+        // Fetch more to account for privacy filtering
         const { data, error } = await supabase
           .from('activity_feed')
           .select(`
             *,
-            user:user_profiles!activity_feed_user_id_fkey(id, display_name, avatar_url, current_level)
+            user:user_profiles!activity_feed_user_id_fkey(id, display_name, avatar_url, current_level, preferences)
           `)
           .order('created_at', { ascending: false })
-          .range(page * limit, (page + 1) * limit - 1);
+          .range(page * limit, (page + 1) * limit + 10); // Fetch extra for filtering
 
         if (data) {
+          // Filter activities based on privacy settings
+          const filteredData = data.filter(activity => {
+            // Always show own activities
+            if (activity.user_id === userId) return true;
+
+            // Check user's profile visibility setting
+            const profileVisibility = activity.user?.preferences?.privacy?.profileVisibility || 'public';
+
+            // Private profiles - only show to the user themselves (already handled above)
+            if (profileVisibility === 'private') return false;
+
+            // Friends-only profiles - only show to friends
+            if (profileVisibility === 'friends') {
+              return friendIds.includes(activity.user_id);
+            }
+
+            // Public profiles - also respect the activity's visibility field
+            if (activity.visibility === 'friends') {
+              return friendIds.includes(activity.user_id);
+            }
+
+            return true;
+          }).slice(0, limit); // Limit after filtering
+
+          // Remove preferences from user object (not needed in UI)
+          const cleanedData = filteredData.map(activity => ({
+            ...activity,
+            user: activity.user ? {
+              id: activity.user.id,
+              display_name: activity.user.display_name,
+              avatar_url: activity.user.avatar_url,
+              current_level: activity.user.current_level,
+            } : null,
+          }));
+
           if (page === 0) {
-            set({ feed: data, feedHasMore: data.length === limit });
+            set({ feed: cleanedData, feedHasMore: cleanedData.length === limit });
           } else {
             set(state => ({
-              feed: [...state.feed, ...data],
-              feedHasMore: data.length === limit,
+              feed: [...state.feed, ...cleanedData],
+              feedHasMore: cleanedData.length === limit,
             }));
           }
         }
@@ -855,13 +1117,13 @@ export const useSocialStore = create(
       },
 
       postActivity: async (eventType, eventData, visibility = 'friends') => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const { data, error } = await supabase
           .from('activity_feed')
           .insert({
-            user_id: user.id,
+            user_id: userId,
             event_type: eventType,
             event_data: eventData,
             visibility,
@@ -876,14 +1138,14 @@ export const useSocialStore = create(
       },
 
       likeActivity: async (activityId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const { data, error } = await supabase
           .from('activity_likes')
           .insert({
             activity_id: activityId,
-            user_id: user.id,
+            user_id: userId,
           })
           .select()
           .single();
@@ -892,21 +1154,21 @@ export const useSocialStore = create(
       },
 
       unlikeActivity: async (activityId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         const { error } = await supabase
           .from('activity_likes')
           .delete()
           .eq('activity_id', activityId)
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
 
         return { error };
       },
 
       commentOnActivity: async (activityId, content) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: 'Not authenticated' };
+        const userId = await getCurrentUserId();
+        if (!userId) return { error: 'Not authenticated' };
 
         // Moderate content before posting
         const moderation = moderateComment(content);
@@ -918,7 +1180,7 @@ export const useSocialStore = create(
           .from('activity_comments')
           .insert({
             activity_id: activityId,
-            user_id: user.id,
+            user_id: userId,
             content: moderation.filtered || content,
           })
           .select()
@@ -952,8 +1214,8 @@ export const useSocialStore = create(
       // LEADERBOARD ACTIONS
       // ============================================
 
-      fetchLeaderboards: async () => {
-        const userId = await getCurrentUserId();
+      fetchLeaderboards: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
 
         try {
           // Fetch from Redis
@@ -963,6 +1225,13 @@ export const useSocialStore = create(
             redis.getLeaderboardTop(LEADERBOARD_KEYS.STREAK, 100),
           ]);
 
+          // Check if Redis returned null (connection failed) - use fallback
+          if (!globalTop || !weeklyTop || !streakTop) {
+            console.log('[Social] Redis unavailable, using database fallback');
+            get().fetchLeaderboardsFromDB();
+            return;
+          }
+
           // Get user profiles for the leaderboard entries
           const userIds = [...new Set([
             ...globalTop.map(e => e.userId),
@@ -971,22 +1240,33 @@ export const useSocialStore = create(
           ])];
 
           const profileMap = {};
+          const hiddenUserIds = new Set(); // Users who opted out of leaderboards
 
           // Only query if we have user IDs to look up
           if (userIds.length > 0) {
             const { data: profiles } = await supabase
               .from('user_profiles')
-              .select('id, display_name, avatar_url, current_level')
+              .select('id, display_name, avatar_url, current_level, preferences')
               .in('id', userIds);
 
-            profiles?.forEach(p => { profileMap[p.id] = p; });
+            profiles?.forEach(p => {
+              // Check if user has opted out of leaderboards
+              const showOnLeaderboards = p.preferences?.privacy?.showOnLeaderboards ?? true;
+              if (!showOnLeaderboards) {
+                hiddenUserIds.add(p.id);
+              } else {
+                profileMap[p.id] = p;
+              }
+            });
           }
 
-          // Enrich leaderboard entries with profile data
-          const enrichEntries = (entries) => entries.map(e => ({
-            ...e,
-            profile: profileMap[e.userId] || { display_name: 'Unknown', avatar_url: null },
-          }));
+          // Enrich leaderboard entries with profile data, filtering out hidden users
+          const enrichEntries = (entries) => entries
+            .filter(e => !hiddenUserIds.has(e.userId))
+            .map(e => ({
+              ...e,
+              profile: profileMap[e.userId] || { display_name: 'Unknown', avatar_url: null },
+            }));
 
           set({
             leaderboards: {
@@ -1032,20 +1312,25 @@ export const useSocialStore = create(
         // Fallback: fetch from PostgreSQL
         const { data } = await supabase
           .from('user_profiles')
-          .select('id, display_name, avatar_url, current_level, total_xp')
-          .eq('show_on_leaderboards', true)
+          .select('id, display_name, avatar_url, current_level, total_xp, preferences')
           .order('total_xp', { ascending: false })
-          .limit(100);
+          .limit(200); // Fetch more to account for filtered users
 
         if (data) {
-          const global = data.map((p, i) => ({
+          // Filter out users who have opted out of leaderboards
+          const visibleData = data.filter(p => {
+            const showOnLeaderboards = p.preferences?.privacy?.showOnLeaderboards ?? true;
+            return showOnLeaderboards;
+          }).slice(0, 100); // Limit to top 100 after filtering
+
+          const global = visibleData.map((p, i) => ({
             rank: i + 1,
             userId: p.id,
             score: p.total_xp,
             profile: p,
           }));
 
-          const streak = [...data]
+          const streak = [...visibleData]
             .sort((a, b) => (b.current_streak || 0) - (a.current_streak || 0))
             .map((p, i) => ({
               rank: i + 1,
@@ -1086,8 +1371,8 @@ export const useSocialStore = create(
       // CHALLENGES ACTIONS
       // ============================================
 
-      fetchChallenges: async () => {
-        const userId = await getCurrentUserId();
+      fetchChallenges: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
 
         // Fetch active challenges
         const { data: active } = await supabase
@@ -1249,8 +1534,8 @@ export const useSocialStore = create(
               });
           }
           get().fetchChallenges();
-          // Award XP for creating a challenge
-          triggerGamification('challengeCreated', { xpOverride: 20, module: 'social' });
+          // Award XP for creating a challenge (MEDIUM tier: 10-20 XP)
+          triggerGamification('challengeCreated', { xpOverride: 10, module: 'social' });
         }
 
         return { data, error };
@@ -1267,7 +1552,16 @@ export const useSocialStore = create(
           targetValue,
           durationDays,
           xpReward = 150,
+          wagerAmount = 0,
         } = challengeData;
+
+        // If there's a wager, check and deduct challenger's credits first
+        if (wagerAmount > 0) {
+          const creditCheck = await checkUserCredits(userId, wagerAmount);
+          if (!creditCheck.hasEnough) {
+            return { error: `Insufficient credits. You have ${creditCheck.balance} credits but need ${wagerAmount}.` };
+          }
+        }
 
         // Calculate dates
         const startsAt = new Date();
@@ -1280,12 +1574,14 @@ export const useSocialStore = create(
           .insert({
             title: title || `Head-to-Head: ${metricType}`,
             description: `A head-to-head challenge between two friends`,
-            icon: '⚔️',
+            icon: wagerAmount > 0 ? '💰' : '⚔️',
             challenge_type: 'head_to_head',
             metric_type: metricType,
             target_value: targetValue,
             duration_days: durationDays,
             xp_reward: xpReward,
+            wager_amount: wagerAmount,
+            wager_status: wagerAmount > 0 ? 'pending' : 'none',
             creator_id: userId,
             status: 'pending', // Needs opponent acceptance
             starts_at: startsAt.toISOString(),
@@ -1295,6 +1591,21 @@ export const useSocialStore = create(
           .single();
 
         if (error) return { error };
+
+        // Deduct challenger's wager
+        if (wagerAmount > 0) {
+          const deductResult = await deductCredits(
+            userId,
+            wagerAmount,
+            `Wager for challenge: ${challenge.title}`,
+            challenge.id
+          );
+          if (!deductResult.success) {
+            // Rollback challenge creation
+            await supabase.from('challenges').delete().eq('id', challenge.id);
+            return { error: deductResult.error };
+          }
+        }
 
         // Add creator as participant
         await supabase
@@ -1317,12 +1628,40 @@ export const useSocialStore = create(
           .eq('id', challenge.id);
 
         get().fetchChallenges();
+        get().fetchHeadToHeadInvites();
         return { data: challenge };
       },
 
       acceptHeadToHead: async (challengeId) => {
         const userId = await getCurrentUserId();
         if (!userId) return { error: 'Not authenticated' };
+
+        // Get challenge details to check for wager
+        const { data: challenge } = await supabase
+          .from('challenges')
+          .select('*')
+          .eq('id', challengeId)
+          .single();
+
+        if (!challenge) return { error: 'Challenge not found' };
+
+        // If there's a wager, check and deduct opponent's credits
+        if (challenge.wager_amount > 0) {
+          const creditCheck = await checkUserCredits(userId, challenge.wager_amount);
+          if (!creditCheck.hasEnough) {
+            return { error: `Insufficient credits. You have ${creditCheck.balance} credits but need ${challenge.wager_amount} to accept this challenge.` };
+          }
+
+          const deductResult = await deductCredits(
+            userId,
+            challenge.wager_amount,
+            `Wager for challenge: ${challenge.title}`,
+            challengeId
+          );
+          if (!deductResult.success) {
+            return { error: deductResult.error };
+          }
+        }
 
         // Join the challenge
         await supabase
@@ -1332,32 +1671,63 @@ export const useSocialStore = create(
             user_id: userId,
           });
 
-        // Activate the challenge
+        // Activate the challenge and update wager status
         const { data, error } = await supabase
           .from('challenges')
-          .update({ status: 'active' })
+          .update({
+            status: 'active',
+            wager_status: challenge.wager_amount > 0 ? 'held' : 'none',
+            starts_at: new Date().toISOString(), // Reset start time to now
+          })
           .eq('id', challengeId)
           .select()
           .single();
 
+        // Award XP for accepting challenge
+        triggerGamification('challengeAccepted', { xpOverride: 10, module: 'social' });
+
         get().fetchChallenges();
+        get().fetchHeadToHeadInvites();
         return { data, error };
       },
 
       declineHeadToHead: async (challengeId) => {
+        // Get challenge details to check for wager refund
+        const { data: challenge } = await supabase
+          .from('challenges')
+          .select('*')
+          .eq('id', challengeId)
+          .single();
+
+        if (!challenge) return { error: 'Challenge not found' };
+
+        // Refund the challenger's wager if applicable
+        if (challenge.wager_amount > 0 && challenge.creator_id) {
+          await refundCredits(
+            challenge.creator_id,
+            challenge.wager_amount,
+            `Wager refunded - challenge declined: ${challenge.title}`,
+            challengeId
+          );
+        }
+
         const { data, error } = await supabase
           .from('challenges')
-          .update({ status: 'cancelled' })
+          .update({
+            status: 'cancelled',
+            wager_status: challenge.wager_amount > 0 ? 'refunded' : 'none',
+          })
           .eq('id', challengeId)
           .select()
           .single();
 
         get().fetchChallenges();
+        get().fetchHeadToHeadInvites();
         return { data, error };
       },
 
-      fetchHeadToHeadInvites: async () => {
-        const userId = await getCurrentUserId();
+      fetchHeadToHeadInvites: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
         if (!userId) return;
 
         const { data } = await supabase
@@ -1460,9 +1830,25 @@ export const useSocialStore = create(
 
       // Finalize H2H challenge and determine winner
       finalizeHeadToHead: async (challengeId) => {
+        // Get challenge details including wager
+        const { data: challenge, error: challengeError } = await supabase
+          .from('challenges')
+          .select('*')
+          .eq('id', challengeId)
+          .single();
+
+        if (challengeError || !challenge) {
+          return { error: 'Challenge not found' };
+        }
+
+        // Don't finalize already completed challenges
+        if (challenge.status === 'completed') {
+          return { error: 'Challenge already finalized' };
+        }
+
         const { data: participants } = await supabase
           .from('challenge_participants')
-          .select('*')
+          .select('*, user:user_profiles(display_name)')
           .eq('challenge_id', challengeId)
           .order('current_value', { ascending: false });
 
@@ -1470,59 +1856,322 @@ export const useSocialStore = create(
           return { error: 'Invalid H2H challenge' };
         }
 
-        // Determine winner
+        // Determine winner (highest current_value)
         const winner = participants[0];
         const loser = participants[1];
+        const isTie = winner.current_value === loser.current_value;
+
+        // Handle credit wagers
+        let creditsAwarded = 0;
+        if (challenge.wager_amount > 0 && challenge.wager_status === 'held') {
+          const totalPot = challenge.wager_amount * 2; // Both players wagered
+
+          if (isTie) {
+            // Tie - refund both players
+            await refundCredits(
+              winner.user_id,
+              challenge.wager_amount,
+              `Wager refund (tie): ${challenge.title}`,
+              challengeId
+            );
+            await refundCredits(
+              loser.user_id,
+              challenge.wager_amount,
+              `Wager refund (tie): ${challenge.title}`,
+              challengeId
+            );
+          } else {
+            // Winner takes all
+            const awardResult = await awardCredits(
+              winner.user_id,
+              totalPot,
+              `Challenge won: ${challenge.title} (+${totalPot} credits)`,
+              challengeId
+            );
+            if (awardResult.success) {
+              creditsAwarded = totalPot;
+            }
+          }
+        }
 
         // Update ranks
         await supabase
           .from('challenge_participants')
-          .update({ final_rank: 1, completed: true, completed_at: new Date().toISOString() })
+          .update({
+            final_rank: isTie ? 1 : 1,
+            completed: true,
+            completed_at: new Date().toISOString()
+          })
           .eq('challenge_id', challengeId)
           .eq('user_id', winner.user_id);
 
         await supabase
           .from('challenge_participants')
-          .update({ final_rank: 2, completed: true, completed_at: new Date().toISOString() })
+          .update({
+            final_rank: isTie ? 1 : 2,
+            completed: true,
+            completed_at: new Date().toISOString()
+          })
           .eq('challenge_id', challengeId)
           .eq('user_id', loser.user_id);
 
-        // Award winner extra XP
-        await get().awardChallengeReward(challengeId, winner.user_id);
+        // Award winner extra XP (unless tie)
+        if (!isTie) {
+          await get().awardChallengeReward(challengeId, winner.user_id);
+        }
 
-        // Mark challenge as completed
+        // Mark challenge as completed with winner info
         await supabase
           .from('challenges')
-          .update({ status: 'completed' })
+          .update({
+            status: 'completed',
+            winner_id: isTie ? null : winner.user_id,
+            wager_status: challenge.wager_amount > 0 ? 'paid' : 'none',
+            finalized_at: new Date().toISOString(),
+          })
           .eq('id', challengeId);
 
-        return { winner: winner.user_id, loser: loser.user_id };
+        // Post to activity feed
+        const winnerName = winner.user?.display_name || 'Player';
+        const loserName = loser.user?.display_name || 'Player';
+
+        await supabase
+          .from('activity_feed')
+          .insert({
+            user_id: winner.user_id,
+            event_type: 'challenge_won',
+            event_data: {
+              challenge_id: challengeId,
+              challenge_title: challenge.title,
+              opponent_name: loserName,
+              winner_score: winner.current_value,
+              loser_score: loser.current_value,
+              credits_won: creditsAwarded,
+              is_tie: isTie,
+            },
+            visibility: 'friends',
+          });
+
+        // Refresh challenges
+        get().fetchChallenges();
+
+        return {
+          winner: isTie ? null : winner.user_id,
+          loser: isTie ? null : loser.user_id,
+          isTie,
+          creditsAwarded,
+          winnerScore: winner.current_value,
+          loserScore: loser.current_value,
+        };
+      },
+
+      // Check and auto-finalize all ended H2H challenges
+      // Call this periodically (on app load, when viewing challenges, etc.)
+      checkAndFinalizeEndedChallenges: async () => {
+        try {
+          // Find all H2H challenges that have ended but aren't completed
+          const { data: endedChallenges, error } = await supabase
+            .from('challenges')
+            .select('id, title, ends_at, wager_amount, wager_status')
+            .eq('challenge_type', 'head_to_head')
+            .eq('status', 'active')
+            .lt('ends_at', new Date().toISOString());
+
+          if (error || !endedChallenges) return { finalized: 0 };
+
+          let finalizedCount = 0;
+          const results = [];
+
+          // Finalize each ended challenge
+          for (const challenge of endedChallenges) {
+            console.log(`Auto-finalizing challenge: ${challenge.title} (ID: ${challenge.id})`);
+            const result = await get().finalizeHeadToHead(challenge.id);
+            if (!result.error) {
+              finalizedCount++;
+              results.push({
+                challengeId: challenge.id,
+                title: challenge.title,
+                ...result,
+              });
+            }
+          }
+
+          if (finalizedCount > 0) {
+            console.log(`Auto-finalized ${finalizedCount} ended challenges`);
+            get().fetchChallenges(); // Refresh challenges list
+          }
+
+          return { finalized: finalizedCount, results };
+        } catch (error) {
+          console.error('Error auto-finalizing challenges:', error);
+          return { error: error.message, finalized: 0 };
+        }
+      },
+
+      // Get all completed H2H challenges for the current user (for history view)
+      fetchCompletedH2HChallenges: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return { data: [], error: 'Not authenticated' };
+
+        try {
+          const { data, error } = await supabase
+            .from('challenge_participants')
+            .select(`
+              *,
+              challenge:challenges(
+                id,
+                title,
+                icon,
+                target_value,
+                metric_type,
+                xp_reward,
+                wager_amount,
+                winner_id,
+                finalized_at,
+                ends_at,
+                creator:creator_id(display_name, avatar_url)
+              )
+            `)
+            .eq('user_id', userId)
+            .eq('challenge.challenge_type', 'head_to_head')
+            .eq('challenge.status', 'completed')
+            .order('completed_at', { ascending: false })
+            .limit(20);
+
+          if (error) return { data: [], error: error.message };
+
+          // Enhance with opponent data
+          const enhanced = await Promise.all(data.map(async (p) => {
+            // Get opponent
+            const { data: opponentData } = await supabase
+              .from('challenge_participants')
+              .select('*, user:user_profiles(display_name, avatar_url)')
+              .eq('challenge_id', p.challenge.id)
+              .neq('user_id', userId)
+              .single();
+
+            return {
+              ...p,
+              opponent: opponentData?.user,
+              opponentScore: opponentData?.current_value || 0,
+              isWinner: p.challenge.winner_id === userId,
+              isTie: p.challenge.winner_id === null,
+            };
+          }));
+
+          return { data: enhanced, error: null };
+        } catch (error) {
+          console.error('Error fetching completed H2H:', error);
+          return { data: [], error: error.message };
+        }
+      },
+
+      // Get wager statistics for the current user
+      getWagerStats: async () => {
+        const userId = await getCurrentUserId();
+        if (!userId) return null;
+
+        try {
+          // Get all wager transactions
+          const { data: transactions } = await supabase
+            .from('currency_transactions')
+            .select('*')
+            .eq('user_id', userId)
+            .in('transaction_type', ['wager', 'wager_win', 'wager_refund'])
+            .order('created_at', { ascending: false });
+
+          if (!transactions) return null;
+
+          const stats = {
+            totalWagered: 0,
+            totalWon: 0,
+            totalLost: 0,
+            netProfit: 0,
+            challengesWon: 0,
+            challengesLost: 0,
+            recentTransactions: transactions.slice(0, 10),
+          };
+
+          transactions.forEach(t => {
+            if (t.transaction_type === 'wager') {
+              stats.totalWagered += Math.abs(t.amount);
+              stats.totalLost += Math.abs(t.amount); // Deducted on wager
+            } else if (t.transaction_type === 'wager_win') {
+              stats.totalWon += t.amount;
+              stats.challengesWon++;
+              stats.totalLost -= t.amount / 2; // Recover our original wager
+            } else if (t.transaction_type === 'wager_refund') {
+              stats.totalLost -= t.amount; // Refund reduces loss
+            }
+          });
+
+          // Count losses (wagers without corresponding wins)
+          stats.challengesLost = Math.max(0,
+            transactions.filter(t => t.transaction_type === 'wager').length -
+            transactions.filter(t => t.transaction_type === 'wager_win').length -
+            transactions.filter(t => t.transaction_type === 'wager_refund').length
+          );
+
+          stats.netProfit = stats.totalWon - stats.totalWagered;
+
+          return stats;
+        } catch (error) {
+          console.error('Error fetching wager stats:', error);
+          return null;
+        }
       },
 
       // ============================================
       // PRESENCE ACTIONS
       // ============================================
 
-      updatePresence: async () => {
-        const userId = await getCurrentUserId();
+      // Update user's online presence
+      // Respects showActivityStatus privacy setting
+      updatePresence: async (passedUserId = null) => {
+        const userId = passedUserId || get().currentUserId || await getCurrentUserId();
         if (!userId) return;
 
         try {
+          // Check user's privacy setting - if they've disabled activity status, don't update presence
+          const { socialProfile } = get();
+          const showActivityStatus = socialProfile?.preferences?.privacy?.showActivityStatus ?? true;
+
+          if (!showActivityStatus) {
+            // User has disabled activity status - remove them from online users
+            await redis.setUserOffline(userId);
+            return;
+          }
+
           await redis.setUserOnline(userId);
         } catch (error) {
           console.error('Error updating presence:', error);
         }
       },
 
+      // Fetch which friends are currently online
+      // Only shows friends who have showActivityStatus enabled
       fetchOnlineFriends: async () => {
         const { friends } = get();
         if (friends.length === 0) return;
 
         try {
           const onlineUsers = await redis.getOnlineUsers();
+          // Handle null return from Redis (connection failed)
+          if (!onlineUsers) {
+            set({ onlineFriends: [] });
+            return;
+          }
           const onlineSet = new Set(onlineUsers);
+
+          // Filter friends who are online AND have showActivityStatus enabled
           const onlineFriends = friends
-            .filter(f => onlineSet.has(f.user_id))
+            .filter(f => {
+              if (!onlineSet.has(f.user_id)) return false;
+
+              // Check friend's privacy setting - only show if they allow activity status
+              const friendShowActivityStatus = f.preferences?.privacy?.showActivityStatus ?? true;
+              return friendShowActivityStatus;
+            })
             .map(f => f.user_id);
 
           set({ onlineFriends });
@@ -1559,43 +2208,94 @@ export const useSocialStore = create(
       // INITIALIZATION
       // ============================================
 
-      initializeSocial: async () => {
-        set({ loading: true });
-
-        const userId = await getCurrentUserId();
-
-        await Promise.all([
-          get().fetchSocialProfile(),
-          get().fetchFriends(),
-          get().fetchPendingRequests(),
-          get().fetchBlockedUsers(),
-          get().fetchMyGuild(),
-          get().fetchMyGuildInvites(),
-          get().fetchLeaderboards(),
-          get().fetchChallenges(),
-          get().fetchHeadToHeadInvites(),
-        ]);
-
-        // Start presence updates
-        get().updatePresence();
-
-        // Initialize real-time subscriptions
-        if (userId && !get().realtimeInitialized) {
-          initializeSocialRealtime(userId, {
-            onFriendRequest: (request) => {
-              console.log('New friend request received:', request);
-            },
-            onNewActivity: (activity) => {
-              console.log('New activity:', activity);
-            },
-            onEngagement: (engagement) => {
-              console.log('New engagement:', engagement);
-            },
-          });
-          set({ realtimeInitialized: true });
+      initializeSocial: async (passedUserId = null) => {
+        // Prevent concurrent initializations - if already initialized with data, skip
+        const state = get();
+        if (state.socialProfile && state.currentUserId) {
+          console.log('[SocialStore] Already initialized, skipping');
+          return;
         }
 
-        set({ loading: false });
+        console.log('[SocialStore] Initializing...');
+        set({ loading: true });
+
+        // Use passed userId if available, otherwise check stored, then fetch
+        const userId = passedUserId || state.currentUserId || await getCurrentUserId();
+        console.log('[SocialStore] Got userId:', userId);
+        if (!userId) {
+          console.log('[SocialStore] No user ID, skipping initialization');
+          set({ loading: false });
+          return;
+        }
+
+        // Store userId so sub-functions can use it without calling auth
+        set({ currentUserId: userId });
+
+        // Master timeout - ensure loading is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ loading: false });
+        }, INIT_TIMEOUT_MS);
+
+        try {
+          // Helper to wrap each fetch with its own timeout (silently handle errors)
+          const withTimeout = (promise, name, timeoutMs = 10000) => {
+            return Promise.race([
+              promise,
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error(`${name} timeout`)), timeoutMs)
+              )
+            ]).catch(() => {}); // Silent - only log final success/fail
+          };
+
+          // Run fetches with individual timeouts
+          await Promise.allSettled([
+            withTimeout(get().fetchSocialProfile(userId), 'fetchSocialProfile'),
+            withTimeout(get().fetchFriends(userId), 'fetchFriends'),
+            withTimeout(get().fetchPendingRequests(userId), 'fetchPendingRequests'),
+            withTimeout(get().fetchBlockedUsers(userId), 'fetchBlockedUsers'),
+            withTimeout(get().fetchMyGuild(userId), 'fetchMyGuild'),
+            withTimeout(get().fetchMyGuildInvites(userId), 'fetchMyGuildInvites'),
+            withTimeout(get().fetchLeaderboards(userId), 'fetchLeaderboards'),
+            withTimeout(get().fetchChallenges(userId), 'fetchChallenges'),
+            withTimeout(get().fetchHeadToHeadInvites(userId), 'fetchHeadToHeadInvites'),
+          ]);
+
+          // Start presence updates (non-blocking)
+          get().updatePresence(userId).catch(() => {});
+
+          // Initialize real-time subscriptions
+          if (userId && !get().realtimeInitialized) {
+            try {
+              initializeSocialRealtime(userId, {
+                onFriendRequest: (request) => {
+                  console.log('New friend request received:', request);
+                },
+                onNewActivity: (activity) => {
+                  console.log('New activity:', activity);
+                },
+                onEngagement: (engagement) => {
+                  console.log('New engagement:', engagement);
+                },
+              });
+              set({ realtimeInitialized: true });
+            } catch (e) {
+              console.warn('[SocialStore] Realtime init failed:', e.message);
+            }
+          }
+
+          console.log('[SocialStore] ✅ Initialized');
+        } catch (error) {
+          console.error('[SocialStore] Initialization error:', error);
+        } finally {
+          clearTimeout(timeoutId);
+          // Always set loading to false (unless timeout already did it)
+          if (!timedOut) {
+            set({ loading: false });
+          }
+        }
       },
 
       // Cleanup function for unmounting
@@ -1612,18 +2312,18 @@ export const useSocialStore = create(
     }),
     {
       name: 'lifeos-social',
-      partialize: (state) => ({
-        // Only persist minimal data
-        socialProfile: state.socialProfile,
+      partialize: () => ({
+        // Don't persist socialProfile - always fetch fresh from database
+        // This prevents stale data issues between user sessions
       }),
     }
   )
 );
 
-// Initialize function for app startup
-export const initializeSocialStore = async () => {
+// Initialize function for app startup - accepts userId to avoid race conditions
+export const initializeSocialStore = async (userId = null) => {
   const store = useSocialStore.getState();
-  await store.initializeSocial();
+  await store.initializeSocial(userId);
 };
 
 export default useSocialStore;

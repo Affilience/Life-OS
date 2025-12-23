@@ -165,60 +165,94 @@ const ACTION_STAT_MAP = {
   tasksSingleDay: 'tasksSingleDay',
 };
 
-// XP values for different actions
+// XP values for different actions - Balanced tier system
+// Harder/longer tasks = more XP, easy tasks = 5-10 XP
 const XP_VALUES = {
-  // High XP actions (30-50)
-  workoutCompleted: 40,
-  projectCompleted: 50,
-  bookCompleted: 45,
-  skillMastered: 50,
-  savingsGoalCompleted: 50,
-  courseCompleted: 45,
-  challengeCompleted: 40,
-  bossDefeated: 50,
-  weeklyPerfect: 40,
-  monthlyPerfect: 100,
-  chainCompleted: 45,
-  weeklyQuestCompleted: 30,
-  monthlyQuestCompleted: 50,
-  crossModuleQuestCompleted: 35,
-  questChainCompleted: 45,
+  // ===========================================
+  // EPIC TIER (50-75 XP) - Major achievements requiring weeks/months of effort
+  // ===========================================
+  monthlyPerfect: 75,           // Perfect month - extremely rare
+  skillMastered: 60,            // Mastering a skill takes months
+  bossDefeated: 50,             // Boss battles are challenging
+  projectCompleted: 50,         // Completing a full project
+  savingsGoalCompleted: 50,     // Major financial milestone
+  resolutionCompleted: 50,      // Year-long commitment achieved
+  monthlyQuestCompleted: 40,    // Month-long quest
 
-  // Medium XP actions (15-25)
-  taskCompleted: 20,
-  projectCreated: 15,
-  questCompleted: 25,
-  mealLogged: 15,
-  journalEntry: 20,
-  practiceSession: 25,
-  noteCreated: 15,
-  timeBlockCompleted: 15,
-  pomodoroCompleted: 20,
-  skillLevelUp: 30,
-  prSet: 25,
-  cardioSession: 20,
-  savingsContribution: 15,
-  friendAdded: 15,
-  challengeCreated: 20,
-  streakMaintained: 15,
+  // ===========================================
+  // HARD TIER (25-40 XP) - Significant effort, 30+ minutes
+  // ===========================================
+  bookCompleted: 35,            // Finishing an entire book
+  courseCompleted: 35,          // Completing a full course
+  workoutCompleted: 25,         // Full workout session
+  challengeCompleted: 25,       // Social challenge completed
+  weeklyPerfect: 25,            // Perfect week
+  weeklyQuestCompleted: 20,     // Week-long quest
+  questChainCompleted: 30,      // Multi-step quest chain
+  chainCompleted: 25,           // Streak chain maintained
+  crossModuleQuestCompleted: 20,
+  skillLevelUp: 20,             // Leveling up a skill
 
-  // Low XP actions (5-10)
-  waterLogged: 5,
-  expenseLogged: 5,
-  incomeLogged: 10,
-  sleepLogged: 10,
-  moodLogged: 5,
-  ideaCaptured: 10,
-  articleRead: 10,
-  gratitudeLogged: 10,
-  loginDay: 5,
-  dayActive: 5,
-  activityLogged: 5,
-  eventCreated: 5,
-  streakDay: 10,
+  // ===========================================
+  // MEDIUM TIER (10-20 XP) - Moderate effort, 10-30 minutes
+  // ===========================================
+  journalEntry: 12,             // Writing a journal entry
+  practiceSession: 12,          // Skill practice session
+  pomodoroCompleted: 8,         // 25-min focused work
+  deepWorkMinutes: 10,          // Deep work session
+  timeBlockCompleted: 8,        // Completing a time block
+  prSet: 15,                    // Personal record in workout
+  cardioSession: 10,            // Cardio workout
+  questCompleted: 12,           // Single quest
+  milestoneAchieved: 15,        // Skill milestone
+  challengeCreated: 10,         // Creating a challenge
+  mediaCompleted: 12,           // Video/podcast completed
+  identityCheckIn: 15,          // Deep self-reflection
+  decisionReviewed: 10,         // Reviewing a decision
+  resolutionMilestone: 15,      // Resolution milestone
+  badHabitMilestone: 15,        // Bad habit milestone
 
-  // Default
-  default: 10,
+  // ===========================================
+  // EASY TIER (5-10 XP) - Quick actions, 1-10 minutes
+  // ===========================================
+  taskCompleted: 8,             // Completing a task
+  mealLogged: 8,                // Logging a meal
+  noteCreated: 5,               // Creating a note
+  projectCreated: 8,            // Starting a project
+  ideaCaptured: 5,              // Quick idea capture
+  articleRead: 6,               // Reading an article
+  friendAdded: 8,               // Adding a friend
+  streakMaintained: 8,          // Maintaining a streak
+  savingsContribution: 8,       // Contributing to savings
+  incomeLogged: 6,              // Logging income
+  recipeCreated: 6,             // Creating a recipe
+  workoutTemplateCreated: 8,    // Creating workout template
+  budgetCreated: 8,             // Creating a budget
+  savingsGoalCreated: 8,        // Setting a savings goal
+  valueCreated: 8,              // Defining a core value
+  resolutionCheckIn: 8,         // Resolution check-in
+  skillAdded: 8,                // Adding a skill to track
+  decisionLogged: 6,            // Logging a decision
+  badHabitStarted: 8,           // Committing to quit a habit
+  sleepLogged: 5,               // Logging sleep
+  gratitudeLogged: 5,           // Quick gratitude entry
+
+  // ===========================================
+  // TRIVIAL TIER (2-5 XP) - Simple tracking, seconds
+  // ===========================================
+  waterLogged: 3,               // Logging water intake
+  expenseLogged: 3,             // Logging an expense
+  moodLogged: 3,                // Logging mood
+  loginDay: 3,                  // Daily login
+  dayActive: 3,                 // Being active for the day
+  activityLogged: 3,            // Generic activity
+  eventCreated: 3,              // Creating a calendar event
+  streakDay: 5,                 // One day of streak
+  supplementTaken: 2,           // Taking a supplement
+  supplementAdded: 3,           // Adding a supplement to track
+
+  // Default for unlisted actions
+  default: 5,
 };
 
 /**
@@ -506,7 +540,11 @@ export async function triggerGamification(action, options = {}) {
     // Also update gamificationStore (used by Character page and dashboard)
     // Skip avatar sync since we already called avatarStore.addXP above
     if (gamificationStore.addXP) {
-      await gamificationStore.addXP(xpAmount, module, { skipAvatarSync: true });
+      try {
+        await gamificationStore.addXP(xpAmount, module, { skipAvatarSync: true });
+      } catch (e) {
+        console.warn('[Gamification] XP sync error:', e.message);
+      }
     }
   }
 
@@ -531,58 +569,128 @@ export async function triggerGamification(action, options = {}) {
   // 7. Check for unlocks
   const newAchievements = achievementsStore.checkAchievements() || [];
   avatarStore.checkUnlocks();
-  const newPets = await petStore.checkUnlocks() || [];
+  let newPets = [];
+  try {
+    newPets = await petStore.checkUnlocks() || [];
+  } catch (e) {
+    console.warn('[Gamification] Pet unlock check error:', e.message);
+  }
 
   // 7.5 Auto-check quest progress based on updated stats
   // This enables automatic quest completion when underlying actions are performed
-  const questsStore = useQuestsStore.getState();
-  const completedQuests = questsStore.checkAndUpdateQuestProgress();
+  // All actions defer heavy checks to prevent UI freezes
 
-  // 7.55 Auto-extend custom streaks based on action type
-  // This enables streaks to auto-complete when relevant actions are performed
+  let completedQuests = [];
   let extendedStreaks = [];
-  try {
-    const customStreaksStore = useCustomStreaksStore.getState();
-    extendedStreaks = await customStreaksStore.checkAndAutoExtendStreaks(action);
-  } catch (e) {
-    console.warn('[Gamification] Could not auto-extend streaks:', e);
-  }
-
-  // 7.6 Auto-complete daily tasks based on action type
-  // This enables tasks like "Write a quick reflection" to auto-complete when journal entry is saved
-  // Uses the semantic task service for comprehensive keyword matching
   let autoCompletedTasks = [];
-  try {
-    const [{ default: useDailyTasksStore }, { getTasksForAction }] = await Promise.all([
-      import('../stores/dailyTasksStore'),
-      import('../services/taskSemanticService'),
-    ]);
 
-    const dailyTasksStore = useDailyTasksStore.getState();
-    const today = new Date().toISOString().split('T')[0];
-    const todaysTasks = dailyTasksStore.getTasksByDate?.(today) || [];
+  // Helper function to run heavy checks (deferred to prevent UI freezes)
+  // Includes celebration triggers for results since they need the populated arrays
+  const runHeavyChecks = async () => {
+    const localCompletedQuests = [];
+    const localExtendedStreaks = [];
+    const localAutoCompletedTasks = [];
 
+    // Quest progress check
+    try {
+      const questsStore = useQuestsStore.getState();
+      const quests = questsStore.checkAndUpdateQuestProgress();
+      if (quests?.length > 0) localCompletedQuests.push(...quests);
+    } catch (e) {
+      console.warn('[Gamification] Could not check quest progress:', e);
+    }
+
+    // 7.55 Auto-extend custom streaks based on action type
+    try {
+      const customStreaksStore = useCustomStreaksStore.getState();
+      const streaks = await customStreaksStore.checkAndAutoExtendStreaks(action);
+      if (streaks?.length > 0) localExtendedStreaks.push(...streaks);
+    } catch (e) {
+      console.warn('[Gamification] Could not auto-extend streaks:', e);
+    }
+
+    // 7.6 Auto-complete daily tasks based on action type
     // Skip if this is a task completion action (avoid infinite loops)
-    if (action === 'taskCompleted') {
-      // Don't auto-complete other tasks when a task is completed
-    } else {
-      // Use semantic service to find matching tasks
-      const matchingTasks = getTasksForAction(action, todaysTasks);
+    if (action !== 'taskCompleted') {
+      try {
+        const [{ default: useDailyTasksStore }, { getTasksForAction }] = await Promise.all([
+          import('../stores/dailyTasksStore'),
+          import('../services/taskSemanticService'),
+        ]);
 
-      if (matchingTasks.length > 0) {
-        matchingTasks.forEach(task => {
-          // Only auto-complete tasks that aren't already completed
-          if (!task.completed) {
-            console.log('[Gamification] Auto-completing task via semantic match:', task.title, '| Action:', action);
-            dailyTasksStore.toggleTask(task.id, today);
-            autoCompletedTasks.push(task);
-          }
-        });
+        const dailyTasksStore = useDailyTasksStore.getState();
+        const today = new Date().toISOString().split('T')[0];
+        const todaysTasks = dailyTasksStore.getTasksByDate?.(today) || [];
+
+        // Use semantic service to find matching tasks
+        const matchingTasks = getTasksForAction(action, todaysTasks);
+
+        if (matchingTasks.length > 0) {
+          matchingTasks.forEach(task => {
+            if (!task.completed) {
+              console.log('[Gamification] Auto-completing task via semantic match:', task.title, '| Action:', action);
+              dailyTasksStore.toggleTask(task.id, today);
+              localAutoCompletedTasks.push(task);
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('[Gamification] Could not auto-complete daily tasks:', e);
       }
     }
-  } catch (e) {
-    console.warn('[Gamification] Could not auto-complete daily tasks:', e);
-  }
+
+    // Trigger celebrations for deferred results (inside the deferred function so arrays are populated)
+    // Streak extension celebrations
+    if (localExtendedStreaks.length > 0 && globalCelebrate) {
+      localExtendedStreaks.forEach((extended, index) => {
+        setTimeout(() => {
+          globalCelebrate.streakExtended({
+            streak: extended.streak,
+            previousStreak: extended.previousStreak,
+            newStreak: extended.newStreak,
+          });
+        }, index * 2000);
+      });
+    }
+
+    // Quest completion celebrations (from auto-check)
+    if (localCompletedQuests.length > 0 && globalCelebrate) {
+      const celebrationDelay = localExtendedStreaks.length * 1500;
+      localCompletedQuests.forEach((quest, index) => {
+        setTimeout(() => {
+          globalCelebrate.questCompleted({ quest });
+        }, celebrationDelay + index * 2000);
+      });
+    }
+
+    // Daily task auto-completion celebrations
+    if (localAutoCompletedTasks.length > 0 && globalCelebrate) {
+      const celebrationDelay = (localExtendedStreaks.length + localCompletedQuests.length) * 1500;
+      localAutoCompletedTasks.forEach((task, index) => {
+        setTimeout(() => {
+          globalCelebrate.questCompleted({
+            quest: {
+              name: task.title,
+              title: task.title,
+              type: 'daily',
+              description: 'Daily task completed!',
+              xpReward: XP_VALUES.taskCompleted || 20,
+            },
+          });
+        }, celebrationDelay + index * 2000);
+      });
+    }
+
+    // Update the outer arrays for return value (though callers shouldn't rely on these for deferred results)
+    completedQuests.push(...localCompletedQuests);
+    extendedStreaks.push(...localExtendedStreaks);
+    autoCompletedTasks.push(...localAutoCompletedTasks);
+  };
+
+  // Defer heavy checks for ALL actions to prevent UI freezes
+  // The checks still run, just in the next event loop tick
+  // This ensures the UI remains responsive while background processing happens
+  setTimeout(runHeavyChecks, 0);
 
   // 8. Update streaks for relevant actions
   const streakModule = STREAK_ACTIONS[action];
@@ -661,41 +769,16 @@ export async function triggerGamification(action, options = {}) {
     });
   }
 
-  // Streak extension celebrations
-  if (extendedStreaks.length > 0 && globalCelebrate) {
-    const celebrationDelay = (newAchievements.length + newPets.length) * 1500;
-    extendedStreaks.forEach((extended, index) => {
-      setTimeout(() => {
-        globalCelebrate.streakExtended({
-          streak: extended.streak,
-          previousStreak: extended.previousStreak,
-          newStreak: extended.newStreak,
-        });
-      }, celebrationDelay + index * 2000);
-    });
-  }
-
-  // Quest completion celebrations (from auto-check)
-  if (completedQuests && completedQuests.length > 0 && globalCelebrate) {
-    const celebrationDelay = (newAchievements.length + newPets.length + extendedStreaks.length) * 1500;
-    completedQuests.forEach((quest, index) => {
-      setTimeout(() => {
-        globalCelebrate.questCompleted({
-          quest,
-        });
-      }, celebrationDelay + index * 2000);
-    });
-  }
-
   // Direct quest completion celebration (when triggerGamification is called from questsStore)
   // This handles the case where a quest was manually completed and we need to celebrate it
+  // Note: Auto-detected quest completions are celebrated inside runHeavyChecks()
   const isQuestCompletionAction = [
     'questCompleted', 'weeklyQuestCompleted', 'monthlyQuestCompleted',
     'crossModuleQuestCompleted', 'questChainCompleted', 'bossDefeated'
   ].includes(action);
 
-  if (isQuestCompletionAction && globalCelebrate && (!completedQuests || completedQuests.length === 0)) {
-    const celebrationDelay = (newAchievements.length + newPets.length + extendedStreaks.length) * 1500;
+  if (isQuestCompletionAction && globalCelebrate) {
+    const celebrationDelay = (newAchievements.length + newPets.length) * 1500;
     setTimeout(() => {
       // Determine quest type from action name
       const questType = action === 'bossDefeated' ? 'boss' :
@@ -716,30 +799,8 @@ export async function triggerGamification(action, options = {}) {
     }, celebrationDelay);
   }
 
-  // Daily task auto-completion celebrations
-  // Shows a Duolingo-style celebration when tasks are auto-completed by actions
-  if (autoCompletedTasks.length > 0 && globalCelebrate) {
-    const celebrationDelay = (
-      newAchievements.length +
-      newPets.length +
-      extendedStreaks.length +
-      (completedQuests?.length || 0)
-    ) * 1500;
-
-    autoCompletedTasks.forEach((task, index) => {
-      setTimeout(() => {
-        globalCelebrate.questCompleted({
-          quest: {
-            name: task.title,
-            title: task.title,
-            type: 'daily',
-            description: 'Daily task completed!',
-            xpReward: XP_VALUES.taskCompleted || 20,
-          },
-        });
-      }, celebrationDelay + index * 2000);
-    });
-  }
+  // Note: Streak extension, auto-quest completion, and auto-task completion celebrations
+  // are now triggered inside runHeavyChecks() after the deferred processing completes
 
   console.log('[Gamification] Store action:', {
     action,

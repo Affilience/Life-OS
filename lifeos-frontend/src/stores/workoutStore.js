@@ -292,32 +292,57 @@ export const useWorkoutStore = create(
       },
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
           // Load workouts with exercises AND user profile workout metadata
           const [workoutsResult, profileResult] = await Promise.all([
-            supabase
-              .from('health_workouts')
-              .select(`
-                *,
-                health_exercises (*)
-              `)
-              .eq('user_id', userId)
-              .order('workout_date', { ascending: false }),
-            supabase
-              .from('user_profiles')
-              .select('workout_custom_templates, workout_custom_exercises, workout_exercise_history, workout_personal_records, workout_cardio_records')
-              .eq('id', userId)
-              .maybeSingle(),
+            withTimeout(
+              supabase
+                .from('health_workouts')
+                .select(`
+                  *,
+                  health_exercises (*)
+                `)
+                .eq('user_id', userId)
+                .order('workout_date', { ascending: false })
+            ),
+            withTimeout(
+              supabase
+                .from('user_profiles')
+                .select('workout_custom_templates, workout_custom_exercises, workout_exercise_history, workout_personal_records, workout_cardio_records')
+                .eq('id', userId)
+                .maybeSingle()
+            ),
           ]);
 
           const { data: workoutsData, error: workoutsError } = workoutsResult;
           const { data: profileData } = profileResult;
 
-          if (workoutsError) throw workoutsError;
+          // Continue with empty data on timeout - don't throw
+          if (workoutsError && workoutsError !== 'timeout') throw workoutsError;
 
           // Set workout metadata from profile
           if (profileData) {
@@ -404,8 +429,11 @@ export const useWorkoutStore = create(
             workouts: strengthWorkouts,
             cardioWorkouts,
           });
+          console.log('[WorkoutStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing workouts from Supabase:', error);
+          console.error('[WorkoutStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -802,8 +830,8 @@ export const useWorkoutStore = create(
           customTemplates: [...state.customTemplates, newTemplate],
         });
 
-        // Award XP for creating a workout template
-        triggerGamification('workoutTemplateCreated', { xpOverride: 15, module: 'health' });
+        // Award XP for creating a workout template (EASY tier: 5-10 XP)
+        triggerGamification('workoutTemplateCreated', { xpOverride: 8, module: 'health' });
 
         // Sync to Supabase
         get().syncWorkoutMetadataToSupabase();
@@ -1318,6 +1346,6 @@ export const useWorkoutStore = create(
 );
 
 // Initialize function for App.jsx
-export const initializeWorkoutStore = async () => {
-  return useWorkoutStore.getState().initializeFromSupabase();
+export const initializeWorkoutStore = async (userId = null) => {
+  return useWorkoutStore.getState().initializeFromSupabase(userId);
 };

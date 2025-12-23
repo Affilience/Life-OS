@@ -61,18 +61,41 @@ export const useContentStore = create(
       },
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
-          const { data, error } = await supabase
-            .from('content_items')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+          const { data, error } = await withTimeout(
+            supabase
+              .from('content_items')
+              .select('*')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+          );
 
-          if (error) throw error;
+          // Continue with empty data on timeout - don't throw
+          if (error && error !== 'timeout') throw error;
 
           if (data && data.length > 0) {
             const contentItems = data.map(item => ({
@@ -102,8 +125,11 @@ export const useContentStore = create(
             set({ contentItems });
             get().updateStats();
           }
+          console.log('[ContentStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing content from Supabase:', error);
+          console.error('[ContentStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -377,7 +403,7 @@ export const useContentStore = create(
 );
 
 // Initialize content store from Supabase
-export const initializeContentStore = async () => {
+export const initializeContentStore = async (userId = null) => {
   const store = useContentStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };

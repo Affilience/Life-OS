@@ -123,34 +123,64 @@ export const useResolutionStore = create(
       activeYear: 2026,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
-          // Load resolutions
-          const { data: resolutionsData, error: resError } = await supabase
-            .from('resolutions')
-            .select('*')
-            .eq('user_id', userId);
+          // Run all queries in parallel for faster initialization
+          const [
+            { data: resolutionsData, error: resError },
+            { data: checkInsData, error: checkInError },
+            { data: achievementsData, error: achError }
+          ] = await Promise.all([
+            // Load resolutions
+            withTimeout(
+              supabase
+                .from('resolutions')
+                .select('*')
+                .eq('user_id', userId)
+            ),
+            // Load check-ins
+            withTimeout(
+              supabase
+                .from('resolution_check_ins')
+                .select('*')
+                .eq('user_id', userId)
+            ),
+            // Load achievements
+            withTimeout(
+              supabase
+                .from('resolution_achievements')
+                .select('*')
+                .eq('user_id', userId)
+            )
+          ]);
 
-          if (resError) throw resError;
-
-          // Load check-ins
-          const { data: checkInsData, error: checkInError } = await supabase
-            .from('resolution_check_ins')
-            .select('*')
-            .eq('user_id', userId);
-
-          if (checkInError) throw checkInError;
-
-          // Load achievements
-          const { data: achievementsData, error: achError } = await supabase
-            .from('resolution_achievements')
-            .select('*')
-            .eq('user_id', userId);
-
-          if (achError) throw achError;
+          // Continue with empty data on timeout - don't throw
+          if (resError && resError !== 'timeout') throw resError;
+          if (checkInError && checkInError !== 'timeout') throw checkInError;
+          if (achError && achError !== 'timeout') throw achError;
 
           if (resolutionsData) {
             // Transform resolutions from DB format
@@ -195,8 +225,11 @@ export const useResolutionStore = create(
 
             set({ resolutions, checkIns, achievements, resolutionXP });
           }
+          console.log('[ResolutionStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing resolutions from Supabase:', error);
+          console.error('[ResolutionStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -218,7 +251,7 @@ export const useResolutionStore = create(
 
         // Check for first resolution achievement
         const newAchievements = [...achievements];
-        let xpGain = 25; // Base XP for creating resolution
+        let xpGain = 8; // Base XP for creating resolution (EASY tier)
 
         if (resolutions.length === 0 && !achievements.includes('first_resolution')) {
           newAchievements.push('first_resolution');
@@ -302,10 +335,10 @@ export const useResolutionStore = create(
         const newStreak = hadYesterdayCheckIn ? resolution.currentStreak + 1 : 1;
         const longestStreak = Math.max(resolution.longestStreak, newStreak);
 
-        // Calculate XP
-        let xpGain = 10; // Base check-in XP
-        if (newStreak >= 7) xpGain += 5; // Streak bonus
-        if (newStreak >= 30) xpGain += 10;
+        // Calculate XP (TRIVIAL/EASY tier for check-ins)
+        let xpGain = 5; // Base check-in XP
+        if (newStreak >= 7) xpGain += 3; // Streak bonus
+        if (newStreak >= 30) xpGain += 5;
 
         // Check for achievements
         const newAchievements = [...achievements];
@@ -375,10 +408,10 @@ export const useResolutionStore = create(
         });
       },
 
-      // Complete a milestone
+      // Complete a milestone (HARD tier - significant quarterly achievement)
       completeMilestone: (resolutionId, milestoneId) => {
         const { resolutions, achievements, resolutionXP } = get();
-        let xpGain = 100;
+        let xpGain = 25;
         const newAchievements = [...achievements];
 
         const updatedResolutions = resolutions.map(r => {
@@ -427,11 +460,11 @@ export const useResolutionStore = create(
         });
       },
 
-      // Mark resolution as completed (full year success!)
+      // Mark resolution as completed (full year success! EPIC tier)
       completeResolution: (resolutionId) => {
         const { resolutions, achievements, resolutionXP } = get();
         const newAchievements = [...achievements];
-        let xpGain = 500;
+        let xpGain = 75;
 
         if (!achievements.includes('year_complete')) {
           newAchievements.push('year_complete');
@@ -598,9 +631,9 @@ export const useResolutionStore = create(
 );
 
 // Initialize resolution store from Supabase
-export const initializeResolutionStore = async () => {
+export const initializeResolutionStore = async (userId = null) => {
   const store = useResolutionStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };
 
 // Helper function to generate quarterly milestones

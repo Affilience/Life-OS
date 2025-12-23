@@ -15,6 +15,7 @@
  */
 
 import { supabase, getCurrentUserId } from '../../../lib/supabase';
+import { checkRateLimit } from '../../redis';
 
 // ============================================================================
 // CONFIGURATION
@@ -372,6 +373,14 @@ export async function extractMemoriesFromConversation(messages) {
   try {
     const userId = await getCurrentUserId();
     if (!userId) return [];
+
+    // Rate limiting: 10 memory extractions per minute (expensive operation)
+    const rateLimitKey = `nova:memory-extract:${userId}`;
+    const allowed = await checkRateLimit(rateLimitKey, 10, 60);
+    if (!allowed) {
+      console.warn(`Memory extraction rate limit exceeded for user ${userId}`);
+      return [];
+    }
 
     // Filter to messages with enough content
     const substantiveMessages = messages.filter(

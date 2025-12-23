@@ -44,13 +44,23 @@ export default function CreateTimeBlockModal({ initialData, editBlock, onClose }
   ];
 
   const blockTypes = [
+    // Work & Productivity
     { id: 'deep_work', label: 'Deep Work', description: 'Focused, uninterrupted work' },
     { id: 'shallow', label: 'Shallow Work', description: 'Admin, emails, light tasks' },
     { id: 'meeting', label: 'Meeting', description: 'Calls, discussions' },
-    { id: 'learning', label: 'Learning', description: 'Study, reading, courses' },
-    { id: 'break', label: 'Break', description: 'Rest, recovery' },
-    { id: 'exercise', label: 'Exercise', description: 'Workout, movement' },
     { id: 'creative', label: 'Creative', description: 'Design, writing, ideation' },
+    // Learning & Growth
+    { id: 'learning', label: 'Learning', description: 'Study, reading, courses' },
+    { id: 'exercise', label: 'Exercise', description: 'Workout, movement' },
+    // Casual & Personal
+    { id: 'social', label: 'Social', description: 'Friends, family, hangouts' },
+    { id: 'entertainment', label: 'Entertainment', description: 'Movies, games, shows' },
+    { id: 'hobby', label: 'Hobby', description: 'Personal interests, crafts' },
+    { id: 'selfcare', label: 'Self-Care', description: 'Grooming, spa, relaxation' },
+    { id: 'meal', label: 'Meal', description: 'Cooking, eating, food prep' },
+    { id: 'errand', label: 'Errand', description: 'Shopping, appointments, chores' },
+    { id: 'travel', label: 'Travel', description: 'Commute, trips, transit' },
+    { id: 'break', label: 'Break', description: 'Rest, recovery, nap' },
   ];
 
   const calculateDuration = () => {
@@ -240,25 +250,25 @@ export default function CreateTimeBlockModal({ initialData, editBlock, onClose }
             </div>
           </div>
 
-          {/* Block Type */}
+          {/* Block Type / Activity */}
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Block Type
+              Activity Type
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[200px] overflow-y-auto pr-1">
               {blockTypes.map((type) => (
                 <button
                   key={type.id}
                   type="button"
                   onClick={() => handleChange('type', type.id)}
-                  className={`p-3 rounded-lg border-2 text-left transition-all ${
+                  className={`p-2 rounded-lg border-2 text-left transition-all ${
                     formData.type === type.id
                       ? 'border-purple-500 bg-purple-500/20 text-purple-300'
                       : 'border-white/15 bg-[#1a1724]/30 text-white/60 hover:border-zinc-600'
                   }`}
                 >
-                  <div className="text-sm font-semibold">{type.label}</div>
-                  <div className="text-xs text-white/50 mt-0.5">{type.description}</div>
+                  <div className="text-xs font-semibold">{type.label}</div>
+                  <div className="text-[10px] text-white/50 mt-0.5 line-clamp-1">{type.description}</div>
                 </button>
               ))}
             </div>

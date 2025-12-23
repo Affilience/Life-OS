@@ -46,6 +46,14 @@ const DEFAULT_SETTINGS = {
     xpToastBatchWindow: 2000, // ms to batch XP gains before showing toast
   },
 
+  // Feedback & Sounds (micro-interactions)
+  feedback: {
+    hapticsEnabled: true,
+    soundsEnabled: true,
+    soundVolume: 0.3, // 0.0 - 1.0
+    celebrationsEnabled: true,
+  },
+
   // Privacy
   privacy: {
     profileVisibility: 'private', // 'public' | 'friends' | 'private'
@@ -189,23 +197,51 @@ const useSettingsStore = create(
       lastError: null,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        try {
-          set({ isSyncing: true });
+      initializeFromSupabase: async (passedUserId = null) => {
+        set({ isSyncing: true });
 
-          const userId = await getCurrentUserId();
+        // Master timeout - guarantee function returns even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          console.warn('[SettingsStore] ⏱️ Master timeout reached - using defaults');
+          set({ isSyncing: false, isInitialized: true });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout (matches working stores)
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
+        try {
+          const userId = passedUserId || await getCurrentUserId();
           if (!userId) {
-            set({ isSyncing: false });
+            clearTimeout(timeoutId);
+            set({ isSyncing: false, isInitialized: true });
+            console.log('[SettingsStore] ✅ Initialized (no user)');
             return;
           }
 
-          const { data, error } = await supabase
-            .from('user_profiles')
-            .select('preferences, display_name, avatar_url')
-            .eq('id', userId)
-            .maybeSingle();
+          const { data, error } = await withTimeout(
+            supabase
+              .from('user_profiles')
+              .select('preferences, display_name, avatar_url')
+              .eq('id', userId)
+              .maybeSingle()
+          );
 
-          if (error) throw error;
+          if (error && error !== 'timeout') {
+            throw error;
+          }
+
+          clearTimeout(timeoutId);
+          if (timedOut) return;
 
           if (data) {
             // Merge fetched preferences with defaults (to handle new settings)
@@ -220,17 +256,19 @@ const useSettingsStore = create(
             }
 
             set({ settings: mergedSettings, isInitialized: true, isSyncing: false });
+            console.log('[SettingsStore] ✅ Initialized');
           } else {
-            // No profile found, create one with defaults
-            await supabase.from('user_profiles').upsert({
-              id: userId,
-              preferences: DEFAULT_SETTINGS,
-            });
+            // No profile found - just use defaults
             set({ isInitialized: true, isSyncing: false });
+            console.log('[SettingsStore] ✅ Initialized (using defaults)');
           }
         } catch (error) {
-          console.error('Error initializing settings:', error);
-          set({ lastError: error.message, isInitialized: true, isSyncing: false });
+          console.error('[SettingsStore] Error initializing:', error);
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({ lastError: error.message, isInitialized: true, isSyncing: false });
+          }
+          console.log('[SettingsStore] ✅ Initialized (with error, using defaults)');
         }
       },
 
@@ -362,10 +400,10 @@ const useSettingsStore = create(
 );
 
 // Initialize settings store
-export const initializeSettingsStore = async () => {
+export const initializeSettingsStore = async (userId = null) => {
   const store = useSettingsStore.getState();
   if (!store.isInitialized) {
-    await store.initializeFromSupabase();
+    await store.initializeFromSupabase(userId);
   }
 };
 

@@ -21,20 +21,27 @@ export const EQUIPMENT_RARITY = {
   rare: {
     name: 'Rare',
     color: '#3b82f6',
-    glow: 'subtle',
+    glow: 'rgba(59, 130, 246, 0.4)',
     statMultiplier: 1.5,
   },
   epic: {
     name: 'Epic',
     color: '#a855f7',
-    glow: 'medium',
+    glow: 'rgba(168, 85, 247, 0.5)',
     statMultiplier: 2.0,
   },
   legendary: {
     name: 'Legendary',
     color: '#f97316',
-    glow: 'strong',
+    glow: 'rgba(249, 115, 22, 0.6)',
     statMultiplier: 3.0,
+    hasParticles: true,
+  },
+  mythical: {
+    name: 'Mythical',
+    color: '#ffd700',
+    glow: 'rgba(255, 215, 0, 0.7)',
+    statMultiplier: 4.0,
     hasParticles: true,
   },
 };

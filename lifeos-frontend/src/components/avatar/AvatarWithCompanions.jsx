@@ -40,16 +40,17 @@ export function AvatarWithCompanions({
   // Define natural positions for up to 6 pets
   // Positions are relative to avatar center, with more padding
   // All pets stay large and visible (minimum 0.9 scale)
+  // Order matches dashboard widget: first pet on right, second on left, etc.
   const petPositions = [
     // Ground level - loyal companion at feet (more spread out)
-    { x: -160, y: 90, scale: 1.0, zIndex: 5, animation: 'ground-left' },
-    { x: 155, y: 95, scale: 1.0, zIndex: 5, animation: 'ground-right' },
+    { x: 155, y: 95, scale: 1.0, zIndex: 5, animation: 'ground-right' },   // 1st pet - right
+    { x: -160, y: 90, scale: 1.0, zIndex: 5, animation: 'ground-left' },   // 2nd pet - left
     // Shoulder height - floating familiars (more padding)
-    { x: -180, y: -20, scale: 0.95, zIndex: 15, animation: 'float-left' },
     { x: 175, y: -25, scale: 0.95, zIndex: 15, animation: 'float-right' },
+    { x: -180, y: -20, scale: 0.95, zIndex: 15, animation: 'float-left' },
     // Above head - mystical orbiters (more space)
-    { x: -100, y: -140, scale: 0.9, zIndex: 20, animation: 'orbit-top' },
     { x: 105, y: -135, scale: 0.9, zIndex: 20, animation: 'orbit-top-right' },
+    { x: -100, y: -140, scale: 0.9, zIndex: 20, animation: 'orbit-top' },
   ];
 
   // Animation variants for different pet positions
@@ -223,9 +224,10 @@ export function CompactAvatarWithPets({
       />
 
       {/* Pets - only if pets and sprites are visible */}
+      {/* First pet on right, second on left - matches dashboard widget */}
       {showPets && showPetSprites && pets.map((pet, index) => {
         const petSize = size * 0.5; // Larger pets in compact view
-        const xPos = index === 0 ? -8 : size + 28;
+        const xPos = index === 0 ? size + 28 : -8; // First pet on right
         const yPos = size - petSize + 8;
 
         return (
@@ -288,13 +290,14 @@ export function MediumAvatarWithPets({
 
   // Pet positions relative to center - arranged around avatar (scaled based on avatar size)
   // Spread out more to accommodate larger pet sprites
+  // Order matches dashboard widget: first pet on right, second on left, etc.
   const petPositions = [
-    { x: -120 * scaleFactor, y: 85 * scaleFactor, scale: 1.0 },    // Bottom left
-    { x: 120 * scaleFactor, y: 85 * scaleFactor, scale: 1.0 },     // Bottom right
-    { x: -140 * scaleFactor, y: -15 * scaleFactor, scale: 0.95 },  // Middle left
+    { x: 120 * scaleFactor, y: 85 * scaleFactor, scale: 1.0 },     // Bottom right (1st pet)
+    { x: -120 * scaleFactor, y: 85 * scaleFactor, scale: 1.0 },    // Bottom left (2nd pet)
     { x: 140 * scaleFactor, y: -15 * scaleFactor, scale: 0.95 },   // Middle right
-    { x: -90 * scaleFactor, y: -100 * scaleFactor, scale: 0.9 },   // Top left
+    { x: -140 * scaleFactor, y: -15 * scaleFactor, scale: 0.95 },  // Middle left
     { x: 90 * scaleFactor, y: -100 * scaleFactor, scale: 0.9 },    // Top right
+    { x: -90 * scaleFactor, y: -100 * scaleFactor, scale: 0.9 },   // Top left
   ];
 
   // Responsive container sizing - smaller on mobile

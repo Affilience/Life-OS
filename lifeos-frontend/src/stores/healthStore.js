@@ -99,20 +99,76 @@ export const useHealthStore = create(
       },
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
-        if (!userId) return;
+      initializeFromSupabase: async (passedUserId = null) => {
+        console.log('[HealthStore] Initializing...');
+        const userId = passedUserId || await getCurrentUserId();
+        if (!userId) {
+          console.log('[HealthStore] No user ID, skipping');
+          return;
+        }
 
         set({ _isSyncing: true, _syncError: null });
 
-        try {
-          // Fetch user health settings, meal plans, AND supplement stacks
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('health_settings, meal_plans, supplement_stacks')
-            .eq('id', userId)
-            .maybeSingle();
+        // Master timeout - ensure syncing is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ _isSyncing: false });
+        }, INIT_TIMEOUT_MS);
 
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
+        try {
+          const today = new Date().toISOString().split('T')[0];
+
+          // Run ALL queries in parallel for faster initialization
+          const [
+            { data: profile },
+            { data: nutritionLogs },
+            { data: recipes },
+            { data: supplements },
+            { data: waterLog }
+          ] = await Promise.all([
+            withTimeout(supabase
+              .from('user_profiles')
+              .select('health_settings, meal_plans, supplement_stacks')
+              .eq('id', userId)
+              .maybeSingle()),
+            withTimeout(supabase
+              .from('health_nutrition_logs')
+              .select('*')
+              .eq('user_id', userId)
+              .order('meal_timestamp', { ascending: false })
+              .limit(100)),
+            withTimeout(supabase
+              .from('health_recipes')
+              .select('*')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+              .limit(100)),
+            withTimeout(supabase
+              .from('health_supplements')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('is_active', true)),
+            withTimeout(supabase
+              .from('health_water_logs')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('log_date', today)
+              .maybeSingle())
+          ]);
+
+          // Process profile data
           if (profile?.health_settings) {
             const settings = profile.health_settings;
             set({
@@ -123,25 +179,14 @@ export const useHealthStore = create(
               waterGoalMl: settings.dailyGoals?.water || 2000,
             });
           }
-
-          // Load meal plans from profile
           if (profile?.meal_plans) {
             set({ mealPlans: profile.meal_plans });
           }
-
-          // Load supplement stacks from profile
           if (profile?.supplement_stacks) {
             set({ supplementStacks: profile.supplement_stacks });
           }
 
-          // Fetch meals (nutrition logs)
-          const { data: nutritionLogs } = await supabase
-            .from('health_nutrition_logs')
-            .select('*')
-            .eq('user_id', userId)
-            .order('meal_timestamp', { ascending: false })
-            .limit(100);
-
+          // Process nutrition logs
           if (nutritionLogs) {
             const meals = nutritionLogs.map(log => ({
               id: log.id,
@@ -157,14 +202,7 @@ export const useHealthStore = create(
             set({ meals });
           }
 
-          // Fetch recipes (limit to 100 most recent)
-          const { data: recipes } = await supabase
-            .from('health_recipes')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(100);
-
+          // Process recipes
           if (recipes) {
             const formattedRecipes = recipes.map(r => ({
               id: r.id,
@@ -187,13 +225,7 @@ export const useHealthStore = create(
             set({ recipes: formattedRecipes });
           }
 
-          // Fetch supplements
-          const { data: supplements } = await supabase
-            .from('health_supplements')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('is_active', true);
-
+          // Process supplements
           if (supplements) {
             const formattedSupplements = supplements.map(s => ({
               id: s.id,
@@ -214,15 +246,7 @@ export const useHealthStore = create(
             set({ supplements: formattedSupplements });
           }
 
-          // Fetch today's water intake
-          const today = new Date().toISOString().split('T')[0];
-          const { data: waterLog } = await supabase
-            .from('health_water_logs')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('log_date', today)
-            .maybeSingle();
-
+          // Process water log
           if (waterLog) {
             set(state => ({
               waterIntake: {
@@ -232,10 +256,16 @@ export const useHealthStore = create(
             }));
           }
 
-          set({ _lastSyncedAt: new Date().toISOString(), _isSyncing: false });
+          set({ _lastSyncedAt: new Date().toISOString() });
+          console.log('[HealthStore] ✅ Initialized');
         } catch (error) {
-          console.error('Failed to initialize health from Supabase:', error);
-          set({ _syncError: error.message, _isSyncing: false });
+          console.error('[HealthStore] ❌ Failed to initialize:', error);
+          set({ _syncError: error.message });
+        } finally {
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({ _isSyncing: false });
+          }
         }
       },
 
@@ -319,12 +349,12 @@ export const useHealthStore = create(
           }
         }
 
-        // Award XP through unified gamification
+        // Award XP through unified gamification (EASY tier: 5-10 XP)
         const { dailyGoals } = get();
-        let xpEarned = 15;
+        let xpEarned = 8;
         const proteinAmount = newMeal.totalProtein || 0;
         if (proteinAmount >= dailyGoals.protein * 0.25) {
-          xpEarned += 5; // Protein bonus
+          xpEarned += 2; // Small protein bonus
           triggerGamification('proteinGoalHit', { xpOverride: 0 }); // Just track stat
         }
 
@@ -529,10 +559,10 @@ export const useHealthStore = create(
           }
         }
 
-        // Award XP for hitting water goal
+        // Award XP for hitting water goal (TRIVIAL tier: 2-5 XP)
         if (current < waterGoalMl && newAmount >= waterGoalMl) {
           triggerGamification('waterLogged', {
-            xpOverride: 10,
+            xpOverride: 3,
             module: 'health'
           });
         }
@@ -696,7 +726,7 @@ export const useHealthStore = create(
           }
         }
 
-        triggerGamification('recipeCreated', { xpOverride: 10, module: 'health' });
+        triggerGamification('recipeCreated', { xpOverride: 6, module: 'health' });
 
         return newRecipe.id;
       },
@@ -833,7 +863,7 @@ export const useHealthStore = create(
           },
         }));
 
-        triggerGamification('eventCreated', { xpOverride: 5, module: 'health' }); // Meal plan copied
+        triggerGamification('eventCreated', { xpOverride: 3, module: 'health' }); // Meal plan copied
 
         // Sync to Supabase
         get().syncMealPlansToSupabase();
@@ -887,7 +917,7 @@ export const useHealthStore = create(
           }
         }
 
-        triggerGamification('supplementAdded', { xpOverride: 5, module: 'health' });
+        triggerGamification('supplementAdded', { xpOverride: 3, module: 'health' });
 
         return newSupplement.id;
       },
@@ -1172,6 +1202,6 @@ export const useHealthStore = create(
 export { SUPPLEMENT_INTERACTIONS, SUPPLEMENT_TIMING };
 
 // Initialize function
-export const initializeHealthStore = async () => {
-  await useHealthStore.getState().initializeFromSupabase();
+export const initializeHealthStore = async (userId = null) => {
+  await useHealthStore.getState().initializeFromSupabase(userId);
 };

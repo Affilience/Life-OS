@@ -115,19 +115,42 @@ export const useQuotesStore = create(
       lastShownId: null,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
-          const { data, error } = await supabase
-            .from('user_quotes')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(200);
+          const { data, error } = await withTimeout(
+            supabase
+              .from('user_quotes')
+              .select('*')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+              .limit(200)
+          );
 
-          if (error) throw error;
+          // Continue with empty data on timeout - don't throw
+          if (error && error !== 'timeout') throw error;
 
           if (data && data.length > 0) {
             const customQuotes = data.map(q => ({
@@ -145,8 +168,11 @@ export const useQuotesStore = create(
 
             set({ customQuotes, favoriteIds });
           }
+          console.log('[QuotesStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error initializing quotes from Supabase:', error);
+          console.error('[QuotesStore] ❌ Error initializing:', error);
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -274,7 +300,7 @@ export const useQuotesStore = create(
 );
 
 // Initialize quotes store from Supabase
-export const initializeQuotesStore = async () => {
+export const initializeQuotesStore = async (userId = null) => {
   const store = useQuotesStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };

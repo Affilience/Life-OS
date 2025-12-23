@@ -1528,10 +1528,30 @@ const useAchievementsStore = create(
   persist(
     (set, get) => ({
       // Initialize from Supabase - MERGES with local data instead of overwriting
-      initializeFromSupabase: async () => {
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout to prevent hanging
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const userId = await getCurrentUserId();
-          if (!userId) return;
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            return;
+          }
 
           // Get current local state FIRST
           const localState = get();
@@ -1539,26 +1559,28 @@ const useAchievementsStore = create(
           const localProgress = localState.achievementProgress || {};
           const localStats = localState.stats || {};
 
-          // Load user achievements from the new user_achievements table
-          const { data: userAchievements, error: achievementsError } = await supabase
-            .from('user_achievements')
-            .select('*')
-            .eq('user_id', userId);
+          // Run both queries in parallel for faster initialization
+          const [
+            { data: userAchievements, error: achievementsError },
+            { data: statsData, error: statsError }
+          ] = await Promise.all([
+            // Load user achievements from the new user_achievements table
+            withTimeout(
+              supabase
+                .from('user_achievements')
+                .select('*')
+                .eq('user_id', userId)
+            ),
+            // Load achievement stats
+            withTimeout(
+              supabase
+                .from('user_achievement_stats')
+                .select('*')
+                .eq('user_id', userId)
+            )
+          ]);
 
-          if (achievementsError) {
-            console.error('Error loading achievements:', achievementsError);
-            // Continue with local data on error
-          }
-
-          // Load achievement stats
-          const { data: statsData, error: statsError } = await supabase
-            .from('user_achievement_stats')
-            .select('*')
-            .eq('user_id', userId);
-
-          if (statsError) {
-            console.error('Error loading achievement stats:', statsError);
-          }
+          // Continue with local data on timeout/error - don't log intermediate errors
 
           // Convert Supabase data to local format
           const supabaseUnlocked = (userAchievements || []).map(ua => ({
@@ -1621,10 +1643,12 @@ const useAchievementsStore = create(
             }
           }
 
-          console.log(`[Achievements] Initialized: ${mergedUnlocked.length} unlocked (${localUnlocked.length} local, ${supabaseUnlocked.length} from Supabase)`);
+          console.log(`[AchievementsStore] ✅ Initialized: ${mergedUnlocked.length} unlocked (${localUnlocked.length} local, ${supabaseUnlocked.length} from Supabase)`);
         } catch (error) {
-          console.error('Error initializing achievements from Supabase:', error);
+          console.error('[AchievementsStore] ❌ Error initializing:', error);
           // On error, keep local state - don't wipe it
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
@@ -2231,7 +2255,7 @@ const useAchievementsStore = create(
 );
 
 // Initialize function for App.jsx
-export const initializeAchievementsStore = async () => {
+export const initializeAchievementsStore = async (userId = null) => {
   // One-time migration: Clear corrupted localStorage stats (v3)
   // This fixes the issue where Math.max() was keeping corrupted high values
   const hasStatsMigration = localStorage.getItem('achievements-stats-migration-v3');
@@ -2262,7 +2286,7 @@ export const initializeAchievementsStore = async () => {
     localStorage.removeItem('achievements-retro-awarded-v2');
   }
 
-  await useAchievementsStore.getState().initializeFromSupabase();
+  await useAchievementsStore.getState().initializeFromSupabase(userId);
 
   // Check if we need to retroactively award rewards (one-time fix)
   // v2: Fixed achievement-based equipment unlocks for 'default' method items

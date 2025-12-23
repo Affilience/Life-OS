@@ -17,6 +17,7 @@ import BooksView from './BooksView';
 import PodcastsView from './PodcastsView';
 import VideosView from './VideosView';
 import CoursesView from './CoursesView';
+import CollectionsView from './CollectionsView';
 
 // Mobile navigation tabs
 function MobileNav() {
@@ -173,31 +174,8 @@ function MainCanvas() {
         )}
 
         {/* Collections View */}
-        {activeView === 'collections' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {collections.map((collection) => (
-              <div
-                key={collection.id}
-                className="bg-[#12101a]/40 backdrop-blur-sm border border-white/5 rounded-lg p-6 hover:border-purple-500/30 transition-all duration-200 cursor-pointer group"
-                style={{ borderLeftColor: collection.color, borderLeftWidth: '3px' }}
-              >
-                <div className="flex items-start gap-4">
-                  <span className="text-4xl">{collection.icon}</span>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">
-                      {collection.name}
-                    </h3>
-                    <p className="text-sm text-white/50 mb-3">
-                      {collection.description}
-                    </p>
-                    <div className="text-xs text-white/40">
-                      {collection.items.length} items
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {(activeView === 'collections' || activeView === 'collection-detail') && (
+          <CollectionsView initialCollectionId={activeView === 'collection-detail' ? activeItemId : null} />
         )}
 
         {/* Note Detail/Editor View */}

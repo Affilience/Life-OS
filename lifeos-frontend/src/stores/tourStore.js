@@ -102,16 +102,48 @@ export const useTourStore = create(
       _isSyncing: false,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
-        if (!userId) return;
+      initializeFromSupabase: async (passedUserId = null) => {
+        // Master timeout - guarantee function returns even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          console.warn('[TourStore] ⏱️ Master timeout reached - using defaults');
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout (matches working stores)
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
 
         try {
-          const { data } = await supabase
-            .from('user_profiles')
-            .select('preferences')
-            .eq('id', userId)
-            .maybeSingle();
+          const userId = passedUserId || await getCurrentUserId();
+          if (!userId) {
+            clearTimeout(timeoutId);
+            console.log('[TourStore] ✅ Initialized (no user)');
+            return;
+          }
+
+          const { data, error } = await withTimeout(
+            supabase
+              .from('user_profiles')
+              .select('preferences')
+              .eq('id', userId)
+              .maybeSingle()
+          );
+
+          clearTimeout(timeoutId);
+          if (timedOut) return;
+
+          if (error && error !== 'timeout') {
+            console.error('[TourStore] Error loading tours from Supabase:', error);
+            return;
+          }
 
           if (data?.preferences?.tours) {
             const tourPrefs = data.preferences.tours;
@@ -123,8 +155,10 @@ export const useTourStore = create(
               hasSeenTourPrompt: tourPrefs.hasSeenTourPrompt ?? false,
             });
           }
+          console.log('[TourStore] ✅ Initialized');
         } catch (error) {
-          console.error('Error loading tours from Supabase:', error);
+          console.error('[TourStore] Error loading tours from Supabase:', error);
+          clearTimeout(timeoutId);
         }
       },
 
@@ -475,9 +509,9 @@ export const useTourStore = create(
 );
 
 // Initialize tour store from Supabase
-export const initializeTourStore = async () => {
+export const initializeTourStore = async (userId = null) => {
   const store = useTourStore.getState();
-  await store.initializeFromSupabase();
+  await store.initializeFromSupabase(userId);
 };
 
 export default useTourStore;

@@ -142,22 +142,45 @@ export const useAvatarStore = create(
       _syncError: null,
 
       // Initialize from Supabase
-      initializeFromSupabase: async () => {
-        const userId = await getCurrentUserId();
-        if (!userId) return;
+      initializeFromSupabase: async (passedUserId = null) => {
+        console.log('[AvatarStore] Initializing...');
+        const userId = passedUserId || await getCurrentUserId();
+        if (!userId) {
+          console.log('[AvatarStore] No user ID, skipping initialization');
+          return;
+        }
 
         set({ _isSyncing: true, _syncError: null });
 
+        // Master timeout - ensure syncing is set to false even if queries hang
+        const INIT_TIMEOUT_MS = 15000;
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          set({ _isSyncing: false, _isInitialized: true });
+        }, INIT_TIMEOUT_MS);
+
+        // Helper to wrap queries with timeout
+        const withTimeout = (promise, timeoutMs = 10000) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+            )
+          ]).catch(() => ({ data: null, error: 'timeout' }));
+        };
+
         try {
-          const { data, error } = await supabase
+          const { data, error } = await withTimeout(supabase
             .from('user_profiles')
             .select('*')
             .eq('id', userId)
-            .maybeSingle();
+            .maybeSingle());
 
-          if (error) throw error;
+          if (error && error !== 'timeout') throw error;
           if (!data) {
             console.log('No user profile found, using defaults');
+            clearTimeout(timeoutId);
             set({ _isSyncing: false, _isInitialized: true });
             return;
           }
@@ -181,16 +204,21 @@ export const useAvatarStore = create(
               ownedCosmetics: data.owned_cosmetics || DEFAULT_STATE.ownedCosmetics,
               activeCosmetics: data.active_cosmetics || DEFAULT_STATE.activeCosmetics,
               _lastSyncedAt: new Date().toISOString(),
-              _isSyncing: false,
               _isInitialized: true,
             });
 
             // Recalculate stats after loading
             get().recalculateStats();
+            console.log('[AvatarStore] ✅ Initialized - Level:', data.current_level || 1, 'Gender:', data.character_gender || 'male');
           }
         } catch (error) {
-          console.error('Failed to initialize avatar from Supabase:', error);
-          set({ _syncError: error.message, _isSyncing: false });
+          console.error('[AvatarStore] ❌ Failed to initialize:', error);
+          set({ _syncError: error.message });
+        } finally {
+          clearTimeout(timeoutId);
+          if (!timedOut) {
+            set({ _isSyncing: false });
+          }
         }
       },
 
@@ -1207,6 +1235,6 @@ function getTierForLevel(level) {
 }
 
 // Hook to initialize store from Supabase on app load
-export const initializeAvatarStore = async () => {
-  await useAvatarStore.getState().initializeFromSupabase();
+export const initializeAvatarStore = async (userId = null) => {
+  await useAvatarStore.getState().initializeFromSupabase(userId);
 };

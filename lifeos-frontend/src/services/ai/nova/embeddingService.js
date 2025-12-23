@@ -16,6 +16,7 @@
  */
 
 import { supabase, getCurrentUserId } from '../../../lib/supabase';
+import { checkRateLimit } from '../../redis';
 
 // Embedding dimensions for text-embedding-ada-002
 const EMBEDDING_DIMENSIONS = 1536;
@@ -126,6 +127,17 @@ export async function generateEmbedding(text) {
   // Skip if service is known to be unavailable
   if (!shouldAttemptEmbedding()) {
     return null;
+  }
+
+  // Rate limiting: 60 embeddings per minute (OpenAI API cost control)
+  const userId = await getCurrentUserId();
+  if (userId) {
+    const rateLimitKey = `nova:embeddings:${userId}`;
+    const allowed = await checkRateLimit(rateLimitKey, 60, 60);
+    if (!allowed) {
+      console.warn(`Embedding rate limit exceeded for user ${userId}`);
+      return null;
+    }
   }
 
   // Check cache first

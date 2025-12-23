@@ -115,24 +115,24 @@ const WeeklyInsightsWidget = memo(function WeeklyInsightsWidget() {
   }, [totalXP, moduleXP, recentEvents, tasksByDate, sessions]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <h3 className="text-sm font-semibold text-text-muted mb-3 flex items-center gap-2 flex-shrink-0">
         <Sparkles className="w-4 h-4" />
         Weekly Insights
       </h3>
-      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-hidden">
+      <div className="flex-1 grid grid-cols-2 gap-2 overflow-y-auto min-h-0">
         {insights.map((insight) => {
           const Icon = insight.icon;
           return (
-            <div key={insight.label} className={`${insight.bgColor} border border-border rounded-xl p-3`}>
-              <div className="flex items-start justify-between mb-1.5">
-                <Icon className={`w-4 h-4 ${insight.color}`} />
-                <span className={`text-[10px] font-medium ${insight.trend === 'up' ? 'text-green-400' : 'text-text-muted'}`}>
+            <div key={insight.label} className={`${insight.bgColor} border border-border rounded-xl p-2 sm:p-3 min-w-0`}>
+              <div className="flex items-start justify-between mb-1 sm:mb-1.5">
+                <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${insight.color} flex-shrink-0`} />
+                <span className={`text-[9px] sm:text-[10px] font-medium truncate ml-1 ${insight.trend === 'up' ? 'text-green-400' : 'text-text-muted'}`}>
                   {insight.change}
                 </span>
               </div>
-              <div className="text-xl font-bold text-text-primary mb-0.5">{insight.value}</div>
-              <div className="text-[10px] text-text-muted">{insight.label}</div>
+              <div className="text-base sm:text-xl font-bold text-text-primary mb-0.5 truncate">{insight.value}</div>
+              <div className="text-[9px] sm:text-[10px] text-text-muted truncate">{insight.label}</div>
             </div>
           );
         })}

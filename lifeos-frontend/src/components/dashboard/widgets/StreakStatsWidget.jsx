@@ -7,7 +7,8 @@ import CosmicFlame from '../../../features/streaks/components/CosmicFlame';
 
 export default function StreakStatsWidget() {
   const navigate = useNavigate();
-  const { streak = 0, credits = 0 } = useGamificationStore();
+  const { globalStreak, cosmicCredits = 0 } = useGamificationStore();
+  const streak = globalStreak?.current_streak || 0;
 
   // Get gamification mode and terminology
   const mode = useGamificationModeStore((state) => state.mode);
@@ -53,7 +54,7 @@ export default function StreakStatsWidget() {
       return (
         <div className="flex items-center gap-2">
           <Coins className="w-5 h-5 text-warning" />
-          <span className="text-sm font-bold text-text-primary">{credits}</span>
+          <span className="text-sm font-bold text-text-primary">{cosmicCredits}</span>
           <span className="text-xs text-text-muted">{terms.credits.toLowerCase()}</span>
         </div>
       );
@@ -61,7 +62,7 @@ export default function StreakStatsWidget() {
       return (
         <div className="flex items-center gap-2">
           <Award className="w-5 h-5 text-success" />
-          <span className="text-sm font-bold text-text-primary">{credits}</span>
+          <span className="text-sm font-bold text-text-primary">{cosmicCredits}</span>
           <span className="text-xs text-text-muted">{terms.credits.toLowerCase()}</span>
         </div>
       );
@@ -69,7 +70,7 @@ export default function StreakStatsWidget() {
       // Minimal mode
       return (
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-text-primary">{credits}</span>
+          <span className="text-sm font-bold text-text-primary">{cosmicCredits}</span>
           <span className="text-xs text-text-muted">pts</span>
         </div>
       );

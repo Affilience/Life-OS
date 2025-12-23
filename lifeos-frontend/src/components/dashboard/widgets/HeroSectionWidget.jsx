@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, BarChart2, Sparkles } from 'lucide-react';
 import { useGamificationStore } from '../../../stores/gamificationStore';
@@ -8,13 +8,17 @@ import { getStageByLevel } from '../../../data/avatarEvolution';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../../stores/gamificationModeStore';
 import { useNewOnboardingStore } from '../../../stores/newOnboardingStore';
 import { useSocialStore } from '../../../stores/socialStore';
+import { useAuth } from '../../../hooks/useAuth';
 import AvatarRenderer from '../../avatar/AvatarRenderer';
 import LevelTitle from '../../gamification/LevelTitle';
 
 const HeroSectionWidget = memo(function HeroSectionWidget() {
   const navigate = useNavigate();
   const { level, currentXP, xpToNextLevel } = useGamificationStore();
-  const { prestige = 0, getHeroSpritePath } = useAvatarStore();
+  const { prestige = 0, getHeroSpritePath, getActiveTitle } = useAvatarStore();
+
+  // Get active cosmetic title
+  const activeTitle = getActiveTitle();
   const { activePets } = usePetStore();
 
   // Get gamification mode and terminology
@@ -25,7 +29,15 @@ const HeroSectionWidget = memo(function HeroSectionWidget() {
 
   // Get username from onboarding store and social store
   const { profile } = useNewOnboardingStore();
-  const { socialProfile } = useSocialStore();
+  const { socialProfile, fetchSocialProfile } = useSocialStore();
+  const { user } = useAuth();
+
+  // Fetch social profile on mount if not loaded (pass userId to avoid auth race)
+  useEffect(() => {
+    if (!socialProfile?.display_name && user?.id) {
+      fetchSocialProfile(user.id);
+    }
+  }, [socialProfile?.display_name, fetchSocialProfile, user?.id]);
 
   // Prefer socialProfile (database) over onboarding store (local)
   const displayName = socialProfile?.display_name || socialProfile?.username || profile?.displayName || profile?.username || 'Traveler';
@@ -162,6 +174,12 @@ const HeroSectionWidget = memo(function HeroSectionWidget() {
     if (mode === 'cosmic') {
       return (
         <>
+          {/* Cosmetic Title (if equipped) */}
+          {activeTitle && (
+            <p className="text-[10px] font-semibold text-yellow-400 tracking-wide mb-0.5">
+              ✦ {activeTitle} ✦
+            </p>
+          )}
           {/* Username */}
           <h2 className="text-lg font-bold text-text-primary truncate mb-0.5">{displayName}</h2>
           {/* Level Title Badge */}

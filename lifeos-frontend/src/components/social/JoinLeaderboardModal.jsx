@@ -28,10 +28,18 @@ export default function JoinLeaderboardModal({ isOpen, onClose }) {
     updateUsername,
     checkUsernameAvailable,
     syncToLeaderboards,
+    fetchSocialProfile,
   } = useSocialStore();
 
   const { level, totalXP, globalStreak } = useGamificationStore();
   const currentStreak = globalStreak?.current_streak || 0;
+
+  // Fetch profile when modal opens to ensure we have latest data
+  useEffect(() => {
+    if (isOpen) {
+      fetchSocialProfile();
+    }
+  }, [isOpen, fetchSocialProfile]);
 
   // Initialize username from profile if exists
   useEffect(() => {
@@ -39,7 +47,8 @@ export default function JoinLeaderboardModal({ isOpen, onClose }) {
       setUsername(socialProfile.username);
       setUsernameAvailable(true);
       setStep(2); // Skip to confirm if they already have a username
-    } else if (isOpen) {
+    } else if (isOpen && socialProfile !== null) {
+      // Only reset if we've loaded profile and it has no username
       setUsername('');
       setUsernameAvailable(null);
       setStep(1);

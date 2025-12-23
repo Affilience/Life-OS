@@ -7,8 +7,7 @@ import {
   FileText,
   TrendingUp,
   Clock,
-  Bookmark,
-  Sparkles
+  Bookmark
 } from 'lucide-react';
 import MiniBarChart from '../shared/charts/MiniBarChart';
 import { useContentStore } from '../../stores/contentStore';
@@ -191,44 +190,6 @@ export default function KnowledgeDashboard({ onTabChange }) {
 
     return activities.slice(0, 3);
   }, [notes, ideas]);
-
-  // Calculate knowledge connections by topic/tag
-  const knowledgeConnections = useMemo(() => {
-    const tagCounts = {};
-    const colors = ['yellow', 'blue', 'green', 'purple', 'cyan', 'pink'];
-
-    // Count tags from notes
-    notes.forEach(note => {
-      (note.tags || []).forEach(tag => {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
-    });
-
-    // Count tags from ideas
-    ideas.forEach(idea => {
-      (idea.tags || []).forEach(tag => {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
-    });
-
-    // Convert to sorted array and take top 4
-    return Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
-      .map(([topic, connections], index) => ({
-        topic,
-        connections,
-        color: colors[index % colors.length]
-      }));
-  }, [notes, ideas]);
-
-  // Calculate notes created this week
-  const notesThisWeek = useMemo(() => {
-    const now = new Date();
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return notes.filter(note => new Date(note.createdAt) >= weekAgo).length;
-  }, [notes]);
 
   // Calculate learning streak (consecutive days with content activity)
   const learningStreak = useMemo(() => {
@@ -439,34 +400,6 @@ export default function KnowledgeDashboard({ onTabChange }) {
                 {contentItems.filter(i => i.status === 'completed' && i.implementationStatus === 'not_started').length}
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Knowledge Connections */}
-        <div className="bg-bg-1 border border-purple-500/20 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-400" />
-              Knowledge Connections
-            </h3>
-            <span className="text-sm text-purple-400">+{notesThisWeek} this week</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {knowledgeConnections.length > 0 ? knowledgeConnections.map((item, index) => (
-              <div key={index} className="bg-[#0c0a10] border border-white/5 rounded-lg p-3">
-                <p className="text-sm text-text-muted">{item.topic}</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-2xl font-bold text-text-primary">{item.connections}</p>
-                  <span className={`text-xs text-${item.color}-400`}>links</span>
-                </div>
-              </div>
-            )) : (
-              <div className="col-span-2 text-center py-4 text-text-primary/50">
-                <p>No tagged content yet</p>
-                <p className="text-sm mt-1">Add tags to notes and ideas to see connections</p>
-              </div>
-            )}
           </div>
         </div>
 

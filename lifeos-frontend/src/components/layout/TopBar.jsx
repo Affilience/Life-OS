@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Bell, Menu } from 'lucide-react';
+import { Plus, Search, Menu } from 'lucide-react';
 import SeasonPill from '../app/SeasonPill';
 import Button from '../ui/Button';
+import NotificationCenter from '../notifications/NotificationCenter';
 
 /**
  * ONYXOS TopBar
@@ -117,18 +118,7 @@ const TopBar = ({ onMenuClick }) => {
           <Plus size={20} />
         </button>
 
-        <button className="
-          relative p-2 rounded-md
-          cosmic-glow
-          text-fg-secondary hover:text-fg-primary hover:bg-accent-mainSoft
-          transition-all duration-fast
-        ">
-          <Bell size={18} />
-          <span className="
-            absolute top-1 right-1 w-2 h-2
-            bg-accent-main rounded-full border border-surface
-          " />
-        </button>
+        <NotificationCenter />
       </div>
     </header>
   );
