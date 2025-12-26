@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase, getCurrentUserId } from '../lib/supabase';
-import { calculateTotalStats, calculateStatBreakdown, getModuleXPMultiplier } from '../utils/statsSystem';
+import { calculateTotalStats, calculateStatBreakdown, getModuleXPMultiplier, SKILL_POINTS_PER_LEVEL } from '../utils/statsSystem';
 import { useAvatarStore } from './avatarStore';
 import { calculateXPForLevel, calculateLevelFromTotalXP } from '../data/avatarEvolution';
 import { feedback, sounds } from '../services/microInteractions';
+import { PERK_TREES } from '../data/perkTrees';
 
 // Lazy import unlock service to avoid circular dependencies
 let unlockServiceRef = null;
@@ -25,6 +26,40 @@ const getNotificationStore = async () => {
   }
   return notificationStoreRef;
 };
+
+// Lazy import skill points store
+let skillPointsStoreRef = null;
+const getSkillPointsStore = async () => {
+  if (!skillPointsStoreRef) {
+    const module = await import('./skillPointsStore');
+    skillPointsStoreRef = module.useSkillPointsStore;
+  }
+  return skillPointsStoreRef;
+};
+
+/**
+ * Get perks that become newly available at a given level
+ */
+function getNewlyAvailablePerks(oldLevel, newLevel) {
+  const newPerks = [];
+  Object.entries(PERK_TREES).forEach(([treeId, tree]) => {
+    tree.perks.forEach(perk => {
+      if (perk.level > oldLevel && perk.level <= newLevel) {
+        newPerks.push({
+          id: perk.id,
+          name: perk.name,
+          tree: treeId,
+          treeName: tree.name,
+          treeColor: tree.color,
+          level: perk.level,
+          tier: perk.tier,
+          description: perk.description,
+        });
+      }
+    });
+  });
+  return newPerks.sort((a, b) => a.level - b.level || a.tree.localeCompare(b.tree));
+}
 
 // ============================================
 // HELPER FUNCTIONS (must be defined before store)
@@ -637,6 +672,20 @@ export const useGamificationStore = create(
           if (leveledUp) {
             // Check if it's a tier up (every 10 levels)
             const tierUp = newLevel % 10 === 0;
+
+            // Award skill points on level up
+            let skillPointsAwarded = SKILL_POINTS_PER_LEVEL;
+            try {
+              const SkillPointsStore = await getSkillPointsStore();
+              const result = await SkillPointsStore.getState().awardLevelUpPoints();
+              skillPointsAwarded = result?.pointsAwarded || SKILL_POINTS_PER_LEVEL;
+            } catch (e) {
+              console.warn('[GamificationStore] Skill points award failed:', e);
+            }
+
+            // Get newly available perks
+            const newlyAvailablePerks = getNewlyAvailablePerks(oldLevel, newLevel);
+
             notifStore.showLevelUp({
               newLevel,
               oldLevel,
@@ -647,6 +696,8 @@ export const useGamificationStore = create(
               xpBeforeLevelUp: totalXP, // XP before this gain
               xpToNextLevel: newXPToNext,
               xpGained: adjustedAmount,
+              skillPointsAwarded,
+              newlyAvailablePerks,
             });
           }
         })();

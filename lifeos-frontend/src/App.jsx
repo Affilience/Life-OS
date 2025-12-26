@@ -181,6 +181,7 @@ const AICompanion = lazy(() => import('./pages/AICompanion'));
 const EquipmentTest = lazy(() => import('./pages/EquipmentTest'));
 const EquipmentTestHeroine = lazy(() => import('./pages/EquipmentTestHeroine'));
 const CombatDemo = lazy(() => import('./pages/CombatDemo'));
+const LevelUpTest = lazy(() => import('./pages/LevelUpTest'));
 
 // Protected Route - requires authentication
 function ProtectedRoute({ children }) {
@@ -247,7 +248,7 @@ function AppContent() {
     const needsOnboarding = freshIsOnboardingActive && !freshIsOnboardingComplete;
     if (needsOnboarding) {
       // Only redirect if not already on onboarding page, auth page, or demo pages
-      const excludedPaths = ['/onboarding', '/auth', '/combat-demo', '/equipment-test'];
+      const excludedPaths = ['/onboarding', '/auth', '/combat-demo', '/equipment-test', '/level-up-test'];
       const shouldRedirect = !excludedPaths.some(path => window.location.pathname.includes(path));
       if (shouldRedirect) {
         console.log('🎯 First-time user detected, redirecting to onboarding...');
@@ -492,6 +493,9 @@ function AppContent() {
                   } />
                   <Route path="/equipment-test-heroine" element={
                     <EquipmentTestHeroine />
+                  } />
+                  <Route path="/level-up-test" element={
+                    <LevelUpTest />
                   } />
                 </Routes>
                 </MainLayout>

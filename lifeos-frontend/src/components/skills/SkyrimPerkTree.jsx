@@ -193,10 +193,10 @@ export default function SkyrimPerkTree() {
                 const isPartial = unlockedPerks.has(prereqId) && !unlockedPerks.has(perk.id);
 
                 // Transform to fit 500x450 viewBox with proper spacing
-                // Original data: x ~160-620 (center 400), y ~-25-530
-                // Target: x 50-450 (center 250), y 20-420
-                const transformX = (ox) => ((ox - 400) * 0.45) + 250;
-                const transformY = (oy) => ((oy + 30) * 0.72) + 20;
+                // Original data: x ~60-760 (center 400), y ~-120-660
+                // Target: x 30-470 (center 250), y 25-425
+                const transformX = (ox) => ((ox - 60) / 700) * 440 + 30;
+                const transformY = (oy) => ((oy + 120) / 780) * 400 + 25;
 
                 const x1 = transformX(prereqPerk.position.x);
                 const y1 = transformY(prereqPerk.position.y);
@@ -237,8 +237,10 @@ export default function SkyrimPerkTree() {
               const nodeSize = perk.type === 'keystone' ? 16 : perk.tier === 'master' ? 14 : perk.tier === 'expert' ? 12 : 10;
 
               // Transform to fit 500x450 viewBox with proper spacing
-              const transformX = (ox) => ((ox - 400) * 0.45) + 250;
-              const transformY = (oy) => ((oy + 30) * 0.72) + 20;
+              // Original data: x ~60-760 (center 400), y ~-120-660
+              // Target: x 30-470 (center 250), y 25-425
+              const transformX = (ox) => ((ox - 60) / 700) * 440 + 30;
+              const transformY = (oy) => ((oy + 120) / 780) * 400 + 25;
               const x = transformX(perk.position.x);
               const y = transformY(perk.position.y);
 

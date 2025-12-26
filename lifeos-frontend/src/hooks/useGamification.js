@@ -21,12 +21,42 @@ import usePerkStore from '../stores/perkStore';
 import useQuestsStore from '../stores/questsStore';
 import useCustomStreaksStore from '../stores/customStreaksStore';
 import { calculatePerkBonusXP, addStatXP } from '../utils/perkEffects';
+import { PERK_TREES } from '../data/perkTrees';
 
 // Global celebration trigger (set by CelebrationProvider)
 let globalCelebrate = null;
 export const setCelebrationTrigger = (trigger) => {
   globalCelebrate = trigger;
 };
+
+/**
+ * Get perks that become newly available at a given level
+ * Returns perks where: oldLevel < perk.level <= newLevel
+ */
+function getNewlyAvailablePerks(oldLevel, newLevel) {
+  const newPerks = [];
+
+  Object.entries(PERK_TREES).forEach(([treeId, tree]) => {
+    tree.perks.forEach(perk => {
+      // Perk becomes available if its level requirement is now met
+      if (perk.level > oldLevel && perk.level <= newLevel) {
+        newPerks.push({
+          id: perk.id,
+          name: perk.name,
+          tree: treeId,
+          treeName: tree.name,
+          treeColor: tree.color,
+          level: perk.level,
+          tier: perk.tier,
+          description: perk.description,
+        });
+      }
+    });
+  });
+
+  // Sort by level, then by tree
+  return newPerks.sort((a, b) => a.level - b.level || a.tree.localeCompare(b.tree));
+}
 
 // Module-to-constellation mapping
 const MODULE_CONSTELLATION_MAP = {
@@ -717,11 +747,15 @@ export async function triggerGamification(action, options = {}) {
       console.warn('[Gamification] Skill points award failed:', e);
     }
 
+    // Get newly available perks at this level
+    const newlyAvailablePerks = getNewlyAvailablePerks(levelBefore, levelAfter);
+
     // Trigger level up modal with full data
     globalCelebrate.levelUp({
       newLevel: levelAfter,
       oldLevel: levelBefore,
       skillPointsAwarded,
+      newlyAvailablePerks,
       stageTransition: avatarStore.currentTier !== tierBefore,
       newStage: avatarStore.currentTier,
       oldStage: tierBefore,
