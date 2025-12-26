@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle, useState } from 'react';
-import * as PIXI from 'pixi.js';
+// Use pixi.js-legacy for Canvas fallback when WebGL unavailable
+import * as PIXI from 'pixi.js-legacy';
 import { GlowFilter } from '@pixi/filter-glow';
 import { ShockwaveFilter } from '@pixi/filter-shockwave';
 import { sounds } from '../../services/microInteractions/sounds';
@@ -11,19 +12,6 @@ import {
   legendaryWeaponSounds,
   playCombatSound
 } from '../../services/combatSounds';
-
-// Check WebGL support
-const isWebGLSupported = () => {
-  try {
-    const canvas = document.createElement('canvas');
-    return !!(
-      window.WebGLRenderingContext &&
-      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
-    );
-  } catch (e) {
-    return false;
-  }
-};
 
 /**
  * CombatCanvas - Professional GPU-accelerated combat effects
@@ -49,9 +37,7 @@ const CombatCanvas = forwardRef(({
     if (typeof window === 'undefined') return;
 
     try {
-      // Determine renderer preference
-      const preferWebGL = isWebGLSupported();
-
+      // pixi.js-legacy automatically falls back to Canvas if WebGL unavailable
       const app = new PIXI.Application({
         width,
         height,
@@ -59,10 +45,6 @@ const CombatCanvas = forwardRef(({
         antialias: true,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
-        // Force canvas if WebGL not available
-        forceCanvas: !preferWebGL,
-        // Prefer WebGL2 if available
-        preferWebGLVersion: 2,
       });
 
       containerRef.current.appendChild(app.view);
@@ -106,23 +88,6 @@ const CombatCanvas = forwardRef(({
       }
     };
   }, [width, height, onReady]);
-
-  // If there's an init error, render a fallback
-  if (initError) {
-    return (
-      <div
-        className={className}
-        style={{
-          width,
-          height,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          pointerEvents: 'none',
-        }}
-      />
-    );
-  }
 
   // ============================================
   // UTILITY FUNCTIONS
@@ -7589,6 +7554,7 @@ const CombatCanvas = forwardRef(({
       createHealEffect, createShieldEffect, createBuffEffect, createDebuffEffect,
       playWeaponAttack, playAbility, playBossAttack]);
 
+  // Render fallback if init failed, otherwise render the canvas container
   return (
     <div
       ref={containerRef}
@@ -7598,6 +7564,8 @@ const CombatCanvas = forwardRef(({
         height,
         position: 'relative',
         overflow: 'hidden',
+        // Hide if there was an init error (canvas won't have any content)
+        ...(initError ? { pointerEvents: 'none' } : {}),
       }}
     />
   );
