@@ -13,6 +13,8 @@
 let petStoreRef = null;
 let avatarStoreRef = null;
 let gamificationStoreRef = null;
+let elementalAbilityStoreRef = null;
+let perkTreesRef = null;
 
 const getPetStore = async () => {
   if (!petStoreRef) {
@@ -36,6 +38,22 @@ const getGamificationStore = async () => {
     gamificationStoreRef = module.default;
   }
   return gamificationStoreRef;
+};
+
+const getElementalAbilityStore = async () => {
+  if (!elementalAbilityStoreRef) {
+    const module = await import('../stores/elementalAbilityStore');
+    elementalAbilityStoreRef = module.default;
+  }
+  return elementalAbilityStoreRef;
+};
+
+const getPerkTrees = async () => {
+  if (!perkTreesRef) {
+    const module = await import('../data/perkTrees');
+    perkTreesRef = module.PERK_TREES;
+  }
+  return perkTreesRef;
 };
 
 /**
@@ -148,20 +166,42 @@ export const onAchievementUnlock = async (achievementId) => {
 export const onPerkUnlock = async (perkId, treeId, newTreeLevel) => {
   console.log('[UnlockService] Perk/tree unlock triggered:', { perkId, treeId, newTreeLevel });
 
+  // Check if this perk unlocks an ability
+  let unlockedAbility = null;
+  if (perkId) {
+    try {
+      const PERK_TREES = await getPerkTrees();
+      const tree = PERK_TREES[treeId];
+      if (tree) {
+        const perk = tree.perks.find(p => p.id === perkId);
+        if (perk?.effect?.unlocksAbility) {
+          // This perk unlocks an ability - register it
+          const abilityStore = await getElementalAbilityStore();
+          abilityStore.getState().unlockFromPerk(perkId);
+          unlockedAbility = perk.effect.unlocksAbility;
+          console.log('[UnlockService] Unlocked ability from perk:', unlockedAbility);
+        }
+      }
+    } catch (error) {
+      console.error('[UnlockService] Error checking perk ability unlock:', error);
+    }
+  }
+
   // Check all unlocks when skill tree changes
   const result = await checkAllUnlocks();
 
-  if (result.hasNewUnlocks) {
+  if (result.hasNewUnlocks || unlockedAbility) {
     console.log('[UnlockService] New unlocks from skill tree:', {
       perkId,
       treeId,
       newTreeLevel,
       pets: result.newPets.map(p => p.name),
       equipment: result.newEquipment.map(e => e.name),
+      ability: unlockedAbility,
     });
   }
 
-  return result;
+  return { ...result, unlockedAbility };
 };
 
 /**

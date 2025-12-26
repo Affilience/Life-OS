@@ -284,17 +284,17 @@ export default function EquipmentInventory() {
               Combat Abilities
             </h3>
             <p style={{ fontSize: '0.85rem', color: '#9ca3af', marginBottom: '16px' }}>
-              Equip up to 3 elemental abilities for boss battles
+              Equip 2 abilities + weapon ability for boss battles
             </p>
 
-            {/* 3 Ability Slots */}
+            {/* 2 Ability Slots (weapon provides 3rd) */}
             <div style={{
               display: 'flex',
               gap: '12px',
               marginBottom: '16px',
               justifyContent: 'center'
             }}>
-              {[0, 1, 2].map(slot => {
+              {[0, 1].map(slot => {
                 const abilityId = equippedAbilities[slot];
                 const ability = abilityId ? getAbilityById(abilityId) : null;
                 const isSelected = selectedAbilitySlot === slot;
@@ -332,9 +332,14 @@ export default function EquipmentInventory() {
                         {ability ? ability.name : `Slot ${slot + 1}`}
                       </div>
                       {ability && (
-                        <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginTop: '2px' }}>
-                          {(ability.cooldown / 1000).toFixed(0)}s CD
-                        </div>
+                        <>
+                          <div style={{ fontSize: '0.65rem', color: '#d1d5db', marginTop: '2px' }}>
+                            {ability.damage}x DMG
+                          </div>
+                          <div style={{ fontSize: '0.6rem', color: '#9ca3af' }}>
+                            {(ability.cooldown / 1000).toFixed(0)}s CD
+                          </div>
+                        </>
                       )}
                     </div>
                     {ability && (

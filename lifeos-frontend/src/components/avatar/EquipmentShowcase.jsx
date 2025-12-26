@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAvatarStore } from '../../stores/avatarStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
+import useElementalAbilityStore from '../../stores/elementalAbilityStore';
 import { useStats } from '../../hooks/useStats';
 import { usePetStore, PET_DATABASE } from '../../stores/petStore';
 import { EQUIPMENT_DATABASE, EQUIPMENT_RARITY, EQUIPMENT_SLOTS } from '../../data/equipmentDatabase';
@@ -26,9 +27,11 @@ import {
   X,
   Clock,
   Target,
-  Flame
+  Flame,
+  Plus
 } from 'lucide-react';
 import { WEAPON_ATTACKS } from '../../data/weaponAttacks';
+import { getAbilityById, ELEMENTAL_ABILITIES } from '../../data/elementalAbilities';
 
 // Slot definitions for paper doll layout
 const PAPERDOLL_SLOTS = {
@@ -129,6 +132,19 @@ export default function EquipmentShowcase() {
   const [filterRarity, setFilterRarity] = useState('all');
   const [showInventory, setShowInventory] = useState(false);
 
+  // Ability store
+  const {
+    equippedAbilities,
+    equipAbility,
+    unequipAbility,
+    isAbilityEquipped,
+    getUnlockedAbilities,
+  } = useElementalAbilityStore();
+
+  // Ability selection state
+  const [selectedAbilitySlot, setSelectedAbilitySlot] = useState(null);
+  const [abilityFilterElement, setAbilityFilterElement] = useState('all');
+
   // Get all available equipment from EQUIPMENT_DATABASE
   // Only filter by unlocked status - once unlocked, items are always available
   const availableEquipment = useMemo(() => {
@@ -144,6 +160,18 @@ export default function EquipmentShowcase() {
     const itemId = equipped[slotId];
     if (!itemId) return null;
     return EQUIPMENT_DATABASE[itemId] || null;
+  };
+
+  // Get equipped weapon for weapon ability display
+  const equippedWeapon = getEquippedForSlot('mainHand');
+  const weaponAbility = equippedWeapon?.weaponType ? WEAPON_ATTACKS[equippedWeapon.weaponType] : null;
+
+  // Get UNLOCKED abilities, filtered by element
+  const getFilteredAbilities = () => {
+    const unlockedIds = getUnlockedAbilities();
+    const unlockedAbilities = unlockedIds.map(id => getAbilityById(id)).filter(Boolean);
+    if (abilityFilterElement === 'all') return unlockedAbilities;
+    return unlockedAbilities.filter(a => a.element === abilityFilterElement);
   };
 
   // Get sprite URL for inventory display
@@ -340,6 +368,209 @@ export default function EquipmentShowcase() {
 
       {/* Stats Display */}
       <StatsDisplay stats={stats} statBreakdown={statBreakdown} />
+
+      {/* Combat Abilities Section */}
+      <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-400" />
+            Combat Abilities
+          </h3>
+          <span className="text-xs text-white/50">Equip abilities for boss battles</span>
+        </div>
+
+        {/* Ability Slots - 2 custom + 1 weapon */}
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-4">
+          {/* Ability Slot 1 */}
+          {[0, 1].map(slot => {
+            const abilityId = equippedAbilities[slot];
+            const ability = abilityId ? getAbilityById(abilityId) : null;
+            const isSelected = selectedAbilitySlot === slot;
+
+            return (
+              <div
+                key={slot}
+                onClick={() => setSelectedAbilitySlot(isSelected ? null : slot)}
+                className={`
+                  relative w-24 sm:w-28 p-3 rounded-xl cursor-pointer transition-all duration-200
+                  ${isSelected ? 'ring-2 ring-purple-500 scale-105' : 'hover:scale-102'}
+                  ${ability ? 'border-2' : 'border-2 border-dashed border-white/20'}
+                `}
+                style={{
+                  borderColor: ability ? ability.elementColor : undefined,
+                  background: ability
+                    ? `linear-gradient(135deg, ${ability.elementColor}20, transparent)`
+                    : 'rgba(0,0,0,0.3)',
+                  boxShadow: ability ? `0 0 15px ${ability.elementColor}30` : 'none',
+                }}
+              >
+                <div className="text-center">
+                  <div className="text-2xl sm:text-3xl mb-1">
+                    {ability ? ability.icon : <Plus className="w-6 h-6 mx-auto text-white/30" />}
+                  </div>
+                  <div className="text-xs font-bold truncate" style={{ color: ability ? ability.elementColor : '#6b7280' }}>
+                    {ability ? ability.name : `Slot ${slot + 1}`}
+                  </div>
+                  {ability && (
+                    <>
+                      <div className="text-[10px] text-white/60 mt-1">
+                        {ability.damage}x DMG
+                      </div>
+                      <div className="text-[10px] text-white/40">
+                        {(ability.cooldown / 1000).toFixed(0)}s CD
+                      </div>
+                    </>
+                  )}
+                </div>
+                {ability && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      unequipAbility(slot);
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs transition-colors"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Weapon Ability (Read-only) */}
+          <div
+            className={`
+              relative w-24 sm:w-28 p-3 rounded-xl
+              ${weaponAbility ? 'border-2 border-orange-500/50' : 'border-2 border-dashed border-white/10'}
+            `}
+            style={{
+              background: weaponAbility
+                ? 'linear-gradient(135deg, rgba(249, 115, 22, 0.15), transparent)'
+                : 'rgba(0,0,0,0.2)',
+            }}
+          >
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl mb-1">
+                {weaponAbility ? '⚔️' : '🔒'}
+              </div>
+              <div className="text-xs font-bold truncate text-orange-400">
+                {weaponAbility ? weaponAbility.attackName : 'Weapon'}
+              </div>
+              {weaponAbility ? (
+                <>
+                  <div className="text-[10px] text-white/60 mt-1">
+                    {weaponAbility.damageMultiplier}x DMG
+                  </div>
+                  <div className="text-[10px] text-white/40">
+                    {(weaponAbility.cooldown / 1000).toFixed(1)}s CD
+                  </div>
+                </>
+              ) : (
+                <div className="text-[10px] text-white/30 mt-1">
+                  Equip weapon
+                </div>
+              )}
+            </div>
+            <div className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-orange-500/80 rounded text-[8px] text-white font-bold">
+              WPN
+            </div>
+          </div>
+        </div>
+
+        {/* Ability Selection Panel */}
+        {selectedAbilitySlot !== null && (
+          <div className="bg-black/40 rounded-xl p-4 border border-white/10 mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-white">Select Ability for Slot {selectedAbilitySlot + 1}</span>
+              <button
+                onClick={() => setSelectedAbilitySlot(null)}
+                className="text-white/50 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Element Filter */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button
+                onClick={() => setAbilityFilterElement('all')}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  abilityFilterElement === 'all' ? 'bg-purple-500 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+              >
+                All
+              </button>
+              {Object.entries(ELEMENTAL_ABILITIES).slice(0, 6).map(([key, elem]) => (
+                <button
+                  key={key}
+                  onClick={() => setAbilityFilterElement(key)}
+                  className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+                  style={{
+                    background: abilityFilterElement === key ? elem.color : 'rgba(255,255,255,0.1)',
+                    color: 'white',
+                  }}
+                >
+                  {elem.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Abilities Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-64 overflow-y-auto">
+              {getFilteredAbilities().length > 0 ? (
+                getFilteredAbilities().map(ability => {
+                  const equipped = isAbilityEquipped(ability.id);
+                  const equippedInCurrentSlot = equippedAbilities[selectedAbilitySlot] === ability.id;
+
+                  return (
+                    <div
+                      key={ability.id}
+                      onClick={() => {
+                        if (!equipped || equippedInCurrentSlot) {
+                          equipAbility(selectedAbilitySlot, ability.id);
+                          setSelectedAbilitySlot(null);
+                        }
+                      }}
+                      className={`
+                        p-3 rounded-lg cursor-pointer transition-all hover:scale-105
+                        ${equipped && !equippedInCurrentSlot ? 'opacity-40 cursor-not-allowed' : ''}
+                      `}
+                      style={{
+                        background: `linear-gradient(135deg, ${ability.elementColor}30, transparent)`,
+                        border: equipped ? '2px solid #22c55e' : `1px solid ${ability.elementColor}50`,
+                      }}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-1">{ability.icon}</div>
+                        <div className="text-xs font-bold truncate" style={{ color: ability.elementColor }}>
+                          {ability.name}
+                        </div>
+                        <div className="text-[10px] text-white/70 mt-1">
+                          {ability.damage}x DMG
+                        </div>
+                        <div className="text-[10px] text-white/50">
+                          {(ability.cooldown / 1000).toFixed(0)}s cooldown
+                        </div>
+                      </div>
+                      {equipped && (
+                        <div className="text-[9px] text-green-400 text-center mt-1 font-bold">
+                          EQUIPPED
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <Lock className="w-8 h-8 mx-auto mb-2 text-white/30" />
+                  <p className="text-white/50 text-sm">No abilities unlocked yet</p>
+                  <p className="text-white/30 text-xs mt-1">Unlock abilities via skill tree perks</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Inventory Modal */}
       {showInventory && selectedSlot && (

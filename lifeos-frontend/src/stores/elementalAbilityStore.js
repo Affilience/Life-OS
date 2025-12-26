@@ -42,8 +42,9 @@ const useElementalAbilityStore = create(
       // STATE
       // ============================================
 
-      // 3 equipped ability slots (stores ability IDs)
-      equippedAbilities: [null, null, null],
+      // 2 equipped ability slots (stores ability IDs)
+      // Note: Weapon provides a 3rd ability based on weapon type
+      equippedAbilities: [null, null],
 
       // Cooldown tracking: { abilityId: lastUsedTimestamp }
       abilityCooldowns: {},
@@ -93,7 +94,6 @@ const useElementalAbilityStore = create(
             updates.equippedAbilities = [
               equippedResult.data.slot_0 || null,
               equippedResult.data.slot_1 || null,
-              equippedResult.data.slot_2 || null,
             ];
           }
 
@@ -122,10 +122,10 @@ const useElementalAbilityStore = create(
       // ============================================
 
       /**
-       * Equip an ability to a slot (0, 1, or 2)
+       * Equip an ability to a slot (0 or 1)
        */
       equipAbility: async (slot, abilityId) => {
-        if (slot < 0 || slot > 2) {
+        if (slot < 0 || slot > 1) {
           console.error('Invalid slot:', slot);
           return;
         }
@@ -158,7 +158,7 @@ const useElementalAbilityStore = create(
        * Unequip ability from a slot
        */
       unequipAbility: async (slot) => {
-        if (slot < 0 || slot > 2) return;
+        if (slot < 0 || slot > 1) return;
 
         const currentSlots = [...get().equippedAbilities];
         currentSlots[slot] = null;
@@ -185,7 +185,7 @@ const useElementalAbilityStore = create(
               user_id: userId,
               slot_0: equippedAbilities[0],
               slot_1: equippedAbilities[1],
-              slot_2: equippedAbilities[2],
+              slot_2: null, // Reserved for weapon ability
               updated_at: new Date().toISOString(),
             }, { onConflict: 'user_id' });
         } catch (error) {
@@ -481,7 +481,7 @@ const useElementalAbilityStore = create(
 
       reset: () => {
         set({
-          equippedAbilities: [null, null, null],
+          equippedAbilities: [null, null],
           abilityCooldowns: {},
           unlockedSources: {
             unlockedPerks: [],
