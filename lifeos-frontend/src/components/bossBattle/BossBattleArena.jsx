@@ -12,12 +12,16 @@ import { animate, stagger } from 'animejs';
 import { useBossStore } from '../../stores/bossStore';
 import { useAvatarStore } from '../../stores/avatarStore';
 import { usePetStore } from '../../stores/petStore';
+import useElementalAbilityStore from '../../stores/elementalAbilityStore';
 import { BOSS_DATABASE, BOSS_DIFFICULTY } from '../../data/bossDatabase';
 import { WEAPON_ATTACKS, ATTACK_ANIMATIONS } from '../../data/weaponAttacks';
 import { ABILITY_TYPES, getWeaponAbility, isAbilityReady, calculateAbilityDamage } from '../../data/weaponAbilities';
+import { getAbilityById, calculateAbilityDamage as calcElementalDamage } from '../../data/elementalAbilities';
 import { sounds } from '../../services/microInteractions';
+import { playBossAttack } from '../../services/combatSounds';
 import AvatarRenderer from '../avatar/AvatarRenderer';
 import AbilityAnimation from '../combat/AbilityAnimation';
+import CombatCanvas from '../combat/CombatCanvas';
 import { Confetti, Fireworks, ScreenFlash, Starburst } from '../ui/Celebration';
 
 // Custom hook for anime.js screen shake
@@ -626,103 +630,709 @@ const BossAttackProjectile = ({ boss, onComplete }) => {
   const color = boss?.attackColor || '#ff0000';
   const attackAnimation = boss?.attackAnimation || 'fireball';
 
-  // Different projectile styles based on boss attack type
+  // IMPRESSIVE projectile styles for each boss attack type
   const getProjectileStyle = () => {
     switch (attackAnimation) {
+      // Shadow Slime - Despair Glob: Pulsating dark mass with shadow tendrils
+      case 'bounce':
+        return (
+          <motion.div className="relative w-20 h-20">
+            {/* Main glob body */}
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: `radial-gradient(circle, ${color} 0%, #1a0a2e 60%, #000 100%)`,
+                boxShadow: `0 0 40px ${color}, 0 0 80px ${color}50, inset 0 0 20px #000`,
+              }}
+              animate={{
+                scale: [1, 1.2, 0.9, 1.1, 1],
+                borderRadius: ['50%', '45%', '55%', '48%', '50%']
+              }}
+              transition={{ duration: 0.4, repeat: 0 }}
+            />
+            {/* Shadow tendrils */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-2 h-8 rounded-full origin-bottom"
+                style={{
+                  background: `linear-gradient(to top, ${color}, transparent)`,
+                  left: '50%',
+                  bottom: '50%',
+                  transform: `rotate(${i * 45}deg)`,
+                }}
+                animate={{
+                  scaleY: [0.5, 1.5, 0.5],
+                  opacity: [0.3, 0.8, 0.3],
+                }}
+                transition={{ duration: 0.3, delay: i * 0.03 }}
+              />
+            ))}
+            {/* Dripping effect */}
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={`drip-${i}`}
+                className="absolute w-3 h-6 rounded-full"
+                style={{
+                  backgroundColor: color,
+                  left: `${30 + i * 20}%`,
+                  top: '80%',
+                }}
+                animate={{ y: [0, 30, 60], opacity: [1, 0.5, 0], scaleY: [1, 1.5, 0.5] }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Goblin Chief - Distraction Dagger: Multiple spinning daggers
+      case 'stab':
+        return (
+          <motion.div className="relative w-24 h-24">
+            {/* Multiple daggers spinning in formation */}
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  width: 0,
+                  height: 0,
+                  borderLeft: '8px solid transparent',
+                  borderRight: '8px solid transparent',
+                  borderBottom: `30px solid ${color}`,
+                  filter: `drop-shadow(0 0 8px ${color})`,
+                }}
+                animate={{
+                  rotate: [0, 360],
+                  x: Math.cos((i * 120) * Math.PI / 180) * 25 - 8,
+                  y: Math.sin((i * 120) * Math.PI / 180) * 25 - 15,
+                }}
+                transition={{ duration: 0.3, repeat: 0 }}
+              />
+            ))}
+            {/* Poison trail */}
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={`trail-${i}`}
+                className="absolute w-2 h-2 rounded-full"
+                style={{
+                  backgroundColor: '#22ff22',
+                  boxShadow: '0 0 10px #22ff22',
+                  left: '50%',
+                  top: '50%',
+                }}
+                animate={{
+                  x: (Math.random() - 0.5) * 60,
+                  y: -30 - i * 10,
+                  opacity: [1, 0],
+                  scale: [1, 0],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Skeleton Knight - Oath Breaker: Ghostly sword slash with bones
+      case 'slash':
+        return (
+          <motion.div className="relative w-32 h-20">
+            {/* Main slash arc */}
+            <motion.div
+              className="absolute w-full h-4 rounded-full origin-left"
+              style={{
+                background: `linear-gradient(90deg, transparent, ${color}, #fff, ${color}, transparent)`,
+                boxShadow: `0 0 20px ${color}, 0 0 40px ${color}50`,
+                top: '40%',
+              }}
+              animate={{
+                scaleX: [0, 1.2, 1],
+                opacity: [0, 1, 0.7],
+              }}
+              transition={{ duration: 0.25 }}
+            />
+            {/* Ghostly trail */}
+            <motion.div
+              className="absolute w-full h-3 rounded-full origin-left"
+              style={{
+                background: `linear-gradient(90deg, transparent, #88888850, transparent)`,
+                top: '45%',
+              }}
+              animate={{ scaleX: [0, 1], opacity: [0.8, 0] }}
+              transition={{ duration: 0.35, delay: 0.1 }}
+            />
+            {/* Bone fragments */}
+            {[...Array(5)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-4 rounded-sm"
+                style={{
+                  backgroundColor: '#e0e0e0',
+                  boxShadow: '0 0 5px #888',
+                  left: `${20 + i * 15}%`,
+                  top: '50%',
+                }}
+                animate={{
+                  y: [-10, -40 - Math.random() * 20],
+                  x: (Math.random() - 0.5) * 30,
+                  rotate: [0, 360 + Math.random() * 360],
+                  opacity: [1, 0],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.03 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Forest Troll - Excuse Avalanche: Massive boulder with debris
+      case 'smash':
+        return (
+          <motion.div className="relative w-28 h-28">
+            {/* Main boulder */}
+            <motion.div
+              className="absolute inset-2 rounded-2xl"
+              style={{
+                background: `radial-gradient(circle at 30% 30%, #8b7355 0%, #5c4033 50%, #2a1810 100%)`,
+                boxShadow: `0 0 30px ${color}, 0 8px 20px #00000080`,
+              }}
+              animate={{
+                rotate: [0, 45, 90],
+                scale: [0.8, 1.1, 1],
+              }}
+              transition={{ duration: 0.35 }}
+            />
+            {/* Cracks on boulder */}
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+              <motion.path
+                d="M30,20 L50,50 L70,30 M50,50 L40,80 M50,50 L80,60"
+                stroke="#3a2515"
+                strokeWidth="3"
+                fill="none"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.3 }}
+              />
+            </svg>
+            {/* Flying debris */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-sm"
+                style={{
+                  width: 4 + Math.random() * 8,
+                  height: 4 + Math.random() * 8,
+                  backgroundColor: i % 2 === 0 ? '#8b7355' : '#5c4033',
+                  left: '50%',
+                  top: '50%',
+                }}
+                animate={{
+                  x: (Math.random() - 0.5) * 100,
+                  y: -20 - Math.random() * 60,
+                  rotate: [0, 360],
+                  opacity: [1, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.02 }}
+              />
+            ))}
+            {/* Dust clouds */}
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={`dust-${i}`}
+                className="absolute w-8 h-8 rounded-full"
+                style={{
+                  background: 'radial-gradient(circle, #8b735580, transparent)',
+                  left: `${20 + i * 20}%`,
+                  top: '70%',
+                }}
+                animate={{
+                  scale: [0, 2],
+                  opacity: [0.6, 0],
+                  y: [0, -20],
+                }}
+                transition={{ duration: 0.4, delay: 0.1 + i * 0.05 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Stone Golem - Stagnation Slam: Giant stone fist with shockwaves
+      case 'pound':
+        return (
+          <motion.div className="relative w-32 h-32">
+            {/* Giant fist */}
+            <motion.div
+              className="absolute w-20 h-24 rounded-t-3xl rounded-b-lg left-1/2 top-0"
+              style={{
+                background: `linear-gradient(180deg, #a0a0a0 0%, #606060 50%, #404040 100%)`,
+                boxShadow: `0 0 30px ${color}, 0 10px 30px #00000080`,
+                transform: 'translateX(-50%)',
+              }}
+              animate={{
+                y: [0, 20],
+                scale: [1, 1.1],
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Knuckle details */}
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-4 h-3 rounded-full bg-gray-500"
+                  style={{ left: `${10 + i * 20}%`, top: '10%' }}
+                />
+              ))}
+            </motion.div>
+            {/* Shockwave rings */}
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute left-1/2 bottom-0 rounded-full border-4"
+                style={{
+                  width: 40,
+                  height: 20,
+                  borderColor: color,
+                  transform: 'translateX(-50%)',
+                }}
+                animate={{
+                  scale: [1, 3 + i],
+                  opacity: [0.8, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              />
+            ))}
+            {/* Ground cracks */}
+            <svg className="absolute bottom-0 left-0 w-full h-8" viewBox="0 0 100 30">
+              {[...Array(5)].map((_, i) => (
+                <motion.line
+                  key={i}
+                  x1="50"
+                  y1="15"
+                  x2={20 + i * 15}
+                  y2={25 + (Math.random() - 0.5) * 10}
+                  stroke={color}
+                  strokeWidth="2"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                />
+              ))}
+            </svg>
+          </motion.div>
+        );
+
+      // Flame Demon - Burnout Blaze: Raging inferno with multiple fireballs
       case 'fireball':
         return (
-          <motion.div
-            className="w-10 h-10 rounded-full relative"
-            style={{
-              background: `radial-gradient(circle, #ffff00 0%, ${color} 50%, #000 100%)`,
-              boxShadow: `0 0 30px ${color}, 0 0 60px ${color}`,
-            }}
-            animate={{ scale: [1, 1.3, 1], rotate: [0, 180, 360] }}
-            transition={{ duration: 0.4, repeat: 0 }}
-          >
-            {/* Fire particles */}
+          <motion.div className="relative w-28 h-28">
+            {/* Main fireball */}
+            <motion.div
+              className="absolute inset-4 rounded-full"
+              style={{
+                background: `radial-gradient(circle at 40% 40%, #fff 0%, #ffff00 20%, ${color} 50%, #8b0000 80%, #000 100%)`,
+                boxShadow: `0 0 50px ${color}, 0 0 100px ${color}80, 0 0 150px ${color}40`,
+              }}
+              animate={{
+                scale: [1, 1.3, 1.1, 1.2, 1],
+                rotate: [0, 10, -10, 5, 0],
+              }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Orbiting smaller fireballs */}
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-4 h-4 rounded-full"
+                style={{
+                  background: `radial-gradient(circle, #fff, #ff6600)`,
+                  boxShadow: `0 0 15px #ff6600`,
+                  left: '50%',
+                  top: '50%',
+                }}
+                animate={{
+                  x: [
+                    Math.cos((i * 90) * Math.PI / 180) * 35,
+                    Math.cos((i * 90 + 180) * Math.PI / 180) * 35,
+                  ],
+                  y: [
+                    Math.sin((i * 90) * Math.PI / 180) * 35,
+                    Math.sin((i * 90 + 180) * Math.PI / 180) * 35,
+                  ],
+                }}
+                transition={{ duration: 0.4 }}
+              />
+            ))}
+            {/* Fire particles rising */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  width: 3 + Math.random() * 6,
+                  height: 3 + Math.random() * 6,
+                  backgroundColor: i % 3 === 0 ? '#ff0000' : i % 3 === 1 ? '#ff6600' : '#ffff00',
+                  left: `${30 + Math.random() * 40}%`,
+                  top: '60%',
+                }}
+                animate={{
+                  y: [-20, -80 - Math.random() * 40],
+                  x: (Math.random() - 0.5) * 40,
+                  opacity: [1, 0],
+                  scale: [1, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.02 }}
+              />
+            ))}
+            {/* Heat distortion rings */}
+            {[...Array(2)].map((_, i) => (
+              <motion.div
+                key={`heat-${i}`}
+                className="absolute inset-0 rounded-full border-2 border-orange-500/30"
+                animate={{
+                  scale: [1, 1.8],
+                  opacity: [0.5, 0],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.15 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Ice Drake - Comfort Zone Freeze: Crystalline ice beam
+      case 'breath':
+        return (
+          <motion.div className="relative w-36 h-24">
+            {/* Main ice breath cone */}
+            <motion.div
+              className="absolute left-0 top-1/2 w-full h-12 -translate-y-1/2 origin-left"
+              style={{
+                background: `linear-gradient(90deg, ${color} 0%, #88ddff 30%, #ffffff 60%, #88ddff 80%, transparent 100%)`,
+                clipPath: 'polygon(0% 40%, 100% 0%, 100% 100%, 0% 60%)',
+                boxShadow: `0 0 40px ${color}`,
+              }}
+              animate={{
+                scaleX: [0.5, 1.2, 1],
+                opacity: [0.5, 1, 0.9],
+              }}
+              transition={{ duration: 0.35 }}
+            />
+            {/* Ice crystals */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute"
+                style={{
+                  left: `${10 + i * 12}%`,
+                  top: `${35 + (Math.random() - 0.5) * 30}%`,
+                  width: 0,
+                  height: 0,
+                  borderLeft: '4px solid transparent',
+                  borderRight: '4px solid transparent',
+                  borderBottom: `${12 + Math.random() * 8}px solid #aaeeff`,
+                  filter: 'drop-shadow(0 0 5px #88ddff)',
+                  transform: `rotate(${Math.random() * 60 - 30}deg)`,
+                }}
+                animate={{
+                  scale: [0, 1.2, 1],
+                  opacity: [0, 1, 0.8],
+                }}
+                transition={{ duration: 0.3, delay: i * 0.03 }}
+              />
+            ))}
+            {/* Frost particles */}
+            {[...Array(15)].map((_, i) => (
+              <motion.div
+                key={`frost-${i}`}
+                className="absolute w-2 h-2 rounded-full bg-white"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${30 + Math.random() * 40}%`,
+                  boxShadow: '0 0 8px #88ddff',
+                }}
+                animate={{
+                  x: [0, 20 + Math.random() * 30],
+                  opacity: [0, 1, 0],
+                  scale: [0, 1, 0.5],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.02 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Dark Wizard - Imposter Hex: Swirling dark magic with runes
+      case 'spell':
+        return (
+          <motion.div className="relative w-28 h-28">
+            {/* Central dark orb */}
+            <motion.div
+              className="absolute inset-6 rounded-full"
+              style={{
+                background: `radial-gradient(circle, ${color} 0%, #1a0030 60%, #000 100%)`,
+                boxShadow: `0 0 40px ${color}, inset 0 0 20px #ff00ff40`,
+              }}
+              animate={{
+                scale: [1, 1.2, 1],
+              }}
+              transition={{ duration: 0.3 }}
+            />
+            {/* Rotating magic circles */}
+            {[...Array(2)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute inset-0 rounded-full border-2"
+                style={{
+                  borderColor: i === 0 ? color : '#ff00ff',
+                  borderStyle: 'dashed',
+                }}
+                animate={{
+                  rotate: i === 0 ? [0, 360] : [360, 0],
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{ duration: 0.5 }}
+              />
+            ))}
+            {/* Floating runes */}
+            {['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ'].map((rune, i) => (
+              <motion.div
+                key={i}
+                className="absolute text-lg font-bold"
+                style={{
+                  color: color,
+                  textShadow: `0 0 10px ${color}`,
+                  left: '50%',
+                  top: '50%',
+                }}
+                animate={{
+                  x: Math.cos((i * 60) * Math.PI / 180) * 45 - 6,
+                  y: Math.sin((i * 60) * Math.PI / 180) * 45 - 10,
+                  opacity: [0, 1, 0.7],
+                  scale: [0.5, 1.2, 1],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.04 }}
+              >
+                {rune}
+              </motion.div>
+            ))}
+            {/* Dark energy wisps */}
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={`wisp-${i}`}
+                className="absolute w-3 h-8 rounded-full origin-bottom"
+                style={{
+                  background: `linear-gradient(to top, ${color}, transparent)`,
+                  left: '50%',
+                  top: '50%',
+                }}
+                animate={{
+                  rotate: [i * 60, i * 60 + 30, i * 60],
+                  scaleY: [0.5, 1.5, 0.5],
+                  opacity: [0.3, 0.8, 0.3],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Void Watcher - Timeline Terror: Eldritch tentacles with eyes
+      case 'tentacle':
+        return (
+          <motion.div className="relative w-32 h-32">
+            {/* Central void */}
+            <motion.div
+              className="absolute inset-8 rounded-full"
+              style={{
+                background: `radial-gradient(circle, #000 0%, ${color} 100%)`,
+                boxShadow: `0 0 50px ${color}, inset 0 0 30px #000`,
+              }}
+              animate={{
+                scale: [1, 0.8, 1.1, 1],
+              }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Multiple tentacles */}
             {[...Array(6)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute w-3 h-3 rounded-full"
+                className="absolute w-3 origin-bottom"
                 style={{
-                  backgroundColor: i % 2 === 0 ? '#ff6600' : '#ffaa00',
-                  top: '50%',
+                  height: 40 + Math.random() * 20,
+                  background: `linear-gradient(to top, ${color}, #1e1b4b, transparent)`,
+                  borderRadius: '50%',
                   left: '50%',
+                  bottom: '50%',
+                  boxShadow: `0 0 10px ${color}`,
                 }}
                 animate={{
-                  x: Math.cos(i * 60 * Math.PI / 180) * 15,
-                  y: Math.sin(i * 60 * Math.PI / 180) * 15 - 20,
+                  rotate: [i * 60 - 30, i * 60 + 30, i * 60 - 30],
+                  scaleY: [0.8, 1.2, 0.8],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.05 }}
+              />
+            ))}
+            {/* Floating eyes */}
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={`eye-${i}`}
+                className="absolute rounded-full bg-white flex items-center justify-center"
+                style={{
+                  width: 12,
+                  height: 12,
+                  boxShadow: `0 0 10px ${color}`,
+                  left: '50%',
+                  top: '50%',
+                }}
+                animate={{
+                  x: Math.cos((i * 90 + 45) * Math.PI / 180) * 40 - 6,
+                  y: Math.sin((i * 90 + 45) * Math.PI / 180) * 40 - 6,
+                  scale: [0, 1.2, 1],
+                }}
+                transition={{ duration: 0.3, delay: 0.1 + i * 0.05 }}
+              >
+                <div className="w-2 h-2 rounded-full bg-red-600" />
+              </motion.div>
+            ))}
+            {/* Reality distortion */}
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{
+                border: `2px solid ${color}`,
+                borderStyle: 'dotted',
+              }}
+              animate={{
+                rotate: [0, -360],
+                scale: [1, 1.3, 1],
+              }}
+              transition={{ duration: 0.6 }}
+            />
+          </motion.div>
+        );
+
+      // Dragon Lord - Destiny's Wrath: ULTIMATE dragon breath attack
+      case 'dragonfire':
+        return (
+          <motion.div className="relative w-40 h-36">
+            {/* Massive dragon head silhouette */}
+            <motion.div
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-16"
+              style={{
+                background: `linear-gradient(180deg, #fbbf24 0%, #f97316 50%, #000 100%)`,
+                clipPath: 'polygon(20% 0%, 80% 0%, 100% 40%, 85% 100%, 15% 100%, 0% 40%)',
+                boxShadow: `0 0 30px #fbbf24`,
+              }}
+              animate={{ scale: [0.8, 1.1, 1] }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Dragon eyes */}
+              <div className="absolute w-2 h-2 rounded-full bg-red-500 left-[30%] top-[30%]" style={{ boxShadow: '0 0 10px #ff0000' }} />
+              <div className="absolute w-2 h-2 rounded-full bg-red-500 left-[60%] top-[30%]" style={{ boxShadow: '0 0 10px #ff0000' }} />
+            </motion.div>
+            {/* Main breath cone - golden fire */}
+            <motion.div
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-24 origin-top"
+              style={{
+                background: `linear-gradient(180deg, #fbbf24 0%, #f97316 30%, #ef4444 60%, #7c2d12 90%, transparent 100%)`,
+                clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)',
+                boxShadow: `0 0 60px #fbbf24, 0 0 120px #f9731680`,
+              }}
+              animate={{
+                scaleY: [0.5, 1.2, 1],
+                scaleX: [0.8, 1.1, 1],
+              }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Inner white-hot core */}
+            <motion.div
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 origin-top"
+              style={{
+                background: `linear-gradient(180deg, #fff 0%, #fef08a 50%, transparent 100%)`,
+                clipPath: 'polygon(45% 0%, 55% 0%, 100% 100%, 0% 100%)',
+              }}
+              animate={{
+                scaleY: [0.3, 1, 0.8],
+                opacity: [0.5, 1, 0.8],
+              }}
+              transition={{ duration: 0.35, delay: 0.05 }}
+            />
+            {/* Massive fire particles */}
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: 4 + Math.random() * 8,
+                  height: 4 + Math.random() * 8,
+                  backgroundColor: ['#fbbf24', '#f97316', '#ef4444', '#fff'][Math.floor(Math.random() * 4)],
+                  left: `${30 + Math.random() * 40}%`,
+                  top: `${30 + Math.random() * 50}%`,
+                  boxShadow: '0 0 10px currentColor',
+                }}
+                animate={{
+                  y: [0, 40 + Math.random() * 40],
+                  x: (Math.random() - 0.5) * 60,
                   opacity: [1, 0],
-                  scale: [1, 0],
+                  scale: [1, 0.5],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.015 }}
+              />
+            ))}
+            {/* Spiraling energy rings */}
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={`ring-${i}`}
+                className="absolute left-1/2 rounded-full border-2"
+                style={{
+                  width: 30 + i * 15,
+                  height: 15 + i * 8,
+                  borderColor: '#fbbf24',
+                  top: `${40 + i * 15}%`,
+                  transform: 'translateX(-50%)',
+                }}
+                animate={{
+                  scale: [0.5, 1.5],
+                  opacity: [1, 0],
+                  y: [0, 20],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      default:
+        // Default slash/strike - Enhanced version
+        return (
+          <motion.div className="relative w-20 h-20">
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: `radial-gradient(circle, #fff 0%, ${color} 40%, ${color}80 70%, transparent 100%)`,
+                boxShadow: `0 0 30px ${color}, 0 0 60px ${color}50`,
+              }}
+              animate={{ scale: [0.5, 1.3, 1], rotate: [0, 180] }}
+              transition={{ duration: 0.3 }}
+            />
+            {/* Impact lines */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-8 origin-bottom"
+                style={{
+                  background: `linear-gradient(to top, ${color}, transparent)`,
+                  left: '50%',
+                  top: '50%',
+                  transform: `rotate(${i * 45}deg)`,
+                }}
+                animate={{
+                  scaleY: [0, 1.5, 0],
+                  opacity: [0, 1, 0],
                 }}
                 transition={{ duration: 0.3, delay: i * 0.02 }}
               />
             ))}
           </motion.div>
-        );
-      case 'breath':
-        return (
-          <motion.div
-            className="w-16 h-8 rounded-full"
-            style={{
-              background: `linear-gradient(180deg, ${color}00, ${color}, ${color}00)`,
-              boxShadow: `0 0 20px ${color}`,
-            }}
-            animate={{ scaleX: [1, 2, 1], opacity: [0.8, 1, 0.8] }}
-            transition={{ duration: 0.3 }}
-          />
-        );
-      case 'spell':
-      case 'dark_pulse':
-        return (
-          <motion.div
-            className="w-8 h-8 relative"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 0.4 }}
-          >
-            {[...Array(4)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-3 h-3 rounded-full"
-                style={{
-                  backgroundColor: color,
-                  boxShadow: `0 0 10px ${color}`,
-                  top: '50%',
-                  left: '50%',
-                }}
-                animate={{
-                  x: Math.cos(i * 90 * Math.PI / 180) * 12,
-                  y: Math.sin(i * 90 * Math.PI / 180) * 12,
-                }}
-              />
-            ))}
-          </motion.div>
-        );
-      case 'tentacle':
-        return (
-          <motion.div
-            className="w-4 h-16 rounded-full"
-            style={{
-              background: `linear-gradient(180deg, ${color}, #1e1b4b)`,
-              boxShadow: `0 0 15px ${color}`,
-            }}
-            animate={{ scaleY: [1, 1.3, 1], rotate: [-20, 20, -20] }}
-            transition={{ duration: 0.3 }}
-          />
-        );
-      default:
-        // Default slash/strike
-        return (
-          <motion.div
-            className="w-10 h-10 rounded-full"
-            style={{
-              background: `radial-gradient(circle, #fff 0%, ${color} 50%, transparent 100%)`,
-              boxShadow: `0 0 20px ${color}`,
-            }}
-            animate={{ scale: [0.8, 1.2, 0.8] }}
-            transition={{ duration: 0.3 }}
-          />
         );
     }
   };
@@ -730,9 +1340,9 @@ const BossAttackProjectile = ({ boss, onComplete }) => {
   return (
     <motion.div
       className="absolute left-1/2 pointer-events-none z-30"
-      initial={{ top: '35%', x: '-50%', scale: 0.5, opacity: 0 }}
-      animate={{ top: '75%', x: '-50%', scale: 1, opacity: [0, 1, 1, 0.5] }}
-      transition={{ duration: 0.4, ease: 'easeIn' }}
+      initial={{ top: '25%', x: '-50%', scale: 0.3, opacity: 0 }}
+      animate={{ top: '70%', x: '-50%', scale: 1, opacity: [0, 1, 1, 0.8] }}
+      transition={{ duration: 0.5, ease: 'easeIn' }}
       onAnimationComplete={onComplete}
     >
       {getProjectileStyle()}
@@ -1378,6 +1988,16 @@ export default function BossBattleArena({ bossId, onClose }) {
   const { level, equipped, characterGender } = useAvatarStore();
   const { activePet } = usePetStore();
 
+  // Elemental Ability Store
+  const {
+    equippedAbilities,
+    useAbility: useElementalAbility,
+    isAbilityReady: isElementalAbilityReady,
+    getCooldownProgress: getElementalCooldownProgress,
+    getEquippedAbility,
+    resetCooldowns: resetElementalCooldowns,
+  } = useElementalAbilityStore();
+
   const [damageNumbers, setDamageNumbers] = useState([]);
   const [attackEffects, setAttackEffects] = useState([]);
   const [battleResult, setBattleResult] = useState(null);
@@ -1414,6 +2034,7 @@ export default function BossBattleArena({ bossId, onClose }) {
   const projectileIdRef = useRef(0);
   const arenaRef = useRef(null);
   const particleContainerRef = useRef(null);
+  const combatCanvasRef = useRef(null);
 
   // Initialize anime.js hooks
   const triggerShake = useScreenShake(arenaRef);
@@ -1483,60 +2104,76 @@ export default function BossBattleArena({ bossId, onClose }) {
     const attackSpeed = boss?.attackSpeed || 1000;
 
     battleIntervalRef.current = setInterval(() => {
-      // Spawn boss projectile first
-      const projId = projectileIdRef.current++;
-      setBossProjectiles(prev => [...prev, {
-        id: projId,
-        boss,
-        startY: 150, // Boss position
-        endY: 450, // Player position
-      }]);
+      // Calculate positions based on screen dimensions
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+      const centerX = screenWidth / 2;
 
-      // Delay the actual damage until projectile hits
-      setTimeout(() => {
-        bossAttack();
+      // Boss is at ~20% from top, player at ~80% from top
+      const bossY = screenHeight * 0.18;
+      const playerY = screenHeight * 0.78;
 
-        // Play boss attack sound
-        sounds.bossAttack();
+      // Use PixiJS createBossProjectile for spectacular effects
+      const colorHex = parseInt((boss?.attackColor || '#ff0000').replace('#', ''), 16);
 
-        // Remove projectile
-        setBossProjectiles(prev => prev.filter(p => p.id !== projId));
+      if (combatCanvasRef.current) {
+        // Play boss-specific attack sound
+        playBossAttack(boss?.attackAnimation || 'default');
 
-        // Screen shake on player hit
-        triggerShake('normal');
+        combatCanvasRef.current.createBossProjectile(centerX, bossY, centerX, playerY, {
+          color: colorHex,
+          size: 35,
+          speed: 14,
+          attackType: boss?.attackAnimation || 'default',
+          onImpact: () => {
+            // Apply damage when projectile hits
+            bossAttack();
 
-        // Particle burst at player position
-        burstParticles(120, 480, {
-          colors: [boss?.attackColor || '#ff0000', '#ffffff', '#ff6600'],
-          count: 8,
-          spread: 80,
+            // Show damage number on player side
+            const id = damageIdRef.current++;
+            setDamageNumbers(prev => [...prev, {
+              id,
+              damage: currentBattle?.boss?.damage || boss?.damage || 0,
+              position: { x: '30%', y: '70%' },
+              isPlayer: true,
+              attackName: boss?.attackName || 'Attack',
+            }]);
+
+            setTimeout(() => {
+              setDamageNumbers(prev => prev.filter(d => d.id !== id));
+            }, 800);
+          }
         });
-
-        // Show damage number on player side
-        const id = damageIdRef.current++;
-        setDamageNumbers(prev => [...prev, {
-          id,
-          damage: currentBattle?.boss?.damage || boss?.damage || 0,
-          position: { x: '30%', y: '70%' },
-          isPlayer: true,
-          attackName: boss?.attackName || 'Attack',
-        }]);
-
-        // Add impact effect
-        const impactId = effectIdRef.current++;
-        setImpactEffects(prev => [...prev, {
-          id: impactId,
-          x: '50%',
-          y: '75%',
-          color: boss?.attackColor || '#ff0000',
-          size: 'normal',
+      } else {
+        // Fallback to old system if canvas not ready
+        const projId = projectileIdRef.current++;
+        setBossProjectiles(prev => [...prev, {
+          id: projId,
+          boss,
+          startY: 150,
+          endY: 450,
         }]);
 
         setTimeout(() => {
-          setDamageNumbers(prev => prev.filter(d => d.id !== id));
-          setImpactEffects(prev => prev.filter(e => e.id !== impactId));
-        }, 800);
-      }, 350); // Delay matches projectile travel time
+          bossAttack();
+          playBossAttack(boss?.attackAnimation || 'default');
+          setBossProjectiles(prev => prev.filter(p => p.id !== projId));
+          triggerShake('normal');
+
+          const id = damageIdRef.current++;
+          setDamageNumbers(prev => [...prev, {
+            id,
+            damage: currentBattle?.boss?.damage || boss?.damage || 0,
+            position: { x: '30%', y: '70%' },
+            isPlayer: true,
+            attackName: boss?.attackName || 'Attack',
+          }]);
+
+          setTimeout(() => {
+            setDamageNumbers(prev => prev.filter(d => d.id !== id));
+          }, 800);
+        }, 350);
+      }
     }, attackSpeed);
 
     return () => {
@@ -1666,35 +2303,22 @@ export default function BossBattleArena({ bossId, onClose }) {
     const color = attackData.weapon?.color || currentWeapon?.color || '#ffaa00';
     const trailColor = attackData.weapon?.trailColor || currentWeapon?.trailColor || '#ff6600';
     const isMagic = currentWeapon?.isMagic || false;
+    const element = currentWeapon?.element || 'physical';
+    const attackType = currentWeapon?.animation || 'slash';
 
-    // Spawn player projectile with anime.js
-    const projId = projectileIdRef.current++;
-    setPlayerProjectiles(prev => [...prev, {
-      id: projId,
-      startX: 150, // Player center
-      startY: 480, // Player Y
-      endX: 200, // Boss center
-      endY: 180, // Boss Y
-      color,
-      trailColor,
-      isMagic,
-      isCrit,
-    }]);
+    // Calculate boss position for PixiJS effects
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const bossX = screenWidth / 2;
+    const bossY = screenHeight * 0.22; // Slightly lower than attack origin
 
-    // Delay damage effects until projectile reaches boss
-    setTimeout(() => {
-      // Remove projectile
-      setPlayerProjectiles(prev => prev.filter(p => p.id !== projId));
-
-      // Screen shake on boss hit
-      triggerShake(isCrit ? 'crit' : 'light');
-
-      // Particle burst at boss position
-      burstParticles(200, 200, {
-        colors: isCrit ? ['#fbbf24', '#ffffff', color] : [color, trailColor, '#ffffff'],
-        count: isCrit ? 20 : 10,
-        spread: isCrit ? 180 : 100,
-        size: isCrit ? 8 : 5,
+    // Use PixiJS for spectacular weapon attack effects
+    if (combatCanvasRef.current) {
+      combatCanvasRef.current.playWeaponAttack({
+        element,
+        attackType,
+        targetX: bossX,
+        targetY: bossY,
       });
 
       // Show damage number on boss
@@ -1702,44 +2326,63 @@ export default function BossBattleArena({ bossId, onClose }) {
       const randomX = 40 + Math.random() * 80;
       const randomY = 40 + Math.random() * 80;
 
-      setDamageNumbers(prev => [...prev, {
-        id,
-        damage,
-        position: { x: `${randomX}px`, y: `${randomY}px` },
-        isPlayer: false,
-        isCrit,
-        color,
-      }]);
+      setTimeout(() => {
+        setDamageNumbers(prev => [...prev, {
+          id,
+          damage,
+          position: { x: `${randomX}px`, y: `${randomY}px` },
+          isPlayer: false,
+          isCrit,
+          color,
+        }]);
 
-      // Add impact effect at boss
-      const impactId = effectIdRef.current++;
-      setImpactEffects(prev => [...prev, {
-        id: impactId,
-        x: '50%',
-        y: '50%',
-        color: isCrit ? '#fbbf24' : color,
-        size: isCrit ? 'large' : 'normal',
-      }]);
-
-      // Add attack effect (for Framer Motion backup)
-      const effectId = effectIdRef.current++;
-      setAttackEffects(prev => [...prev, {
-        id: effectId,
-        position: { x: '50%', y: '50%' },
-        ...attackData,
-        animation: currentWeapon?.animation,
+        setTimeout(() => {
+          setDamageNumbers(prev => prev.filter(d => d.id !== id));
+        }, isCrit ? 1000 : 600);
+      }, 150);
+    } else {
+      // Fallback to anime.js projectiles
+      const projId = projectileIdRef.current++;
+      setPlayerProjectiles(prev => [...prev, {
+        id: projId,
+        startX: 150,
+        startY: 480,
+        endX: 200,
+        endY: 180,
         color,
         trailColor,
+        isMagic,
         isCrit,
       }]);
 
-      // Remove effects
       setTimeout(() => {
-        setDamageNumbers(prev => prev.filter(d => d.id !== id));
-        setImpactEffects(prev => prev.filter(e => e.id !== impactId));
-        setAttackEffects(prev => prev.filter(e => e.id !== effectId));
-      }, isCrit ? 1000 : 600);
-    }, 250); // Delay matches projectile travel time
+        setPlayerProjectiles(prev => prev.filter(p => p.id !== projId));
+        triggerShake(isCrit ? 'crit' : 'light');
+        burstParticles(200, 200, {
+          colors: isCrit ? ['#fbbf24', '#ffffff', color] : [color, trailColor, '#ffffff'],
+          count: isCrit ? 20 : 10,
+          spread: isCrit ? 180 : 100,
+          size: isCrit ? 8 : 5,
+        });
+
+        const id = damageIdRef.current++;
+        const randomX = 40 + Math.random() * 80;
+        const randomY = 40 + Math.random() * 80;
+
+        setDamageNumbers(prev => [...prev, {
+          id,
+          damage,
+          position: { x: `${randomX}px`, y: `${randomY}px` },
+          isPlayer: false,
+          isCrit,
+          color,
+        }]);
+
+        setTimeout(() => {
+          setDamageNumbers(prev => prev.filter(d => d.id !== id));
+        }, isCrit ? 1000 : 600);
+      }, 250);
+    }
   }, [isBattleActive, isCountdown, battleResult, battleEnded, isAttackReady, playerAttack, currentBattle, lastAttackResult, currentWeapon, triggerShake, burstParticles]);
 
   // Handle ability use
@@ -1754,11 +2397,22 @@ export default function BossBattleArena({ bossId, onClose }) {
     const baseDamage = currentBattle?.playerDamage || 10;
     const abilityDamage = calculateAbilityDamage(baseDamage, weaponAbility);
 
-    // Show the ability animation
-    setActiveAbilityAnimation({
-      ability: weaponAbility,
-      position: { x: 200, y: 200 }, // Boss center position
-    });
+    // Calculate boss position for PixiJS effects
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const bossX = screenWidth / 2;
+    const bossY = screenHeight * 0.22;
+
+    // Use PixiJS for spectacular ability effects
+    if (combatCanvasRef.current && weaponAbility.abilityId) {
+      combatCanvasRef.current.playAbility(weaponAbility.abilityId, bossX, bossY);
+    } else {
+      // Fallback to old animation system
+      setActiveAbilityAnimation({
+        ability: weaponAbility,
+        position: { x: 200, y: 200 },
+      });
+    }
 
     // Play ability sound (if available)
     if (sounds.powerAttack) {
@@ -1769,17 +2423,6 @@ export default function BossBattleArena({ bossId, onClose }) {
 
     // Apply damage after animation duration
     setTimeout(() => {
-      // Trigger screen shake based on ability
-      triggerShake(weaponAbility.screenShake || 'heavy');
-
-      // Massive particle burst
-      burstParticles(200, 200, {
-        colors: [weaponAbility.color, weaponAbility.trailColor || weaponAbility.color, '#ffffff'],
-        count: 25,
-        spread: 200,
-        size: 10,
-      });
-
       // Show damage number
       const id = damageIdRef.current++;
       setDamageNumbers(prev => [...prev, {
@@ -1787,36 +2430,86 @@ export default function BossBattleArena({ bossId, onClose }) {
         damage: abilityDamage,
         position: { x: '60px', y: '60px' },
         isPlayer: false,
-        isCrit: true, // Abilities always show as crit-style
+        isCrit: true,
         color: weaponAbility.color,
       }]);
 
-      // Apply damage to boss (simulate attack with custom damage)
-      // We'll call playerAttack multiple times based on damage multiplier
+      // Apply damage to boss
       const attacksNeeded = Math.ceil(weaponAbility.damage);
       for (let i = 0; i < attacksNeeded; i++) {
         playerAttack();
       }
 
-      // Add impact effect
-      const impactId = effectIdRef.current++;
-      setImpactEffects(prev => [...prev, {
-        id: impactId,
-        x: '50%',
-        y: '50%',
-        color: weaponAbility.color,
-        size: 'large',
-      }]);
-
       // Clean up
       setTimeout(() => {
         setDamageNumbers(prev => prev.filter(d => d.id !== id));
-        setImpactEffects(prev => prev.filter(e => e.id !== impactId));
         setActiveAbilityAnimation(null);
         setIsAbilityAnimating(false);
       }, 1000);
     }, weaponAbility.duration || 600);
-  }, [isBattleActive, isCountdown, battleResult, battleEnded, canUseAbility, weaponAbility, currentBattle, playerAttack, triggerShake, burstParticles]);
+  }, [isBattleActive, isCountdown, battleResult, battleEnded, canUseAbility, weaponAbility, currentBattle, playerAttack]);
+
+  // Handle elemental ability use
+  const handleElementalAbility = useCallback((slot) => {
+    if (!isBattleActive || isCountdown || battleResult || battleEnded) return;
+
+    // Check if ability is ready
+    if (!isElementalAbilityReady(slot)) return;
+
+    // Use the ability (starts cooldown)
+    const ability = useElementalAbility(slot);
+    if (!ability) return;
+
+    // Calculate boss position for PixiJS effects
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const bossX = screenWidth / 2;
+    const bossY = screenHeight * 0.22;
+
+    // Play PixiJS effect
+    if (combatCanvasRef.current) {
+      combatCanvasRef.current.playAbility(ability.id, bossX, bossY);
+    }
+
+    // Play sound
+    if (sounds.powerAttack) {
+      sounds.powerAttack();
+    } else {
+      sounds.attackHit();
+    }
+
+    // Calculate and apply damage
+    const baseDamage = currentBattle?.playerDamage || 10;
+    const abilityDamage = calcElementalDamage(ability, baseDamage);
+
+    // Apply damage after animation
+    setTimeout(() => {
+      // Show damage number
+      const id = damageIdRef.current++;
+      setDamageNumbers(prev => [...prev, {
+        id,
+        damage: abilityDamage,
+        position: { x: '60px', y: '60px' },
+        isPlayer: false,
+        isCrit: true,
+        color: ability.elementColor || ability.color,
+      }]);
+
+      // Screen shake
+      triggerShake(ability.damage >= 4.0 ? 'heavy' : 'normal');
+
+      // Apply damage to boss
+      const attacksNeeded = Math.ceil(ability.damage);
+      for (let i = 0; i < attacksNeeded; i++) {
+        playerAttack();
+      }
+
+      // Clean up damage number
+      setTimeout(() => {
+        setDamageNumbers(prev => prev.filter(d => d.id !== id));
+      }, 1000);
+    }, 400);
+  }, [isBattleActive, isCountdown, battleResult, battleEnded, isElementalAbilityReady, useElementalAbility, currentBattle, playerAttack, triggerShake]);
 
   // Handle close/abandon - always ensure battle is properly ended
   const handleClose = async () => {
@@ -1849,6 +2542,16 @@ export default function BossBattleArena({ bossId, onClose }) {
     >
       {/* Particle container for anime.js burst effects */}
       <div ref={particleContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
+
+      {/* PixiJS Combat Canvas for spectacular effects */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 50 }}>
+        <CombatCanvas
+          ref={combatCanvasRef}
+          width={window.innerWidth}
+          height={window.innerHeight}
+          className="w-full h-full"
+        />
+      </div>
 
       {/* Background effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.1),transparent_70%)]" />
@@ -2061,6 +2764,7 @@ export default function BossBattleArena({ bossId, onClose }) {
 
             {/* Attack and Ability Buttons */}
             {isBattleActive && !battleResult && (
+              <>
               <div className="flex gap-3 mt-4">
                 {/* Attack Button */}
                 <motion.button
@@ -2115,6 +2819,58 @@ export default function BossBattleArena({ bossId, onClose }) {
                   </motion.button>
                 )}
               </div>
+
+              {/* Elemental Ability Slots */}
+              {equippedAbilities.some(a => a !== null) && (
+                <div className="flex gap-2 justify-center mt-2">
+                  {equippedAbilities.map((abilityId, slot) => {
+                    if (!abilityId) return null;
+                    const ability = getEquippedAbility(slot);
+                    if (!ability) return null;
+
+                    const isReady = isElementalAbilityReady(slot);
+                    const progress = getElementalCooldownProgress(slot);
+
+                    return (
+                      <motion.button
+                        key={slot}
+                        onClick={() => handleElementalAbility(slot)}
+                        disabled={!isReady}
+                        whileHover={isReady ? { scale: 1.05 } : {}}
+                        whileTap={isReady ? { scale: 0.95 } : {}}
+                        className="relative p-2 rounded-xl transition-all"
+                        style={{
+                          touchAction: 'manipulation',
+                          background: isReady
+                            ? `linear-gradient(135deg, ${ability.elementColor}cc, ${ability.elementColor}66)`
+                            : 'rgba(55, 65, 81, 0.5)',
+                          borderColor: isReady ? ability.elementColor : 'transparent',
+                          borderWidth: '2px',
+                          boxShadow: isReady ? `0 0 15px ${ability.elementColor}60` : 'none',
+                          minWidth: '60px',
+                        }}
+                      >
+                        {/* Cooldown overlay */}
+                        {!isReady && (
+                          <div
+                            className="absolute inset-0 rounded-xl overflow-hidden"
+                            style={{
+                              background: `linear-gradient(to top, transparent ${progress * 100}%, rgba(0,0,0,0.6) ${progress * 100}%)`,
+                            }}
+                          />
+                        )}
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-xl">{ability.icon}</span>
+                          <span className={`text-xs font-bold ${isReady ? 'text-white' : 'text-gray-400'}`}>
+                            {ability.name.split(' ')[0]}
+                          </span>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              )}
+              </>
             )}
 
             {/* Cooldown indicators */}

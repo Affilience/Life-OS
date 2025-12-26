@@ -130,6 +130,14 @@ export default function AvatarRenderer({
   animate = true,
   showStats = false,
   className = '',
+  // External data props for rendering other players (e.g., PvP opponents)
+  externalEquipped = null,
+  externalCharacterGender = null,
+  externalLevel = null,
+  externalPrestige = null,
+  externalTier = null,
+  externalDyeColors = null,
+  externalSkinTone = null,
 }) {
   const canvasRef = useRef(null);
   const [currentFrame, setCurrentFrame] = useState(0);
@@ -149,19 +157,40 @@ export default function AvatarRenderer({
   const showParticleEffects = isVisible('showParticleEffects');
 
   const {
-    level,
-    prestige,
-    currentTier,
-    equipped,
+    level: storeLevel,
+    prestige: storePrestige,
+    currentTier: storeTier,
+    equipped: storeEquipped,
     stats,
+    characterGender: storeCharacterGender,
+    dyeColors: storeDyeColors,
+    skinTone: storeSkinTone,
     getCurrentTierData,
     getEquippedItems,
     getVisualEquipment,
   } = useAvatarStore();
 
+  // Use external data if provided, otherwise fall back to store
+  const isExternalAvatar = externalEquipped !== null;
+  const level = externalLevel ?? storeLevel;
+  const prestige = externalPrestige ?? storePrestige;
+  const currentTier = externalTier ?? storeTier;
+  const equipped = externalEquipped ?? storeEquipped;
+  const characterGender = externalCharacterGender ?? storeCharacterGender;
+  const dyeColors = externalDyeColors ?? storeDyeColors;
+  const skinTone = externalSkinTone ?? storeSkinTone;
+
   const tierData = getCurrentTierData();
-  const equippedItems = getEquippedItems();
-  const visualEquipment = getVisualEquipment();
+  // For external avatars, compute equipped items directly from the equipped object
+  const equippedItems = isExternalAvatar
+    ? Object.entries(equipped || {}).reduce((acc, [slot, itemId]) => {
+        if (itemId && EQUIPMENT_DATABASE[itemId]) {
+          acc[slot] = EQUIPMENT_DATABASE[itemId];
+        }
+        return acc;
+      }, {})
+    : getEquippedItems();
+  const visualEquipment = isExternalAvatar ? equipped : getVisualEquipment();
 
   // If avatar is hidden in current mode, show a minimal placeholder
   if (!showAvatar) {

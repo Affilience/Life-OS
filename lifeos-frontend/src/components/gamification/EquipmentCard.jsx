@@ -2,12 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { getRarityColor } from '../../stores/gamificationStore';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
+import { ABILITY_TYPES } from '../../data/weaponAbilities';
 import {
   ShieldCheckIcon,
   BoltIcon,
   HeartIcon,
   AcademicCapIcon,
-  SparklesIcon
+  SparklesIcon,
+  FireIcon
 } from '@heroicons/react/24/outline';
 
 /**
@@ -177,6 +179,35 @@ export default function EquipmentCard({ equipment, isEquipped = false, onEquip, 
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Weapon Ability */}
+        {item.ability && ABILITY_TYPES[item.ability] && (
+          <div className="mb-3 p-2 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30">
+            <div className="flex items-center gap-2 mb-1">
+              <FireIcon className="w-4 h-4 text-amber-400" />
+              <span className="text-sm font-bold text-amber-400">
+                {ABILITY_TYPES[item.ability].name}
+              </span>
+              {ABILITY_TYPES[item.ability].isMagic && (
+                <span className="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded">
+                  Magic
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-white/70 leading-relaxed">
+              {ABILITY_TYPES[item.ability].description}
+            </p>
+            <div className="flex items-center gap-3 mt-2 text-xs">
+              <span className="text-orange-300">
+                <BoltIcon className="w-3 h-3 inline mr-1" />
+                {ABILITY_TYPES[item.ability].damage}x DMG
+              </span>
+              <span className="text-cyan-300">
+                ⏱ {(ABILITY_TYPES[item.ability].cooldown / 1000).toFixed(0)}s CD
+              </span>
+            </div>
           </div>
         )}
 

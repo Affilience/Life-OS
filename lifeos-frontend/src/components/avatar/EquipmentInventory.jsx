@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGamificationStore } from '../../stores/gamificationStore';
+import useElementalAbilityStore from '../../stores/elementalAbilityStore';
+import { getAllAbilities, getAbilityById, ELEMENTAL_ABILITIES } from '../../data/elementalAbilities';
 import { supabase } from '../../lib/supabase';
 import { EmptyState } from '../ui';
 import { useGamificationModeStore, TERMINOLOGY } from '../../stores/gamificationModeStore';
@@ -89,6 +91,25 @@ export default function EquipmentInventory() {
 
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [filterRarity, setFilterRarity] = useState('all');
+
+  // Ability store
+  const {
+    equippedAbilities,
+    equipAbility,
+    unequipAbility,
+    isAbilityEquipped,
+  } = useElementalAbilityStore();
+
+  // Ability selection state
+  const [selectedAbilitySlot, setSelectedAbilitySlot] = useState(null);
+  const [abilityFilterElement, setAbilityFilterElement] = useState('all');
+
+  // Get all abilities, filtered by element
+  const getFilteredAbilities = () => {
+    const allAbilities = getAllAbilities();
+    if (abilityFilterElement === 'all') return allAbilities;
+    return allAbilities.filter(a => a.element === abilityFilterElement);
+  };
 
   const slots = [
     { id: 'helmet', name: 'Helmet', icon: '⛑️' },
@@ -252,6 +273,203 @@ export default function EquipmentInventory() {
                 )
               ))}
             </div>
+          </div>
+
+          {/* Combat Abilities Section */}
+          <div className="abilities-section" style={{ marginTop: '24px' }}>
+            <h3 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>✨</span>
+              Combat Abilities
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#9ca3af', marginBottom: '16px' }}>
+              Equip up to 3 elemental abilities for boss battles
+            </p>
+
+            {/* 3 Ability Slots */}
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginBottom: '16px',
+              justifyContent: 'center'
+            }}>
+              {[0, 1, 2].map(slot => {
+                const abilityId = equippedAbilities[slot];
+                const ability = abilityId ? getAbilityById(abilityId) : null;
+                const isSelected = selectedAbilitySlot === slot;
+
+                return (
+                  <div
+                    key={slot}
+                    onClick={() => setSelectedAbilitySlot(isSelected ? null : slot)}
+                    style={{
+                      position: 'relative',
+                      width: '100px',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      border: isSelected ? '2px solid #a855f7' : '2px solid rgba(255,255,255,0.2)',
+                      background: ability
+                        ? `linear-gradient(135deg, ${ability.elementColor}20, transparent)`
+                        : 'rgba(0,0,0,0.3)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: isSelected ? '0 0 15px rgba(168, 85, 247, 0.5)' : 'none',
+                    }}
+                  >
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>
+                        {ability ? ability.icon : '➕'}
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        color: ability ? ability.elementColor : '#6b7280',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {ability ? ability.name : `Slot ${slot + 1}`}
+                      </div>
+                      {ability && (
+                        <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginTop: '2px' }}>
+                          {(ability.cooldown / 1000).toFixed(0)}s CD
+                        </div>
+                      )}
+                    </div>
+                    {ability && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          unequipAbility(slot);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          background: 'rgba(239, 68, 68, 0.8)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          color: 'white'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Ability Selection Grid (when slot selected) */}
+            {selectedAbilitySlot !== null && (
+              <div style={{
+                background: 'rgba(0,0,0,0.4)',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                {/* Element Filter */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => setAbilityFilterElement('all')}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      background: abilityFilterElement === 'all' ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    All
+                  </button>
+                  {Object.entries(ELEMENTAL_ABILITIES).map(([key, elem]) => (
+                    <button
+                      key={key}
+                      onClick={() => setAbilityFilterElement(key)}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        border: 'none',
+                        background: abilityFilterElement === key ? elem.color : 'rgba(255,255,255,0.1)',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem'
+                      }}
+                    >
+                      {elem.name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Abilities Grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  gap: '8px',
+                  maxHeight: '300px',
+                  overflowY: 'auto'
+                }}>
+                  {getFilteredAbilities().map(ability => {
+                    const equipped = isAbilityEquipped(ability.id);
+                    const equippedInCurrentSlot = equippedAbilities[selectedAbilitySlot] === ability.id;
+
+                    return (
+                      <div
+                        key={ability.id}
+                        onClick={() => {
+                          if (!equipped || equippedInCurrentSlot) {
+                            equipAbility(selectedAbilitySlot, ability.id);
+                            setSelectedAbilitySlot(null);
+                          }
+                        }}
+                        style={{
+                          padding: '10px',
+                          borderRadius: '8px',
+                          border: equipped ? '2px solid #22c55e' : '1px solid rgba(255,255,255,0.2)',
+                          background: `linear-gradient(135deg, ${ability.elementColor}30, transparent)`,
+                          cursor: equipped && !equippedInCurrentSlot ? 'not-allowed' : 'pointer',
+                          opacity: equipped && !equippedInCurrentSlot ? 0.5 : 1,
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.5rem' }}>{ability.icon}</div>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            color: ability.elementColor,
+                            marginTop: '4px'
+                          }}>
+                            {ability.name}
+                          </div>
+                          <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginTop: '2px' }}>
+                            {ability.damage}x DMG | {(ability.cooldown / 1000).toFixed(0)}s
+                          </div>
+                        </div>
+                        {equipped && (
+                          <div style={{
+                            fontSize: '0.6rem',
+                            color: '#22c55e',
+                            textAlign: 'center',
+                            marginTop: '4px'
+                          }}>
+                            Equipped
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

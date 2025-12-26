@@ -241,6 +241,27 @@ export const useNewOnboardingStore = create(
 
       // Initialize from Supabase - Supabase is the ONLY source of truth
       initializeFromSupabase: async (passedUserId = null) => {
+        // FIRST: Check localStorage - if user already completed onboarding, skip everything
+        try {
+          const stored = localStorage.getItem('lifeos-new-onboarding');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed?.state?.isOnboardingComplete === true) {
+              console.log('[OnboardingStore] ✅ localStorage says complete - skipping init');
+              set({
+                _isLoading: false,
+                _isSyncing: false,
+                _hasAuthoritativeData: true,
+                isOnboardingComplete: true,
+                isOnboardingActive: false,
+              });
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('[OnboardingStore] Could not read localStorage:', e);
+        }
+
         set({ _isLoading: true, _isSyncing: true, _syncError: null });
 
         // Master timeout - guarantee function returns even if queries hang
@@ -659,6 +680,20 @@ export const useNewOnboardingStore = create(
           novaState: 'celebrating',
         });
 
+        // CRITICAL: Persist to localStorage as backup
+        // This ensures onboarding won't show again even if Supabase sync fails
+        try {
+          localStorage.setItem('lifeos-new-onboarding', JSON.stringify({
+            state: {
+              isOnboardingComplete: true,
+              isOnboardingActive: false,
+            }
+          }));
+          console.log('[Onboarding] ✅ Saved completion to localStorage');
+        } catch (e) {
+          console.warn('[Onboarding] Could not save to localStorage:', e);
+        }
+
         // Award 100 starter credits
         try {
           const gamificationStore = await getGamificationStore();
@@ -717,6 +752,14 @@ export const useNewOnboardingStore = create(
           skippedSteps: [],
           xpEarned: 0,
         });
+
+        // Clear localStorage when resetting
+        try {
+          localStorage.removeItem('lifeos-new-onboarding');
+          console.log('[Onboarding] Cleared localStorage');
+        } catch (e) {
+          console.warn('[Onboarding] Could not clear localStorage:', e);
+        }
 
         // Reset onboarding status in Supabase
         const userId = await getCurrentUserId();

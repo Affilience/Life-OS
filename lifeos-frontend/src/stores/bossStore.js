@@ -234,15 +234,21 @@ export const useBossStore = create(
         const equippedWeapon = equippedItems.mainHand;
         const weaponAttack = getWeaponAttack(equippedWeapon, EQUIPMENT_DATABASE);
 
+        // Apply boss difficulty scaling
+        const { BOSS_DIFFICULTY } = await import('../data/bossDatabase');
+        const difficultyMultiplier = BOSS_DIFFICULTY[boss.difficulty]?.multiplier || 1.0;
+        const scaledHealth = Math.floor(boss.health * difficultyMultiplier);
+        const scaledDamage = Math.floor(boss.damage * difficultyMultiplier);
+
         const battleData = {
           user_id: userId,
           boss_id: boss.id,
           boss_name: boss.name,
           boss_level_min: boss.levelRange[0],
           boss_level_max: boss.levelRange[1],
-          boss_max_health: boss.health,
-          boss_current_health: boss.health,
-          boss_damage: boss.damage,
+          boss_max_health: scaledHealth,
+          boss_current_health: scaledHealth,
+          boss_damage: scaledDamage,
           player_max_health: playerStats.maxHealth,
           player_current_health: playerStats.maxHealth,
           player_damage: playerStats.damage,
@@ -264,8 +270,9 @@ export const useBossStore = create(
             currentBattle: {
               id: data.id,
               boss,
-              bossCurrentHealth: boss.health,
-              bossMaxHealth: boss.health,
+              bossCurrentHealth: scaledHealth,
+              bossMaxHealth: scaledHealth,
+              bossDamage: scaledDamage,
               playerCurrentHealth: playerStats.maxHealth,
               playerMaxHealth: playerStats.maxHealth,
               playerDamage: playerStats.damage,

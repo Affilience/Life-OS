@@ -132,7 +132,7 @@ const usePvpArenaStore = create((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('id, display_name, avatar_url, current_level')
+        .select('id, display_name, avatar_url, current_level, character_gender, equipped_items, dye_colors, skin_tone, prestige, current_tier')
         .eq('id', userId)
         .single();
 

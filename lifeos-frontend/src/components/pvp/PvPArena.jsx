@@ -24,10 +24,14 @@ import {
 import usePvpArenaStore from '../../stores/pvpArenaStore';
 import { useAvatarStore } from '../../stores/avatarStore';
 import { usePetStore } from '../../stores/petStore';
+import useElementalAbilityStore from '../../stores/elementalAbilityStore';
 import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
 import { getWeaponAbility, isAbilityReady, calculateAbilityDamage } from '../../data/weaponAbilities';
+import { getAbilityById, calculateAbilityDamage as calcElementalDamage } from '../../data/elementalAbilities';
 import { sounds } from '../../services/microInteractions';
 import AbilityAnimation from '../combat/AbilityAnimation';
+import CombatCanvas from '../combat/CombatCanvas';
+import AvatarRenderer from '../avatar/AvatarRenderer';
 
 // Damage number floating animation
 const DamageNumber = ({ damage, x, y, isCrit, isPlayer }) => (
@@ -50,23 +54,160 @@ const DamageNumber = ({ damage, x, y, isCrit, isPlayer }) => (
   </motion.div>
 );
 
-// Health bar component
-const HealthBar = ({ current, max, color, label, isPlayer }) => {
+// Attack projectile from player to opponent (bottom-left to top-right)
+const PlayerAttackProjectile = ({ weapon, isCrit, onComplete }) => {
+  const color = weapon?.color || '#22c55e';
+  const trailColor = weapon?.trailColor || '#86efac';
+  const isMagic = weapon?.isMagic;
+
+  return (
+    <motion.div
+      className="absolute pointer-events-none z-30"
+      initial={{ bottom: '30%', left: '15%', scale: 0.5, opacity: 1 }}
+      animate={{
+        bottom: '65%',
+        left: '75%',
+        scale: isCrit ? 1.5 : 1,
+        opacity: [1, 1, 0.8]
+      }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      onAnimationComplete={onComplete}
+    >
+      {isMagic ? (
+        <div className="relative">
+          <motion.div
+            className="w-8 h-8 rounded-full"
+            style={{
+              background: `radial-gradient(circle, ${color} 0%, ${trailColor} 60%, transparent 100%)`,
+              boxShadow: `0 0 20px ${color}, 0 0 40px ${trailColor}`,
+            }}
+            animate={{ scale: [1, 1.3, 1], rotate: 360 }}
+            transition={{ duration: 0.3 }}
+          />
+          {/* Magic trail */}
+          {[...Array(5)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full"
+              style={{ backgroundColor: trailColor, left: '50%', top: '50%' }}
+              initial={{ x: 0, y: 0, opacity: 0.8 }}
+              animate={{ x: -15 - i * 8, y: 10 + i * 5, opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.2, delay: i * 0.03 }}
+            />
+          ))}
+        </div>
+      ) : (
+        <motion.div
+          className="w-10 h-3 rounded-full"
+          style={{
+            background: `linear-gradient(90deg, transparent 10%, ${color}, ${trailColor}, transparent 90%)`,
+            boxShadow: `0 0 15px ${color}`,
+            transform: 'rotate(-30deg)',
+          }}
+          animate={{ scaleX: [1, 1.5, 1] }}
+          transition={{ duration: 0.15, repeat: 1 }}
+        />
+      )}
+    </motion.div>
+  );
+};
+
+// Attack projectile from opponent to player (top-right to bottom-left)
+const OpponentAttackProjectile = ({ isCrit, onComplete }) => {
+  const color = '#ef4444';
+  const trailColor = '#fca5a5';
+
+  return (
+    <motion.div
+      className="absolute pointer-events-none z-30"
+      initial={{ top: '25%', right: '15%', scale: 0.5, opacity: 1 }}
+      animate={{
+        top: '60%',
+        right: '75%',
+        scale: isCrit ? 1.5 : 1,
+        opacity: [1, 1, 0.8]
+      }}
+      transition={{ duration: 0.35, ease: 'easeIn' }}
+      onAnimationComplete={onComplete}
+    >
+      <div className="relative">
+        <motion.div
+          className="w-8 h-8 rounded-full"
+          style={{
+            background: `radial-gradient(circle, #fff 0%, ${color} 40%, ${trailColor} 70%, transparent 100%)`,
+            boxShadow: `0 0 ${isCrit ? 30 : 20}px ${color}`,
+          }}
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 0.2 }}
+        />
+        {/* Impact particles */}
+        {isCrit && [...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 rounded-full"
+            style={{
+              backgroundColor: color,
+              left: '50%',
+              top: '50%',
+            }}
+            initial={{ x: 0, y: 0, opacity: 1 }}
+            animate={{
+              x: Math.cos(i * 60 * Math.PI / 180) * 30,
+              y: Math.sin(i * 60 * Math.PI / 180) * 30,
+              opacity: 0,
+              scale: 0
+            }}
+            transition={{ duration: 0.3 }}
+          />
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Impact effect at hit location
+const ImpactEffect = ({ color, position, isPlayer }) => (
+  <motion.div
+    className="absolute w-16 h-16 pointer-events-none z-40"
+    style={{
+      left: position?.x || (isPlayer ? '15%' : '75%'),
+      top: position?.y || (isPlayer ? '55%' : '30%'),
+      transform: 'translate(-50%, -50%)',
+    }}
+    initial={{ scale: 0, opacity: 1 }}
+    animate={{ scale: [0, 1.5, 2], opacity: [1, 0.8, 0] }}
+    transition={{ duration: 0.3 }}
+  >
+    <div
+      className="absolute inset-0 rounded-full border-4"
+      style={{ borderColor: color }}
+    />
+    <motion.div
+      className="absolute inset-2 rounded-full"
+      style={{ background: `radial-gradient(circle, ${color} 0%, transparent 70%)` }}
+      animate={{ scale: [1, 0.5], opacity: [1, 0] }}
+      transition={{ duration: 0.2 }}
+    />
+  </motion.div>
+);
+
+// Health bar component - compact version for inline display
+const HealthBar = ({ current, max, label, isPlayer }) => {
   const percent = Math.max(0, Math.min(100, (current / max) * 100));
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-1">
-        <span className={`text-sm font-medium ${isPlayer ? 'text-green-400' : 'text-red-400'}`}>
+        <span className={`text-xs font-medium ${isPlayer ? 'text-green-400' : 'text-red-400'}`}>
           {label}
         </span>
-        <span className="text-sm text-white/70">
+        <span className="text-xs text-white/70">
           {current.toLocaleString()} / {max.toLocaleString()}
         </span>
       </div>
-      <div className="h-6 bg-black/50 rounded-full overflow-hidden border border-white/20">
+      <div className="h-4 bg-black/50 rounded-full overflow-hidden border border-white/20">
         <motion.div
-          className={`h-full ${color} relative`}
+          className={`h-full relative ${isPlayer ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-red-500 to-orange-400'}`}
           initial={{ width: '100%' }}
           animate={{ width: `${percent}%` }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -78,8 +219,95 @@ const HealthBar = ({ current, max, color, label, isPlayer }) => {
   );
 };
 
+// Weapon cooldown indicator component
+const CooldownIndicator = ({ progress, weaponName, cooldownMs, canAttack }) => {
+  const percentage = Math.min(100, progress * 100);
+
+  return (
+    <div className="w-full max-w-xs mx-auto mt-3">
+      <div className="flex items-center justify-between text-xs mb-1">
+        <span className="text-white/60 font-medium flex items-center gap-1">
+          <Swords className="w-3 h-3" />
+          {weaponName || 'Attack'}
+        </span>
+        {canAttack ? (
+          <span className="text-green-400 font-bold animate-pulse">READY!</span>
+        ) : (
+          <span className="text-white/40">{Math.ceil((1 - progress) * cooldownMs)}ms</span>
+        )}
+      </div>
+      <div className="h-2.5 bg-black/60 rounded-full overflow-hidden border border-white/20">
+        <motion.div
+          className={`h-full rounded-full ${
+            canAttack
+              ? 'bg-gradient-to-r from-green-500 to-emerald-400'
+              : 'bg-gradient-to-r from-blue-500 to-purple-500'
+          }`}
+          style={{ width: `${percentage}%` }}
+          animate={canAttack ? { opacity: [1, 0.7, 1] } : {}}
+          transition={canAttack ? { duration: 0.5, repeat: Infinity } : {}}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Ability cooldown indicator component
+const AbilityCooldownIndicator = ({ ability, lastUsedTime, canUse }) => {
+  const [progress, setProgress] = useState(canUse ? 1 : 0);
+
+  useEffect(() => {
+    if (!ability || canUse) {
+      setProgress(1);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - lastUsedTime;
+      const prog = Math.min(1, elapsed / ability.cooldown);
+      setProgress(prog);
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [ability, lastUsedTime, canUse]);
+
+  if (!ability) return null;
+
+  const percentage = Math.min(100, progress * 100);
+  const remainingMs = Math.max(0, ability.cooldown - (Date.now() - lastUsedTime));
+
+  return (
+    <div className="w-full max-w-xs mx-auto mt-2">
+      <div className="flex items-center justify-between text-xs mb-1">
+        <span className="text-white/60 font-medium flex items-center gap-1">
+          <Sparkles className="w-3 h-3" style={{ color: ability.color }} />
+          {ability.name}
+        </span>
+        {canUse ? (
+          <span className="font-bold animate-pulse" style={{ color: ability.color }}>READY!</span>
+        ) : (
+          <span className="text-white/40">{(remainingMs / 1000).toFixed(1)}s</span>
+        )}
+      </div>
+      <div className="h-2 bg-black/60 rounded-full overflow-hidden border border-white/20">
+        <motion.div
+          className="h-full rounded-full"
+          style={{
+            width: `${percentage}%`,
+            background: canUse
+              ? `linear-gradient(90deg, ${ability.color}, ${ability.trailColor || ability.color})`
+              : 'linear-gradient(90deg, #4b5563, #6b7280)',
+          }}
+          animate={canUse ? { opacity: [1, 0.6, 1] } : {}}
+          transition={canUse ? { duration: 0.5, repeat: Infinity } : {}}
+        />
+      </div>
+    </div>
+  );
+};
+
 // Queue waiting screen
-const QueueScreen = ({ queueTime, onCancel, playersInQueue }) => {
+const QueueScreen = ({ onCancel }) => {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -229,17 +457,34 @@ export default function PvPArena({ onClose }) {
     exitMatch,
   } = usePvpArenaStore();
 
-  const { level, equipped } = useAvatarStore();
+  const { level, equipped, characterGender, dyeColors, skinTone, prestige, currentTier } = useAvatarStore();
   const { activePet } = usePetStore();
 
+  // Elemental abilities
+  const {
+    equippedAbilities,
+    getEquippedAbility,
+    useAbility: useElementalAbility,
+    isAbilityReady: isElementalAbilityReady,
+    getCooldownProgress: getElementalCooldownProgress,
+  } = useElementalAbilityStore();
+
   const [damageNumbers, setDamageNumbers] = useState([]);
+  const combatCanvasRef = useRef(null);
   const [weaponCooldown, setWeaponCooldown] = useState(0);
-  const [isReady, setIsReady] = useState(false);
+  const [cooldownProgress, setCooldownProgress] = useState(1);
+  const [isAttackReady, setIsAttackReady] = useState(true);
   const [abilityLastUsed, setAbilityLastUsed] = useState(0);
   const [isAbilityAnimating, setIsAbilityAnimating] = useState(false);
   const [activeAbilityAnimation, setActiveAbilityAnimation] = useState(null);
+  const [playerProjectiles, setPlayerProjectiles] = useState([]);
+  const [opponentProjectiles, setOpponentProjectiles] = useState([]);
+  const [impactEffects, setImpactEffects] = useState([]);
+  const [hitCount, setHitCount] = useState(0);
+  const [critCount, setCritCount] = useState(0);
   const arenaRef = useRef(null);
   const cooldownIntervalRef = useRef(null);
+  const projectileIdRef = useRef(0);
 
   // Get weapon info
   const weaponId = equipped?.mainHand || equipped?.weapon;
@@ -292,24 +537,43 @@ export default function PvPArena({ onClose }) {
     });
   }, []);
 
-  // Weapon cooldown timer
+  // Weapon cooldown (from weapon or default 500ms)
+  const weaponCooldownMs = weapon?.stats?.attackSpeed || 500;
+
+  // Weapon cooldown timer - track progress for UI
   useEffect(() => {
     if (weaponCooldown > 0) {
+      setIsAttackReady(false);
       cooldownIntervalRef.current = setInterval(() => {
-        setWeaponCooldown(prev => Math.max(0, prev - 100));
-      }, 100);
+        setWeaponCooldown(prev => {
+          const next = Math.max(0, prev - 50);
+          setCooldownProgress(1 - (next / weaponCooldownMs));
+          if (next === 0) {
+            setIsAttackReady(true);
+          }
+          return next;
+        });
+      }, 50);
     }
     return () => {
       if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current);
     };
-  }, [weaponCooldown > 0]);
+  }, [weaponCooldown > 0, weaponCooldownMs]);
 
   // Handle tap attack
-  const handleAttack = useCallback(async (e) => {
-    if (!isInMatch || !userId || matchResult) return;
+  const handleAttack = useCallback(async () => {
+    if (!isInMatch || !userId || matchResult || !isAttackReady) return;
+
+    // Start cooldown
+    setWeaponCooldown(weaponCooldownMs);
+    setCooldownProgress(0);
 
     const isCrit = Math.random() < 0.1; // 10% crit chance
     const damage = isCrit ? Math.floor(damagePerTap * 1.5) : damagePerTap;
+
+    // Track stats
+    setHitCount(prev => prev + 1);
+    if (isCrit) setCritCount(prev => prev + 1);
 
     // Play sound
     if (isCrit) {
@@ -318,27 +582,41 @@ export default function PvPArena({ onClose }) {
       sounds.attackHit?.();
     }
 
-    // Show damage number
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Spawn attack projectile from player to opponent
+    const projId = projectileIdRef.current++;
+    setPlayerProjectiles(prev => [...prev, { id: projId, weapon, isCrit }]);
 
-    setDamageNumbers(prev => [
-      ...prev,
-      { id: Date.now(), damage, x, y, isCrit, isPlayer: true },
-    ]);
+    // Projectile hits opponent after animation
+    setTimeout(() => {
+      // Show damage number at opponent's position
+      setDamageNumbers(prev => [
+        ...prev,
+        { id: Date.now(), damage, x: '75%', y: '30%', isCrit, isPlayer: true },
+      ]);
 
-    // Shake screen
-    triggerShake(isCrit ? 'heavy' : 'light');
+      // Impact effect at opponent
+      setImpactEffects(prev => [...prev, {
+        id: Date.now(),
+        color: isCrit ? '#fbbf24' : '#22c55e',
+        isPlayer: false,
+      }]);
+
+      // Shake screen on hit
+      triggerShake(isCrit ? 'heavy' : 'light');
+
+      // Clean up projectile
+      setPlayerProjectiles(prev => prev.filter(p => p.id !== projId));
+
+      // Clean up effects
+      setTimeout(() => {
+        setDamageNumbers(prev => prev.slice(1));
+        setImpactEffects(prev => prev.slice(1));
+      }, 800);
+    }, 350);
 
     // Send attack to opponent
     await attack(userId, damage, isCrit);
-
-    // Clean up old damage numbers
-    setTimeout(() => {
-      setDamageNumbers(prev => prev.slice(1));
-    }, 800);
-  }, [isInMatch, userId, matchResult, damagePerTap, attack, triggerShake]);
+  }, [isInMatch, userId, matchResult, damagePerTap, attack, triggerShake, weapon, isAttackReady, weaponCooldownMs]);
 
   // Handle weapon ability
   const handleWeaponAbility = useCallback(async () => {
@@ -393,6 +671,95 @@ export default function PvPArena({ onClose }) {
       }, 800);
     }, weaponAbility.duration || 600);
   }, [weaponAbility, canUseAbility, isInMatch, userId, matchResult, damagePerTap, useAbility, triggerShake]);
+
+  // Handle elemental ability use
+  const handleElementalAbility = useCallback(async (slot) => {
+    if (!isInMatch || !userId || matchResult) return;
+    if (!isElementalAbilityReady(slot)) return;
+
+    const ability = useElementalAbility(slot);
+    if (!ability) return;
+
+    // Play PixiJS effect via CombatCanvas
+    if (combatCanvasRef.current) {
+      combatCanvasRef.current.playAbility(ability.id, window.innerWidth / 2, 150);
+    }
+
+    // Play sound
+    if (sounds.powerAttack) {
+      sounds.powerAttack();
+    }
+
+    // Calculate damage
+    const abilityDamage = calcElementalDamage(ability, damagePerTap);
+
+    // Trigger screen shake
+    triggerShake('heavy');
+
+    // Show damage number
+    const id = Date.now();
+    setDamageNumbers(prev => [
+      ...prev,
+      {
+        id,
+        damage: abilityDamage,
+        x: '50%',
+        y: '25%',
+        isCrit: true,
+        isPlayer: true,
+      },
+    ]);
+
+    // Send ability damage to opponent
+    await useAbility(userId, ability, abilityDamage);
+
+    // Clean up damage number
+    setTimeout(() => {
+      setDamageNumbers(prev => prev.filter(d => d.id !== id));
+    }, 1000);
+  }, [isInMatch, userId, matchResult, isElementalAbilityReady, useElementalAbility, damagePerTap, triggerShake, useAbility]);
+
+  // Detect opponent attacks (when opponentTaps increases) and show incoming projectile
+  const prevOpponentTaps = useRef(opponentTaps);
+  useEffect(() => {
+    if (!isInMatch || !userId) return;
+
+    // If opponentTaps increased, they attacked us
+    if (opponentTaps > prevOpponentTaps.current) {
+      const attackCount = opponentTaps - prevOpponentTaps.current;
+
+      // Spawn incoming projectile(s)
+      for (let i = 0; i < attackCount; i++) {
+        setTimeout(() => {
+          const projId = projectileIdRef.current++;
+          const isCrit = Math.random() < 0.1;
+          setOpponentProjectiles(prev => [...prev, { id: projId, isCrit }]);
+
+          // Projectile hits us after animation
+          setTimeout(() => {
+            // Impact effect on player
+            setImpactEffects(prev => [...prev, {
+              id: Date.now(),
+              color: isCrit ? '#fbbf24' : '#ef4444',
+              isPlayer: true,
+            }]);
+
+            // Small shake when hit
+            triggerShake(isCrit ? 'normal' : 'light');
+
+            // Clean up projectile
+            setOpponentProjectiles(prev => prev.filter(p => p.id !== projId));
+
+            // Clean up impact
+            setTimeout(() => {
+              setImpactEffects(prev => prev.slice(1));
+            }, 300);
+          }, 350);
+        }, i * 100); // Stagger multiple attacks
+      }
+    }
+    prevOpponentTaps.current = opponentTaps;
+  }, [opponentTaps, isInMatch, userId, triggerShake]);
 
   // Join queue handler - always ranked
   const handleJoinQueue = async () => {
@@ -516,7 +883,6 @@ export default function PvPArena({ onClose }) {
   // Main battle arena
   const isPlayer1 = currentMatch?.player1_id === userId;
   const opponentLevel = isPlayer1 ? currentMatch?.player2_level : currentMatch?.player1_level;
-  const opponentWeapon = isPlayer1 ? currentMatch?.player2_weapon : currentMatch?.player1_weapon;
 
   return (
     <div className="fixed inset-0 bg-black z-50 overflow-hidden">
@@ -538,83 +904,351 @@ export default function PvPArena({ onClose }) {
           </button>
         </div>
 
-        {/* Health Bars */}
-        <div className="px-4 py-3 space-y-3 bg-black/30">
-          <HealthBar
-            current={myHealth}
-            max={myMaxHealth}
-            color="bg-gradient-to-r from-green-500 to-emerald-400"
-            label={`${myProfile?.display_name || 'You'} (Lv.${level})`}
-            isPlayer={true}
-          />
-          <HealthBar
-            current={opponentHealth}
-            max={opponentMaxHealth}
-            color="bg-gradient-to-r from-red-500 to-orange-400"
-            label={`${opponentProfile?.display_name || 'Opponent'} (Lv.${opponentLevel || '?'})`}
-            isPlayer={false}
+        {/* PixiJS Combat Canvas for effects */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 50 }}>
+          <CombatCanvas
+            ref={combatCanvasRef}
+            width={window.innerWidth}
+            height={window.innerHeight}
+            className="w-full h-full"
           />
         </div>
 
-        {/* Battle Area - Tap Zone */}
+        {/* Battle Area */}
         <div
           onClick={handleAttack}
-          className="flex-1 relative cursor-crosshair select-none"
+          className="flex-1 relative cursor-crosshair select-none flex flex-col"
           style={{ touchAction: 'manipulation' }}
         >
-          {/* VS Display */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center">
+          {/* Opponent Section - Top */}
+          <div className="flex-1 flex flex-col items-center justify-center relative pt-4">
+            {/* Opponent name and difficulty */}
+            <div className="text-center mb-2">
+              <h2 className="text-2xl font-black text-white drop-shadow-lg">
+                {opponentProfile?.display_name || 'Opponent'}
+              </h2>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-red-500/30 text-red-400">
+                Level {opponentProfile?.current_level || opponentLevel || '?'}
+              </span>
+            </div>
+
+            {/* Opponent health bar - inline */}
+            <div className="w-full max-w-sm mb-4 px-4">
+              <HealthBar
+                current={opponentHealth}
+                max={opponentMaxHealth}
+                label="OPPONENT HP"
+                isPlayer={false}
+              />
+            </div>
+
+            {/* Opponent Avatar */}
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, type: 'spring' }}
+              className="relative"
+            >
+              {/* Glow effect behind opponent */}
+              <div className="absolute inset-0 bg-red-500/30 rounded-full blur-xl scale-150" />
+              {/* Animated bounce */}
               <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="text-6xl font-black text-red-500/30"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="relative"
               >
-                VS
+                {/* Render opponent's full avatar if they have equipment data */}
+                {opponentProfile?.equipped_items ? (
+                  <div className="w-32 h-32 sm:w-40 sm:h-40">
+                    <AvatarRenderer
+                      size={160}
+                      animate={true}
+                      externalEquipped={opponentProfile.equipped_items}
+                      externalCharacterGender={opponentProfile.character_gender}
+                      externalLevel={opponentProfile.current_level}
+                      externalPrestige={opponentProfile.prestige}
+                      externalTier={opponentProfile.current_tier}
+                      externalDyeColors={opponentProfile.dye_colors}
+                      externalSkinTone={opponentProfile.skin_tone}
+                    />
+                  </div>
+                ) : (
+                  /* Fallback if no equipment data */
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-br from-red-900/50 to-orange-900/50 border-4 border-red-500/50 flex items-center justify-center">
+                    <div className="text-center">
+                      <Swords className="w-12 h-12 text-red-400 mx-auto mb-1" />
+                      <span className="text-2xl font-black text-red-400">
+                        {opponentProfile?.display_name?.[0]?.toUpperCase() || '?'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {/* Enemy indicator ring */}
+                <motion.div
+                  className="absolute inset-0 rounded-full border-2 border-red-400/50 pointer-events-none"
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
               </motion.div>
-              <p className="text-white/30 mt-2">TAP TO ATTACK!</p>
+            </motion.div>
+          </div>
+
+          {/* VS Divider */}
+          <div className="flex items-center gap-3 px-8 py-2">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-3xl font-black text-red-500/50"
+            >
+              VS
+            </motion.div>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          </div>
+
+          {/* Player Section - Bottom */}
+          <div className="flex-1 flex flex-col items-center justify-center relative">
+            {/* Player health bar - inline */}
+            <div className="w-full max-w-sm mb-4 px-4">
+              <HealthBar
+                current={myHealth}
+                max={myMaxHealth}
+                label="YOUR HP"
+                isPlayer={true}
+              />
+            </div>
+
+            {/* Player Avatar - Full size like opponent */}
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, type: 'spring' }}
+              className="relative"
+            >
+              {/* Glow effect behind player */}
+              <div className="absolute inset-0 bg-green-500/30 rounded-full blur-xl scale-150" />
+              {/* Animated bounce */}
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="relative"
+              >
+                <div className="w-32 h-32 sm:w-40 sm:h-40">
+                  <AvatarRenderer
+                    size={160}
+                    animate={true}
+                  />
+                </div>
+                {/* Player indicator ring */}
+                <motion.div
+                  className="absolute inset-0 rounded-full border-2 border-green-400/50 pointer-events-none"
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              </motion.div>
+              {/* Player label */}
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-600 to-emerald-500 rounded-full text-sm font-bold text-white shadow-lg whitespace-nowrap"
+              >
+                {myProfile?.display_name || 'YOU'}
+              </motion.div>
+            </motion.div>
+
+            {/* Player name and level */}
+            <div className="text-center mt-4">
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-500/30 text-green-400">
+                Level {level}
+              </span>
+            </div>
+
+            {/* Combat stats row */}
+            <div className="flex items-center gap-4 mt-2 text-sm">
+              <div className="flex items-center gap-1.5 text-yellow-400">
+                <Swords className="w-4 h-4" />
+                <span className="font-bold">{damagePerTap}</span>
+                <span className="text-white/40 text-xs">DMG</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-white/50">
+                <span className="font-medium">{hitCount} hits</span>
+              </div>
+              {critCount > 0 && (
+                <div className="flex items-center gap-1.5 text-orange-400">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="font-bold">{critCount}</span>
+                  <span className="text-white/40 text-xs">CRITS</span>
+                </div>
+              )}
+            </div>
+
+            {/* Weapon info badge */}
+            <div className="mt-1 text-xs text-white/40 flex items-center gap-2">
+              <span
+                className="px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: `${weapon?.color || '#ffffff'}20`,
+                  color: weapon?.color || '#ffffff',
+                }}
+              >
+                {weapon?.name || 'Fists'}
+              </span>
+              <span>×{weapon?.stats?.damageMultiplier?.toFixed(1) || '1.0'}</span>
+              <span>{weaponCooldownMs}ms</span>
             </div>
           </div>
 
-          {/* Player side indicator */}
-          <div className="absolute bottom-20 left-4 flex flex-col items-center gap-1 pointer-events-none">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center border-2 border-green-500/50 overflow-hidden">
-              {myProfile?.avatar_url ? (
-                <img
-                  src={myProfile.avatar_url}
-                  alt={myProfile.display_name || 'You'}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-xl font-bold text-green-400">
-                  {myProfile?.display_name?.[0]?.toUpperCase() || 'Y'}
-                </span>
+          {/* Attack and Ability Buttons */}
+          <div className="px-4 pb-2 flex flex-col items-center gap-3">
+            <div className="flex gap-3">
+              {/* Attack Button */}
+              <motion.button
+                onClick={(e) => { e.stopPropagation(); handleAttack(); }}
+                disabled={!isAttackReady}
+                whileHover={isAttackReady ? { scale: 1.05 } : {}}
+                whileTap={isAttackReady ? { scale: 0.95 } : {}}
+                className={`px-6 py-3 rounded-2xl font-bold text-base transition-all ${
+                  isAttackReady
+                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
+                    : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
+                }`}
+                style={{ touchAction: 'manipulation' }}
+              >
+                <div className="flex items-center gap-2">
+                  <Swords className="w-5 h-5" />
+                  <span>{weapon?.attackName || 'Attack'}</span>
+                </div>
+              </motion.button>
+
+              {/* Weapon Ability Button */}
+              {weaponAbility && (
+                <motion.button
+                  onClick={(e) => { e.stopPropagation(); handleWeaponAbility(); }}
+                  disabled={!canUseAbility}
+                  whileHover={canUseAbility ? { scale: 1.05 } : {}}
+                  whileTap={canUseAbility ? { scale: 0.95 } : {}}
+                  className={`px-6 py-3 rounded-2xl font-bold text-base transition-all ${
+                    canUseAbility
+                      ? 'text-white shadow-lg cursor-pointer'
+                      : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
+                  }`}
+                  style={{
+                    touchAction: 'manipulation',
+                    background: canUseAbility
+                      ? `linear-gradient(135deg, ${weaponAbility.color}, ${weaponAbility.trailColor || weaponAbility.color})`
+                      : undefined,
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    <span>{weaponAbility.name}</span>
+                  </div>
+                </motion.button>
               )}
             </div>
-            <span className="text-xs font-semibold text-green-400 bg-black/50 px-2 py-0.5 rounded-full">
-              {myProfile?.display_name || 'You'}
-            </span>
+
+            {/* Elemental Ability Slots */}
+            {equippedAbilities.some(a => a !== null) && (
+              <div className="flex gap-2 justify-center">
+                {equippedAbilities.map((abilityId, slot) => {
+                  if (!abilityId) return null;
+                  const ability = getEquippedAbility(slot);
+                  if (!ability) return null;
+
+                  const isReady = isElementalAbilityReady(slot);
+                  const progress = getElementalCooldownProgress(slot);
+
+                  return (
+                    <motion.button
+                      key={slot}
+                      onClick={(e) => { e.stopPropagation(); handleElementalAbility(slot); }}
+                      disabled={!isReady}
+                      whileHover={isReady ? { scale: 1.05 } : {}}
+                      whileTap={isReady ? { scale: 0.95 } : {}}
+                      className="relative p-2 rounded-xl transition-all"
+                      style={{
+                        touchAction: 'manipulation',
+                        background: isReady
+                          ? `linear-gradient(135deg, ${ability.elementColor}cc, ${ability.elementColor}66)`
+                          : 'rgba(55, 65, 81, 0.5)',
+                        borderColor: isReady ? ability.elementColor : 'transparent',
+                        borderWidth: '2px',
+                        boxShadow: isReady ? `0 0 15px ${ability.elementColor}60` : 'none',
+                        minWidth: '60px',
+                      }}
+                    >
+                      {/* Cooldown overlay */}
+                      {!isReady && (
+                        <div
+                          className="absolute inset-0 rounded-xl overflow-hidden"
+                          style={{
+                            background: `linear-gradient(to top, transparent ${progress * 100}%, rgba(0,0,0,0.6) ${progress * 100}%)`,
+                          }}
+                        />
+                      )}
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-xl">{ability.icon}</span>
+                        <span className={`text-xs font-bold ${isReady ? 'text-white' : 'text-gray-400'}`}>
+                          {ability.name.split(' ')[0]}
+                        </span>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Cooldown indicators */}
+            <div className="w-full max-w-xs">
+              <CooldownIndicator
+                progress={cooldownProgress}
+                weaponName={weapon?.attackName || 'Attack'}
+                cooldownMs={weaponCooldownMs}
+                canAttack={isAttackReady}
+              />
+              {weaponAbility && (
+                <AbilityCooldownIndicator
+                  ability={weaponAbility}
+                  lastUsedTime={abilityLastUsed}
+                  canUse={canUseAbility}
+                />
+              )}
+            </div>
           </div>
 
-          {/* Opponent side indicator */}
-          <div className="absolute top-20 right-4 flex flex-col items-center gap-1 pointer-events-none">
-            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center border-2 border-red-500/50 overflow-hidden">
-              {opponentProfile?.avatar_url ? (
-                <img
-                  src={opponentProfile.avatar_url}
-                  alt={opponentProfile.display_name || 'Opponent'}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-xl font-bold text-red-400">
-                  {opponentProfile?.display_name?.[0]?.toUpperCase() || 'O'}
-                </span>
-              )}
-            </div>
-            <span className="text-xs font-semibold text-red-400 bg-black/50 px-2 py-0.5 rounded-full">
-              {opponentProfile?.display_name || 'Opponent'}
-            </span>
-          </div>
+          {/* Attack Projectiles - Player to Opponent */}
+          <AnimatePresence>
+            {playerProjectiles.map(proj => (
+              <PlayerAttackProjectile
+                key={proj.id}
+                weapon={proj.weapon}
+                isCrit={proj.isCrit}
+                onComplete={() => setPlayerProjectiles(prev => prev.filter(p => p.id !== proj.id))}
+              />
+            ))}
+          </AnimatePresence>
+
+          {/* Attack Projectiles - Opponent to Player */}
+          <AnimatePresence>
+            {opponentProjectiles.map(proj => (
+              <OpponentAttackProjectile
+                key={proj.id}
+                isCrit={proj.isCrit}
+                onComplete={() => setOpponentProjectiles(prev => prev.filter(p => p.id !== proj.id))}
+              />
+            ))}
+          </AnimatePresence>
+
+          {/* Impact Effects */}
+          <AnimatePresence>
+            {impactEffects.map(effect => (
+              <ImpactEffect
+                key={effect.id}
+                color={effect.color}
+                isPlayer={effect.isPlayer}
+              />
+            ))}
+          </AnimatePresence>
 
           {/* Damage Numbers */}
           <AnimatePresence>
@@ -636,72 +1270,6 @@ export default function PvPArena({ onClose }) {
           </AnimatePresence>
         </div>
 
-        {/* Stats Bar */}
-        <div className="px-4 py-2 bg-black/50 flex justify-around">
-          <div className="text-center">
-            <p className="text-lg font-bold text-green-400">{myTaps}</p>
-            <p className="text-xs text-white/50">Your Taps</p>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-yellow-400">{damagePerTap}</p>
-            <p className="text-xs text-white/50">Damage</p>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-red-400">{opponentTaps}</p>
-            <p className="text-xs text-white/50">Opp Taps</p>
-          </div>
-        </div>
-
-        {/* Weapon Ability */}
-        {weaponAbility && (
-          <div className="p-4 bg-black/70">
-            <button
-              onClick={handleWeaponAbility}
-              disabled={!canUseAbility}
-              className={`w-full p-4 rounded-xl flex items-center justify-center gap-3 transition-all ${
-                !canUseAbility
-                  ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                  : 'text-white hover:scale-[1.02] active:scale-95'
-              }`}
-              style={{
-                background: canUseAbility
-                  ? `linear-gradient(135deg, ${weaponAbility.color}, ${weaponAbility.trailColor || weaponAbility.color})`
-                  : undefined,
-                boxShadow: canUseAbility ? `0 0 30px ${weaponAbility.color}50` : 'none',
-              }}
-            >
-              <Sparkles className="w-6 h-6" />
-              <div className="flex flex-col items-start">
-                <span className="font-bold">{weaponAbility.name}</span>
-                {!canUseAbility && (
-                  <span className="text-xs text-white/50">
-                    {isAbilityAnimating
-                      ? 'Casting...'
-                      : `${((weaponAbility.cooldown - (Date.now() - abilityLastUsed)) / 1000).toFixed(1)}s`}
-                  </span>
-                )}
-              </div>
-              <span className="text-sm opacity-75 bg-black/30 px-2 py-1 rounded-lg">
-                {weaponAbility.damage}x DMG
-              </span>
-            </button>
-
-            {/* Ability Cooldown Progress */}
-            {!canUseAbility && !isAbilityAnimating && (
-              <div className="mt-2 h-1.5 bg-black/50 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{ backgroundColor: weaponAbility.color }}
-                  initial={{ width: '0%' }}
-                  animate={{
-                    width: `${Math.min(100, ((Date.now() - abilityLastUsed) / weaponAbility.cooldown) * 100)}%`,
-                  }}
-                  transition={{ duration: 0.1 }}
-                />
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

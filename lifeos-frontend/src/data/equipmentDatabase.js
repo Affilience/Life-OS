@@ -4,6 +4,8 @@
  * All equipment tied to module unlocks for meaningful progression
  */
 
+import { ABILITY_TYPES } from './weaponAbilities';
+
 // Equipment Rarity Tiers
 export const EQUIPMENT_RARITY = {
   common: {
@@ -2414,4 +2416,61 @@ export function getUnlockedEquipment(userProgress) {
     }
     return false;
   });
+}
+
+/**
+ * Get weapon with enriched ability display information
+ * @param {string} weaponId - The weapon ID to look up
+ * @returns {Object|null} - Weapon with abilityName and abilityDescription added
+ */
+export function getWeaponWithAbility(weaponId) {
+  const weapon = EQUIPMENT_DATABASE[weaponId];
+  if (!weapon) return null;
+
+  // Only weapons have abilities
+  if (!weapon.ability) return weapon;
+
+  const ability = ABILITY_TYPES[weapon.ability];
+  if (!ability) return weapon;
+
+  return {
+    ...weapon,
+    abilityName: ability.name,
+    abilityDescription: ability.description,
+    abilityDamage: ability.damage,
+    abilityCooldown: ability.cooldown,
+    abilityColor: ability.color,
+    isMagicAbility: ability.isMagic || false,
+  };
+}
+
+/**
+ * Get all weapons with their ability information
+ * @returns {Object[]} - Array of weapons with ability display info
+ */
+export function getAllWeaponsWithAbilities() {
+  return Object.values(EQUIPMENT_DATABASE)
+    .filter(item => item.slot === 'mainHand' && item.ability)
+    .map(weapon => getWeaponWithAbility(weapon.id));
+}
+
+/**
+ * Check if a weapon ability is unlocked based on skill tree perks
+ * @param {string} abilityId - The ability ID to check
+ * @param {string[]} unlockedPerks - Array of unlocked perk IDs
+ * @returns {boolean} - Whether the ability is unlocked
+ */
+export function isAbilityUnlocked(abilityId, unlockedPerks = []) {
+  // Ability unlock perk IDs follow pattern: unlock_ability_{abilityId}
+  const unlockPerkId = `unlock_ability_${abilityId}`;
+  return unlockedPerks.includes(unlockPerkId);
+}
+
+/**
+ * Get the perk required to unlock a specific ability
+ * @param {string} abilityId - The ability ID
+ * @returns {string} - The perk ID that unlocks this ability
+ */
+export function getAbilityUnlockPerk(abilityId) {
+  return `unlock_ability_${abilityId}`;
 }

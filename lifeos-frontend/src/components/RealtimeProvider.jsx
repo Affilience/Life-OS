@@ -39,7 +39,7 @@ import { useSocialStore } from '../stores/socialStore';  // named export
 import useBadHabitsStore from '../stores/badHabitsStore';  // default export
 import useBossStore from '../stores/bossStore';  // default export
 import useCustomStreaksStore from '../stores/customStreaksStore';  // default export
-import usePetStore from '../stores/petStore';  // default export
+import { usePetStore } from '../stores/petStore';  // named export
 import usePvpArenaStore from '../stores/pvpArenaStore';  // default export
 import usePvpStore from '../stores/pvpStore';  // default export
 import useQuestsStore from '../stores/questsStore';  // default export

@@ -197,6 +197,96 @@ export const PERK_TREES = {
         effect: { bodyXpMultiplier: 3, socialXpBonus: 0.1 },
         prerequisites: ['body_iron_will'],
         position: { x: 400, y: -25 } // Star above head - higher up for better spacing
+      },
+
+      // === WEAPON ABILITY UNLOCKS (Physical) ===
+      {
+        id: 'unlock_ability_power_slash',
+        name: 'Power Slash',
+        tier: 'adept',
+        level: 25,
+        type: 'unlock',
+        description: 'UNLOCK: Power Slash ability - A devastating wide slash that cleaves through defenses',
+        effect: { unlocksAbility: 'power_slash' },
+        prerequisites: ['body_strength_1'],
+        position: { x: 560, y: 480 } // Right of foundation
+      },
+      {
+        id: 'unlock_ability_cleaving_blow',
+        name: 'Cleaving Blow',
+        tier: 'adept',
+        level: 30,
+        type: 'unlock',
+        description: 'UNLOCK: Cleaving Blow ability - A brutal overhead strike that causes bleeding',
+        effect: { unlocksAbility: 'cleaving_blow' },
+        prerequisites: ['unlock_ability_power_slash'],
+        position: { x: 680, y: 430 } // Far right branch
+      },
+      {
+        id: 'unlock_ability_blade_dance',
+        name: 'Blade Dance',
+        tier: 'adept',
+        level: 35,
+        type: 'unlock',
+        description: 'UNLOCK: Blade Dance ability - A flurry of elegant slashes striking multiple times',
+        effect: { unlocksAbility: 'blade_dance' },
+        prerequisites: ['unlock_ability_cleaving_blow'],
+        position: { x: 700, y: 360 } // Continue right branch
+      },
+      {
+        id: 'unlock_ability_earthshatter',
+        name: 'Earthshatter',
+        tier: 'expert',
+        level: 50,
+        type: 'unlock',
+        description: 'UNLOCK: Earthshatter ability - Slam the ground with tremendous force, stunning enemies',
+        effect: { unlocksAbility: 'earthshatter' },
+        prerequisites: ['unlock_ability_blade_dance', 'body_peak_performance'],
+        position: { x: 680, y: 280 } // Upper right
+      },
+      {
+        id: 'unlock_ability_thunderous_blow',
+        name: 'Thunderous Blow',
+        tier: 'expert',
+        level: 55,
+        type: 'unlock',
+        description: 'UNLOCK: Thunderous Blow ability - Channel lightning through your weapon',
+        effect: { unlocksAbility: 'thunderous_blow' },
+        prerequisites: ['unlock_ability_earthshatter'],
+        position: { x: 620, y: 200 } // Upper right branch
+      },
+      {
+        id: 'unlock_ability_berserker_rage',
+        name: 'Berserker Rage',
+        tier: 'expert',
+        level: 65,
+        type: 'unlock',
+        description: 'UNLOCK: Berserker Rage ability - Enter a rage, dealing massive damage',
+        effect: { unlocksAbility: 'berserker_rage' },
+        prerequisites: ['unlock_ability_thunderous_blow', 'body_beast_mode'],
+        position: { x: 560, y: 130 } // Near crown
+      },
+      {
+        id: 'unlock_ability_shadow_strike',
+        name: 'Shadow Strike',
+        tier: 'adept',
+        level: 30,
+        type: 'unlock',
+        description: 'UNLOCK: Shadow Strike ability - Vanish into shadows and strike with lethal precision',
+        effect: { unlocksAbility: 'shadow_strike' },
+        prerequisites: ['body_endurance_1'],
+        position: { x: 240, y: 480 } // Left side branch
+      },
+      {
+        id: 'unlock_ability_assassinate',
+        name: 'Assassinate',
+        tier: 'expert',
+        level: 50,
+        type: 'unlock',
+        description: 'UNLOCK: Assassinate ability - A precise strike targeting vital points',
+        effect: { unlocksAbility: 'assassinate' },
+        prerequisites: ['unlock_ability_shadow_strike', 'body_peak_performance'],
+        position: { x: 160, y: 400 } // Far left
       }
     ]
   },
@@ -378,6 +468,96 @@ export const PERK_TREES = {
         effect: { mindXpMultiplier: 3, globalXpBonus: 0.1 },
         prerequisites: ['mind_master_learner'],
         position: { x: 400, y: -25 } // Transcendence point - higher up
+      },
+
+      // === WEAPON ABILITY UNLOCKS (Magic) ===
+      {
+        id: 'unlock_ability_chain_lightning',
+        name: 'Chain Lightning',
+        tier: 'adept',
+        level: 25,
+        type: 'unlock',
+        description: 'UNLOCK: Chain Lightning ability - Unleash lightning that arcs between targets',
+        effect: { unlocksAbility: 'chain_lightning' },
+        prerequisites: ['mind_focus_1'],
+        position: { x: 580, y: 500 } // Right branch
+      },
+      {
+        id: 'unlock_ability_frost_bolt',
+        name: 'Frost Bolt',
+        tier: 'adept',
+        level: 30,
+        type: 'unlock',
+        description: 'UNLOCK: Frost Bolt ability - Launch a freezing bolt of ice',
+        effect: { unlocksAbility: 'frost_bolt' },
+        prerequisites: ['unlock_ability_chain_lightning'],
+        position: { x: 680, y: 450 } // Far right
+      },
+      {
+        id: 'unlock_ability_arcane_nova',
+        name: 'Arcane Nova',
+        tier: 'adept',
+        level: 35,
+        type: 'unlock',
+        description: 'UNLOCK: Arcane Nova ability - Release a burst of pure arcane energy',
+        effect: { unlocksAbility: 'arcane_nova' },
+        prerequisites: ['unlock_ability_frost_bolt', 'mind_reader_2'],
+        position: { x: 120, y: 390 } // Far left branch
+      },
+      {
+        id: 'unlock_ability_arcane_barrage',
+        name: 'Arcane Barrage',
+        tier: 'expert',
+        level: 50,
+        type: 'unlock',
+        description: 'UNLOCK: Arcane Barrage ability - Launch a volley of arcane missiles',
+        effect: { unlocksAbility: 'arcane_barrage' },
+        prerequisites: ['unlock_ability_arcane_nova', 'mind_knowledge_synthesis'],
+        position: { x: 120, y: 290 } // Upper left
+      },
+      {
+        id: 'unlock_ability_soul_drain',
+        name: 'Soul Drain',
+        tier: 'adept',
+        level: 35,
+        type: 'unlock',
+        description: 'UNLOCK: Soul Drain ability - Drain the life force from your enemy',
+        effect: { unlocksAbility: 'soul_drain' },
+        prerequisites: ['mind_note_taker'],
+        position: { x: 220, y: 500 } // Left branch
+      },
+      {
+        id: 'unlock_ability_dark_pulse',
+        name: 'Dark Pulse',
+        tier: 'expert',
+        level: 50,
+        type: 'unlock',
+        description: 'UNLOCK: Dark Pulse ability - Emit a wave of corrupting darkness',
+        effect: { unlocksAbility: 'dark_pulse' },
+        prerequisites: ['unlock_ability_soul_drain', 'mind_knowledge_synthesis'],
+        position: { x: 180, y: 400 } // Far left
+      },
+      {
+        id: 'unlock_ability_meteor',
+        name: 'Meteor',
+        tier: 'expert',
+        level: 60,
+        type: 'unlock',
+        description: 'UNLOCK: Meteor ability - Call down a devastating meteor from the sky',
+        effect: { unlocksAbility: 'meteor' },
+        prerequisites: ['unlock_ability_arcane_barrage', 'mind_speed_reader'],
+        position: { x: 140, y: 200 } // Upper left
+      },
+      {
+        id: 'unlock_ability_arcane_explosion',
+        name: 'Arcane Explosion',
+        tier: 'master',
+        level: 75,
+        type: 'unlock',
+        description: 'UNLOCK: Arcane Explosion ability - Channel power for a massive arcane detonation',
+        effect: { unlocksAbility: 'arcane_explosion' },
+        prerequisites: ['unlock_ability_meteor', 'mind_master_learner'],
+        position: { x: 200, y: 100 } // Near crown
       }
     ]
   },
