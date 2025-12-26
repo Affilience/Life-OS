@@ -483,114 +483,117 @@ export const PVP_EQUIPMENT = {
 /**
  * Achievement-unlockable pets
  * Maps achievement IDs to pet rewards (uses petStore PET_DATABASE keys)
+ * IMPORTANT: Each achievement should only unlock ONE type of reward (ability, pet, OR equipment)
  */
 export const ACHIEVEMENT_PETS = {
-  // Quest Achievements - Unlock quest-themed pets
-  first_quest: ['common_imp'],           // First Steps - Mischievous imp helper
+  // Quest Achievements - Keep pets (no ability conflicts)
   quest_novice: ['common_pixie'],        // Quest Novice - Celtic fairy guide
   quest_apprentice: ['uncommon_carbuncle'], // Quest Apprentice - Gem-seeking rabbit
   quest_master: ['rare_baku'],           // Quest Master - Dream-eating tapir
   boss_slayer: ['epic_chimera'],         // Boss Slayer - Multi-headed beast
 
-  // Streak Achievements - Unlock dedication-themed pets
-  streak_starter: ['common_will_o_wisp'], // 3-day streak - Ghost flame guide
-  one_week: ['uncommon_griffin_chick'],  // 7-day streak - Loyal griffin
-  two_weeks: ['uncommon_selkie'],        // 14-day streak - Shape-shifting seal
-  one_month: ['rare_qilin'],             // 30-day streak - Auspicious qilin
+  // Streak Achievements - redistributed (removed those with ability conflicts)
+  one_month: ['rare_qilin'],             // 30-day streak - Auspicious qilin (no ability conflict)
   streak_60: ['epic_garuda'],            // 60-day streak - Divine eagle
   streak_90: ['epic_sleipnir'],          // 90-day streak - Odin's steed
   streak_legend: ['mythic_raiju'],       // 100-day streak - Lightning beast
   streak_365: ['mythic_jormungandr'],    // 365-day streak - World Serpent
 
-  // Productivity Achievements - Unlock focus-themed pets
-  deep_work_1: ['common_foo_pup'],       // First deep work - Guardian lion pup
-  deep_work_10: ['uncommon_thunderbird'], // 10 hours - Lightning eagle
-  deep_work_100: ['rare_anubis_jackal'], // 100 hours - Guide of souls
-  task_slayer: ['rare_basilisk'],        // 100 tasks - Serpent king
-  task_500: ['epic_nine_tailed_kitsune'], // 500 tasks - Ancient fox spirit
+  // Productivity Achievements - redistributed (removed those with ability conflicts)
+  deep_work_1: ['common_foo_pup'],       // First deep work - Guardian lion pup (no ability conflict)
+  task_slayer: ['rare_basilisk'],        // 100 tasks - Serpent king (no ability conflict)
+  total_activities_1000: ['epic_nine_tailed_kitsune'], // Moved from task_500 (has thunder_storm ability)
 
-  // Health & Fitness Achievements - Unlock strength-themed pets
-  first_workout: ['common_scarab'],      // First workout - Sacred beetle
-  workout_50: ['uncommon_tanuki'],       // 50 workouts - Shapeshifting raccoon
-  workout_100: ['rare_pegasus'],         // 100 workouts - Divine winged horse
-  perfect_workout_week: ['epic_phoenix'], // 7-day workout streak - Immortal fire bird
+  // Health & Fitness Achievements - redistributed (removed those with ability conflicts)
+  workout_100: ['rare_pegasus'],         // 100 workouts - Divine winged horse (no ability conflict)
+  early_riser_streak: ['epic_phoenix'],  // Moved from perfect_workout_week (has stone_spike ability)
 
-  // Knowledge Achievements - Unlock wisdom-themed pets
-  first_book: ['common_kitsune_pup'],    // First book - Young fox spirit
-  bookworm: ['uncommon_domovoi'],        // 10 books - Household spirit
-  books_25: ['rare_azure_dragon'],       // 25 books - Eastern dragon
+  // Knowledge Achievements - redistributed (removed those with ability conflicts)
+  books_25: ['rare_azure_dragon'],       // 25 books - Eastern dragon (no ability conflict)
   books_52: ['mythic_quetzalcoatl'],     // 52 books - Feathered serpent god
 
-  // Financial Achievements
-  first_goal_complete: ['uncommon_griffin_chick'], // Goal Achiever
+  // Pets moved from conflicting achievements to new homes:
+  first_project: ['common_imp'],         // Moved from first_quest (has lightning_strike ability)
+  journal_10: ['common_will_o_wisp'],    // Moved from streak_starter (has toxic_spit ability)
+  cardio_sessions_25: ['uncommon_griffin_chick'], // Moved from one_week (has inferno ability)
+  cardio_sessions_100: ['uncommon_selkie'], // Moved from two_weeks (has blizzard ability)
+  marathon_session: ['uncommon_thunderbird'], // Moved from deep_work_10 (has ice_beam ability)
+  deep_work_1000: ['rare_anubis_jackal'], // Moved from deep_work_100 (has dark_tendrils ability)
+  volume_10k: ['common_scarab'],         // Moved from first_workout (has rock_throw ability)
+  volume_100k: ['uncommon_tanuki'],      // Moved from workout_50 (has power_buff ability)
+  notes_50: ['common_kitsune_pup'],      // Moved from first_book (has wind_slash ability)
+  notes_200: ['uncommon_domovoi'],       // Moved from bookworm (has tornado ability)
+  goal_50_percent: ['uncommon_griffin_chick'], // Moved from first_goal_complete (has holy_light ability)
 
-  // Milestone Achievements - Unlock level-based pets
-  level_10: ['common_imp'],              // Rising Star
-  level_25: ['rare_azure_dragon'],       // Champion
-  level_50: ['mythic_fenrir_pup'],       // Legend - Wolf of Ragnarok
+  // Milestone Achievements - redistributed (removed those with ability conflicts)
+  level_10: ['common_imp'],              // Rising Star - no ability conflict
+  journal_50: ['rare_azure_dragon'],     // Moved from level_25 (has earthquake ability)
+  six_months: ['mythic_fenrir_pup'],     // Moved from level_50 (has landslide ability)
 
-  // Special Achievements
-  life_optimizer: ['epic_fenghuang'],    // All modules in one day - Chinese phoenix empress
-  balanced_week: ['mythic_leviathan'],   // All 8 modules in a week - Sea serpent
+  // Special Achievements - redistributed
+  life_optimizer: ['epic_fenghuang'],    // All modules in one day - Chinese phoenix empress (no conflict)
+  total_activities_5000: ['mythic_leviathan'], // Moved from balanced_week (has greater_heal ability)
 };
 
 /**
  * Achievement-unlockable equipment
  * Maps achievement IDs to equipment rewards
+ * IMPORTANT: Each achievement should only unlock ONE type of reward (ability, pet, OR equipment)
  */
 export const ACHIEVEMENT_EQUIPMENT = {
-  // Fitness Achievements (matches achievementsStore IDs)
-  first_workout: ['helmet_training'],
-  workout_10: ['chest_padded_armor'],
-  workout_50: ['helmet_steel_greathelm'],
-  workout_100: ['chest_dragon', 'helmet_dragon'],
+  // Fitness Achievements - redistributed from conflicting achievements
+  workout_10: ['chest_padded_armor'],              // No conflict - only unlocks this
+  burn_1000_cal: ['helmet_training'],              // Moved from first_workout (has ability)
+  burn_10000_cal: ['helmet_steel_greathelm'],      // Moved from workout_50 (has ability)
+  burn_50000_cal: ['chest_dragon'],                // Moved from workout_100 (has pet)
+  burn_100000_cal: ['helmet_dragon'],              // Moved from workout_100 (has pet)
 
-  // Knowledge Achievements (matches achievementsStore IDs)
-  first_book: ['weapon_wooden_staff'],
-  bookworm: ['helmet_scholar_circlet'],
-  reading_10h: ['cape_sage'],
+  // Knowledge Achievements - redistributed
+  reading_10h: ['ring_intelligence'],              // Moved from two_weeks (has ability)
+  ideas_25: ['weapon_wooden_staff'],               // Moved from first_book (has ability)
+  ideas_100: ['helmet_scholar_circlet'],           // Moved from bookworm (has ability)
+  reading_200h: ['cape_sage'],                     // Moved from reading_10h (keeping ring there)
 
-  // Productivity Achievements (matches achievementsStore IDs)
-  deep_work_1: ['weapon_training_sword'],
-  deep_work_10: ['weapon_iron_sword'],
-  deep_work_100: ['weapon_steel_longsword'],
-  task_slayer: ['weapon_dragon_blade'],
+  // Productivity Achievements - redistributed
+  task_streak_7: ['weapon_training_sword'],        // Moved from deep_work_1 (has pet)
+  deep_work_500: ['weapon_iron_sword'],            // Moved from deep_work_10 (has ability)
+  task_1000: ['weapon_steel_longsword'],           // Moved from deep_work_100 (has ability)
+  projects_25: ['weapon_dragon_blade'],            // Moved from task_slayer (has pet)
 
-  // Streak Achievements (matches achievementsStore IDs)
-  streak_starter: ['ring_copper_band'],
-  one_week: ['ring_strength'],
-  two_weeks: ['ring_intelligence'],
-  one_month: ['ring_vitality'],
-  streak_legend: ['helmet_phoenix_crown', 'ring_one'],
+  // Streak Achievements - redistributed
+  total_activities_100: ['ring_copper_band'],      // Moved from streak_starter (has ability)
+  first_pr: ['ring_strength'],                     // Moved from one_week (has ability)
+  three_months: ['ring_vitality'],                 // Moved from one_month (has pet)
+  streak_180: ['helmet_phoenix_crown'],            // Moved from streak_legend (has pet)
+  first_year: ['ring_one'],                        // Moved from streak_legend (streak_365 has pet)
 
-  // Quest Achievements (matches achievementsStore IDs)
-  first_quest: ['cape_leather'],
-  quest_novice: ['shield_wooden_buckler'],
-  quest_apprentice: ['helmet_leather_hood'],
-  quest_master: ['helmet_iron'],
-  quest_legend: ['helmet_steel_greathelm'],
-  boss_slayer: ['weapon_enchanted_blade'],
-  dragon_hunter: ['chest_dragon', 'shield_dragon'],
+  // Quest Achievements - redistributed
+  first_month: ['cape_leather'],                   // Moved from first_quest (has ability)
+  goals_3_complete: ['shield_wooden_buckler'],     // Moved from quest_novice (has pet)
+  contribution_10: ['helmet_leather_hood'],        // Moved from quest_apprentice (has pet)
+  projects_5: ['helmet_iron'],                     // Moved from quest_master (has pet)
+  quest_legend: ['weapon_enchanted_blade'],        // Moved from boss_slayer (has pet)
+  weekend_warrior: ['chest_dragon'],               // Moved from dragon_hunter (has ability)
+  monday_motivator: ['shield_dragon'],             // Moved from dragon_hunter (has ability)
 
-  // Financial Achievements (matches achievementsStore IDs)
-  budget_master: ['ring_focus'],
-  expense_tracker: ['amulet_wooden_charm'],
-  saver: ['ring_power'],
+  // Financial Achievements - redistributed
+  savings_streak_12: ['ring_focus'],               // Moved from budget_master (has ability)
+  expense_tracker: ['amulet_wooden_charm'],        // No conflict - only unlocks this
+  saver: ['ring_power'],                           // No conflict - only unlocks this
 
   // Contribution/Social Achievements
-  first_contribution: ['cape_traveler'],
-  contribution_10: ['cape_sage'],
-  contribution_50: ['cape_enchanter'],
-  contribution_100: ['cape_archmage'],
+  first_contribution: ['cape_traveler'],           // No conflict - ability water_blast is separate
+  contribution_50: ['cape_enchanter'],             // No conflict - only unlocks this
+  contribution_100: ['cape_archmage'],             // No conflict - only unlocks this (helmet_leather_hood moved here from contribution_10)
 
-  // Goal Achievements
-  first_goal_complete: ['amulet_stone_pendant'],
-  goals_3_complete: ['amulet_strength'],
-  goals_10_complete: ['amulet_guardian'],
+  // Goal Achievements - redistributed
+  goal_25_percent: ['amulet_stone_pendant'],       // Moved from first_goal_complete (has ability)
+  goals_10_complete: ['amulet_guardian'],          // No conflict - only unlocks this
+  goal_75_percent: ['amulet_strength'],            // Moved from goals_3_complete (now has equipment)
 
   // Mythical Achievement Rewards
-  infernal_dedication: ['helmet_infernal_visage'],  // 90-day daily task completion
-  celestial_guardian: ['weapon_celestial_mace'],    // Help 50 community members
+  infernal_dedication: ['helmet_infernal_visage'], // No conflict - 90-day daily task completion
+  celestial_guardian: ['weapon_celestial_mace'],   // No conflict - Help 50 community members
 };
 
 /**

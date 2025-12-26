@@ -292,17 +292,7 @@ export const ELEMENTAL_ABILITIES = {
         tier: 2,
         description: 'Explode with radiant energy',
       },
-      sanctuary: {
-        id: 'sanctuary',
-        name: 'Sanctuary',
-        icon: '🛡️',
-        element: 'holy',
-        damage: 1.5,
-        cooldown: 15000,
-        tier: 2,
-        description: 'Create a protective sanctuary',
-        shieldPercent: 0.2,
-      },
+      // sanctuary removed - protective ability
       consecrate: {
         id: 'consecrate',
         name: 'Consecrate',
@@ -577,75 +567,7 @@ export const ELEMENTAL_ABILITIES = {
     gradientClass: 'from-emerald-500 to-teal-500',
     textColor: 'text-white',
     abilities: {
-      heal: {
-        id: 'heal',
-        name: 'Heal',
-        icon: '💚',
-        element: 'support',
-        damage: 0,
-        cooldown: 12000,
-        tier: 1,
-        description: 'Restore health to yourself',
-        healPercent: 0.2,
-      },
-      greater_heal: {
-        id: 'greater_heal',
-        name: 'Greater Heal',
-        icon: '💖',
-        element: 'support',
-        damage: 0,
-        cooldown: 20000,
-        tier: 2,
-        description: 'Restore a large amount of health',
-        healPercent: 0.4,
-      },
-      shield: {
-        id: 'shield',
-        name: 'Shield',
-        icon: '🛡️',
-        element: 'support',
-        damage: 0,
-        cooldown: 15000,
-        tier: 2,
-        description: 'Create a protective shield',
-        shieldPercent: 0.25,
-      },
-      power_buff: {
-        id: 'power_buff',
-        name: 'Power Buff',
-        icon: '💪',
-        element: 'support',
-        damage: 0,
-        cooldown: 18000,
-        tier: 2,
-        description: 'Increase your damage output',
-        damageBoost: 0.3,
-        duration: 10000,
-      },
-      speed_buff: {
-        id: 'speed_buff',
-        name: 'Speed Buff',
-        icon: '⚡',
-        element: 'support',
-        damage: 0,
-        cooldown: 16000,
-        tier: 2,
-        description: 'Increase your attack speed',
-        speedBoost: 0.3,
-        duration: 8000,
-      },
-      magic_buff: {
-        id: 'magic_buff',
-        name: 'Magic Buff',
-        icon: '🎭',
-        element: 'support',
-        damage: 0,
-        cooldown: 18000,
-        tier: 2,
-        description: 'Enhance your magical abilities',
-        magicBoost: 0.3,
-        duration: 10000,
-      },
+      // Only offensive support abilities remain - healing/shields/buffs removed
       curse: {
         id: 'curse',
         name: 'Curse',
@@ -1217,9 +1139,8 @@ export function isAbilityReady(lastUsed, cooldown) {
  * Types: 'perk' (skill tree), 'achievement', 'boss', 'default' (starts unlocked)
  */
 export const ABILITY_UNLOCKS = {
-  // === UNLOCKED BY DEFAULT (starter abilities - only 3) ===
+  // === UNLOCKED BY DEFAULT (starter abilities - only 2) ===
   fireball: { type: 'default', description: 'Available from the start' },
-  heal: { type: 'default', description: 'Available from the start' },
   magic_missile: { type: 'default', description: 'Available from the start' },
 
   // === EARLY ACHIEVEMENTS (former defaults) ===
@@ -1326,15 +1247,9 @@ export const ABILITY_UNLOCKS = {
   // Holy achievements
   smite: { type: 'achievement', achievementId: 'journal_streak_30', name: 'Journal Master', description: 'Write journal entries for 30 days in a row' },
   radiant_burst: { type: 'achievement', achievementId: 'xp_1000', name: 'XP Collector', description: 'Earn 1000 XP' },
-  sanctuary: { type: 'achievement', achievementId: 'reading_50h', name: 'Reading Master', description: 'Read for 50 hours' },
   consecrate: { type: 'achievement', achievementId: 'xp_10000', name: 'XP Master', description: 'Earn 10000 XP' },
 
-  // Support achievements
-  greater_heal: { type: 'achievement', achievementId: 'balanced_week', name: 'Balanced Week', description: 'Complete a balanced week of activities' },
-  shield: { type: 'achievement', achievementId: 'budget_master', name: 'Budget Master', description: 'Master your budget' },
-  power_buff: { type: 'achievement', achievementId: 'workout_50', name: 'Workout Warrior', description: 'Complete 50 workouts' },
-  speed_buff: { type: 'achievement', achievementId: 'task_streak_30', name: 'Task Streak', description: 'Maintain a 30-day task streak' },
-  magic_buff: { type: 'achievement', achievementId: 'courses_3', name: 'Course Completer', description: 'Complete 3 courses' },
+  // Support achievements (non-offensive abilities removed: heal, greater_heal, shield, power_buff, speed_buff, magic_buff, sanctuary)
   curse: { type: 'achievement', achievementId: 'dragon_hunter', name: 'Dragon Hunter', description: 'Defeat a dragon boss' },
 
   // === UNLOCKED VIA BOSS DROPS ===

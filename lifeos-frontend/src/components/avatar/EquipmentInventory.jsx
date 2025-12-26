@@ -318,9 +318,38 @@ export default function EquipmentInventory() {
                     }}
                   >
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>
-                        {ability ? ability.icon : '➕'}
-                      </div>
+                      {ability ? (
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          margin: '0 auto 6px',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.25rem',
+                          background: `linear-gradient(135deg, ${ability.elementColor}40, ${ability.elementColor}20)`,
+                          boxShadow: `0 2px 8px ${ability.elementColor}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                          border: `1px solid ${ability.elementColor}60`,
+                        }}>
+                          {ability.icon}
+                        </div>
+                      ) : (
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          margin: '0 auto 6px',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px dashed rgba(255,255,255,0.2)',
+                        }}>
+                          ➕
+                        </div>
+                      )}
                       <div style={{
                         fontSize: '0.75rem',
                         fontWeight: 'bold',
@@ -448,7 +477,21 @@ export default function EquipmentInventory() {
                         }}
                       >
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.5rem' }}>{ability.icon}</div>
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            margin: '0 auto 8px',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.25rem',
+                            background: `linear-gradient(135deg, ${ability.elementColor}50, ${ability.elementColor}25)`,
+                            boxShadow: `0 2px 8px ${ability.elementColor}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                            border: `1px solid ${ability.elementColor}70`,
+                          }}>
+                            {ability.icon}
+                          </div>
                           <div style={{
                             fontSize: '0.75rem',
                             fontWeight: 'bold',

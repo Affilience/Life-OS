@@ -76,10 +76,10 @@ export const PET_DATABASE = {
     bonusType: 'learning',
     bonusAmount: 5,
     bonusDescription: '+5% Learning XP',
-    // New unlock system
-    unlockMethod: 'level',
-    unlockRequirement: { level: 5 },
-    unlockDescription: 'Reach Level 5',
+    // Unlock via notes_50 achievement (moved from first_book which has wind_slash ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'notes_50', fallbackStat: 'notesCreated', fallbackTarget: 50 },
+    unlockDescription: 'Create 50 notes',
   },
   common_imp: {
     id: 'common_imp',
@@ -92,10 +92,10 @@ export const PET_DATABASE = {
     bonusType: 'productivity',
     bonusAmount: 5,
     bonusDescription: '+5% Task Completion XP',
-    // New unlock system - "First Steps" achievement
+    // Unlock via first_project achievement (moved from first_quest which has lightning_strike ability)
     unlockMethod: 'achievement',
-    unlockRequirement: { achievementId: 'first_steps', fallbackStat: 'tasksCompleted', fallbackTarget: 1 },
-    unlockDescription: 'Complete "First Steps" achievement',
+    unlockRequirement: { achievementId: 'first_project', fallbackStat: 'projectsCompleted', fallbackTarget: 1 },
+    unlockDescription: 'Complete your first project',
   },
   common_scarab: {
     id: 'common_scarab',
@@ -108,10 +108,10 @@ export const PET_DATABASE = {
     bonusType: 'health',
     bonusAmount: 5,
     bonusDescription: '+5% Workout XP',
-    // New unlock system - Bazaar purchase
-    unlockMethod: 'bazaar',
-    unlockRequirement: { price: 150 },
-    unlockDescription: '150 Cosmic Credits',
+    // Unlock via volume_10k achievement (moved from first_workout which has rock_throw ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'volume_10k', fallbackStat: 'totalVolume', fallbackTarget: 10000 },
+    unlockDescription: 'Lift 10,000 lbs total volume',
   },
 
   // UNCOMMON TIER
@@ -126,10 +126,10 @@ export const PET_DATABASE = {
     bonusType: 'productivity',
     bonusAmount: 10,
     bonusDescription: '+10% Focus Session XP',
-    // New unlock system - "One Week Wonder" achievement (7-day streak)
+    // Unlock via cardio_sessions_25 achievement (moved from one_week which has inferno ability)
     unlockMethod: 'achievement',
-    unlockRequirement: { achievementId: 'one_week_wonder', fallbackStat: 'longestStreak', fallbackTarget: 7 },
-    unlockDescription: 'Complete "One Week Wonder" achievement',
+    unlockRequirement: { achievementId: 'cardio_sessions_25', fallbackStat: 'cardioSessions', fallbackTarget: 25 },
+    unlockDescription: 'Complete 25 cardio sessions',
   },
   uncommon_tanuki: {
     id: 'uncommon_tanuki',
@@ -142,10 +142,10 @@ export const PET_DATABASE = {
     bonusType: 'learning',
     bonusAmount: 10,
     bonusDescription: '+10% Skill Practice XP',
-    // New unlock system - Skill Tree (Craft tree Level 15)
-    unlockMethod: 'skill_tree',
-    unlockRequirement: { tree: 'craft', level: 15 },
-    unlockDescription: 'Reach Craft tree Level 15',
+    // Unlock via volume_100k achievement (moved from workout_50 which has power_buff ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'volume_100k', fallbackStat: 'totalVolume', fallbackTarget: 100000 },
+    unlockDescription: 'Lift 100,000 lbs total volume',
   },
   uncommon_domovoi: {
     id: 'uncommon_domovoi',
@@ -158,10 +158,10 @@ export const PET_DATABASE = {
     bonusType: 'journal',
     bonusAmount: 10,
     bonusDescription: '+10% Reflection Bonus',
-    // New unlock system - Bazaar purchase
-    unlockMethod: 'bazaar',
-    unlockRequirement: { price: 600 },
-    unlockDescription: '600 Cosmic Credits',
+    // Unlock via notes_200 achievement (moved from bookworm which has tornado ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'notes_200', fallbackStat: 'notesCreated', fallbackTarget: 200 },
+    unlockDescription: 'Create 200 notes',
   },
 
   // RARE TIER
@@ -176,10 +176,10 @@ export const PET_DATABASE = {
     bonusType: 'time',
     bonusAmount: 15,
     bonusDescription: '+15% Time Management XP',
-    // New unlock system - Leveling
-    unlockMethod: 'level',
-    unlockRequirement: { level: 20 },
-    unlockDescription: 'Reach Level 20',
+    // Unlock via journal_50 achievement (moved from level_25 which has earthquake ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'journal_50', fallbackStat: 'journalEntries', fallbackTarget: 50 },
+    unlockDescription: 'Write 50 journal entries',
   },
   rare_pegasus: {
     id: 'rare_pegasus',
@@ -192,10 +192,10 @@ export const PET_DATABASE = {
     bonusType: 'creativity',
     bonusAmount: 15,
     bonusDescription: '+15% Creative Project XP',
-    // New unlock system - Achievement (complete 10 projects)
+    // Unlock via workout_100 achievement (no ability conflict)
     unlockMethod: 'achievement',
-    unlockRequirement: { achievementId: 'project_master', fallbackStat: 'projectsCompleted', fallbackTarget: 10 },
-    unlockDescription: 'Complete 10 projects',
+    unlockRequirement: { achievementId: 'workout_100', fallbackStat: 'workoutsCompleted', fallbackTarget: 100 },
+    unlockDescription: 'Complete 100 workouts',
   },
   rare_anubis_jackal: {
     id: 'rare_anubis_jackal',
@@ -208,10 +208,10 @@ export const PET_DATABASE = {
     bonusType: 'wisdom',
     bonusAmount: 15,
     bonusDescription: '+15% Study Session XP',
-    // New unlock system - Skill Tree (Mind tree Level 30)
-    unlockMethod: 'skill_tree',
-    unlockRequirement: { tree: 'mind', level: 30 },
-    unlockDescription: 'Reach Mind tree Level 30',
+    // Unlock via deep_work_1000 achievement (moved from deep_work_100 which has dark_tendrils ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'deep_work_1000', fallbackStat: 'deepWorkHours', fallbackTarget: 1000 },
+    unlockDescription: 'Log 1,000 deep work hours',
   },
 
   // EPIC TIER
@@ -226,10 +226,10 @@ export const PET_DATABASE = {
     bonusType: 'universal',
     bonusAmount: 20,
     bonusDescription: '+20% All Learning XP',
-    // New unlock system - Skill Tree (unlock "Peak Performance" keystone perk)
-    unlockMethod: 'skill_tree',
-    unlockRequirement: { perkId: 'peak_performance' },
-    unlockDescription: 'Unlock "Peak Performance" keystone',
+    // Unlock via total_activities_1000 achievement (moved from task_500 which has thunder_storm ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'total_activities_1000', fallbackStat: 'totalActivities', fallbackTarget: 1000 },
+    unlockDescription: 'Complete 1,000 total activities',
   },
   epic_phoenix: {
     id: 'epic_phoenix',
@@ -242,10 +242,10 @@ export const PET_DATABASE = {
     bonusType: 'universal',
     bonusAmount: 10,
     bonusDescription: '+10% XP to All Modules',
-    // New unlock system - Achievement (Rise from Ashes - rebuild 30-day streak)
+    // Unlock via early_riser_streak achievement (moved from perfect_workout_week which has stone_spike ability)
     unlockMethod: 'achievement',
-    unlockRequirement: { achievementId: 'rise_from_ashes', fallbackStat: 'streaksRebuilt', fallbackTarget: 1 },
-    unlockDescription: 'Rebuild a 30-day streak after losing one',
+    unlockRequirement: { achievementId: 'early_riser_streak', fallbackStat: 'earlyRiserDays', fallbackTarget: 30 },
+    unlockDescription: 'Complete 30 days of early morning activities',
   },
   epic_fenghuang: {
     id: 'epic_fenghuang',
@@ -258,10 +258,10 @@ export const PET_DATABASE = {
     bonusType: 'balance',
     bonusAmount: 15,
     bonusDescription: '+15% XP when all modules active',
-    // New unlock system - Bazaar purchase
-    unlockMethod: 'bazaar',
-    unlockRequirement: { price: 3500 },
-    unlockDescription: '3,500 Cosmic Credits',
+    // Unlock via life_optimizer achievement (all modules in one day - no ability conflict)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'life_optimizer' },
+    unlockDescription: 'Complete all modules in one day',
   },
 
   // MYTHIC TIER
@@ -276,10 +276,10 @@ export const PET_DATABASE = {
     bonusType: 'power',
     bonusAmount: 25,
     bonusDescription: '+25% Achievement XP',
-    // New unlock system - Leveling
-    unlockMethod: 'level',
-    unlockRequirement: { level: 50 },
-    unlockDescription: 'Reach Level 50',
+    // Unlock via six_months achievement (moved from level_50 which has landslide ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'six_months' },
+    unlockDescription: 'Use the app for 6 months',
   },
   mythic_jormungandr: {
     id: 'mythic_jormungandr',
@@ -292,9 +292,9 @@ export const PET_DATABASE = {
     bonusType: 'completion',
     bonusAmount: 20,
     bonusDescription: '+20% XP on weekly completion',
-    // New unlock system - Achievement (Year of Excellence - 365-day streak)
+    // Unlock via streak_365 achievement (no ability conflict)
     unlockMethod: 'achievement',
-    unlockRequirement: { achievementId: 'year_of_excellence', fallbackStat: 'longestStreak', fallbackTarget: 365 },
+    unlockRequirement: { achievementId: 'streak_365', fallbackStat: 'longestStreak', fallbackTarget: 365 },
     unlockDescription: '365-day streak',
   },
   mythic_leviathan: {
@@ -308,10 +308,10 @@ export const PET_DATABASE = {
     bonusType: 'mastery',
     bonusAmount: 30,
     bonusDescription: '+30% XP when mastering new skills',
-    // New unlock system - Skill Tree (Any tree Level 80+)
-    unlockMethod: 'skill_tree',
-    unlockRequirement: { anyTree: true, level: 80 },
-    unlockDescription: 'Reach Level 80 in any skill tree',
+    // Unlock via total_activities_5000 achievement (moved from balanced_week which has greater_heal ability)
+    unlockMethod: 'achievement',
+    unlockRequirement: { achievementId: 'total_activities_5000', fallbackStat: 'totalActivities', fallbackTarget: 5000 },
+    unlockDescription: 'Complete 5,000 total activities',
   },
 
   // ====================================
@@ -361,8 +361,8 @@ export const PET_DATABASE = {
     bonusAmount: 5,
     bonusDescription: '+5% Streak Bonus',
     unlockMethod: 'achievement',
-    unlockRequirement: { achievementId: 'streak_starter' },
-    unlockDescription: '3-day streak',
+    unlockRequirement: { achievementId: 'journal_10' },
+    unlockDescription: 'Write 10 journal entries',
   },
 
   // UNCOMMON TIER - New Companions
@@ -377,9 +377,10 @@ export const PET_DATABASE = {
     bonusType: 'productivity',
     bonusAmount: 10,
     bonusDescription: '+10% Deep Work XP',
+    // Unlock via marathon_session achievement (moved from deep_work_10 which has ice_beam ability)
     unlockMethod: 'achievement',
-    unlockRequirement: { achievementId: 'deep_work_10' },
-    unlockDescription: '10 hours of deep work',
+    unlockRequirement: { achievementId: 'marathon_session' },
+    unlockDescription: 'Complete a marathon deep work session (4+ hours)',
   },
   uncommon_selkie: {
     id: 'uncommon_selkie',
@@ -392,9 +393,10 @@ export const PET_DATABASE = {
     bonusType: 'adaptation',
     bonusAmount: 10,
     bonusDescription: '+10% Streak Recovery',
+    // Unlock via cardio_sessions_100 achievement (moved from two_weeks which has blizzard ability)
     unlockMethod: 'achievement',
-    unlockRequirement: { achievementId: 'two_weeks' },
-    unlockDescription: '14-day streak',
+    unlockRequirement: { achievementId: 'cardio_sessions_100', fallbackStat: 'cardioSessions', fallbackTarget: 100 },
+    unlockDescription: 'Complete 100 cardio sessions',
   },
   uncommon_carbuncle: {
     id: 'uncommon_carbuncle',

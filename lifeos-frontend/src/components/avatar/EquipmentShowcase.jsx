@@ -366,9 +366,6 @@ export default function EquipmentShowcase() {
         </div>
       </div>
 
-      {/* Stats Display */}
-      <StatsDisplay stats={stats} statBreakdown={statBreakdown} />
-
       {/* Combat Abilities Section */}
       <div className="bg-gradient-to-br from-[#1a1a1a] via-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
@@ -405,9 +402,22 @@ export default function EquipmentShowcase() {
                 }}
               >
                 <div className="text-center">
-                  <div className="text-2xl sm:text-3xl mb-1">
-                    {ability ? ability.icon : <Plus className="w-6 h-6 mx-auto text-white/30" />}
-                  </div>
+                  {ability ? (
+                    <div
+                      className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-1 rounded-lg flex items-center justify-center text-xl sm:text-2xl"
+                      style={{
+                        background: `linear-gradient(135deg, ${ability.elementColor}40, ${ability.elementColor}20)`,
+                        boxShadow: `0 2px 8px ${ability.elementColor}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                        border: `1px solid ${ability.elementColor}60`,
+                      }}
+                    >
+                      {ability.icon}
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-1 rounded-lg flex items-center justify-center bg-white/5 border border-dashed border-white/20">
+                      <Plus className="w-5 h-5 text-white/30" />
+                    </div>
+                  )}
                   <div className="text-xs font-bold truncate" style={{ color: ability ? ability.elementColor : '#6b7280' }}>
                     {ability ? ability.name : `Slot ${slot + 1}`}
                   </div>
@@ -541,7 +551,16 @@ export default function EquipmentShowcase() {
                       }}
                     >
                       <div className="text-center">
-                        <div className="text-2xl mb-1">{ability.icon}</div>
+                        <div
+                          className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center text-xl"
+                          style={{
+                            background: `linear-gradient(135deg, ${ability.elementColor}50, ${ability.elementColor}25)`,
+                            boxShadow: `0 2px 8px ${ability.elementColor}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                            border: `1px solid ${ability.elementColor}70`,
+                          }}
+                        >
+                          {ability.icon}
+                        </div>
                         <div className="text-xs font-bold truncate" style={{ color: ability.elementColor }}>
                           {ability.name}
                         </div>
@@ -571,6 +590,9 @@ export default function EquipmentShowcase() {
           </div>
         )}
       </div>
+
+      {/* Stats Display */}
+      <StatsDisplay stats={stats} statBreakdown={statBreakdown} />
 
       {/* Inventory Modal */}
       {showInventory && selectedSlot && (
