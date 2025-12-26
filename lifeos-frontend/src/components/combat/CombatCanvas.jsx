@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle, useState } from 'react';
 import * as PIXI from 'pixi.js';
 import { GlowFilter } from '@pixi/filter-glow';
 import { ShockwaveFilter } from '@pixi/filter-shockwave';
@@ -11,6 +11,19 @@ import {
   legendaryWeaponSounds,
   playCombatSound
 } from '../../services/combatSounds';
+
+// Check WebGL support
+const isWebGLSupported = () => {
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+    );
+  } catch (e) {
+    return false;
+  }
+};
 
 /**
  * CombatCanvas - Professional GPU-accelerated combat effects
@@ -26,53 +39,90 @@ const CombatCanvas = forwardRef(({
 }, ref) => {
   const containerRef = useRef(null);
   const appRef = useRef(null);
+  const [initError, setInitError] = useState(null);
 
   // Initialize PixiJS
   useEffect(() => {
     if (!containerRef.current || appRef.current) return;
 
-    const app = new PIXI.Application({
-      width,
-      height,
-      backgroundAlpha: 0,
-      antialias: true,
-      resolution: window.devicePixelRatio || 1,
-      autoDensity: true,
-    });
+    // Check if we're in browser environment
+    if (typeof window === 'undefined') return;
 
-    containerRef.current.appendChild(app.view);
-    appRef.current = app;
+    try {
+      // Determine renderer preference
+      const preferWebGL = isWebGLSupported();
 
-    // Create render layers
-    const layers = {
-      background: new PIXI.Container(),
-      projectiles: new PIXI.Container(),
-      effects: new PIXI.Container(),
-      particles: new PIXI.Container(),
-      flash: new PIXI.Container(),
-    };
+      const app = new PIXI.Application({
+        width,
+        height,
+        backgroundAlpha: 0,
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+        // Force canvas if WebGL not available
+        forceCanvas: !preferWebGL,
+        // Prefer WebGL2 if available
+        preferWebGLVersion: 2,
+      });
 
-    Object.values(layers).forEach(layer => app.stage.addChild(layer));
-    appRef.current.layers = layers;
+      containerRef.current.appendChild(app.view);
+      appRef.current = app;
 
-    // Screen flash overlay
-    const flashOverlay = new PIXI.Graphics();
-    flashOverlay.beginFill(0xffffff, 1);
-    flashOverlay.drawRect(0, 0, width, height);
-    flashOverlay.endFill();
-    flashOverlay.alpha = 0;
-    layers.flash.addChild(flashOverlay);
-    appRef.current.flashOverlay = flashOverlay;
+      // Create render layers
+      const layers = {
+        background: new PIXI.Container(),
+        projectiles: new PIXI.Container(),
+        effects: new PIXI.Container(),
+        particles: new PIXI.Container(),
+        flash: new PIXI.Container(),
+      };
 
-    if (onReady) onReady(app);
+      Object.values(layers).forEach(layer => app.stage.addChild(layer));
+      appRef.current.layers = layers;
+
+      // Screen flash overlay
+      const flashOverlay = new PIXI.Graphics();
+      flashOverlay.beginFill(0xffffff, 1);
+      flashOverlay.drawRect(0, 0, width, height);
+      flashOverlay.endFill();
+      flashOverlay.alpha = 0;
+      layers.flash.addChild(flashOverlay);
+      appRef.current.flashOverlay = flashOverlay;
+
+      if (onReady) onReady(app);
+    } catch (error) {
+      console.error('[CombatCanvas] Failed to initialize PixiJS:', error);
+      setInitError(error.message);
+    }
 
     return () => {
       if (appRef.current) {
-        appRef.current.destroy(true, { children: true, texture: true });
+        try {
+          appRef.current.destroy(true, { children: true, texture: true });
+        } catch (e) {
+          console.warn('[CombatCanvas] Error during cleanup:', e);
+        }
         appRef.current = null;
       }
     };
   }, [width, height, onReady]);
+
+  // If there's an init error, render a fallback
+  if (initError) {
+    return (
+      <div
+        className={className}
+        style={{
+          width,
+          height,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          pointerEvents: 'none',
+        }}
+      />
+    );
+  }
 
   // ============================================
   // UTILITY FUNCTIONS
