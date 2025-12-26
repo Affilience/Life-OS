@@ -60,7 +60,7 @@ SYSTEM KNOWLEDGE:
 LifeOS has 11 core modules:
 1. Dashboard (/) - Central hub with momentum indicators, module health, active quests
 2. Modules (/modules) - Overview of all modules
-3. Character (/character) - Avatar customization, equipment, skill trees
+3. Character (/character) - Avatar customisation, equipment, skill trees
 4. Social (/social) - Guilds, leaderboards, friends, challenges
 5. Quests (/quests) - Active missions and rewards
 6. Productivity (/productivity) - Tasks, deep work, time tracking
@@ -82,7 +82,7 @@ QUICK ACTIONS:
 GAMIFICATION:
 - XP and leveling system
 - Streaks (workout, journal, productivity)
-- Equipment and avatar customization
+- Equipment and avatar customisation
 - Credits as currency
 - Skill trees for progression
 

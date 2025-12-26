@@ -26,7 +26,7 @@ export default function Productivity() {
       <div className="px-4 pt-6">
         <PageHeader
           title="Productivity"
-          subtitle="Track deep work, manage projects, and maximize your output"
+          subtitle="Track deep work, manage projects, and maximise your output"
           icon={Zap}
           module="productivity"
           variant="elevated"

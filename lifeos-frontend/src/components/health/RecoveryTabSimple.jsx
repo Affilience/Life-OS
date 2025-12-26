@@ -108,7 +108,7 @@ export default function RecoveryTabSimple() {
               <div style={{ fontSize: '24px' }}>😴</div>
               <div>
                 <div style={{ fontSize: '15px', fontWeight: '600', color: '#fff', marginBottom: '4px' }}>
-                  Prioritize Sleep Quality
+                  Prioritise Sleep Quality
                 </div>
                 <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.6)' }}>
                   Your HRV is below optimal. Focus on getting 8+ hours of quality sleep tonight.

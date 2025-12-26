@@ -120,7 +120,7 @@ export default function RecipeLibrary({ selectable = false, onSelectRecipe }) {
         <EmptyState
           type="recipes"
           title="No recipes yet"
-          description="Build your recipe library to make meal planning easy. Add your favorite meals and we'll help you plan your week."
+          description="Build your recipe library to make meal planning easy. Add your favourite meals and we'll help you plan your week."
           variant="emerald"
           size="sm"
           action={

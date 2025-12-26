@@ -428,7 +428,7 @@ const OverviewDashboard = () => {
         />
         <HeroStat
           icon={Quote}
-          label="Favorites"
+          label="Favourites"
           value={stats.favorites.toString()}
           color="#7c3aed"
         />
@@ -438,7 +438,7 @@ const OverviewDashboard = () => {
       <div className="dashboard-section">
         <h2 className="section-title">Skill Constellation</h2>
         <p className="section-description">
-          Your knowledge skills visualized as an interconnected universe
+          Your knowledge skills visualised as an interconnected universe
         </p>
         <InteractiveSkillTree tags={tags} />
       </div>

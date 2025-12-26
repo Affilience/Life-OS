@@ -67,7 +67,7 @@ export default function ProductivitySetup({ onComplete, onSkip }) {
       {/* Step 1: Work Style */}
       <SetupStep
         title="What's your preferred work style?"
-        description="We'll optimize your experience around this"
+        description="We'll optimise your experience around this"
       >
         {({ onNext }) => (
           <>

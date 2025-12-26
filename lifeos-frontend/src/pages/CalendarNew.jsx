@@ -10,7 +10,7 @@ import PageHeader from '../components/shared/PageHeader';
 /**
  * Astral Map - Calendar & Time
  *
- * Plan your time, track actual usage, and optimize your schedule
+ * Plan your time, track actual usage, and optimise your schedule
  */
 
 const CalendarNew = () => {
@@ -52,7 +52,7 @@ const CalendarNew = () => {
       <div className="px-4 pt-6">
         <PageHeader
           title="Calendar"
-          subtitle="Plan your time, track actual usage, and optimize your schedule"
+          subtitle="Plan your time, track actual usage, and optimise your schedule"
           icon={Calendar}
           module="calendar"
           variant="elevated"

@@ -78,7 +78,7 @@ export default function CosmeticsSection() {
           No Cosmetics Yet
         </h3>
         <p className="text-text-muted text-sm max-w-md mx-auto">
-          Purchase titles and frames from the {mode === 'cosmic' ? 'Bazaar' : 'Shop'} to customize your character's appearance!
+          Purchase titles and frames from the {mode === 'cosmic' ? 'Bazaar' : 'Shop'} to customise your character's appearance!
         </p>
       </div>
     );
@@ -93,7 +93,7 @@ export default function CosmeticsSection() {
           Cosmetics
         </h3>
         <p className="text-sm text-text-muted">
-          Equip cosmetics to customize your character
+          Equip cosmetics to customise your character
         </p>
       </div>
 

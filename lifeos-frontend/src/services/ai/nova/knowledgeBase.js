@@ -15,7 +15,7 @@ export const ROUTES = {
     path: '/',
     name: 'Dashboard',
     description: 'Main overview with customizable widgets, quick stats, and daily summary',
-    features: ['Widget customization', 'Quick actions', 'Daily overview', 'Progress at a glance'],
+    features: ['Widget customisation', 'Quick actions', 'Daily overview', 'Progress at a glance'],
   },
   modules: {
     path: '/modules',
@@ -84,7 +84,7 @@ export const ROUTES = {
   character: {
     path: '/character',
     name: 'Character',
-    description: 'Avatar customization, equipment, RPG stats, and evolution',
+    description: 'Avatar customisation, equipment, RPG stats, and evolution',
     features: ['Avatar display', 'Equipment slots', 'RPG stats', 'Cosmetics', 'Prestige system'],
   },
   quests: {

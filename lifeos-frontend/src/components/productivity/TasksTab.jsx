@@ -245,7 +245,7 @@ export default function TasksTab() {
       <div className="tab-header">
         <div className="header-left">
           <h2 className="tab-title">Tasks</h2>
-          <p className="tab-description">Manage and organize your tasks by priority and project</p>
+          <p className="tab-description">Manage and organise your tasks by priority and project</p>
         </div>
         <button onClick={() => setShowQuickAdd(!showQuickAdd)} className="add-task-btn" data-tour="add-task-btn">
           <Plus className="w-5 h-5" />

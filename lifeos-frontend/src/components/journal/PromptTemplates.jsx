@@ -94,7 +94,7 @@ const PromptTemplates = () => {
       title: 'Future Self',
       icon: '🔮',
       prompt: 'Imagine yourself one year from now. What does your life look like? What steps can you take today to get there?',
-      description: 'Visualize your future and plan your path'
+      description: 'Visualise your future and plan your path'
     },
 
     // Self-Discovery
@@ -112,7 +112,7 @@ const PromptTemplates = () => {
       title: 'Strengths & Talents',
       icon: '💪',
       prompt: 'What are your unique strengths and talents? How did you discover them, and how do you use them?',
-      description: 'Recognize and celebrate your capabilities'
+      description: 'Recognise and celebrate your capabilities'
     },
     {
       id: 12,

@@ -4,7 +4,7 @@ import { useGamificationModeStore } from '../../../stores/gamificationModeStore'
 import './CosmicFlame.css';
 
 /**
- * CosmicFlame - Pixel art fire effect for streak visualization
+ * CosmicFlame - Pixel art fire effect for streak visualisation
  *
  * Features:
  * - PixelLab-generated flame sprites by tier

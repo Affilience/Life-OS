@@ -1123,7 +1123,7 @@ export default function CombatDemo() {
                 <button onClick={() => playWeaponAttack('ice', 'temporal_rift')} className="px-2 py-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded text-xs">⏰ Temporal Rift</button>
                 <button onClick={() => playWeaponAttack('holy', 'divine_annihilation')} className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-white hover:from-yellow-400 hover:to-gray-100 text-black rounded text-xs">💫 Divine Annihilation</button>
                 <button onClick={() => playWeaponAttack('ice', 'glacial_sunder')} className="px-2 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded text-xs">❄️ Glacial Sunder</button>
-                <button onClick={() => playWeaponAttack('physical', 'knights_honor')} className="px-2 py-1 bg-gradient-to-r from-blue-400 to-indigo-500 hover:from-blue-300 hover:to-indigo-400 text-white rounded text-xs">⚔️ Knight's Honor</button>
+                <button onClick={() => playWeaponAttack('physical', 'knights_honor')} className="px-2 py-1 bg-gradient-to-r from-blue-400 to-indigo-500 hover:from-blue-300 hover:to-indigo-400 text-white rounded text-xs">⚔️ Knight's Honour</button>
                 <button onClick={() => playWeaponAttack('fire', 'elemental_blade_storm')} className="px-2 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded text-xs">🌈 Elemental Storm</button>
               </div>
               {/* Axe Weapons */}

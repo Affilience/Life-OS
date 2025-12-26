@@ -68,6 +68,7 @@ export default function Social() {
   const [selectedBattle, setSelectedBattle] = useState(null);
   const [pvpSubTab, setPvpSubTab] = useState('arena'); // arena, battles, loadout, history
   const [showArena, setShowArena] = useState(false);
+  const [userToBlock, setUserToBlock] = useState(null); // For block confirmation
 
   // Connect to gamification store for user's own stats
   const { level, totalXP, globalStreak, userId } = useGamificationStore();
@@ -1159,7 +1160,7 @@ export default function Social() {
                                 <UserMinus className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => blockUser(friend.user_id)}
+                                onClick={() => setUserToBlock(friend)}
                                 className="p-2 text-white/40 hover:text-red-400 transition-colors"
                                 title="Block user"
                               >
@@ -1328,6 +1329,41 @@ export default function Social() {
       )}
       {showArena && (
         <PvPArena onClose={() => setShowArena(false)} />
+      )}
+
+      {/* Block User Confirmation Modal */}
+      {userToBlock && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#1a1724] border border-white/10 rounded-2xl p-6 max-w-sm w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                <Ban className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Block User</h3>
+            </div>
+            <p className="text-white/70 mb-6">
+              Are you sure you want to block <span className="text-white font-medium">{userToBlock.display_name || userToBlock.username || 'this user'}</span>?
+              They won't be able to send you friend requests or messages.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setUserToBlock(null)}
+                className="flex-1 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  blockUser(userToBlock.user_id);
+                  setUserToBlock(null);
+                }}
+                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Block
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

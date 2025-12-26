@@ -1,5 +1,5 @@
 /**
- * NebulaCore - Realistic cosmic nebula visualization using @flodlc/nebula library
+ * NebulaCore - Realistic cosmic nebula visualisation using @flodlc/nebula library
  * Progressive evolution: atom → electrons → molecular → emission → planetary
  */
 

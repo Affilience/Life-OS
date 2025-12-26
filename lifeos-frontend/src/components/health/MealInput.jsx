@@ -177,7 +177,7 @@ export default function MealInput({ onClose }) {
             animation: 'pulse 2s ease-in-out infinite',
           }}>
             <span style={{ animation: 'sparkle 1.5s ease-in-out infinite' }}>✨</span>
-            <span>AI analyzing...</span>
+            <span>AI analysing...</span>
           </div>
         )}
 

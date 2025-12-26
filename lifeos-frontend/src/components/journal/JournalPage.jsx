@@ -9,7 +9,8 @@ function JournalPage({
   side = 'right',
   isEmpty = false,
   onStartWriting,
-  onEdit
+  onEdit,
+  font = 'caveat'
 }) {
   const formattedDate = entry.date
     ? format(new Date(entry.date), 'EEEE, MMMM d, yyyy')
@@ -30,7 +31,7 @@ function JournalPage({
 
   return (
     <div
-      className={`journal-page journal-page--${side} ${isEmpty ? 'journal-page--empty' : ''}`}
+      className={`journal-page journal-page--${side} ${isEmpty ? 'journal-page--empty' : ''} journal-font-${font}`}
       data-page={pageNumber}
       onClick={handleClick}
     >

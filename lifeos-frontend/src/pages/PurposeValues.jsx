@@ -20,6 +20,8 @@ import {
   Star,
   Lightbulb,
   Flag,
+  X,
+  Check,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import ValuesAssessment from '../components/purpose/ValuesAssessment';
@@ -683,6 +685,10 @@ function VisionView() {
 
 // Value Card Component
 function ValueCard({ value, rank }) {
+  const { updateValue } = usePurposeStore();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editImportance, setEditImportance] = useState(value.importance);
+
   // Gradient colors based on rank
   const rankColors = [
     'from-amber-500 to-orange-500', // 1st
@@ -693,29 +699,84 @@ function ValueCard({ value, rank }) {
   const rankGradient = rank <= 3 ? rankColors[rank - 1] : rankColors[3];
   const isTop3 = rank <= 3;
 
+  const handleSave = () => {
+    updateValue(value.id, { importance: editImportance });
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditImportance(value.importance);
+    setIsEditing(false);
+  };
+
   return (
     <div className={`relative overflow-hidden rounded-2xl bg-slate-800/30 border transition-all hover:border-purple-500/40 group ${isTop3 ? 'border-purple-500/30' : 'border-slate-700/50'}`}>
       {isTop3 && (
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-transparent to-pink-500/5" />
       )}
-      <div className="relative p-5 flex items-center gap-5">
-        <div className={`relative w-14 h-14 rounded-xl bg-gradient-to-br ${rankGradient} flex items-center justify-center shadow-lg flex-shrink-0`}>
-          <span className="text-xl font-bold text-white">{rank}</span>
-          {rank === 1 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center">
-              <Star className="w-3 h-3 text-yellow-900 fill-yellow-900" />
+      <div className="relative p-5">
+        <div className="flex items-center gap-5">
+          <div className={`relative w-14 h-14 rounded-xl bg-gradient-to-br ${rankGradient} flex items-center justify-center shadow-lg flex-shrink-0`}>
+            <span className="text-xl font-bold text-white">{rank}</span>
+            {rank === 1 && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center">
+                <Star className="w-3 h-3 text-yellow-900 fill-yellow-900" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-lg text-white group-hover:text-purple-300 transition-colors truncate">{value.name}</h4>
+            <p className="text-sm text-slate-400 line-clamp-2">{value.description}</p>
+          </div>
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-700/50 border border-slate-600/50 hover:border-purple-500/50 hover:bg-purple-500/10 transition-all cursor-pointer"
+            >
+              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+              <span className="font-bold text-xl text-white">{value.importance}</span>
+              <span className="text-slate-500 text-sm">/10</span>
+              <Edit2 className="w-4 h-4 text-slate-400 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCancel}
+                className="p-2 rounded-lg bg-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleSave}
+                className="p-2 rounded-lg bg-purple-500/20 text-purple-400 hover:text-white hover:bg-purple-500/30 transition-all"
+              >
+                <Check className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-lg text-white group-hover:text-purple-300 transition-colors truncate">{value.name}</h4>
-          <p className="text-sm text-slate-400 line-clamp-2">{value.description}</p>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-700/50 border border-slate-600/50">
-          <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-          <span className="font-bold text-xl text-white">{value.importance}</span>
-          <span className="text-slate-500 text-sm">/10</span>
-        </div>
+
+        {/* Edit Mode - Importance Slider */}
+        {isEditing && (
+          <div className="mt-4 pt-4 border-t border-slate-700/50">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-slate-400 w-20">Importance:</span>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={editImportance}
+                onChange={(e) => setEditImportance(parseInt(e.target.value))}
+                className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+              />
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 min-w-[100px] justify-center">
+                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                <span className="font-bold text-xl text-white">{editImportance}</span>
+                <span className="text-slate-500 text-sm">/10</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

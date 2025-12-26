@@ -148,7 +148,7 @@ export default function NutritionCharts() {
       { nutrient: 'Protein', actual: totalProtein, goal: targetProtein, fullMark: 200 },
       { nutrient: 'Carbs', actual: totalCarbs, goal: targetCarbs, fullMark: 350 },
       { nutrient: 'Fat', actual: totalFat, goal: targetFat, fullMark: 100 },
-      { nutrient: 'Fiber', actual: todayMeals.reduce((sum, m) => sum + (m.totalFiber || m.fiber || 0), 0), goal: 30, fullMark: 50 }
+      { nutrient: 'Fibre', actual: todayMeals.reduce((sum, m) => sum + (m.totalFiber || m.fiber || 0), 0), goal: 30, fullMark: 50 }
     ];
 
     // Stats

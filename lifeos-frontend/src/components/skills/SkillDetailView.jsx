@@ -15,7 +15,7 @@ import useSkillsStore, {
  * Skill Detail View
  *
  * Comprehensive breakdown of a skill including:
- * - Progress visualization with level info
+ * - Progress visualisation with level info
  * - 30-day practice heatmap
  * - Weekly practice bar chart
  * - Complete practice session history

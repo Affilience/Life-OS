@@ -84,7 +84,7 @@ ${correlationContext}
 
     const buildTime = Date.now() - startTime;
     if (buildTime > 1000) {
-      console.warn(`Context build took ${buildTime}ms - consider optimization`);
+      console.warn(`Context build took ${buildTime}ms - consider optimisation`);
     }
 
     return fullContext;

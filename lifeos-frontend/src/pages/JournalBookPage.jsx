@@ -147,7 +147,7 @@ export default function JournalBookPage() {
         <div className="top-actions">
           <button
             className="icon-btn"
-            title="Customize cover"
+            title="Customise cover"
             onClick={() => setShowCoverCustomizer(true)}
             data-tour="customize-cover-btn"
           >

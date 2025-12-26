@@ -1,5 +1,5 @@
 /**
- * BudgetTracker - Budget progress visualization
+ * BudgetTracker - Budget progress visualisation
  * Shows spending limits and current progress
  */
 

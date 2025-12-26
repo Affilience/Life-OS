@@ -1,5 +1,5 @@
 /**
- * ImmersiveAvatarCustomization - Customize Your Character
+ * ImmersiveAvatarCustomisation - Customize Your Character
  *
  * Skin tone selection step in onboarding.
  * Uses IntersectionObserver for entrance animations.
@@ -48,7 +48,7 @@ const SKIN_TONES = [
   },
 ];
 
-export default function ImmersiveAvatarCustomization({
+export default function ImmersiveAvatarCustomisation({
   sectionId,
   onComplete,
   onLockScroll,

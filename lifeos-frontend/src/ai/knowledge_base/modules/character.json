@@ -2,7 +2,7 @@
   "name": "Character & Avatar",
   "route": "/character",
   "navigation": "Sidebar → Character (user icon)",
-  "purpose": "View and customize your avatar, track evolution stages, manage equipment and companions.",
+  "purpose": "View and customise your avatar, track evolution stages, manage equipment and companions.",
   "tabs": [
     {
       "name": "Avatar",

@@ -7,7 +7,7 @@
  */
 
 import React, { useState } from 'react';
-import { ArrowRight, ArrowLeft, CheckCircle2, Heart, Lightbulb } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Heart, Lightbulb, Star } from 'lucide-react';
 import Card from '../ui/Card';
 
 const COMMON_VALUES = [
@@ -64,7 +64,7 @@ const SCENARIOS = [
       { text: 'Helping someone succeed', values: ['Service', 'Impact'] },
       { text: 'Pushing past your limits', values: ['Courage', 'Growth'] },
       { text: 'Sharing experiences with others', values: ['Community', 'Fun'] },
-      { text: 'Being recognized for your work', values: ['Achievement', 'Excellence'] },
+      { text: 'Being recognised for your work', values: ['Achievement', 'Excellence'] },
     ],
   },
   {
@@ -92,10 +92,11 @@ const SCENARIOS = [
 ];
 
 const ValuesAssessment = ({ onComplete }) => {
-  const [step, setStep] = useState(0); // 0 = intro, 1-5 = scenarios, 6 = selection, 7 = ranking
+  const [step, setStep] = useState(0); // 0 = intro, 1-5 = scenarios, 6 = selection, 7 = ranking, 8 = importance
   const [answers, setAnswers] = useState([]);
   const [selectedValues, setSelectedValues] = useState([]);
   const [rankedValues, setRankedValues] = useState([]);
+  const [customImportance, setCustomImportance] = useState({}); // { valueName: importance }
 
   const handleScenarioAnswer = (option) => {
     setAnswers([...answers, option]);
@@ -134,10 +135,20 @@ const ValuesAssessment = ({ onComplete }) => {
     }
   };
 
+  // Initialize suggested importance scores based on ranking
+  const initializeImportance = () => {
+    const initial = {};
+    rankedValues.forEach((value, index) => {
+      initial[value.name] = 10 - index * 2; // 10, 8, 6, 4, 2
+    });
+    setCustomImportance(initial);
+    setStep(8);
+  };
+
   const handleComplete = () => {
-    const finalValues = rankedValues.map((value, index) => ({
+    const finalValues = rankedValues.map((value) => ({
       ...value,
-      importance: 10 - index * 2, // 10, 8, 6, 4, 2
+      importance: customImportance[value.name] || 5,
     }));
     onComplete(finalValues);
   };
@@ -421,16 +432,124 @@ const ValuesAssessment = ({ onComplete }) => {
           </div>
 
           <button
-            onClick={handleComplete}
+            onClick={initializeImportance}
             className="w-full px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30"
             style={{
               background: 'linear-gradient(to right, #8b5cf6, #ec4899)',
               color: 'rgba(255, 255, 255, 0.87)',
             }}
           >
-            <CheckCircle2 className="w-5 h-5" />
-            Complete Assessment
+            Continue to Importance
+            <ArrowRight className="w-5 h-5" />
           </button>
+        </div>
+      </Card>
+    );
+  }
+
+  // Custom Importance (step 8)
+  if (step === 8) {
+    return (
+      <Card padding="lg">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="text-center mb-8">
+            <Star className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+            <h3 className="text-2xl font-bold mb-2" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
+              Rate Your Values
+            </h3>
+            <p style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
+              Adjust the importance of each value (1-10). We've suggested scores based on your ranking.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {rankedValues.map((value, index) => (
+              <div
+                key={value.name}
+                className="p-5 rounded-xl"
+                style={{
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                }}
+              >
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500 text-white font-bold flex-shrink-0">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-lg" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
+                      {value.name}
+                    </div>
+                    <div className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.60)' }}>
+                      {value.description}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={customImportance[value.name] || 5}
+                    onChange={(e) =>
+                      setCustomImportance({
+                        ...customImportance,
+                        [value.name]: parseInt(e.target.value),
+                      })
+                    }
+                    className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${((customImportance[value.name] || 5) - 1) * 11.1}%, rgba(255,255,255,0.1) ${((customImportance[value.name] || 5) - 1) * 11.1}%, rgba(255,255,255,0.1) 100%)`,
+                    }}
+                  />
+                  <div
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl min-w-[100px] justify-center"
+                    style={{
+                      background: 'rgba(139, 92, 246, 0.2)',
+                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                    }}
+                  >
+                    <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                    <span className="font-bold text-xl text-white">
+                      {customImportance[value.name] || 5}
+                    </span>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.38)' }}>/10</span>
+                  </div>
+                </div>
+
+                <div className="mt-2 text-xs" style={{ color: 'rgba(255, 255, 255, 0.38)' }}>
+                  Suggested: {10 - index * 2}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => setStep(7)}
+              className="px-6 py-3 rounded-lg font-medium flex items-center gap-2"
+              style={{
+                background: 'rgba(39, 39, 42, 0.4)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: 'rgba(255, 255, 255, 0.60)',
+              }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Ranking
+            </button>
+            <button
+              onClick={handleComplete}
+              className="flex-1 px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30"
+              style={{
+                background: 'linear-gradient(to right, #8b5cf6, #ec4899)',
+                color: 'rgba(255, 255, 255, 0.87)',
+              }}
+            >
+              <CheckCircle2 className="w-5 h-5" />
+              Complete Assessment
+            </button>
+          </div>
         </div>
       </Card>
     );

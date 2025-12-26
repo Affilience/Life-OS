@@ -399,7 +399,7 @@ function CreateTemplateModal({ template, customExercises, onClose, onSave }) {
                 </div>
               </div>
               <div className="color-picker">
-                <label>Color</label>
+                <label>Colour</label>
                 <div className="color-grid">
                   {TEMPLATE_COLORS.map(c => (
                     <button

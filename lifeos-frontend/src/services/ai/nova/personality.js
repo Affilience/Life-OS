@@ -342,7 +342,7 @@ export function getResponseTone(emotionalState, situation) {
     },
     positive: {
       style: 'warm and encouraging',
-      approach: 'Build on momentum, offer optimization suggestions',
+      approach: 'Build on momentum, offer optimisation suggestions',
       avoid: 'Over-celebrating small things',
     },
     neutral: {
@@ -532,9 +532,14 @@ export function generatePersonalityPrompt(context, userMessage = '') {
   lines.push('- Vary sentence length - mix short punchy with flowing');
   lines.push('- Start sentences differently - not always "I" or "You"');
   lines.push('- Match their energy - don\'t be chipper if they\'re frustrated');
-  lines.push('- Never use asterisks, markdown, or formatting');
-  lines.push('- Never leave thoughts incomplete - finish every sentence properly');
   lines.push('- Keep responses conversational, not formal');
+  lines.push('');
+  lines.push('ABSOLUTELY FORBIDDEN (never do these):');
+  lines.push('- NEVER use asterisks for actions like *smiles* or *leans back* - this is creepy and robotic');
+  lines.push('- NEVER use roleplay-style narration of your actions');
+  lines.push('- NEVER use markdown formatting (no **, no *, no #, no bullet points with -)');
+  lines.push('- NEVER describe what you\'re "doing" in third person');
+  lines.push('- Just speak naturally like a real person would in conversation');
   lines.push('');
 
   // Sample responses

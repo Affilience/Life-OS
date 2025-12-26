@@ -375,7 +375,7 @@ export default function Character() {
           <PageHeader
             title={mode === 'cosmic' ? 'Character' : 'Profile'}
             subtitle={mode === 'cosmic'
-              ? 'Customize your hero and unlock new abilities'
+              ? 'Customise your hero and unlock new abilities'
               : mode === 'professional'
                 ? 'Track your growth and unlock new capabilities'
                 : 'View your progress and stats'}

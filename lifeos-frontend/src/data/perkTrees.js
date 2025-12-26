@@ -203,21 +203,21 @@ export const PERK_TREES = {
       {
         id: 'unlock_ability_power_slash',
         name: 'Power Slash',
-        tier: 'adept',
-        level: 25,
+        tier: 'novice',
+        level: 5,
         type: 'unlock',
-        description: 'UNLOCK: Power Slash ability - A devastating wide slash that cleaves through defenses',
+        description: 'UNLOCK: Power Slash ability - A powerful slashing attack',
         effect: { unlocksAbility: 'power_slash' },
-        prerequisites: ['body_strength_1'],
+        prerequisites: ['body_foundation'],
         position: { x: 560, y: 480 } // Right of foundation
       },
       {
         id: 'unlock_ability_cleaving_blow',
         name: 'Cleaving Blow',
-        tier: 'adept',
-        level: 30,
+        tier: 'novice',
+        level: 7,
         type: 'unlock',
-        description: 'UNLOCK: Cleaving Blow ability - A brutal overhead strike that causes bleeding',
+        description: 'UNLOCK: Cleaving Blow ability - A wide sweeping attack',
         effect: { unlocksAbility: 'cleaving_blow' },
         prerequisites: ['unlock_ability_power_slash'],
         position: { x: 680, y: 430 } // Far right branch
@@ -225,10 +225,10 @@ export const PERK_TREES = {
       {
         id: 'unlock_ability_blade_dance',
         name: 'Blade Dance',
-        tier: 'adept',
-        level: 35,
+        tier: 'novice',
+        level: 10,
         type: 'unlock',
-        description: 'UNLOCK: Blade Dance ability - A flurry of elegant slashes striking multiple times',
+        description: 'UNLOCK: Blade Dance ability - A flurry of rapid blade strikes',
         effect: { unlocksAbility: 'blade_dance' },
         prerequisites: ['unlock_ability_cleaving_blow'],
         position: { x: 700, y: 360 } // Continue right branch
@@ -236,21 +236,21 @@ export const PERK_TREES = {
       {
         id: 'unlock_ability_earthshatter',
         name: 'Earthshatter',
-        tier: 'expert',
-        level: 50,
+        tier: 'novice',
+        level: 15,
         type: 'unlock',
-        description: 'UNLOCK: Earthshatter ability - Slam the ground with tremendous force, stunning enemies',
+        description: 'UNLOCK: Earthshatter ability - Slam the ground with tremendous force',
         effect: { unlocksAbility: 'earthshatter' },
-        prerequisites: ['unlock_ability_blade_dance', 'body_peak_performance'],
+        prerequisites: ['unlock_ability_blade_dance'],
         position: { x: 680, y: 280 } // Upper right
       },
       {
         id: 'unlock_ability_thunderous_blow',
         name: 'Thunderous Blow',
-        tier: 'expert',
-        level: 55,
+        tier: 'adept',
+        level: 20,
         type: 'unlock',
-        description: 'UNLOCK: Thunderous Blow ability - Channel lightning through your weapon',
+        description: 'UNLOCK: Thunderous Blow ability - A devastating strike that echoes like thunder',
         effect: { unlocksAbility: 'thunderous_blow' },
         prerequisites: ['unlock_ability_earthshatter'],
         position: { x: 620, y: 200 } // Upper right branch
@@ -258,21 +258,21 @@ export const PERK_TREES = {
       {
         id: 'unlock_ability_berserker_rage',
         name: 'Berserker Rage',
-        tier: 'expert',
-        level: 65,
+        tier: 'adept',
+        level: 30,
         type: 'unlock',
-        description: 'UNLOCK: Berserker Rage ability - Enter a rage, dealing massive damage',
+        description: 'UNLOCK: Berserker Rage ability - Enter a berserker state for massive damage',
         effect: { unlocksAbility: 'berserker_rage' },
-        prerequisites: ['unlock_ability_thunderous_blow', 'body_beast_mode'],
+        prerequisites: ['unlock_ability_thunderous_blow'],
         position: { x: 560, y: 130 } // Near crown
       },
       {
         id: 'unlock_ability_shadow_strike',
         name: 'Shadow Strike',
-        tier: 'adept',
-        level: 30,
+        tier: 'novice',
+        level: 10,
         type: 'unlock',
-        description: 'UNLOCK: Shadow Strike ability - Vanish into shadows and strike with lethal precision',
+        description: 'UNLOCK: Shadow Strike ability - Strike from the shadows with lethal precision',
         effect: { unlocksAbility: 'shadow_strike' },
         prerequisites: ['body_endurance_1'],
         position: { x: 240, y: 480 } // Left side branch
@@ -280,12 +280,12 @@ export const PERK_TREES = {
       {
         id: 'unlock_ability_assassinate',
         name: 'Assassinate',
-        tier: 'expert',
-        level: 50,
+        tier: 'adept',
+        level: 25,
         type: 'unlock',
-        description: 'UNLOCK: Assassinate ability - A precise strike targeting vital points',
+        description: 'UNLOCK: Assassinate ability - A lethal assassination technique',
         effect: { unlocksAbility: 'assassinate' },
-        prerequisites: ['unlock_ability_shadow_strike', 'body_peak_performance'],
+        prerequisites: ['unlock_ability_shadow_strike'],
         position: { x: 160, y: 400 } // Far left
       }
     ]
@@ -474,89 +474,89 @@ export const PERK_TREES = {
       {
         id: 'unlock_ability_chain_lightning',
         name: 'Chain Lightning',
-        tier: 'adept',
-        level: 25,
+        tier: 'novice',
+        level: 5,
         type: 'unlock',
-        description: 'UNLOCK: Chain Lightning ability - Unleash lightning that arcs between targets',
+        description: 'UNLOCK: Chain Lightning ability - Lightning that arcs between enemies',
         effect: { unlocksAbility: 'chain_lightning' },
-        prerequisites: ['mind_focus_1'],
+        prerequisites: ['mind_foundation'],
         position: { x: 580, y: 500 } // Right branch
       },
       {
-        id: 'unlock_ability_frost_bolt',
-        name: 'Frost Bolt',
-        tier: 'adept',
-        level: 30,
+        id: 'unlock_ability_arcane_blast',
+        name: 'Arcane Blast',
+        tier: 'novice',
+        level: 7,
         type: 'unlock',
-        description: 'UNLOCK: Frost Bolt ability - Launch a freezing bolt of ice',
-        effect: { unlocksAbility: 'frost_bolt' },
+        description: 'UNLOCK: Arcane Blast ability - Fire a blast of pure arcane energy',
+        effect: { unlocksAbility: 'arcane_blast' },
         prerequisites: ['unlock_ability_chain_lightning'],
         position: { x: 680, y: 450 } // Far right
       },
       {
-        id: 'unlock_ability_arcane_nova',
-        name: 'Arcane Nova',
-        tier: 'adept',
-        level: 35,
+        id: 'unlock_ability_frost_nova',
+        name: 'Frost Nova',
+        tier: 'novice',
+        level: 10,
         type: 'unlock',
-        description: 'UNLOCK: Arcane Nova ability - Release a burst of pure arcane energy',
-        effect: { unlocksAbility: 'arcane_nova' },
-        prerequisites: ['unlock_ability_frost_bolt', 'mind_reader_2'],
-        position: { x: 120, y: 390 } // Far left branch
+        description: 'UNLOCK: Frost Nova ability - Release an expanding wave of frost',
+        effect: { unlocksAbility: 'frost_nova' },
+        prerequisites: ['unlock_ability_arcane_blast'],
+        position: { x: 700, y: 390 } // Far right branch
       },
       {
-        id: 'unlock_ability_arcane_barrage',
-        name: 'Arcane Barrage',
-        tier: 'expert',
-        level: 50,
+        id: 'unlock_ability_arcane_beam',
+        name: 'Arcane Beam',
+        tier: 'novice',
+        level: 15,
         type: 'unlock',
-        description: 'UNLOCK: Arcane Barrage ability - Launch a volley of arcane missiles',
-        effect: { unlocksAbility: 'arcane_barrage' },
-        prerequisites: ['unlock_ability_arcane_nova', 'mind_knowledge_synthesis'],
-        position: { x: 120, y: 290 } // Upper left
+        description: 'UNLOCK: Arcane Beam ability - Fire a concentrated beam of arcane power',
+        effect: { unlocksAbility: 'arcane_beam' },
+        prerequisites: ['unlock_ability_frost_nova'],
+        position: { x: 680, y: 330 } // Continue right
       },
       {
         id: 'unlock_ability_soul_drain',
         name: 'Soul Drain',
-        tier: 'adept',
-        level: 35,
+        tier: 'novice',
+        level: 10,
         type: 'unlock',
         description: 'UNLOCK: Soul Drain ability - Drain the life force from your enemy',
         effect: { unlocksAbility: 'soul_drain' },
-        prerequisites: ['mind_note_taker'],
+        prerequisites: ['mind_reader_1'],
         position: { x: 220, y: 500 } // Left branch
       },
       {
         id: 'unlock_ability_dark_pulse',
         name: 'Dark Pulse',
-        tier: 'expert',
-        level: 50,
+        tier: 'adept',
+        level: 20,
         type: 'unlock',
         description: 'UNLOCK: Dark Pulse ability - Emit a wave of corrupting darkness',
         effect: { unlocksAbility: 'dark_pulse' },
-        prerequisites: ['unlock_ability_soul_drain', 'mind_knowledge_synthesis'],
+        prerequisites: ['unlock_ability_soul_drain'],
         position: { x: 180, y: 400 } // Far left
       },
       {
         id: 'unlock_ability_meteor',
         name: 'Meteor',
-        tier: 'expert',
-        level: 60,
+        tier: 'adept',
+        level: 25,
         type: 'unlock',
         description: 'UNLOCK: Meteor ability - Call down a devastating meteor from the sky',
         effect: { unlocksAbility: 'meteor' },
-        prerequisites: ['unlock_ability_arcane_barrage', 'mind_speed_reader'],
-        position: { x: 140, y: 200 } // Upper left
+        prerequisites: ['unlock_ability_arcane_beam'],
+        position: { x: 620, y: 250 } // Upper right
       },
       {
-        id: 'unlock_ability_arcane_explosion',
-        name: 'Arcane Explosion',
-        tier: 'master',
-        level: 75,
+        id: 'unlock_ability_mystic_explosion',
+        name: 'Mystic Explosion',
+        tier: 'adept',
+        level: 35,
         type: 'unlock',
-        description: 'UNLOCK: Arcane Explosion ability - Channel power for a massive arcane detonation',
-        effect: { unlocksAbility: 'arcane_explosion' },
-        prerequisites: ['unlock_ability_meteor', 'mind_master_learner'],
+        description: 'UNLOCK: Mystic Explosion ability - Detonate a massive arcane explosion',
+        effect: { unlocksAbility: 'mystic_explosion' },
+        prerequisites: ['unlock_ability_meteor', 'unlock_ability_dark_pulse'],
         position: { x: 200, y: 100 } // Near crown
       }
     ]
@@ -739,6 +739,74 @@ export const PERK_TREES = {
         effect: { spiritXpMultiplier: 3, globalXpBonus: 0.15 },
         prerequisites: ['spirit_inner_peace'],
         position: { x: 400, y: 20 } // Crown above lotus
+      },
+
+      // === WEAPON ABILITY UNLOCKS (Spirit) ===
+      {
+        id: 'unlock_ability_inner_light',
+        name: 'Inner Light',
+        tier: 'novice',
+        level: 5,
+        type: 'unlock',
+        description: 'UNLOCK: Inner Light ability - Channel your inner light as an attack',
+        effect: { unlocksAbility: 'inner_light' },
+        prerequisites: ['spirit_foundation'],
+        position: { x: 500, y: 350 } // Right of center
+      },
+      {
+        id: 'unlock_ability_serenity_wave',
+        name: 'Serenity Wave',
+        tier: 'novice',
+        level: 7,
+        type: 'unlock',
+        description: 'UNLOCK: Serenity Wave ability - Release a calming wave that damages enemies',
+        effect: { unlocksAbility: 'serenity_wave' },
+        prerequisites: ['unlock_ability_inner_light'],
+        position: { x: 550, y: 300 } // Continue right
+      },
+      {
+        id: 'unlock_ability_meditation_burst',
+        name: 'Meditation Burst',
+        tier: 'novice',
+        level: 10,
+        type: 'unlock',
+        description: 'UNLOCK: Meditation Burst ability - Release stored meditative energy',
+        effect: { unlocksAbility: 'meditation_burst' },
+        prerequisites: ['unlock_ability_serenity_wave'],
+        position: { x: 580, y: 240 } // Upper right
+      },
+      {
+        id: 'unlock_ability_zen_strike',
+        name: 'Zen Strike',
+        tier: 'novice',
+        level: 15,
+        type: 'unlock',
+        description: 'UNLOCK: Zen Strike ability - A perfectly balanced attack',
+        effect: { unlocksAbility: 'zen_strike' },
+        prerequisites: ['unlock_ability_meditation_burst'],
+        position: { x: 550, y: 180 } // Continue up
+      },
+      {
+        id: 'unlock_ability_enlightened_blast',
+        name: 'Enlightened Blast',
+        tier: 'adept',
+        level: 20,
+        type: 'unlock',
+        description: 'UNLOCK: Enlightened Blast ability - Channel enlightenment into a powerful blast',
+        effect: { unlocksAbility: 'enlightened_blast' },
+        prerequisites: ['unlock_ability_zen_strike'],
+        position: { x: 500, y: 120 } // Near top
+      },
+      {
+        id: 'unlock_ability_transcendence_strike',
+        name: 'Transcendence Strike',
+        tier: 'adept',
+        level: 30,
+        type: 'unlock',
+        description: 'UNLOCK: Transcendence ability - Transcend mortal limits for ultimate power',
+        effect: { unlocksAbility: 'transcendence' },
+        prerequisites: ['unlock_ability_enlightened_blast'],
+        position: { x: 480, y: 60 } // Near crown
       }
     ]
   },
@@ -920,6 +988,74 @@ export const PERK_TREES = {
         effect: { wealthXpMultiplier: 3, financialFreedom: true, globalXpBonus: 0.1 },
         prerequisites: ['wealth_millionaire_path'],
         position: { x: 400, y: -20 } // Golden capstone - higher up
+      },
+
+      // === WEAPON ABILITY UNLOCKS (Fortune) ===
+      {
+        id: 'unlock_ability_golden_strike',
+        name: 'Golden Strike',
+        tier: 'novice',
+        level: 5,
+        type: 'unlock',
+        description: 'UNLOCK: Golden Strike ability - Strike with the power of gold',
+        effect: { unlocksAbility: 'golden_strike' },
+        prerequisites: ['wealth_foundation'],
+        position: { x: 280, y: 540 } // Left of base
+      },
+      {
+        id: 'unlock_ability_coin_barrage',
+        name: 'Coin Barrage',
+        tier: 'novice',
+        level: 7,
+        type: 'unlock',
+        description: 'UNLOCK: Coin Barrage ability - Hurl a barrage of golden coins',
+        effect: { unlocksAbility: 'coin_barrage' },
+        prerequisites: ['unlock_ability_golden_strike'],
+        position: { x: 180, y: 480 } // Far left
+      },
+      {
+        id: 'unlock_ability_lucky_strike',
+        name: 'Lucky Strike',
+        tier: 'novice',
+        level: 10,
+        type: 'unlock',
+        description: 'UNLOCK: Lucky Strike ability - A strike blessed by fortune',
+        effect: { unlocksAbility: 'lucky_strike' },
+        prerequisites: ['unlock_ability_coin_barrage'],
+        position: { x: 140, y: 410 } // Continue left
+      },
+      {
+        id: 'unlock_ability_wealth_explosion',
+        name: 'Wealth Explosion',
+        tier: 'novice',
+        level: 15,
+        type: 'unlock',
+        description: 'UNLOCK: Wealth Explosion ability - Explode with the power of accumulated wealth',
+        effect: { unlocksAbility: 'wealth_explosion' },
+        prerequisites: ['unlock_ability_lucky_strike'],
+        position: { x: 160, y: 340 } // Upper left
+      },
+      {
+        id: 'unlock_ability_treasure_blast',
+        name: 'Treasure Blast',
+        tier: 'adept',
+        level: 20,
+        type: 'unlock',
+        description: 'UNLOCK: Treasure Blast ability - Unleash the power of a treasure hoard',
+        effect: { unlocksAbility: 'treasure_blast' },
+        prerequisites: ['unlock_ability_wealth_explosion'],
+        position: { x: 200, y: 260 } // Near top left
+      },
+      {
+        id: 'unlock_ability_midas_touch',
+        name: 'Midas Touch',
+        tier: 'adept',
+        level: 30,
+        type: 'unlock',
+        description: 'UNLOCK: Midas Touch ability - Turn your enemies to gold',
+        effect: { unlocksAbility: 'midas_touch' },
+        prerequisites: ['unlock_ability_treasure_blast'],
+        position: { x: 260, y: 180 } // Near apex
       }
     ]
   },
@@ -1101,6 +1237,74 @@ export const PERK_TREES = {
         effect: { socialXpMultiplier: 3, limitlessNetworking: true, globalXpBonus: 0.1 },
         prerequisites: ['social_mentor'],
         position: { x: 400, y: 20 } // Legendary status
+      },
+
+      // === WEAPON ABILITY UNLOCKS (Charm) ===
+      {
+        id: 'unlock_ability_charm_strike',
+        name: 'Charm Strike',
+        tier: 'novice',
+        level: 5,
+        type: 'unlock',
+        description: 'UNLOCK: Charm Strike ability - A charming attack that confuses enemies',
+        effect: { unlocksAbility: 'charm_strike' },
+        prerequisites: ['social_foundation'],
+        position: { x: 300, y: 380 } // Left of center
+      },
+      {
+        id: 'unlock_ability_inspiring_words',
+        name: 'Inspiring Words',
+        tier: 'novice',
+        level: 7,
+        type: 'unlock',
+        description: 'UNLOCK: Inspiring Words ability - Words so inspiring they deal damage',
+        effect: { unlocksAbility: 'inspiring_words' },
+        prerequisites: ['unlock_ability_charm_strike'],
+        position: { x: 240, y: 430 } // Continue left
+      },
+      {
+        id: 'unlock_ability_rally_cry',
+        name: 'Rally Cry',
+        tier: 'novice',
+        level: 10,
+        type: 'unlock',
+        description: 'UNLOCK: Rally Cry ability - A rallying cry that empowers and damages',
+        effect: { unlocksAbility: 'rally_cry' },
+        prerequisites: ['unlock_ability_inspiring_words'],
+        position: { x: 200, y: 480 } // Far left
+      },
+      {
+        id: 'unlock_ability_social_butterfly',
+        name: 'Social Butterfly',
+        tier: 'novice',
+        level: 15,
+        type: 'unlock',
+        description: 'UNLOCK: Social Butterfly ability - Flutter around dealing multiple hits',
+        effect: { unlocksAbility: 'social_butterfly' },
+        prerequisites: ['unlock_ability_rally_cry'],
+        position: { x: 160, y: 400 } // Far left up
+      },
+      {
+        id: 'unlock_ability_influence_blast',
+        name: 'Influence Blast',
+        tier: 'adept',
+        level: 20,
+        type: 'unlock',
+        description: 'UNLOCK: Influence Blast ability - Blast enemies with your social influence',
+        effect: { unlocksAbility: 'influence_blast' },
+        prerequisites: ['unlock_ability_social_butterfly'],
+        position: { x: 180, y: 300 } // Upper left
+      },
+      {
+        id: 'unlock_ability_viral_strike',
+        name: 'Viral Strike',
+        tier: 'adept',
+        level: 30,
+        type: 'unlock',
+        description: 'UNLOCK: Viral Strike ability - An attack that goes viral, hitting everything',
+        effect: { unlocksAbility: 'viral_strike' },
+        prerequisites: ['unlock_ability_influence_blast'],
+        position: { x: 220, y: 220 } // Near top
       }
     ]
   },
@@ -1282,6 +1486,74 @@ export const PERK_TREES = {
         effect: { craftXpMultiplier: 3, worldClass: true, globalXpBonus: 0.15 },
         prerequisites: ['craft_professional'],
         position: { x: 400, y: -25 } // Masterwork crown - higher up
+      },
+
+      // === WEAPON ABILITY UNLOCKS (Tech) ===
+      {
+        id: 'unlock_ability_gadget_throw',
+        name: 'Gadget Throw',
+        tier: 'novice',
+        level: 5,
+        type: 'unlock',
+        description: 'UNLOCK: Gadget Throw ability - Throw a crafted gadget at your enemy',
+        effect: { unlocksAbility: 'gadget_throw' },
+        prerequisites: ['craft_foundation'],
+        position: { x: 280, y: 530 } // Left of base
+      },
+      {
+        id: 'unlock_ability_gear_grind',
+        name: 'Gear Grind',
+        tier: 'novice',
+        level: 7,
+        type: 'unlock',
+        description: 'UNLOCK: Gear Grind ability - Grind enemies with mechanical gears',
+        effect: { unlocksAbility: 'gear_grind' },
+        prerequisites: ['unlock_ability_gadget_throw'],
+        position: { x: 200, y: 480 } // Continue left
+      },
+      {
+        id: 'unlock_ability_bomb_toss',
+        name: 'Bomb Toss',
+        tier: 'novice',
+        level: 10,
+        type: 'unlock',
+        description: 'UNLOCK: Bomb Toss ability - Toss a crafted explosive',
+        effect: { unlocksAbility: 'bomb_toss' },
+        prerequisites: ['unlock_ability_gear_grind'],
+        position: { x: 140, y: 420 } // Far left
+      },
+      {
+        id: 'unlock_ability_turret_blast',
+        name: 'Turret Blast',
+        tier: 'novice',
+        level: 15,
+        type: 'unlock',
+        description: 'UNLOCK: Turret Blast ability - Deploy a temporary turret that fires',
+        effect: { unlocksAbility: 'turret_blast' },
+        prerequisites: ['unlock_ability_bomb_toss'],
+        position: { x: 160, y: 350 } // Upper left
+      },
+      {
+        id: 'unlock_ability_mech_strike',
+        name: 'Mech Strike',
+        tier: 'adept',
+        level: 20,
+        type: 'unlock',
+        description: 'UNLOCK: Mech Strike ability - Summon a mechanical arm to strike',
+        effect: { unlocksAbility: 'mech_strike' },
+        prerequisites: ['unlock_ability_turret_blast'],
+        position: { x: 200, y: 280 } // Near anvil body
+      },
+      {
+        id: 'unlock_ability_invention_overload',
+        name: 'Invention Overload',
+        tier: 'adept',
+        level: 30,
+        type: 'unlock',
+        description: 'UNLOCK: Invention Overload ability - Overload all inventions for massive damage',
+        effect: { unlocksAbility: 'invention_overload' },
+        prerequisites: ['unlock_ability_mech_strike'],
+        position: { x: 260, y: 200 } // Near hammer
       }
     ]
   }
@@ -1289,7 +1561,7 @@ export const PERK_TREES = {
 
 /**
  * XP Awards by Activity Type
- * Based on Habitica's system with optimizations
+ * Based on Habitica's system with optimisations
  */
 export const XP_AWARDS = {
   // BODY Activities

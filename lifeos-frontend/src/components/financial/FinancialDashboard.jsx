@@ -58,7 +58,7 @@ const CURRENCIES = [
  * FinancialDashboard - Streamlined 2-tab financial management
  *
  * Tabs:
- * 1. Budget - All income, expenses, budgets, and visualizations in one place
+ * 1. Budget - All income, expenses, budgets, and visualisations in one place
  * 2. Goals - Savings goals with daily/weekly/monthly payment allocations
  */
 

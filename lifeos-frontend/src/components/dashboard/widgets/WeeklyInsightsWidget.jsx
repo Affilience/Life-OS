@@ -36,10 +36,23 @@ const WeeklyInsightsWidget = memo(function WeeklyInsightsWidget() {
     );
     const weeklyXP = weeklyXPEvents.reduce((sum, e) => sum + (e.eventData?.amount || 0), 0);
 
-    // Calculate previous week XP for comparison (approximate from module XP)
-    const totalModuleXP = Object.values(moduleXP || {}).reduce((sum, xp) => sum + xp, 0);
-    const avgWeeklyXP = totalModuleXP > 0 ? Math.floor(totalModuleXP / 4) : 500; // Approximate 4 weeks
-    const xpChange = avgWeeklyXP > 0 ? Math.round(((weeklyXP - avgWeeklyXP) / avgWeeklyXP) * 100) : 0;
+    // Calculate previous week XP for comparison
+    // Only show percentage change if we have meaningful weekly data
+    let xpChange = 0;
+    if (weeklyXP > 0 && weeklyXPEvents.length > 0) {
+      // Calculate average based on total XP / estimated weeks of usage
+      const totalModuleXP = Object.values(moduleXP || {}).reduce((sum, xp) => sum + xp, 0);
+      if (totalModuleXP > 0) {
+        // Estimate weeks based on total XP (rough average of 500 XP/week for active users)
+        const estimatedWeeks = Math.max(4, Math.ceil(totalModuleXP / 500));
+        const avgWeeklyXP = Math.floor(totalModuleXP / estimatedWeeks);
+        if (avgWeeklyXP > 0) {
+          xpChange = Math.round(((weeklyXP - avgWeeklyXP) / avgWeeklyXP) * 100);
+          // Cap extreme values
+          xpChange = Math.max(-99, Math.min(999, xpChange));
+        }
+      }
+    }
 
     // Calculate completion rate from daily tasks
     const today = new Date().toISOString().split('T')[0];

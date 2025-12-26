@@ -7,9 +7,9 @@ import { calculateXPForLevel } from '../../data/avatarEvolution';
 import AvatarRenderer from './AvatarRenderer';
 import { X, Lock, Check, Star, TrendingUp } from 'lucide-react';
 import UnlockBadge from '../shared/UnlockBadge';
-import './AvatarCustomization.css';
+import './AvatarCustomisation.css';
 
-export default function AvatarCustomization({ onClose }) {
+export default function AvatarCustomisation({ onClose }) {
   const [selectedSlot, setSelectedSlot] = useState('helmet');
 
   const {
@@ -46,12 +46,12 @@ export default function AvatarCustomization({ onClose }) {
   };
 
   return createPortal(
-    <div className="avatar-customization-overlay" onClick={onClose}>
-      <div className="avatar-customization-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="avatar-customisation-overlay" onClick={onClose}>
+      <div className="avatar-customisation-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="customization-header">
+        <div className="customisation-header">
           <div className="header-content">
-            <h2 className="modal-title">Avatar Customization</h2>
+            <h2 className="modal-title">Avatar Customisation</h2>
             <p className="modal-subtitle">Equip gear and track your progression</p>
           </div>
           <button onClick={onClose} className="close-btn">
@@ -59,7 +59,7 @@ export default function AvatarCustomization({ onClose }) {
           </button>
         </div>
 
-        <div className="customization-body">
+        <div className="customisation-body">
           {/* Left Panel - Avatar Preview & Stats */}
           <div className="preview-panel">
             {/* Avatar Display */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAvatarStore } from '../../stores/avatarStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { MediumAvatarWithPets } from '../avatar/AvatarWithCompanions';
-import AvatarCustomization from '../avatar/AvatarCustomization';
+import AvatarCustomisation from '../avatar/AvatarCustomisation';
 import { getStageByLevel, EVOLUTION_STAGES, calculateXPForLevel } from '../../data/avatarEvolution';
 import { Zap, TrendingUp, Award, Settings, Sparkles, BarChart2, User } from 'lucide-react';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
@@ -44,7 +44,7 @@ const getStatLabels = (mode) => {
 };
 
 export function AvatarDashboardSection() {
-  const [showCustomization, setShowCustomization] = useState(false);
+  const [showCustomisation, setShowCustomisation] = useState(false);
   const [avatarSprite, setAvatarSprite] = useState(null);
 
   // Get gamification mode and terminology
@@ -102,11 +102,11 @@ export function AvatarDashboardSection() {
               {/* Customize Button */}
               {visibility.showAvatar && (
                 <button
-                  onClick={() => setShowCustomization(true)}
+                  onClick={() => setShowCustomisation(true)}
                   className="customize-avatar-btn"
                 >
                   <Settings className="w-4 h-4" />
-                  <span>{mode === 'cosmic' ? 'Customize Avatar' : 'Edit Profile'}</span>
+                  <span>{mode === 'cosmic' ? 'Customise Avatar' : 'Edit Profile'}</span>
                 </button>
               )}
             </div>
@@ -292,9 +292,9 @@ export function AvatarDashboardSection() {
         </div>
       </section>
 
-      {/* Customization Modal */}
-      {showCustomization && (
-        <AvatarCustomization onClose={() => setShowCustomization(false)} />
+      {/* Customisation Modal */}
+      {showCustomisation && (
+        <AvatarCustomisation onClose={() => setShowCustomisation(false)} />
       )}
     </>
   );

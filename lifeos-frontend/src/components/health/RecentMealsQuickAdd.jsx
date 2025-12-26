@@ -151,7 +151,7 @@ export default function RecentMealsQuickAdd({ onMealSelected, mealType = 'snack'
             }`}
           >
             <Star size={14} />
-            Favorites
+            Favourites
             {favoriteMeals.length > 0 && (
               <span className="ml-1 text-xs opacity-70">({favoriteMeals.length})</span>
             )}
@@ -167,7 +167,7 @@ export default function RecentMealsQuickAdd({ onMealSelected, mealType = 'snack'
             <p className="text-sm">
               {activeTab === 'recent'
                 ? 'No recent meals yet'
-                : 'No favorite meals saved'}
+                : 'No favourite meals saved'}
             </p>
             {activeTab === 'favorites' && (
               <p className="text-xs mt-1 opacity-70">

@@ -13,6 +13,15 @@ import { feedback } from '../services/microInteractions';
 // Lazy import unlock service to avoid circular dependencies
 let unlockServiceRef = null;
 let notificationStoreRef = null;
+let elementalAbilityStoreRef = null;
+
+const getElementalAbilityStore = async () => {
+  if (!elementalAbilityStoreRef) {
+    const module = await import('./elementalAbilityStore');
+    elementalAbilityStoreRef = module.default;
+  }
+  return elementalAbilityStoreRef;
+};
 
 const getNotificationStore = async () => {
   if (!notificationStoreRef) {
@@ -1972,6 +1981,14 @@ const useAchievementsStore = create(
             const unlockService = await getUnlockService();
             for (const achievement of newUnlocks) {
               await unlockService.onAchievementUnlock(achievement.id);
+            }
+          })();
+
+          // Trigger ability unlocks for achievements
+          (async () => {
+            const elementalAbilityStore = await getElementalAbilityStore();
+            for (const achievement of newUnlocks) {
+              elementalAbilityStore.getState().unlockFromAchievement(achievement.id);
             }
           })();
         }

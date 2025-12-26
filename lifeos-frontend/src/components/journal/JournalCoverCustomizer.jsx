@@ -57,12 +57,22 @@ const COVER_TEXTURES = [
   { id: 'none', name: 'None', opacity: 0 },
 ];
 
+// Available fonts
+const FONT_OPTIONS = [
+  { id: 'caveat', name: 'Handwritten', family: "'Caveat', cursive", preview: 'Aa' },
+  { id: 'merriweather', name: 'Classic Serif', family: "'Merriweather', serif", preview: 'Aa' },
+  { id: 'lora', name: 'Elegant', family: "'Lora', serif", preview: 'Aa' },
+  { id: 'opensans', name: 'Modern', family: "'Open Sans', sans-serif", preview: 'Aa' },
+  { id: 'playfair', name: 'Vintage', family: "'Playfair Display', serif", preview: 'Aa' },
+];
+
 // Default settings
 const DEFAULT_SETTINGS = {
   title: 'My Journal',
   colorTheme: 'leather',
   icon: 'book',
   texture: 'leather',
+  font: 'caveat',
   showBorder: true,
   showDecoration: true,
 };
@@ -85,7 +95,7 @@ export default function JournalCoverCustomizer({ currentSettings, onSave, onClos
       <div className="cover-customizer" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="customizer-header">
-          <h2>Customize Journal Cover</h2>
+          <h2>Customise Journal Cover</h2>
           <button className="close-btn" onClick={onClose}>
             <X size={24} />
           </button>
@@ -135,9 +145,9 @@ export default function JournalCoverCustomizer({ currentSettings, onSave, onClos
               />
             </div>
 
-            {/* Color Theme */}
+            {/* Colour Theme */}
             <div className="setting-group">
-              <label>Cover Color</label>
+              <label>Cover Colour</label>
               <div className="color-grid">
                 {COVER_COLORS.map(color => (
                   <button
@@ -191,6 +201,24 @@ export default function JournalCoverCustomizer({ currentSettings, onSave, onClos
               </div>
             </div>
 
+            {/* Font */}
+            <div className="setting-group">
+              <label>Entry Font</label>
+              <div className="font-options">
+                {FONT_OPTIONS.map(font => (
+                  <button
+                    key={font.id}
+                    className={`font-option ${settings.font === font.id ? 'selected' : ''}`}
+                    onClick={() => setSettings({ ...settings, font: font.id })}
+                    style={{ fontFamily: font.family }}
+                  >
+                    <span className="font-preview">{font.preview}</span>
+                    <span className="font-name">{font.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Toggles */}
             <div className="setting-group toggles">
               <label className="toggle-label">
@@ -228,4 +256,4 @@ export default function JournalCoverCustomizer({ currentSettings, onSave, onClos
 }
 
 // Export the color and icon data for use in JournalCoverPage
-export { COVER_COLORS, COVER_ICONS, COVER_TEXTURES, DEFAULT_SETTINGS };
+export { COVER_COLORS, COVER_ICONS, COVER_TEXTURES, FONT_OPTIONS, DEFAULT_SETTINGS };

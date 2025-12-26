@@ -216,7 +216,7 @@ export default function ThemeSelector() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-[var(--primary-500)]" />
-          <h3 className="text-white font-semibold">Color Theme</h3>
+          <h3 className="text-white font-semibold">Colour Theme</h3>
         </div>
         <span className="text-xs text-white/50 bg-white/5 px-2 py-1 rounded">
           {themeIds.length} themes
@@ -259,7 +259,7 @@ export default function ThemeSelector() {
       <div className="bg-[var(--bg-1)] border border-[var(--border)] rounded-xl p-4">
         <h4 className="text-white/80 font-medium text-sm mb-2">Theme Tips</h4>
         <ul className="text-xs text-white/50 space-y-1">
-          <li>• Cosmic Violet is optimized for productivity and focus</li>
+          <li>• Cosmic Violet is optimised for productivity and focus</li>
           <li>• Emerald Zen and Ocean Depths are great for reducing eye strain</li>
           <li>• Neon Synthwave and Solar Orange provide high energy for motivation</li>
           <li>• Slate Minimal offers maximum readability for long sessions</li>

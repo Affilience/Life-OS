@@ -52,7 +52,7 @@ This is your personal Obsidian-style note system.
 
 ## Features
 - **Bidirectional linking**: Use [[double brackets]] to link notes
-- **Tags**: Use #tags to categorize
+- **Tags**: Use #tags to categorise
 - **Graph view**: Visualize connections
 - **Markdown**: Full markdown support
 

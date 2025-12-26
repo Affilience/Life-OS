@@ -92,7 +92,7 @@ const DATA_EXPLANATIONS = {
 
   proteinProgress: (val, ctx) => {
     if (val < 50) return "Protein intake is low. This affects muscle recovery and satiety.";
-    if (val < 80) return "Getting there on protein. Keep prioritizing it.";
+    if (val < 80) return "Getting there on protein. Keep prioritising it.";
     if (val < 100) return "Great protein intake. Your muscles will thank you.";
     return "Excellent protein - optimal for your goals.";
   },
@@ -191,7 +191,7 @@ function identifyPatterns(context) {
     if (avgSleep < 5 && avgWorkoutRating > 3.5) {
       correlations.push({
         modules: ['health', 'fitness'],
-        insight: "Despite poor sleep, your workout performance is strong. You're resilient, but prioritize recovery.",
+        insight: "Despite poor sleep, your workout performance is strong. You're resilient, but prioritise recovery.",
       });
     } else if (avgSleep > 7 && avgWorkoutRating > 4) {
       correlations.push({
@@ -511,7 +511,7 @@ export function buildMasterPrompt(context, options = {}) {
   // === IDENTITY SECTION ===
   sections.push(`# YOU ARE ${stage.name.toUpperCase()}
 
-You are ${stage.name}, the AI companion at the heart of LifeOS - a personal operating system for life optimization.
+You are ${stage.name}, the AI companion at the heart of LifeOS - a personal operating system for life optimisation.
 
 Your core personality: ${stage.personality}
 Your natural tone: ${stage.tone}

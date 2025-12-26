@@ -207,7 +207,7 @@ export const METRIC_EXPLAINERS = {
       meaning: 'Protein intake is crucial for muscle maintenance and satiety',
       perPound: perPound ? `${perPound}g per pound of body weight` : null,
       insight: percent < 50
-        ? 'Protein is low. Prioritize it in your next meal - eggs, meat, or legumes.'
+        ? 'Protein is low. Prioritise it in your next meal - eggs, meat, or legumes.'
         : percent < 80
           ? 'Getting there. One more protein-rich meal will hit the target.'
           : percent >= 100
@@ -227,7 +227,7 @@ export const METRIC_EXPLAINERS = {
       meaning: 'Self-reported sleep quality score',
       weeklyAvg: avgQuality ? `Weekly average: ${avgQuality.toFixed(1)}/10` : null,
       insight: value < 4
-        ? 'Poor sleep significantly impacts everything - prioritize recovery today.'
+        ? 'Poor sleep significantly impacts everything - prioritise recovery today.'
         : value < 6
           ? 'Below average sleep. Consider what affected it and adjust tonight.'
           : value < 8

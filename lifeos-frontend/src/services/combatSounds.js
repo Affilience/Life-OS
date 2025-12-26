@@ -169,7 +169,7 @@ export const weaponAbilitySounds = {
 };
 
 // ============================================================================
-// ELEMENTAL SKILL ABILITIES (50+ sounds organized by element)
+// ELEMENTAL SKILL ABILITIES (50+ sounds organised by element)
 // ============================================================================
 
 export const elementalSounds = {

@@ -443,8 +443,8 @@ export const MILESTONE_EQUIPMENT = {
   },
   mythic_armor: {
     id: 'mythic_armor',
-    name: 'Mythic Armor',
-    description: 'Armor woven from the fabric of myths.',
+    name: 'Mythic Armour',
+    description: 'Armour woven from the fabric of myths.',
     slot: 'chest',
     rarity: 'legendary',
     stats: { defense: 30, vitality: 25, strength: 15 },
@@ -466,7 +466,7 @@ export const MILESTONE_EQUIPMENT = {
   eternal_essence: {
     id: 'eternal_essence',
     name: 'Eternal Essence',
-    description: 'The crystallized essence of eternity itself.',
+    description: 'The crystallised essence of eternity itself.',
     slot: 'amulet',
     rarity: 'legendary',
     stats: { wisdom: 50, intelligence: 40, vitality: 30, strength: 20, defense: 20 },

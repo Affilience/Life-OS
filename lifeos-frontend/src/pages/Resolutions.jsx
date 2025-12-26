@@ -1,6 +1,6 @@
 /**
  * Resolutions - New Year's Resolution Tracking Page
- * Track goals throughout the year with progress visualization and gamification
+ * Track goals throughout the year with progress visualisation and gamification
  */
 
 import React, { useState, useEffect } from 'react';

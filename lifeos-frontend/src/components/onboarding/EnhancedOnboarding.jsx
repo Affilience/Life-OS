@@ -4,7 +4,7 @@
  * Inspired by:
  * - Duolingo's gradual engagement and quick wins
  * - Gamification with XP rewards and streak commitments
- * - Progress visualization and celebration moments
+ * - Progress visualisation and celebration moments
  * - Personalized Nova reactions
  */
 
@@ -500,7 +500,7 @@ function GoalsStep({ goals, selectedGoals, onToggleGoal, onContinue, onBack }) {
     >
       <div className="step-header">
         <h2>What brings you here?</h2>
-        <p>Choose up to 3 priorities • We'll customize your experience</p>
+        <p>Choose up to 3 priorities • We'll customise your experience</p>
       </div>
 
       <div className="goals-grid">

@@ -104,6 +104,7 @@ function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) 
           pageNumber={pageIndex + 1}
           side={pageIndex % 2 === 0 ? 'left' : 'right'}
           onEdit={onEditEntry}
+          font={coverSettings?.font || 'caveat'}
         />
       );
     }
@@ -121,6 +122,7 @@ function SimpleJournalBook({ entries, onNewEntry, onEditEntry, coverSettings }) 
           side={pageIndex % 2 === 0 ? 'left' : 'right'}
           isEmpty={true}
           onStartWriting={onNewEntry}
+          font={coverSettings?.font || 'caveat'}
         />
       );
     }

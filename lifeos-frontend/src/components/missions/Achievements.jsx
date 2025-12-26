@@ -30,6 +30,7 @@ import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/
 import { ACHIEVEMENT_EQUIPMENT, ACHIEVEMENT_PETS } from '../../data/equipmentUnlocks';
 import { EQUIPMENT_DATABASE, EQUIPMENT_RARITY } from '../../data/equipmentDatabase';
 import { PET_DATABASE, TIER_INFO as PET_TIER_INFO } from '../../stores/petStore';
+import { getAbilitiesUnlockedByAchievement, ELEMENT_COLORS } from '../../data/elementalAbilities';
 
 // Mode-specific styling for the page
 const MODE_PAGE_STYLES = {
@@ -529,6 +530,39 @@ export default function Achievements() {
                             style={{ color: tierInfo.color }}
                           >
                             {pet.name}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+
+                  {/* Ability Rewards */}
+                  {(() => {
+                    const abilityRewards = getAbilitiesUnlockedByAchievement(achievement.id);
+                    if (abilityRewards.length === 0) return null;
+
+                    return abilityRewards.map(ability => {
+                      const elementColor = ELEMENT_COLORS[ability.element] || '#a855f7';
+
+                      return (
+                        <div
+                          key={ability.id}
+                          className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border"
+                          style={{
+                            backgroundColor: `${elementColor}15`,
+                            borderColor: `${elementColor}40`,
+                          }}
+                          title={`${ability.name} - ${ability.element} ability (${ability.description})`}
+                        >
+                          <Sparkles
+                            className="w-4 h-4"
+                            style={{ color: elementColor }}
+                          />
+                          <span
+                            className="text-xs font-medium truncate max-w-[80px]"
+                            style={{ color: elementColor }}
+                          >
+                            {ability.name}
                           </span>
                         </div>
                       );

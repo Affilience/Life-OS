@@ -7,7 +7,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { DEV_USER_ID, isDevMode } from '../lib/dev-auth';
-import { getAbilityById, isAbilityReady as checkAbilityReady, getCooldownProgress as getProgress } from '../data/elementalAbilities';
+import {
+  getAbilityById,
+  isAbilityReady as checkAbilityReady,
+  getCooldownProgress as getProgress,
+  ABILITY_UNLOCKS,
+  getAbilitiesByUnlockType,
+  isAbilityUnlocked as checkAbilityUnlocked,
+} from '../data/elementalAbilities';
 
 // Helper to get current user ID
 const getCurrentUserId = async (timeoutMs = 3000) => {
@@ -41,6 +48,14 @@ const useElementalAbilityStore = create(
       // Cooldown tracking: { abilityId: lastUsedTimestamp }
       abilityCooldowns: {},
 
+      // Unlocked abilities from various sources
+      // { unlockedPerks: [], achievements: [], bossDrops: [] }
+      unlockedSources: {
+        unlockedPerks: [],
+        achievements: [],
+        bossDrops: [],
+      },
+
       // Loading state
       isLoading: false,
 
@@ -58,21 +73,40 @@ const useElementalAbilityStore = create(
             return;
           }
 
-          // Load equipped abilities from Supabase
-          const { data, error } = await supabase
-            .from('user_equipped_abilities')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle();
+          // Load equipped abilities and unlocks in parallel
+          const [equippedResult, unlocksResult] = await Promise.all([
+            supabase
+              .from('user_equipped_abilities')
+              .select('*')
+              .eq('user_id', userId)
+              .maybeSingle(),
+            supabase
+              .from('user_ability_unlocks')
+              .select('*')
+              .eq('user_id', userId)
+              .maybeSingle(),
+          ]);
 
-          if (!error && data) {
-            set({
-              equippedAbilities: [
-                data.slot_0 || null,
-                data.slot_1 || null,
-                data.slot_2 || null,
-              ],
-            });
+          const updates = {};
+
+          if (!equippedResult.error && equippedResult.data) {
+            updates.equippedAbilities = [
+              equippedResult.data.slot_0 || null,
+              equippedResult.data.slot_1 || null,
+              equippedResult.data.slot_2 || null,
+            ];
+          }
+
+          if (!unlocksResult.error && unlocksResult.data) {
+            updates.unlockedSources = {
+              unlockedPerks: unlocksResult.data.unlocked_perks || [],
+              achievements: unlocksResult.data.achievements || [],
+              bossDrops: unlocksResult.data.boss_drops || [],
+            };
+          }
+
+          if (Object.keys(updates).length > 0) {
+            set(updates);
           }
 
           console.log('[ElementalAbilityStore] ✅ Initialized');
@@ -290,6 +324,158 @@ const useElementalAbilityStore = create(
       },
 
       // ============================================
+      // UNLOCK MANAGEMENT
+      // ============================================
+
+      /**
+       * Check if an ability is unlocked
+       */
+      isAbilityUnlocked: (abilityId) => {
+        const { unlockedSources } = get();
+        const unlock = ABILITY_UNLOCKS[abilityId];
+
+        if (!unlock) return false;
+
+        switch (unlock.type) {
+          case 'default':
+            return true;
+          case 'perk':
+            return unlockedSources.unlockedPerks.includes(unlock.perkId);
+          case 'achievement':
+            return unlockedSources.achievements.includes(unlock.achievementId);
+          case 'boss':
+            return unlockedSources.bossDrops.includes(abilityId);
+          default:
+            return false;
+        }
+      },
+
+      /**
+       * Unlock an ability from a perk
+       */
+      unlockFromPerk: (perkId) => {
+        set(state => {
+          if (state.unlockedSources.unlockedPerks.includes(perkId)) {
+            return state;
+          }
+          return {
+            unlockedSources: {
+              ...state.unlockedSources,
+              unlockedPerks: [...state.unlockedSources.unlockedPerks, perkId],
+            },
+          };
+        });
+        get().syncUnlocksToSupabase();
+      },
+
+      /**
+       * Unlock an ability from an achievement
+       */
+      unlockFromAchievement: (achievementId) => {
+        set(state => {
+          if (state.unlockedSources.achievements.includes(achievementId)) {
+            return state;
+          }
+          return {
+            unlockedSources: {
+              ...state.unlockedSources,
+              achievements: [...state.unlockedSources.achievements, achievementId],
+            },
+          };
+        });
+        get().syncUnlocksToSupabase();
+      },
+
+      /**
+       * Unlock an ability from a boss drop
+       */
+      unlockFromBossDrop: (abilityId) => {
+        set(state => {
+          if (state.unlockedSources.bossDrops.includes(abilityId)) {
+            return state;
+          }
+          return {
+            unlockedSources: {
+              ...state.unlockedSources,
+              bossDrops: [...state.unlockedSources.bossDrops, abilityId],
+            },
+          };
+        });
+        get().syncUnlocksToSupabase();
+      },
+
+      /**
+       * Get all unlocked ability IDs
+       */
+      getUnlockedAbilities: () => {
+        const { isAbilityUnlocked } = get();
+        return Object.keys(ABILITY_UNLOCKS).filter(abilityId =>
+          isAbilityUnlocked(abilityId)
+        );
+      },
+
+      /**
+       * Get all unlocked abilities with data
+       */
+      getUnlockedAbilitiesData: () => {
+        return get().getUnlockedAbilities()
+          .map(id => getAbilityById(id))
+          .filter(Boolean);
+      },
+
+      /**
+       * Sync unlock sources to Supabase
+       */
+      syncUnlocksToSupabase: async () => {
+        try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
+          const { unlockedSources } = get();
+
+          await supabase
+            .from('user_ability_unlocks')
+            .upsert({
+              user_id: userId,
+              unlocked_perks: unlockedSources.unlockedPerks,
+              achievements: unlockedSources.achievements,
+              boss_drops: unlockedSources.bossDrops,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+        } catch (error) {
+          console.error('[ElementalAbilityStore] Error syncing unlocks:', error);
+        }
+      },
+
+      /**
+       * Load unlocks from Supabase
+       */
+      loadUnlocksFromSupabase: async () => {
+        try {
+          const userId = await getCurrentUserId();
+          if (!userId) return;
+
+          const { data, error } = await supabase
+            .from('user_ability_unlocks')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          if (!error && data) {
+            set({
+              unlockedSources: {
+                unlockedPerks: data.unlocked_perks || [],
+                achievements: data.achievements || [],
+                bossDrops: data.boss_drops || [],
+              },
+            });
+          }
+        } catch (error) {
+          console.error('[ElementalAbilityStore] Error loading unlocks:', error);
+        }
+      },
+
+      // ============================================
       // RESET
       // ============================================
 
@@ -297,6 +483,11 @@ const useElementalAbilityStore = create(
         set({
           equippedAbilities: [null, null, null],
           abilityCooldowns: {},
+          unlockedSources: {
+            unlockedPerks: [],
+            achievements: [],
+            bossDrops: [],
+          },
           isLoading: false,
         });
       },
@@ -305,6 +496,7 @@ const useElementalAbilityStore = create(
       name: 'lifeos-elemental-abilities-storage',
       partialize: (state) => ({
         equippedAbilities: state.equippedAbilities,
+        unlockedSources: state.unlockedSources,
         // Don't persist cooldowns - they reset each session
       }),
     }

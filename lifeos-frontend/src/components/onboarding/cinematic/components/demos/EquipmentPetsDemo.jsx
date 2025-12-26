@@ -5,7 +5,7 @@
  * Features:
  * - Equipment slots with hover effects
  * - Pet companion with idle animation
- * - Stat boost visualization
+ * - Stat boost visualisation
  */
 
 import React, { useState, useCallback } from 'react';

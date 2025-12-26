@@ -946,7 +946,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
     channels.push(dashboardChannel);
 
     // ============================================
-    // AVATAR & EQUIPMENT - Character customization
+    // AVATAR & EQUIPMENT - Character customisation
     // ============================================
     const avatarChannel = supabase
       .channel('global_avatar')

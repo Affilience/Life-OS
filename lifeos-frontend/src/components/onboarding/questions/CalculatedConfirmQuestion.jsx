@@ -40,7 +40,7 @@ export default function CalculatedConfirmQuestion({ question, value, onAnswer, a
       <div className="question calculated-question loading">
         <div className="calculating-animation">
           <Calculator className="spin" size={32} />
-          <p>Calculating your personalized goal...</p>
+          <p>Calculating your personalised goal...</p>
         </div>
       </div>
     );

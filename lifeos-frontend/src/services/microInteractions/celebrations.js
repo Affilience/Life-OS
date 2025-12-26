@@ -45,7 +45,7 @@ const PALETTES = {
 
 /**
  * Subtle burst - elegant micro-celebration
- * @param {Object} options - Customization options
+ * @param {Object} options - Customisation options
  */
 export function burst(options = {}) {
   if (!celebrationsEnabled || prefersReducedMotion()) return;

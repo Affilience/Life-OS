@@ -1,5 +1,5 @@
 /**
- * MicronutrientGoalsModal - Allows users to customize their micronutrient daily goals
+ * MicronutrientGoalsModal - Allows users to customise their micronutrient daily goals
  */
 
 import { useState } from 'react';
@@ -183,7 +183,7 @@ export default function MicronutrientGoalsModal({ onClose }) {
             </div>
             <div>
               <h3 className="font-semibold text-fg-primary">Micronutrient Goals</h3>
-              <p className="text-xs text-fg-tertiary">Customize your daily targets</p>
+              <p className="text-xs text-fg-tertiary">Customise your daily targets</p>
             </div>
           </div>
           <button

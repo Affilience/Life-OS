@@ -271,7 +271,7 @@ const DEFAULT_LAYOUTS = {
   ],
 };
 
-// Onboarding layout - optimized for the dashboard tour
+// Onboarding layout - optimised for the dashboard tour
 // This layout ensures all tour-targeted elements are visible and well-positioned
 const ONBOARDING_LAYOUTS = {
   lg: [

@@ -1,5 +1,5 @@
 /**
- * StreakVisualizations - Multiple ways to visualize streak data
+ * StreakVisualisations - Multiple ways to visualize streak data
  *
  * Views:
  * 1. Calendar Grid - Monthly calendar with completion dots
@@ -215,7 +215,7 @@ export function ChainLinksView({ completions, streak, daysToShow = 30 }) {
 
   return (
     <div className="space-y-4">
-      {/* Chain visualization */}
+      {/* Chain visualisation */}
       <div className="flex flex-wrap items-center gap-1">
         {chainData.map((day, i) => {
           const prevCompleted = i > 0 && chainData[i - 1].completed;
@@ -546,7 +546,7 @@ export function StatsOverviewView({ streak, completions }) {
 }
 
 /**
- * StreakViewSelector - Toggle between different visualization views
+ * StreakViewSelector - Toggle between different visualisation views
  */
 export function StreakViewSelector({ currentView, onViewChange }) {
   const views = [

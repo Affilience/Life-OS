@@ -123,7 +123,7 @@ export default function DashboardNew() {
         <div className="px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2">
           <PageHeader
             title="Dashboard"
-            subtitle="Your personal command center"
+            subtitle="Your personal command centre"
             icon={Home}
             module="default"
             variant="elevated"
@@ -305,7 +305,7 @@ export default function DashboardNew() {
             </div>
             <h3 className="text-xl font-semibold text-text-primary mb-2">Your dashboard is empty</h3>
             <p className="text-sm text-text-secondary mb-6 max-w-sm">
-              Add widgets to customize your dashboard and see your stats at a glance
+              Add widgets to customise your dashboard and see your stats at a glance
             </p>
             <button
               onClick={() => setIsAddWidgetOpen(true)}

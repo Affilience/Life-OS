@@ -157,7 +157,7 @@ export function ChainLinks({
 }
 
 /**
- * ChainLinksCompact - Horizontal chain with breaks visualization
+ * ChainLinksCompact - Horizontal chain with breaks visualisation
  * Great for showing weekly view with gaps
  */
 export function ChainLinksWeekly({

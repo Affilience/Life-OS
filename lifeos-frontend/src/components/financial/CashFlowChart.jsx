@@ -1,5 +1,5 @@
 /**
- * CashFlowChart - Income vs Expenses visualization
+ * CashFlowChart - Income vs Expenses visualisation
  * Bar chart comparing income and expenses over time
  */
 

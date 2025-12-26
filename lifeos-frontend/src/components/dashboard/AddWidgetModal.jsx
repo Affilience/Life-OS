@@ -56,7 +56,7 @@ export default function AddWidgetModal({ isOpen, onClose }) {
           <div>
             <h2 className="text-lg font-bold text-white">Add Widgets</h2>
             <p className="text-xs text-white/60 mt-0.5">
-              Customize your dashboard with widgets
+              Customise your dashboard with widgets
             </p>
           </div>
           <button

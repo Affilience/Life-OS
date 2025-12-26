@@ -290,7 +290,7 @@ export async function generateGoalPredictions() {
       currentPace: `${Math.round(tasksPerDay * 10) / 10} per day`,
       monthlyProjection: monthlyTaskPrediction,
       insight: tasksPerDay >= 5
-        ? "High productivity! Make sure you're prioritizing important tasks."
+        ? "High productivity! Make sure you're prioritising important tasks."
         : tasksPerDay >= 2
           ? "Consistent task completion. Room to increase if needed."
           : "Consider breaking larger tasks into smaller, completable items."

@@ -278,6 +278,51 @@
   color: #a78bfa;
 }
 
+/* Font Options */
+.font-options {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.font-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.font-option:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  color: white;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.font-option.selected {
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+.font-option .font-preview {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.font-option .font-name {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
 /* Toggles */
 .setting-group.toggles {
   gap: 12px;
@@ -364,5 +409,9 @@
 
   .icon-grid {
     grid-template-columns: repeat(5, 1fr);
+  }
+
+  .font-options {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

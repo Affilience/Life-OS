@@ -98,17 +98,19 @@ export default function EquipmentInventory() {
     equipAbility,
     unequipAbility,
     isAbilityEquipped,
+    getUnlockedAbilities,
   } = useElementalAbilityStore();
 
   // Ability selection state
   const [selectedAbilitySlot, setSelectedAbilitySlot] = useState(null);
   const [abilityFilterElement, setAbilityFilterElement] = useState('all');
 
-  // Get all abilities, filtered by element
+  // Get UNLOCKED abilities, filtered by element
   const getFilteredAbilities = () => {
-    const allAbilities = getAllAbilities();
-    if (abilityFilterElement === 'all') return allAbilities;
-    return allAbilities.filter(a => a.element === abilityFilterElement);
+    const unlockedIds = getUnlockedAbilities();
+    const unlockedAbilities = unlockedIds.map(id => getAbilityById(id)).filter(Boolean);
+    if (abilityFilterElement === 'all') return unlockedAbilities;
+    return unlockedAbilities.filter(a => a.element === abilityFilterElement);
   };
 
   const slots = [

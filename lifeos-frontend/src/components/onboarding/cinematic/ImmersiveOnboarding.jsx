@@ -21,7 +21,7 @@ import { feedback } from '../../../services/microInteractions';
 import ImmersiveIntro from './immersive/ImmersiveIntro';
 import ImmersiveModeSelect from './immersive/ImmersiveModeSelect';
 import ImmersiveHeroSelect from './immersive/ImmersiveHeroSelect';
-import ImmersiveAvatarCustomization from './immersive/ImmersiveAvatarCustomization';
+import ImmersiveAvatarCustomisation from './immersive/ImmersiveAvatarCustomisation';
 import ImmersiveGamification from './immersive/ImmersiveGamification';
 import ImmersiveIdentity from './immersive/ImmersiveIdentity';
 import ImmersiveGoals from './immersive/ImmersiveGoals';

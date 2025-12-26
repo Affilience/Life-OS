@@ -218,7 +218,7 @@ export default function ProfileFrame({
 }
 
 /**
- * Frame selector for settings/customization
+ * Frame selector for settings/customisation
  */
 export function FrameSelector({ level, onSelect, className = '' }) {
   const { selectedFrame, selectFrame } = useLevelProgressionStore();

@@ -2,9 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Save, X, Calendar, Tag, Smile, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { journalDB } from '../db/journalDB';
+import { journalDB, settingsDB } from '../db/journalDB';
 import { triggerGamification } from '../hooks/useGamification';
 import './JournalWriter.css';
+
+// Font family mappings
+const FONT_FAMILIES = {
+  caveat: "'Caveat', cursive",
+  merriweather: "'Merriweather', serif",
+  lora: "'Lora', serif",
+  opensans: "'Open Sans', sans-serif",
+  playfair: "'Playfair Display', serif",
+};
 
 export default function JournalWriter() {
   const navigate = useNavigate();
@@ -26,12 +35,28 @@ export default function JournalWriter() {
 
   const [wordCount, setWordCount] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [font, setFont] = useState('caveat');
 
   useEffect(() => {
     // Focus on content area
     if (contentRef.current) {
       contentRef.current.focus();
     }
+  }, []);
+
+  // Load font setting
+  useEffect(() => {
+    const loadFontSetting = async () => {
+      try {
+        const coverSettings = await settingsDB.get('journalCover');
+        if (coverSettings?.font) {
+          setFont(coverSettings.font);
+        }
+      } catch (error) {
+        console.error('Failed to load font setting:', error);
+      }
+    };
+    loadFontSetting();
   }, []);
 
   useEffect(() => {
@@ -148,6 +173,7 @@ export default function JournalWriter() {
           value={entry.title}
           onChange={(e) => setEntry({ ...entry, title: e.target.value })}
           className="title-input"
+          style={{ fontFamily: FONT_FAMILIES[font] }}
         />
 
         {/* Content */}
@@ -158,6 +184,7 @@ export default function JournalWriter() {
           onChange={(e) => setEntry({ ...entry, content: e.target.value })}
           className="content-textarea"
           data-tour="writer-content"
+          style={{ fontFamily: FONT_FAMILIES[font] }}
         />
 
         {/* Footer */}
@@ -192,7 +219,7 @@ export default function JournalWriter() {
             <Tag size={16} />
             Tags
           </h3>
-          <p className="panel-hint">Add tags to organize your entries</p>
+          <p className="panel-hint">Add tags to organise your entries</p>
           <input
             type="text"
             placeholder="Add tags (coming soon)"

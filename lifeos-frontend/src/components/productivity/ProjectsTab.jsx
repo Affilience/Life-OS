@@ -379,7 +379,7 @@ export default function ProjectsTab() {
           title="No projects found"
           description={filterStatus !== 'all'
             ? "Try adjusting your filters to see more projects"
-            : "Create your first project to organize tasks and track progress"}
+            : "Create your first project to organise tasks and track progress"}
           actionLabel="Create Project"
           onAction={handleOpenCreateModal}
           variant="violet"

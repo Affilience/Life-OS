@@ -1,4 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Caveat:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Caveat:wght@400;700&family=Lora:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+/* Font Classes */
+.journal-font-caveat {
+  font-family: 'Caveat', cursive !important;
+}
+
+.journal-font-merriweather {
+  font-family: 'Merriweather', serif !important;
+}
+
+.journal-font-lora {
+  font-family: 'Lora', serif !important;
+}
+
+.journal-font-opensans {
+  font-family: 'Open Sans', sans-serif !important;
+}
+
+.journal-font-playfair {
+  font-family: 'Playfair Display', serif !important;
+}
 
 /* Journal Page - Realistic Paper */
 .journal-page {

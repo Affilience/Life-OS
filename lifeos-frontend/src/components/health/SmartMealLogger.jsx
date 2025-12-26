@@ -366,7 +366,7 @@ export default function SmartMealLogger({ onMealLogged }) {
         <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl mb-4">
           <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-red-300 font-medium">Couldn't analyze meal</p>
+            <p className="text-red-300 font-medium">Couldn't analyse meal</p>
             <p className="text-red-400/70 text-sm mt-1">{error}</p>
           </div>
         </div>
@@ -386,7 +386,7 @@ export default function SmartMealLogger({ onMealLogged }) {
                 <span className="text-xs px-2 py-1 bg-violet-500/20 text-violet-300 rounded-full">
                   {result.source === 'cache' ? 'Instant' :
                    result.dataSources?.usda > 0 ? 'USDA Data' :
-                   result.dataSources?.web > 0 ? 'Web Data' : 'AI Analyzed'}
+                   result.dataSources?.web > 0 ? 'Web Data' : 'AI Analysed'}
                 </span>
               )}
             </div>
@@ -469,7 +469,7 @@ export default function SmartMealLogger({ onMealLogged }) {
                 <div className="p-3 bg-black/10 rounded-lg">
                   <div className="text-xs text-fg-tertiary mb-2">Additional nutrients</div>
                   <div className="flex gap-4 text-sm text-fg-secondary">
-                    {result.totals.fiber > 0 && <span>Fiber: {result.totals.fiber}g</span>}
+                    {result.totals.fiber > 0 && <span>Fibre: {result.totals.fiber}g</span>}
                     {result.totals.sugar > 0 && <span>Sugar: {result.totals.sugar}g</span>}
                     {result.totals.sodium > 0 && <span>Sodium: {result.totals.sodium}mg</span>}
                   </div>

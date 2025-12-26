@@ -197,7 +197,7 @@ export const EQUIPMENT_DATABASE = {
   suit_reinforced: {
     id: 'suit_reinforced',
     name: 'Reinforced Panels Suit',
-    description: 'Enhanced protection with armored plating',
+    description: 'Enhanced protection with armoured plating',
     slot: 'suit',
     tier: 2,
     rarity: 'uncommon',
@@ -211,7 +211,7 @@ export const EQUIPMENT_DATABASE = {
   suit_biometric: {
     id: 'suit_biometric',
     name: 'Biometric Analysis Suit',
-    description: 'Real-time health monitoring and optimization',
+    description: 'Real-time health monitoring and optimisation',
     slot: 'suit',
     tier: 2,
     rarity: 'rare',
@@ -240,7 +240,7 @@ export const EQUIPMENT_DATABASE = {
   },
   suit_cosmic: {
     id: 'suit_cosmic',
-    name: 'Cosmic Harmonizer Suit',
+    name: 'Cosmic Harmoniser Suit',
     description: 'Reality-bending suit attuned to universal energies',
     slot: 'suit',
     tier: 4,
@@ -248,7 +248,7 @@ export const EQUIPMENT_DATABASE = {
     // New unlock system - Achievement
     unlockMethod: 'achievement',
     unlockRequirement: { achievementId: 'life_optimizer', fallbackStat: 'allModulesActiveDays', fallbackTarget: 90 },
-    unlockDescription: 'Complete "Life Optimizer" achievement',
+    unlockDescription: 'Complete "Life Optimiser" achievement',
     stats: { defense: 10, strength: 8, vitality: 8, intelligence: 5 },
     sprite: 'suit_cosmic',
     effects: ['glow_rainbow', 'particles', 'aura', 'animated'],
@@ -346,7 +346,7 @@ export const EQUIPMENT_DATABASE = {
   tool_quantum_planner: {
     id: 'tool_quantum_planner',
     name: 'Quantum Planner',
-    description: 'Advanced AI-assisted task optimization',
+    description: 'Advanced AI-assisted task optimisation',
     slot: 'tool',
     tier: 2,
     rarity: 'rare',

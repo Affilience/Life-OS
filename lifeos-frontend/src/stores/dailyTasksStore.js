@@ -1,7 +1,7 @@
 /**
  * Daily Tasks Store
  * Manages daily planned tasks with "Plan Tomorrow" functionality
- * Tasks are organized by date and shown on Dashboard and Quests page
+ * Tasks are organised by date and shown on Dashboard and Quests page
  */
 
 import { create } from 'zustand';
@@ -188,7 +188,7 @@ export const PRIORITY_LEVELS = {
 const useDailyTasksStore = create(
   persist(
     (set, get) => ({
-      // Tasks organized by date: { 'YYYY-MM-DD': [tasks] }
+      // Tasks organised by date: { 'YYYY-MM-DD': [tasks] }
       tasksByDate: {},
 
       // Initialize from Supabase - merges with local data and syncs unsynced tasks

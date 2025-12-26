@@ -5,7 +5,7 @@
  * Features:
  * - Core stats display with animated bars
  * - Skill point allocation preview
- * - Stat boost visualization
+ * - Stat boost visualisation
  */
 
 import React, { useState, useCallback, useEffect } from 'react';

@@ -62,7 +62,7 @@ export default function JournalSetup({ onComplete, onSkip }) {
       {/* Step 1: Journal Style */}
       <SetupStep
         title="How do you like to journal?"
-        description="We'll customize your experience"
+        description="We'll customise your experience"
       >
         {({ onNext }) => (
           <>

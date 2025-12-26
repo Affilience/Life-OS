@@ -1,5 +1,5 @@
 /**
- * MacroGoalsModal - Allows users to customize their daily macronutrient goals
+ * MacroGoalsModal - Allows users to customise their daily macronutrient goals
  */
 
 import { useState } from 'react';

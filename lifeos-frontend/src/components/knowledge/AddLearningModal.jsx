@@ -305,7 +305,7 @@ const AddLearningModal = ({ isOpen, onClose, onSubmit }) => {
               placeholder="Enter tags separated by commas..."
             />
             <div className="help-text">
-              Add relevant tags to categorize this content
+              Add relevant tags to categorise this content
             </div>
           </div>
         </div>

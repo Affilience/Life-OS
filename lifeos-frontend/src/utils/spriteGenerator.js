@@ -240,7 +240,7 @@ export function generateIdleAnimation(tier, equippedItems) {
   return frames;
 }
 
-// Generate sprite sheet (for optimization)
+// Generate sprite sheet (for optimisation)
 export function generateSpriteSheet(tier, equippedItems) {
   const frames = 4; // idle animation frames
   const canvas = createCanvas(SPRITE_SIZE * frames, SPRITE_SIZE);

@@ -32,7 +32,7 @@ export default function DashboardSettingsModal() {
       <div className="bg-[#1a1724] border border-white/10 rounded-2xl w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h2 className="text-lg font-bold text-white">Customize Dashboard</h2>
+          <h2 className="text-lg font-bold text-white">Customise Dashboard</h2>
           <button
             onClick={closeSettings}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"

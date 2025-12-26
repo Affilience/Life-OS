@@ -76,7 +76,7 @@ const RecoveryTab = () => {
       id: 1,
       type: 'sleep',
       priority: 'high',
-      title: 'Prioritize Sleep Quality',
+      title: 'Prioritise Sleep Quality',
       description: 'Your HRV is below optimal. Focus on getting 8+ hours of quality sleep tonight.',
       icon: '😴',
       action: 'Set bedtime reminder for 10:30 PM'

@@ -62,7 +62,7 @@ export function resetPerformanceStats() {
 }
 
 /**
- * Build context for Nova with caching and optimization
+ * Build context for Nova with caching and optimisation
  *
  * @param {string} query - The user's query
  * @param {Object} options - Configuration options

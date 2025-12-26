@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
  * Lightweight line/area chart component for dashboards
  * No heavy dependencies - pure SVG with percentage-based positioning
  *
- * @param {boolean} baselineZero - If true, y-axis starts at 0. If false (default), uses data min for better visualization.
+ * @param {boolean} baselineZero - If true, y-axis starts at 0. If false (default), uses data min for better visualisation.
  */
 export default function MiniLineChart({ data, color = 'purple', filled = true, showDots = true, height = 80, baselineZero = false }) {
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -31,7 +31,7 @@ export default function MiniLineChart({ data, color = 'purple', filled = true, s
   const dataMax = Math.max(...data.map(d => d.value));
   const dataMin = Math.min(...data.map(d => d.value));
 
-  // Use actual data range for better visualization, with 10% padding
+  // Use actual data range for better visualisation, with 10% padding
   const rangePadding = (dataMax - dataMin) * 0.1 || dataMax * 0.1;
   const minValue = baselineZero ? 0 : Math.max(0, dataMin - rangePadding);
   const maxValue = dataMax + rangePadding;

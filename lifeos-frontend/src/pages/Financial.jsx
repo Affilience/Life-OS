@@ -1,6 +1,6 @@
 /**
  * Nebula - Financial tracking and management
- * AI-powered transaction parsing, beautiful visualizations, and insights
+ * AI-powered transaction parsing, beautiful visualisations, and insights
  */
 
 import React from 'react';

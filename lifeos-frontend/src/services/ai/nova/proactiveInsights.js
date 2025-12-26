@@ -295,7 +295,7 @@ function checkWorkoutPatterns(context) {
       type: INSIGHT_TYPES.CELEBRATION,
       priority: INSIGHT_PRIORITY.LOW,
       title: 'Strong training week!',
-      message: `${workoutsThisWeek} workouts already this week - you're crushing it. Remember to prioritize recovery.`,
+      message: `${workoutsThisWeek} workouts already this week - you're crushing it. Remember to prioritise recovery.`,
       celebratory: true,
     });
   }

@@ -63,7 +63,7 @@ export const BOSS_DATABASE = {
     xpReward: 350,
     creditsReward: 175,
     sprite: '/assets/bosses/boss_skeleton_knight.png',
-    description: 'An undead warrior bound by cursed armor',
+    description: 'An undead warrior bound by cursed armour',
     lore: 'Once a noble knight, now cursed to guard the realm of broken promises.',
     attackAnimation: 'slash',
     attackName: 'Oath Breaker',

@@ -770,7 +770,7 @@ export default function NovaWidget() {
               <button
                 onClick={closeExpandedChat}
                 className="p-1 hover:bg-bg-hover rounded transition-colors text-text-secondary hover:text-white"
-                title="Minimize"
+                title="Minimise"
               >
                 <X size={16} />
               </button>

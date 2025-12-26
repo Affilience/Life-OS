@@ -1,6 +1,6 @@
 /**
  * Projects View - Cosmic Project Planning System
- * "Stellar Pipeline" - Kanban-style project visualization
+ * "Stellar Pipeline" - Kanban-style project visualisation
  */
 
 import React, { useState } from 'react';

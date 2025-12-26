@@ -581,7 +581,7 @@ export default function CollectionsView({ initialCollectionId = null }) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-white">Collections</h2>
-          <p className="text-sm text-white/50">Organize your knowledge into themed collections</p>
+          <p className="text-sm text-white/50">Organise your knowledge into themed collections</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -598,7 +598,7 @@ export default function CollectionsView({ initialCollectionId = null }) {
           <FolderOpen size={64} className="mx-auto text-white/20 mb-4" />
           <h3 className="text-xl font-medium text-white/60 mb-2">No collections yet</h3>
           <p className="text-sm text-white/40 mb-6">
-            Create collections to organize your books, notes, and media by topic or theme
+            Create collections to organise your books, notes, and media by topic or theme
           </p>
           <button
             onClick={() => setShowCreateModal(true)}

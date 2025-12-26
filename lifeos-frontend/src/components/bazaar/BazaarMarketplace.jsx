@@ -365,12 +365,12 @@ const IRL_REWARDS = [
     rarity: 'common',
     price: 50,
     icon: '☕',
-    suggestion: 'Go get your favorite coffee!',
+    suggestion: 'Go get your favourite coffee!',
   },
   {
     id: 'irl_snack',
     name: 'Snack Time',
-    description: 'Enjoy a favorite snack guilt-free',
+    description: 'Enjoy a favourite snack guilt-free',
     category: 'irl_reward',
     rarity: 'common',
     price: 75,
@@ -385,7 +385,7 @@ const IRL_REWARDS = [
     rarity: 'uncommon',
     price: 150,
     icon: '🎮',
-    suggestion: 'Fire up your favorite game!',
+    suggestion: 'Fire up your favourite game!',
   },
   {
     id: 'irl_movie',
@@ -405,7 +405,7 @@ const IRL_REWARDS = [
     rarity: 'rare',
     price: 400,
     icon: '🍽️',
-    suggestion: 'Book a table at your favorite restaurant!',
+    suggestion: 'Book a table at your favourite restaurant!',
   },
   {
     id: 'irl_spa',

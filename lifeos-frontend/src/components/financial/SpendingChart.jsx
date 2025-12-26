@@ -1,5 +1,5 @@
 /**
- * SpendingChart - Spending trend visualization
+ * SpendingChart - Spending trend visualisation
  * Area chart showing spending over time
  */
 

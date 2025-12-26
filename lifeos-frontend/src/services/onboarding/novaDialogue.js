@@ -130,7 +130,7 @@ export const DIALOGUE = {
       complete: "Your calendar is ready to help you manage time!"
     },
     knowledge: {
-      intro: "Let's organize your learning journey!",
+      intro: "Let's organise your learning journey!",
       questions: {
         interests: "What topics interest you most?",
         format: "How do you prefer to learn?"

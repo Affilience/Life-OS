@@ -267,6 +267,9 @@ export function getPersonalityAdaptations() {
   const preferences = loadPreferences();
   const adaptations = [];
 
+  // CRITICAL: Always include anti-asterisk rule
+  adaptations.push('NEVER use asterisks for actions (like *smiles* or *thinks*) - this comes across as creepy. Just speak naturally.');
+
   // Response length
   if (preferences.responseLength.confidence > 0.6) {
     switch (preferences.responseLength.preference) {

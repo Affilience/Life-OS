@@ -37,7 +37,7 @@ export default function Health() {
       <div className="px-4 pt-6">
         <PageHeader
           title="Health"
-          subtitle="Track workouts, nutrition, and cardio to optimize your fitness"
+          subtitle="Track workouts, nutrition, and cardio to optimise your fitness"
           icon={HeartPulse}
           module="health"
           variant="elevated"

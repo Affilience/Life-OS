@@ -241,7 +241,7 @@ export function applyEquipmentDye(sourceImage, targetColor) {
 
 /**
  * Pre-composite all equipment layers into single cached image
- * This optimization should be used when equipment doesn't change frequently
+ * This optimisation should be used when equipment doesn't change frequently
  * @param {Object} equippedItems - Map of slot -> equipment data
  * @param {Object} sprites - Loaded sprite images
  * @param {number} size - Render size
