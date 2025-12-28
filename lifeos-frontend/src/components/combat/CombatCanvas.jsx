@@ -2241,6 +2241,7 @@ const CombatCanvas = forwardRef(({
       startY = height * 0.5,
       targetX = width * 0.7,
       targetY = height * 0.5,
+      onImpact = null, // Callback when attack visually impacts target
     } = options;
 
     const elementColors = {
@@ -2274,6 +2275,7 @@ const CombatCanvas = forwardRef(({
         setTimeout(() => {
           screenShake(12, 200);
           createParticleBurst(cx, cy, { count: 15, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 100);
         break;
 
@@ -2288,6 +2290,7 @@ const CombatCanvas = forwardRef(({
         setTimeout(() => {
           screenShake(10, 180);
           createParticleBurst(cx, cy, { count: 12, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 80);
         break;
 
@@ -2302,6 +2305,7 @@ const CombatCanvas = forwardRef(({
         setTimeout(() => {
           screenShake(10, 180);
           createParticleBurst(cx, cy, { count: 12, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 80);
         break;
 
@@ -2316,6 +2320,7 @@ const CombatCanvas = forwardRef(({
         setTimeout(() => {
           screenShake(11, 190);
           createParticleBurst(cx, cy, { count: 14, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 90);
         break;
 
@@ -2336,6 +2341,7 @@ const CombatCanvas = forwardRef(({
             direction: -Math.PI / 2,
             spread: Math.PI / 2,
           });
+          if (onImpact) onImpact();
         }, 100);
         break;
 
@@ -2356,6 +2362,7 @@ const CombatCanvas = forwardRef(({
             direction: Math.PI / 2,
             spread: Math.PI / 2,
           });
+          if (onImpact) onImpact();
         }, 100);
         break;
 
@@ -2380,6 +2387,7 @@ const CombatCanvas = forwardRef(({
           screenShake(15, 250);
           screenFlash(colors.main, 80, 0.4);
           createParticleBurst(cx, cy, { count: 25, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 160);
         break;
 
@@ -2402,6 +2410,7 @@ const CombatCanvas = forwardRef(({
         }, 120);
         setTimeout(() => {
           createParticleBurst(cx, cy, { count: 18, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 200);
         break;
 
@@ -2421,6 +2430,7 @@ const CombatCanvas = forwardRef(({
         setTimeout(() => {
           createParticleBurst(cx, cy, { count: 22, color: colors.main, glowColor: colors.glow });
           screenFlash(colors.main, 60, 0.3);
+          if (onImpact) onImpact();
         }, 300);
         break;
 
@@ -2440,6 +2450,7 @@ const CombatCanvas = forwardRef(({
                 screenFlash(colors.main, 100, 0.5);
                 createParticleBurst(cx, cy, { count: 30, color: colors.main, glowColor: colors.glow, minSpeed: 5, maxSpeed: 15 });
                 freezeFrame(40);
+                if (onImpact) onImpact();
               }, 50);
             }
           }, i * 80);
@@ -2463,6 +2474,7 @@ const CombatCanvas = forwardRef(({
         }
         setTimeout(() => {
           createParticleBurst(cx, cy, { count: 35, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 450);
         break;
 
@@ -2487,6 +2499,7 @@ const CombatCanvas = forwardRef(({
             spread: Math.PI / 2,
             direction: Math.atan2(targetY - startY, targetX - startX),
           });
+          if (onImpact) onImpact();
         }, 80);
         break;
 
@@ -2512,6 +2525,7 @@ const CombatCanvas = forwardRef(({
             minSpeed: 5,
             maxSpeed: 12,
           });
+          if (onImpact) onImpact();
         }, 60);
         break;
 
@@ -2534,6 +2548,7 @@ const CombatCanvas = forwardRef(({
         }
         setTimeout(() => {
           createParticleBurst(cx + 20, cy, { count: 20, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 350);
         break;
 
@@ -5005,12 +5020,13 @@ const CombatCanvas = forwardRef(({
         setTimeout(() => {
           screenShake(12, 200);
           createParticleBurst(cx, cy, { count: 15, color: colors.main, glowColor: colors.glow });
+          if (onImpact) onImpact();
         }, 100);
     }
   }, [width, height, createDynamicSlash, createParticleBurst, createShockwave,
       screenShake, screenFlash, freezeFrame, easeOutCubic]);
 
-  const playAbility = useCallback((abilityType, x = width / 2, y = height / 2) => {
+  const playAbility = useCallback((abilityType, x = width / 2, y = height / 2, onImpact = null) => {
     const centerX = width / 2;
     const centerY = height / 2;
     const targetX = x;
@@ -5028,13 +5044,18 @@ const CombatCanvas = forwardRef(({
           size: 15,
           speed: 10,
           element: 'fire',
-          onImpact: (ix, iy) => createFireExplosion(ix, iy),
+          onImpact: (ix, iy) => {
+            createFireExplosion(ix, iy);
+            if (onImpact) onImpact();
+          },
         });
         break;
 
       case 'meteor':
         elementalSounds.meteor_shower();
         createMeteor(targetX, targetY);
+        // Meteor impact happens after ~800ms (fall animation)
+        setTimeout(() => { if (onImpact) onImpact(); }, 800);
         break;
 
       case 'inferno':
@@ -5049,7 +5070,11 @@ const CombatCanvas = forwardRef(({
               coreColor: 0xffffaa,
               size: 10 + Math.random() * 8,
               speed: 8 + Math.random() * 4,
-              onImpact: (ix, iy) => createFireExplosion(ix, iy),
+              onImpact: (ix, iy) => {
+                createFireExplosion(ix, iy);
+                // Call onImpact on first hit
+                if (i === 0 && onImpact) onImpact();
+              },
             });
           }, i * 120);
         }
@@ -5058,11 +5083,13 @@ const CombatCanvas = forwardRef(({
       case 'flame_burst':
         elementalSounds.inferno_blast();
         createFireExplosion(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       case 'blazing_combo':
         elementalSounds.phoenix_flame();
         createComboExplosion(targetX, targetY, 6);
+        if (onImpact) onImpact();
         break;
 
       // ========== ICE ABILITIES ==========
@@ -5075,7 +5102,10 @@ const CombatCanvas = forwardRef(({
           size: 12,
           speed: 14,
           element: 'ice',
-          onImpact: (ix, iy) => createIceExplosion(ix, iy),
+          onImpact: (ix, iy) => {
+            createIceExplosion(ix, iy);
+            if (onImpact) onImpact();
+          },
         });
         break;
 
@@ -5086,6 +5116,8 @@ const CombatCanvas = forwardRef(({
             const offsetX = (Math.random() - 0.5) * 120;
             const offsetY = (Math.random() - 0.5) * 80;
             createIceExplosion(targetX + offsetX, targetY + offsetY);
+            // Call onImpact on first explosion
+            if (i === 0 && onImpact) onImpact();
           }, i * 150);
         }
         screenShake(5, 1500);
@@ -5096,12 +5128,16 @@ const CombatCanvas = forwardRef(({
         createIceExplosion(targetX, targetY);
         createShockwave(targetX, targetY, { radius: 120, wavelength: 40, amplitude: 25, duration: 600 });
         freezeFrame(80);
+        if (onImpact) onImpact();
         break;
 
       case 'ice_beam':
         elementalSounds.absolute_zero();
         createLaserBeam(leftEdge, centerY, targetX, targetY, 0x00ddff);
-        setTimeout(() => createIceExplosion(targetX, targetY), 100);
+        setTimeout(() => {
+          createIceExplosion(targetX, targetY);
+          if (onImpact) onImpact();
+        }, 100);
         break;
 
       // ========== LIGHTNING ABILITIES ==========
@@ -5110,12 +5146,15 @@ const CombatCanvas = forwardRef(({
         screenFlash(0xffffaa, 50, 0.9);
         setTimeout(() => {
           createLightningExplosion(targetX, targetY);
+          if (onImpact) onImpact();
         }, 30);
         break;
 
       case 'chain_lightning':
         elementalSounds.storm_surge();
         createChainLightning(leftEdge, centerY);
+        // Chain lightning impacts after first arc (approx 200ms)
+        setTimeout(() => { if (onImpact) onImpact(); }, 200);
         break;
 
       case 'thunder_storm':
@@ -5124,6 +5163,8 @@ const CombatCanvas = forwardRef(({
           setTimeout(() => {
             const offsetX = (Math.random() - 0.5) * 150;
             createLightningExplosion(targetX + offsetX, targetY);
+            // Call onImpact on first strike
+            if (i === 0 && onImpact) onImpact();
           }, i * 200);
         }
         break;
@@ -5144,6 +5185,7 @@ const CombatCanvas = forwardRef(({
         });
         screenFlash(0xffffaa, 40, 0.8);
         screenShake(12, 100);
+        if (onImpact) onImpact();
         break;
 
       // ========== DARK/SHADOW ABILITIES ==========
@@ -5156,30 +5198,40 @@ const CombatCanvas = forwardRef(({
           size: 18,
           speed: 7,
           element: 'dark',
-          onImpact: (ix, iy) => createDarkExplosion(ix, iy),
+          onImpact: (ix, iy) => {
+            createDarkExplosion(ix, iy);
+            if (onImpact) onImpact();
+          },
         });
         break;
 
       case 'black_hole':
         elementalSounds.oblivion();
         createBlackHole(targetX, targetY);
+        // Black hole pulls in then collapses - impact at start of pull
+        setTimeout(() => { if (onImpact) onImpact(); }, 300);
         break;
 
       case 'soul_drain':
         elementalSounds.nightmare_grasp();
         createDebuffEffect(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       case 'void_rift':
         elementalSounds.void_rupture();
         createDarkExplosion(targetX, targetY);
         createShockwave(targetX, targetY, { radius: 100, wavelength: 60, amplitude: 40, duration: 800 });
+        if (onImpact) onImpact();
         break;
 
       case 'dark_tendrils':
         elementalSounds.dark_pulse();
         createDebuffEffect(targetX, targetY);
-        setTimeout(() => createDarkExplosion(targetX, targetY), 300);
+        setTimeout(() => {
+          createDarkExplosion(targetX, targetY);
+          if (onImpact) onImpact();
+        }, 300);
         break;
 
       // ========== HOLY/LIGHT ABILITIES ==========
@@ -5188,6 +5240,7 @@ const CombatCanvas = forwardRef(({
         elementalSounds.holy_light();
         screenFlash(0xffffcc, 100, 0.4);
         createHolyBeam(targetX, targetY);
+        if (onImpact) onImpact();
         // Floating sparkles rising upward
         setTimeout(() => {
           createParticleBurst(targetX, targetY, {
@@ -5214,9 +5267,10 @@ const CombatCanvas = forwardRef(({
             const offsetX = (i - 2) * 40;
             createHolyBeam(targetX + offsetX, targetY);
             if (i === 2) {
-              // Center pillar is biggest
+              // Center pillar is biggest - this is the impact moment
               screenShake(20, 400);
               freezeFrame(80);
+              if (onImpact) onImpact();
             }
           }, i * 100);
         }
@@ -5299,6 +5353,7 @@ const CombatCanvas = forwardRef(({
           duration: 600,
         });
         freezeFrame(40);
+        if (onImpact) onImpact();
         break;
 
       case 'radiant_burst':
@@ -5366,6 +5421,7 @@ const CombatCanvas = forwardRef(({
           }
         }
         screenFlash(0xffffcc, 150, 0.6);
+        if (onImpact) onImpact();
         break;
 
       case 'sanctuary':
@@ -5445,6 +5501,7 @@ const CombatCanvas = forwardRef(({
           }
         }
         screenFlash(0xffffcc, 100, 0.3);
+        if (onImpact) onImpact();
         break;
 
       case 'consecrate':
@@ -5538,6 +5595,7 @@ const CombatCanvas = forwardRef(({
           }
         }
         screenFlash(0xffffaa, 80, 0.4);
+        if (onImpact) onImpact();
         break;
 
       case 'angels_wrath':
@@ -5649,12 +5707,15 @@ const CombatCanvas = forwardRef(({
         }
         screenFlash(0xffffcc, 120, 0.5);
         screenShake(8, 200);
+        // Impact when feathers release
+        setTimeout(() => { if (onImpact) onImpact(); }, 300);
         break;
 
       // ========== EARTH ABILITIES ==========
       case 'earthquake':
         elementalSounds.earthquake();
         createEarthExplosion(targetX, targetY);
+        if (onImpact) onImpact();
         for (let i = 0; i < 4; i++) {
           setTimeout(() => {
             screenShake(15 - i * 3, 200);
@@ -5679,7 +5740,10 @@ const CombatCanvas = forwardRef(({
           coreColor: 0xaaaaaa,
           size: 20,
           speed: 8,
-          onImpact: (ix, iy) => createEarthExplosion(ix, iy),
+          onImpact: (ix, iy) => {
+            createEarthExplosion(ix, iy);
+            if (onImpact) onImpact();
+          },
         });
         break;
 
@@ -5687,20 +5751,30 @@ const CombatCanvas = forwardRef(({
         elementalSounds.tectonic_slam();
         createEarthExplosion(targetX, targetY);
         freezeFrame(50);
+        if (onImpact) onImpact();
         break;
 
       case 'landslide':
         elementalSounds.meteor_shower();
-        for (let i = 0; i < 5; i++) {
-          setTimeout(() => {
-            createProjectile(leftEdge - 50 + i * 30, -30, targetX + (i - 2) * 30, targetY, {
-              color: 0x8b7355,
-              glowColor: 0x5c4033,
-              size: 15 + Math.random() * 10,
-              speed: 10,
-              onImpact: (ix, iy) => createEarthExplosion(ix, iy),
-            });
-          }, i * 100);
+        {
+          let firstImpact = true;
+          for (let i = 0; i < 5; i++) {
+            setTimeout(() => {
+              createProjectile(leftEdge - 50 + i * 30, -30, targetX + (i - 2) * 30, targetY, {
+                color: 0x8b7355,
+                glowColor: 0x5c4033,
+                size: 15 + Math.random() * 10,
+                speed: 10,
+                onImpact: (ix, iy) => {
+                  createEarthExplosion(ix, iy);
+                  if (firstImpact && onImpact) {
+                    onImpact();
+                    firstImpact = false;
+                  }
+                },
+              });
+            }, i * 100);
+          }
         }
         break;
 
@@ -5714,17 +5788,20 @@ const CombatCanvas = forwardRef(({
           curvature: 0.5,
         });
         createWindExplosion(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       case 'tornado':
         elementalSounds.whirlpool(); // Swirling wind sound
         createTornado(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       case 'gale_force':
         elementalSounds.wave_crash(); // Powerful gust sound
         createWindExplosion(targetX, targetY);
         createShockwave(targetX, targetY, { radius: 100, wavelength: 25, amplitude: 15, duration: 400 });
+        if (onImpact) onImpact();
         break;
 
       case 'air_cutter':
@@ -5737,6 +5814,8 @@ const CombatCanvas = forwardRef(({
               maxThickness: 15,
               curvature: 0.2,
             });
+            // Call onImpact on first slash
+            if (i === 0 && onImpact) onImpact();
           }, i * 80);
         }
         break;
@@ -5750,7 +5829,10 @@ const CombatCanvas = forwardRef(({
           coreColor: 0xaaddff,
           size: 14,
           speed: 11,
-          onImpact: (ix, iy) => createWaterExplosion(ix, iy),
+          onImpact: (ix, iy) => {
+            createWaterExplosion(ix, iy);
+            if (onImpact) onImpact();
+          },
         });
         break;
 
@@ -5759,12 +5841,16 @@ const CombatCanvas = forwardRef(({
         createWaterExplosion(targetX, targetY);
         createShockwave(targetX, targetY, { radius: 120, wavelength: 50, amplitude: 30, duration: 700 });
         screenShake(12, 400);
+        if (onImpact) onImpact();
         break;
 
       case 'hydro_pump':
         elementalSounds.tidal_surge();
         createLaserBeam(leftEdge, centerY, targetX, targetY, 0x4488cc);
-        setTimeout(() => createWaterExplosion(targetX, targetY), 100);
+        setTimeout(() => {
+          createWaterExplosion(targetX, targetY);
+          if (onImpact) onImpact();
+        }, 100);
         break;
 
       case 'bubble_storm':
@@ -5782,6 +5868,8 @@ const CombatCanvas = forwardRef(({
               gravity: -0.1,
               duration: 1000,
             });
+            // Call onImpact on first burst
+            if (i === 0 && onImpact) onImpact();
           }, i * 100);
         }
         break;
@@ -5790,6 +5878,7 @@ const CombatCanvas = forwardRef(({
       case 'poison_cloud':
         combatStateSounds.poison_tick();
         createPoisonExplosion(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       case 'toxic_spit':
@@ -5800,32 +5889,47 @@ const CombatCanvas = forwardRef(({
           coreColor: 0x88ff88,
           size: 12,
           speed: 9,
-          onImpact: (ix, iy) => createPoisonExplosion(ix, iy),
+          onImpact: (ix, iy) => {
+            createPoisonExplosion(ix, iy);
+            if (onImpact) onImpact();
+          },
         });
         break;
 
       case 'venom_spray':
         elementalSounds.thorn_spray();
-        for (let i = 0; i < 5; i++) {
-          const angle = -Math.PI / 6 + (i / 4) * Math.PI / 3;
-          const endX = leftEdge + Math.cos(angle) * 300;
-          const endY = centerY + Math.sin(angle) * 150;
-          setTimeout(() => {
-            createProjectile(leftEdge, centerY, endX, endY, {
-              color: 0x44cc44,
-              glowColor: 0x22aa22,
-              size: 8,
-              speed: 12,
-              onImpact: (ix, iy) => createPoisonExplosion(ix, iy),
-            });
-          }, i * 50);
+        {
+          let firstImpact = true;
+          for (let i = 0; i < 5; i++) {
+            const angle = -Math.PI / 6 + (i / 4) * Math.PI / 3;
+            const endX = leftEdge + Math.cos(angle) * 300;
+            const endY = centerY + Math.sin(angle) * 150;
+            setTimeout(() => {
+              createProjectile(leftEdge, centerY, endX, endY, {
+                color: 0x44cc44,
+                glowColor: 0x22aa22,
+                size: 8,
+                speed: 12,
+                onImpact: (ix, iy) => {
+                  createPoisonExplosion(ix, iy);
+                  if (firstImpact && onImpact) {
+                    onImpact();
+                    firstImpact = false;
+                  }
+                },
+              });
+            }, i * 50);
+          }
         }
         break;
 
       case 'plague':
         combatStateSounds.debuff_apply();
         createDebuffEffect(targetX, targetY);
-        setTimeout(() => createPoisonExplosion(targetX, targetY), 200);
+        setTimeout(() => {
+          createPoisonExplosion(targetX, targetY);
+          if (onImpact) onImpact();
+        }, 200);
         break;
 
       // ========== ARCANE ABILITIES ==========
@@ -5837,36 +5941,49 @@ const CombatCanvas = forwardRef(({
           coreColor: 0xffaaff,
           size: 14,
           speed: 12,
-          onImpact: (ix, iy) => createArcaneExplosion(ix, iy),
+          onImpact: (ix, iy) => {
+            createArcaneExplosion(ix, iy);
+            if (onImpact) onImpact();
+          },
         });
         break;
 
       case 'magic_missile':
         elementalSounds.arcane_torrent();
-        for (let i = 0; i < 4; i++) {
-          setTimeout(() => {
-            createProjectile(leftEdge, centerY + (i - 1.5) * 30, targetX, targetY, {
-              color: 0xff44ff,
-              glowColor: 0xcc22cc,
-              size: 8,
-              speed: 15,
-              onImpact: (ix, iy) => {
-                createParticleBurst(ix, iy, {
-                  count: 10,
-                  color: 0xff44ff,
-                  glowColor: 0xcc22cc,
-                  duration: 400,
-                });
-              },
-            });
-          }, i * 80);
+        {
+          let firstImpact = true;
+          for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+              createProjectile(leftEdge, centerY + (i - 1.5) * 30, targetX, targetY, {
+                color: 0xff44ff,
+                glowColor: 0xcc22cc,
+                size: 8,
+                speed: 15,
+                onImpact: (ix, iy) => {
+                  createParticleBurst(ix, iy, {
+                    count: 10,
+                    color: 0xff44ff,
+                    glowColor: 0xcc22cc,
+                    duration: 400,
+                  });
+                  if (firstImpact && onImpact) {
+                    onImpact();
+                    firstImpact = false;
+                  }
+                },
+              });
+            }, i * 80);
+          }
         }
         break;
 
       case 'arcane_beam':
         elementalSounds.celestial_beam();
         createLaserBeam(leftEdge, centerY, targetX, targetY, 0xff44ff);
-        setTimeout(() => createArcaneExplosion(targetX, targetY), 100);
+        setTimeout(() => {
+          createArcaneExplosion(targetX, targetY);
+          if (onImpact) onImpact();
+        }, 100);
         break;
 
       case 'mystic_explosion':
@@ -5874,43 +5991,51 @@ const CombatCanvas = forwardRef(({
         createArcaneExplosion(targetX, targetY);
         createShockwave(targetX, targetY, { radius: 100, amplitude: 35, duration: 500 });
         freezeFrame(50);
+        if (onImpact) onImpact();
         break;
 
       // ========== SUPPORT ABILITIES ==========
       case 'heal':
         combatStateSounds.heal();
         createHealEffect(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       case 'greater_heal':
         combatStateSounds.revive();
         createHealEffect(targetX, targetY);
         createHolyExplosion(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       case 'shield':
         combatStateSounds.block();
         createShieldEffect(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       case 'power_buff':
         combatStateSounds.buff_apply();
         createBuffEffect(targetX, targetY, 0xffaa00);
+        if (onImpact) onImpact();
         break;
 
       case 'speed_buff':
         combatStateSounds.buff_apply();
         createBuffEffect(targetX, targetY, 0x00ffaa);
+        if (onImpact) onImpact();
         break;
 
       case 'magic_buff':
         combatStateSounds.buff_apply();
         createBuffEffect(targetX, targetY, 0xaa44ff);
+        if (onImpact) onImpact();
         break;
 
       case 'curse':
         combatStateSounds.debuff_apply();
         createDebuffEffect(targetX, targetY);
+        if (onImpact) onImpact();
         break;
 
       // ========== ULTIMATE ABILITIES ==========
@@ -5923,6 +6048,7 @@ const CombatCanvas = forwardRef(({
           createShockwave(targetX, targetY, { radius: 200, wavelength: 60, amplitude: 50, duration: 800 });
           screenShake(30, 500);
           freezeFrame(100);
+          if (onImpact) onImpact();
         }, 150);
         setTimeout(() => {
           for (let i = 0; i < 8; i++) {
@@ -5943,6 +6069,7 @@ const CombatCanvas = forwardRef(({
           createIceExplosion(targetX, targetY);
           createShockwave(targetX, targetY, { radius: 180, wavelength: 50, amplitude: 45, duration: 700 });
           freezeFrame(150);
+          if (onImpact) onImpact();
         }, 200);
         break;
 
@@ -5954,6 +6081,8 @@ const CombatCanvas = forwardRef(({
             const offsetX = (Math.random() - 0.5) * 150;
             createLightningExplosion(targetX + offsetX, targetY);
             createHolyExplosion(targetX + offsetX, targetY);
+            // Call onImpact on first strike
+            if (i === 0 && onImpact) onImpact();
           }, i * 150);
         }
         screenShake(20, 1000);
@@ -5969,6 +6098,7 @@ const CombatCanvas = forwardRef(({
           createShockwave(targetX, targetY, { radius: 150, wavelength: 70, amplitude: 50, duration: 900 });
           screenShake(25, 600);
           freezeFrame(100);
+          if (onImpact) onImpact();
         }, 2000);
         break;
 
@@ -5976,6 +6106,7 @@ const CombatCanvas = forwardRef(({
         // All elements at once
         elementalSounds.fire_burst();
         createFireExplosion(targetX - 40, targetY - 30);
+        if (onImpact) onImpact(); // Impact on first explosion
         setTimeout(() => {
           elementalSounds.ice_shatter();
           createIceExplosion(targetX + 40, targetY - 30);
@@ -6003,6 +6134,7 @@ const CombatCanvas = forwardRef(({
       default:
         createParticleBurst(targetX, targetY, { count: 25 });
         screenFlash(0xffffff, 80, 0.3);
+        if (onImpact) onImpact();
     }
   }, [width, height, createProjectile, createFireExplosion, createIceExplosion,
       createLightningExplosion, createDarkExplosion, createHolyExplosion,

@@ -2321,19 +2321,12 @@ export default function BossBattleArena({ bossId, onClose }) {
 
     // Use PixiJS for spectacular weapon attack effects
     if (combatCanvasRef.current) {
-      combatCanvasRef.current.playWeaponAttack({
-        element,
-        attackType,
-        targetX: bossX,
-        targetY: bossY,
-      });
+      // Show damage number when attack visually impacts the target
+      const showDamageOnImpact = () => {
+        const id = damageIdRef.current++;
+        const randomX = 40 + Math.random() * 80;
+        const randomY = 40 + Math.random() * 80;
 
-      // Show damage number on boss
-      const id = damageIdRef.current++;
-      const randomX = 40 + Math.random() * 80;
-      const randomY = 40 + Math.random() * 80;
-
-      setTimeout(() => {
         setDamageNumbers(prev => [...prev, {
           id,
           damage,
@@ -2346,7 +2339,15 @@ export default function BossBattleArena({ bossId, onClose }) {
         setTimeout(() => {
           setDamageNumbers(prev => prev.filter(d => d.id !== id));
         }, isCrit ? 1000 : 600);
-      }, 150);
+      };
+
+      combatCanvasRef.current.playWeaponAttack({
+        element,
+        attackType,
+        targetX: bossX,
+        targetY: bossY,
+        onImpact: showDamageOnImpact,
+      });
     } else {
       // Fallback to anime.js projectiles
       const projId = projectileIdRef.current++;
@@ -2409,26 +2410,8 @@ export default function BossBattleArena({ bossId, onClose }) {
     const bossX = 870;
     const bossY = 140;
 
-    // Use PixiJS for spectacular ability effects
-    if (combatCanvasRef.current && weaponAbility.abilityId) {
-      combatCanvasRef.current.playAbility(weaponAbility.abilityId, bossX, bossY);
-    } else {
-      // Fallback to old animation system
-      setActiveAbilityAnimation({
-        ability: weaponAbility,
-        position: { x: bossX, y: bossY },
-      });
-    }
-
-    // Play ability sound (if available)
-    if (sounds.powerAttack) {
-      sounds.powerAttack();
-    } else {
-      sounds.attackHit();
-    }
-
-    // Apply damage after animation duration
-    setTimeout(() => {
+    // Show damage when ability visually impacts the target
+    const showAbilityDamageOnImpact = () => {
       // Show damage number
       const id = damageIdRef.current++;
       setDamageNumbers(prev => [...prev, {
@@ -2452,7 +2435,27 @@ export default function BossBattleArena({ bossId, onClose }) {
         setActiveAbilityAnimation(null);
         setIsAbilityAnimating(false);
       }, 1000);
-    }, weaponAbility.duration || 600);
+    };
+
+    // Use PixiJS for spectacular ability effects
+    if (combatCanvasRef.current && weaponAbility.abilityId) {
+      combatCanvasRef.current.playAbility(weaponAbility.abilityId, bossX, bossY, showAbilityDamageOnImpact);
+    } else {
+      // Fallback to old animation system
+      setActiveAbilityAnimation({
+        ability: weaponAbility,
+        position: { x: bossX, y: bossY },
+      });
+      // Use fixed timeout for fallback
+      setTimeout(showAbilityDamageOnImpact, weaponAbility.duration || 600);
+    }
+
+    // Play ability sound (if available)
+    if (sounds.powerAttack) {
+      sounds.powerAttack();
+    } else {
+      sounds.attackHit();
+    }
   }, [isBattleActive, isCountdown, battleResult, battleEnded, canUseAbility, weaponAbility, currentBattle, playerAttack]);
 
   // Handle elemental ability use
@@ -2471,24 +2474,12 @@ export default function BossBattleArena({ bossId, onClose }) {
     const bossX = 870;
     const bossY = 140;
 
-    // Play PixiJS effect
-    if (combatCanvasRef.current) {
-      combatCanvasRef.current.playAbility(ability.id, bossX, bossY);
-    }
-
-    // Play sound
-    if (sounds.powerAttack) {
-      sounds.powerAttack();
-    } else {
-      sounds.attackHit();
-    }
-
-    // Calculate and apply damage
+    // Calculate damage before setting up callback
     const baseDamage = currentBattle?.playerDamage || 10;
     const abilityDamage = calcElementalDamage(ability, baseDamage);
 
-    // Apply damage after animation
-    setTimeout(() => {
+    // Show damage when ability visually impacts the target
+    const showElementalDamageOnImpact = () => {
       // Show damage number
       const id = damageIdRef.current++;
       setDamageNumbers(prev => [...prev, {
@@ -2513,7 +2504,22 @@ export default function BossBattleArena({ bossId, onClose }) {
       setTimeout(() => {
         setDamageNumbers(prev => prev.filter(d => d.id !== id));
       }, 1000);
-    }, 400);
+    };
+
+    // Play PixiJS effect with onImpact callback
+    if (combatCanvasRef.current) {
+      combatCanvasRef.current.playAbility(ability.id, bossX, bossY, showElementalDamageOnImpact);
+    } else {
+      // Fallback with fixed timeout
+      setTimeout(showElementalDamageOnImpact, 400);
+    }
+
+    // Play sound
+    if (sounds.powerAttack) {
+      sounds.powerAttack();
+    } else {
+      sounds.attackHit();
+    }
   }, [isBattleActive, isCountdown, battleResult, battleEnded, isElementalAbilityReady, useElementalAbility, currentBattle, playerAttack, triggerShake]);
 
   // Handle close/abandon - always ensure battle is properly ended
@@ -2657,8 +2663,8 @@ export default function BossBattleArena({ bossId, onClose }) {
               />
             ))}
 
-            {/* Boss section - Top Right */}
-            <div className="absolute right-8 top-8 z-0">
+            {/* Boss section - Top Right (positioned to match CombatCanvas target) */}
+            <div className="absolute right-4 top-2 z-0">
             {/* Boss name and difficulty */}
             <div className="text-center mb-3">
               <h2 className="text-2xl font-black text-white drop-shadow-lg">{boss?.name}</h2>
