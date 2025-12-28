@@ -2107,14 +2107,12 @@ export default function BossBattleArena({ bossId, onClose }) {
     const attackSpeed = boss?.attackSpeed || 1000;
 
     battleIntervalRef.current = setInterval(() => {
-      // Calculate positions based on screen dimensions
-      const screenWidth = window.innerWidth;
-      const screenHeight = window.innerHeight;
-      const centerX = screenWidth / 2;
-
-      // Boss is at ~20% from top, player at ~80% from top
-      const bossY = screenHeight * 0.18;
-      const playerY = screenHeight * 0.78;
+      // Fixed coordinates for 1000x600 canvas (CombatDemo-style diagonal layout)
+      // Boss at top-right: (920, 130), Player at bottom-left: (120, 480)
+      const bossX = 920;
+      const bossY = 130;
+      const playerX = 120;
+      const playerY = 480;
 
       // Use PixiJS createBossProjectile for spectacular effects
       const colorHex = parseInt((boss?.attackColor || '#ff0000').replace('#', ''), 16);
@@ -2123,7 +2121,7 @@ export default function BossBattleArena({ bossId, onClose }) {
         // Play boss-specific attack sound
         playBossAttack(boss?.attackAnimation || 'default');
 
-        combatCanvasRef.current.createBossProjectile(centerX, bossY, centerX, playerY, {
+        combatCanvasRef.current.createBossProjectile(bossX, bossY, playerX, playerY, {
           color: colorHex,
           size: 35,
           speed: 14,
@@ -2316,11 +2314,10 @@ export default function BossBattleArena({ bossId, onClose }) {
     const element = currentWeapon?.element || 'physical';
     const attackType = currentWeapon?.animation || 'slash';
 
-    // Calculate boss position for PixiJS effects
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    const bossX = screenWidth / 2;
-    const bossY = screenHeight * 0.22; // Slightly lower than attack origin
+    // Fixed coordinates for 1000x600 canvas (CombatDemo-style diagonal layout)
+    // Boss at top-right: (870, 140) for attack impacts
+    const bossX = 870;
+    const bossY = 140;
 
     // Use PixiJS for spectacular weapon attack effects
     if (combatCanvasRef.current) {
@@ -2407,11 +2404,10 @@ export default function BossBattleArena({ bossId, onClose }) {
     const baseDamage = currentBattle?.playerDamage || 10;
     const abilityDamage = calculateAbilityDamage(baseDamage, weaponAbility);
 
-    // Calculate boss position for PixiJS effects
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    const bossX = screenWidth / 2;
-    const bossY = screenHeight * 0.22;
+    // Fixed coordinates for 1000x600 canvas (CombatDemo-style diagonal layout)
+    // Boss at top-right: (870, 140) for ability impacts
+    const bossX = 870;
+    const bossY = 140;
 
     // Use PixiJS for spectacular ability effects
     if (combatCanvasRef.current && weaponAbility.abilityId) {
@@ -2420,7 +2416,7 @@ export default function BossBattleArena({ bossId, onClose }) {
       // Fallback to old animation system
       setActiveAbilityAnimation({
         ability: weaponAbility,
-        position: { x: 200, y: 200 },
+        position: { x: bossX, y: bossY },
       });
     }
 
@@ -2470,11 +2466,10 @@ export default function BossBattleArena({ bossId, onClose }) {
     const ability = useElementalAbility(slot);
     if (!ability) return;
 
-    // Calculate boss position for PixiJS effects
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    const bossX = screenWidth / 2;
-    const bossY = screenHeight * 0.22;
+    // Fixed coordinates for 1000x600 canvas (CombatDemo-style diagonal layout)
+    // Boss at top-right: (870, 140) for elemental ability impacts
+    const bossX = 870;
+    const bossY = 140;
 
     // Play PixiJS effect
     if (combatCanvasRef.current) {
@@ -2554,13 +2549,16 @@ export default function BossBattleArena({ bossId, onClose }) {
       <div ref={particleContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
 
       {/* PixiJS Combat Canvas for spectacular effects - must be above all battle content */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 200 }}>
-        <CombatCanvas
-          ref={combatCanvasRef}
-          width={window.innerWidth}
-          height={window.innerHeight}
-          className="w-full h-full"
-        />
+      {/* Fixed 1000x600 canvas centered in viewport for consistent attack coordinates */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 200 }}>
+        <div className="relative" style={{ width: 1000, height: 600 }}>
+          <CombatCanvas
+            ref={combatCanvasRef}
+            width={1000}
+            height={600}
+            className="w-full h-full"
+          />
+        </div>
       </div>
 
       {/* Background effects */}
@@ -2615,50 +2613,52 @@ export default function BossBattleArena({ bossId, onClose }) {
         )}
       </AnimatePresence>
 
-      {/* Main battle area */}
+      {/* Main battle area - Diagonal layout like CombatDemo */}
       {!isCountdown && (
-        <div className="h-full flex flex-col p-4 max-w-lg mx-auto relative overflow-hidden">
-          {/* Anime.js Player Projectiles */}
-          {playerProjectiles.map(proj => (
-            <AnimeProjectile
-              key={proj.id}
-              startX={proj.startX}
-              startY={proj.startY}
-              endX={proj.endX}
-              endY={proj.endY}
-              color={proj.color}
-              trailColor={proj.trailColor}
-              isMagic={proj.isMagic}
-              isCrit={proj.isCrit}
-              onComplete={() => setPlayerProjectiles(prev => prev.filter(p => p.id !== proj.id))}
-            />
-          ))}
+        <div className="h-full w-full flex items-center justify-center relative overflow-hidden">
+          {/* Fixed aspect ratio battle arena */}
+          <div className="relative w-full max-w-4xl aspect-[1000/600]" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
+            {/* Anime.js Player Projectiles */}
+            {playerProjectiles.map(proj => (
+              <AnimeProjectile
+                key={proj.id}
+                startX={proj.startX}
+                startY={proj.startY}
+                endX={proj.endX}
+                endY={proj.endY}
+                color={proj.color}
+                trailColor={proj.trailColor}
+                isMagic={proj.isMagic}
+                isCrit={proj.isCrit}
+                onComplete={() => setPlayerProjectiles(prev => prev.filter(p => p.id !== proj.id))}
+              />
+            ))}
 
-          {/* Anime.js Boss Projectiles */}
-          {bossProjectiles.map(proj => (
-            <BossProjectile
-              key={proj.id}
-              boss={proj.boss}
-              startY={proj.startY}
-              endY={proj.endY}
-              onComplete={() => setBossProjectiles(prev => prev.filter(p => p.id !== proj.id))}
-            />
-          ))}
+            {/* Anime.js Boss Projectiles */}
+            {bossProjectiles.map(proj => (
+              <BossProjectile
+                key={proj.id}
+                boss={proj.boss}
+                startY={proj.startY}
+                endY={proj.endY}
+                onComplete={() => setBossProjectiles(prev => prev.filter(p => p.id !== proj.id))}
+              />
+            ))}
 
-          {/* Anime.js Impact Effects */}
-          {impactEffects.map(impact => (
-            <ImpactFlash
-              key={impact.id}
-              x={impact.x}
-              y={impact.y}
-              color={impact.color}
-              size={impact.size}
-              onComplete={() => setImpactEffects(prev => prev.filter(e => e.id !== impact.id))}
-            />
-          ))}
+            {/* Anime.js Impact Effects */}
+            {impactEffects.map(impact => (
+              <ImpactFlash
+                key={impact.id}
+                x={impact.x}
+                y={impact.y}
+                color={impact.color}
+                size={impact.size}
+                onComplete={() => setImpactEffects(prev => prev.filter(e => e.id !== impact.id))}
+              />
+            ))}
 
-          {/* Boss section */}
-          <div className="flex-1 min-h-0 flex flex-col items-center justify-center relative pt-4 overflow-hidden">
+            {/* Boss section - Top Right */}
+            <div className="absolute right-8 top-8 z-0">
             {/* Boss name and difficulty */}
             <div className="text-center mb-3">
               <h2 className="text-2xl font-black text-white drop-shadow-lg">{boss?.name}</h2>
@@ -2771,11 +2771,11 @@ export default function BossBattleArena({ bossId, onClose }) {
                 ))}
               </AnimatePresence>
             </motion.div>
-          </div>
+            </div>
 
-          {/* Battle Controls - Fixed height section between boss and player */}
+          {/* Battle Controls - Bottom center */}
           {isBattleActive && !battleResult && (
-            <div className="flex-shrink-0 py-2">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-black/30 backdrop-blur-sm rounded-2xl p-3">
               {/* Attack and Ability Buttons */}
               <div className="flex gap-3 justify-center">
                 {/* Attack Button */}
@@ -2913,15 +2913,8 @@ export default function BossBattleArena({ bossId, onClose }) {
             </div>
           )}
 
-          {/* Divider */}
-          <div className="flex-shrink-0 flex items-center gap-4 my-2">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            <Swords className="w-6 h-6 text-white/40" />
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-          </div>
-
-          {/* Player section */}
-          <div className="flex-shrink-0 flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm relative">
+          {/* Player section - Bottom Left */}
+          <div className="absolute left-8 bottom-8 z-0 flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
             {/* Player avatar */}
             <div className="w-20 h-20 relative flex-shrink-0">
               <AvatarRenderer
@@ -2992,6 +2985,7 @@ export default function BossBattleArena({ bossId, onClose }) {
                 <span>{currentWeapon?.cooldown || 500}ms</span>
               </div>
             </div>
+          </div>
           </div>
         </div>
       )}

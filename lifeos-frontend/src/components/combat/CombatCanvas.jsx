@@ -89,7 +89,15 @@ const CombatCanvas = forwardRef(({
       isWebGLRef.current = rendererType === PIXI.RENDERER_TYPE.WEBGL || rendererType === PIXI.RENDERER_TYPE.WEBGL2;
       console.log(`[CombatCanvas] Initialized with ${isWebGLRef.current ? 'WebGL' : 'Canvas'} renderer`);
 
-      containerRef.current.appendChild(app.view);
+      // Append canvas and ensure it's visible
+      const canvas = app.view;
+      canvas.style.display = 'block';
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.position = 'absolute';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      containerRef.current.appendChild(canvas);
       appRef.current = app;
 
       // Create render layers
@@ -7628,6 +7636,9 @@ const CombatCanvas = forwardRef(({
       playWeaponAttack, playAbility, playBossAttack]);
 
   // Render fallback if init failed, otherwise render the canvas container
+  // DEBUG: Add subtle visual indicator when effects are available
+  const isDebug = typeof window !== 'undefined' && window.location.search.includes('debug=canvas');
+
   return (
     <div
       ref={containerRef}
@@ -7636,9 +7647,11 @@ const CombatCanvas = forwardRef(({
         width,
         height,
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible', // Allow effects to extend beyond container
         // Hide if there was an init error (canvas won't have any content)
         ...(initError ? { pointerEvents: 'none' } : {}),
+        // Debug: show canvas bounds
+        ...(isDebug ? { border: '2px solid rgba(255, 0, 255, 0.5)', background: 'rgba(255, 0, 255, 0.05)' } : {}),
       }}
     />
   );

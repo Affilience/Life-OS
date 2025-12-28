@@ -326,8 +326,8 @@ export function Modules() {
           </p>
         </div>
 
-        {/* Constellation Container - scaled down on mobile */}
-        <div className="relative scale-50 md:scale-75 lg:scale-100 origin-center" style={{ width: RADIUS * 2 + 200, height: RADIUS * 2 + 200 }}>
+        {/* Constellation Container - scaled down on mobile, extra height for labels */}
+        <div className="relative scale-50 md:scale-75 lg:scale-100 origin-center -mt-8" style={{ width: RADIUS * 2 + 200, height: RADIUS * 2 + 280 }}>
           {/* SVG for connection lines */}
           <svg
             className="absolute inset-0 w-full h-full"

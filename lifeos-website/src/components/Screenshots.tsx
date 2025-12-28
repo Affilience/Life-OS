@@ -7,14 +7,10 @@
  * Has slightly longer scroll distance (600%) than Gamification (500%) so it
  * progresses slower, allowing Gamification to fully dismantle before Screenshots builds.
  *
- * Gamification dismantles at 0.68-0.80 of 500% = 340-400% scroll distance
- * Screenshots at 340% scroll = 340/600 = 0.57 progress
- * So BUILD_OFFSET = 0.55 to start overlapping with Gamification dismantle
- *
  * Phases:
- * - Cinematic Build (0.55-0.67): Title emerges, cards stagger in
- * - Horizontal Scroll (0.67-0.80): Smooth gallery scroll
- * - Cinematic Dismantle (0.80-0.88): 3D exit with blur
+ * - Cinematic Build (0.55-0.62): Title emerges, cards stagger in
+ * - Horizontal Scroll (0.62-0.78): Smooth gallery scroll with synced progress bar
+ * - Cinematic Dismantle (0.78-0.88): 3D exit with blur
  */
 
 import { useRef, useEffect, useState } from 'react';
@@ -133,8 +129,10 @@ export function Screenshots() {
           anticipatePin: 1,
           onUpdate: (self) => {
             // Calculate which screenshot is active based on scroll progress
-            // Only count during the scroll phase (0.67-0.80)
-            const scrollPhaseProgress = Math.max(0, Math.min(1, (self.progress - 0.67) / 0.13));
+            // Scroll phase runs from 0.62-0.78 (duration 0.16) for smoother pacing
+            const scrollPhaseStart = 0.62;
+            const scrollPhaseDuration = 0.16;
+            const scrollPhaseProgress = Math.max(0, Math.min(1, (self.progress - scrollPhaseStart) / scrollPhaseDuration));
             const newIndex = Math.min(
               Math.floor(scrollPhaseProgress * screenshots.length),
               screenshots.length - 1
@@ -254,12 +252,12 @@ export function Screenshots() {
         }, BUILD_OFFSET + 0.12);
       }
 
-      // ===== PHASE 2: Horizontal Scroll (0.67-0.80) =====
+      // ===== PHASE 2: Horizontal Scroll (0.62-0.78) =====
       tl.to(horizontal, {
         x: -scrollDistance,
         ease: 'none',
-        duration: 0.13, // Scroll phase (0.67 to 0.80)
-      }, 0.67);
+        duration: 0.16, // Scroll phase (0.62 to 0.78) - longer for smoother pacing
+      }, 0.62);
 
       // Parallax disabled - was causing right-side gaps
       // const images = horizontal.querySelectorAll('.screenshot-image');
@@ -271,7 +269,7 @@ export function Screenshots() {
       //   }, 0.40);
       // });
 
-      // ===== PHASE 3: Cinematic Dismantle (0.80-0.88) =====
+      // ===== PHASE 3: Cinematic Dismantle (0.78-0.88) =====
 
       // Fade out scroll hint first
       if (scrollHintRef.current) {
@@ -280,7 +278,7 @@ export function Screenshots() {
           y: 20,
           duration: 0.02,
           ease: 'power2.in',
-        }, 0.80);
+        }, 0.78);
       }
 
       // Progress indicator fades with scale
@@ -292,7 +290,7 @@ export function Screenshots() {
           filter: 'blur(5px)',
           duration: 0.02,
           ease: 'power2.in',
-        }, 0.81);
+        }, 0.79);
       }
 
       // Horizontal container: dramatic exit with 3D rotation and blur
@@ -304,7 +302,7 @@ export function Screenshots() {
         filter: 'blur(15px)',
         duration: 0.03,
         ease: 'power3.in',
-      }, 0.82);
+      }, 0.80);
 
       // Subtitle: expand and dissolve
       if (subtitleRef.current) {
@@ -316,7 +314,7 @@ export function Screenshots() {
           filter: 'blur(6px)',
           duration: 0.02,
           ease: 'power3.in',
-        }, 0.84);
+        }, 0.82);
       }
 
       // Title: dramatic scale up and blur out (explosion effect)
@@ -329,7 +327,7 @@ export function Screenshots() {
           letterSpacing: '0.1em',
           duration: 0.02,
           ease: 'power3.in',
-        }, 0.86);
+        }, 0.84);
       }
 
     }, section);

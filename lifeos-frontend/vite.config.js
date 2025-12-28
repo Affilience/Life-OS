@@ -105,11 +105,20 @@ export default defineConfig({
           if (id.includes('node_modules/uuid')) {
             return 'utils-vendor';
           }
+
+          // PixiJS - combat effects (keep together to preserve side effects)
+          if (id.includes('node_modules/pixi') || id.includes('node_modules/@pixi')) {
+            return 'pixi-vendor';
+          }
         }
       },
-      // Better tree-shaking
+      // Better tree-shaking - but preserve PixiJS side effects
       treeshake: {
-        moduleSideEffects: false,
+        moduleSideEffects: (id) => {
+          // PixiJS requires side effects for initialization
+          if (id.includes('pixi')) return true;
+          return false;
+        },
         propertyReadSideEffects: false,
       },
     },
