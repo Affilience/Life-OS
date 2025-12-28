@@ -5026,18 +5026,21 @@ const CombatCanvas = forwardRef(({
   }, [width, height, createDynamicSlash, createParticleBurst, createShockwave,
       screenShake, screenFlash, freezeFrame, easeOutCubic]);
 
-  const playAbility = useCallback((abilityType, x = width / 2, y = height / 2, onImpact = null) => {
+  const playAbility = useCallback((abilityType, x = width / 2, y = height / 2, onImpact = null, isIncoming = false) => {
     const centerX = width / 2;
     const centerY = height / 2;
     const targetX = x;
     const targetY = y;
-    const leftEdge = width * 0.15;
+    // For outgoing: projectiles start from left edge (player side)
+    // For incoming: projectiles start from top-right (opponent side)
+    const leftEdge = isIncoming ? width * 0.75 : width * 0.15;
+    const startY = isIncoming ? height * 0.25 : centerY;
 
     switch (abilityType) {
       // ========== FIRE ABILITIES ==========
       case 'fireball':
         elementalSounds.fire_burst();
-        createProjectile(leftEdge, centerY, targetX, targetY, {
+        createProjectile(leftEdge, startY, targetX, targetY, {
           color: 0xff4400,
           glowColor: 0xff0000,
           coreColor: 0xffffaa,
@@ -5063,7 +5066,7 @@ const CombatCanvas = forwardRef(({
         elementalSounds.blazing_fury();
         for (let i = 0; i < 5; i++) {
           setTimeout(() => {
-            createProjectile(leftEdge, centerY + (Math.random() - 0.5) * 100,
+            createProjectile(leftEdge, startY + (Math.random() - 0.5) * 100,
               targetX + (Math.random() - 0.5) * 60, targetY + (Math.random() - 0.5) * 60, {
               color: 0xff4400,
               glowColor: 0xff0000,
@@ -5095,7 +5098,7 @@ const CombatCanvas = forwardRef(({
       // ========== ICE ABILITIES ==========
       case 'ice_spike':
         elementalSounds.glacial_spike();
-        createProjectile(leftEdge, centerY, targetX, targetY, {
+        createProjectile(leftEdge, startY, targetX, targetY, {
           color: 0x88ddff,
           glowColor: 0x0088ff,
           coreColor: 0xffffff,
@@ -5133,7 +5136,7 @@ const CombatCanvas = forwardRef(({
 
       case 'ice_beam':
         elementalSounds.absolute_zero();
-        createLaserBeam(leftEdge, centerY, targetX, targetY, 0x00ddff);
+        createLaserBeam(leftEdge, startY, targetX, targetY, 0x00ddff);
         setTimeout(() => {
           createIceExplosion(targetX, targetY);
           if (onImpact) onImpact();
@@ -5152,7 +5155,7 @@ const CombatCanvas = forwardRef(({
 
       case 'chain_lightning':
         elementalSounds.storm_surge();
-        createChainLightning(leftEdge, centerY);
+        createChainLightning(leftEdge, startY);
         // Chain lightning impacts after first arc (approx 200ms)
         setTimeout(() => { if (onImpact) onImpact(); }, 200);
         break;
@@ -5191,7 +5194,7 @@ const CombatCanvas = forwardRef(({
       // ========== DARK/SHADOW ABILITIES ==========
       case 'shadow_burst':
         elementalSounds.shadow_bolt();
-        createProjectile(leftEdge, centerY, targetX, targetY, {
+        createProjectile(leftEdge, startY, targetX, targetY, {
           color: 0x8800ff,
           glowColor: 0x4400aa,
           coreColor: 0xcc88ff,
@@ -5734,7 +5737,7 @@ const CombatCanvas = forwardRef(({
 
       case 'rock_throw':
         elementalSounds.rock_throw();
-        createProjectile(leftEdge, centerY, targetX, targetY, {
+        createProjectile(leftEdge, startY, targetX, targetY, {
           color: 0x8b7355,
           glowColor: 0x5c4033,
           coreColor: 0xaaaaaa,
@@ -5781,7 +5784,7 @@ const CombatCanvas = forwardRef(({
       // ========== WIND ABILITIES ==========
       case 'wind_slash':
         elementalSounds.vine_whip(); // Fast swoosh sound for wind slash
-        createDynamicSlash(leftEdge, centerY - 50, targetX, targetY + 50, {
+        createDynamicSlash(leftEdge, startY - 50, targetX, targetY + 50, {
           color: 0xaaddff,
           glowColor: 0x88bbdd,
           maxThickness: 20,
@@ -5808,7 +5811,7 @@ const CombatCanvas = forwardRef(({
         elementalSounds.thorn_spray(); // Multiple quick whooshes
         for (let i = 0; i < 3; i++) {
           setTimeout(() => {
-            createDynamicSlash(leftEdge, centerY - 30 + i * 30, targetX, centerY - 30 + i * 30, {
+            createDynamicSlash(leftEdge, startY - 30 + i * 30, targetX, targetY - 30 + i * 30, {
               color: 0xaaddff,
               glowColor: 0x88bbdd,
               maxThickness: 15,
@@ -5823,7 +5826,7 @@ const CombatCanvas = forwardRef(({
       // ========== WATER ABILITIES ==========
       case 'water_blast':
         elementalSounds.water_splash();
-        createProjectile(leftEdge, centerY, targetX, targetY, {
+        createProjectile(leftEdge, startY, targetX, targetY, {
           color: 0x4488cc,
           glowColor: 0x2266aa,
           coreColor: 0xaaddff,
@@ -5846,7 +5849,7 @@ const CombatCanvas = forwardRef(({
 
       case 'hydro_pump':
         elementalSounds.tidal_surge();
-        createLaserBeam(leftEdge, centerY, targetX, targetY, 0x4488cc);
+        createLaserBeam(leftEdge, startY, targetX, targetY, 0x4488cc);
         setTimeout(() => {
           createWaterExplosion(targetX, targetY);
           if (onImpact) onImpact();
@@ -5883,7 +5886,7 @@ const CombatCanvas = forwardRef(({
 
       case 'toxic_spit':
         elementalSounds.nature_burst();
-        createProjectile(leftEdge, centerY, targetX, targetY, {
+        createProjectile(leftEdge, startY, targetX, targetY, {
           color: 0x44cc44,
           glowColor: 0x22aa22,
           coreColor: 0x88ff88,
@@ -5902,10 +5905,10 @@ const CombatCanvas = forwardRef(({
           let firstImpact = true;
           for (let i = 0; i < 5; i++) {
             const angle = -Math.PI / 6 + (i / 4) * Math.PI / 3;
-            const endX = leftEdge + Math.cos(angle) * 300;
-            const endY = centerY + Math.sin(angle) * 150;
+            const endX = targetX + Math.cos(angle) * 60;
+            const endY = targetY + Math.sin(angle) * 60;
             setTimeout(() => {
-              createProjectile(leftEdge, centerY, endX, endY, {
+              createProjectile(leftEdge, startY, endX, endY, {
                 color: 0x44cc44,
                 glowColor: 0x22aa22,
                 size: 8,
@@ -5935,7 +5938,7 @@ const CombatCanvas = forwardRef(({
       // ========== ARCANE ABILITIES ==========
       case 'arcane_blast':
         elementalSounds.arcane_pulse();
-        createProjectile(leftEdge, centerY, targetX, targetY, {
+        createProjectile(leftEdge, startY, targetX, targetY, {
           color: 0xff44ff,
           glowColor: 0xcc22cc,
           coreColor: 0xffaaff,
@@ -5954,7 +5957,7 @@ const CombatCanvas = forwardRef(({
           let firstImpact = true;
           for (let i = 0; i < 4; i++) {
             setTimeout(() => {
-              createProjectile(leftEdge, centerY + (i - 1.5) * 30, targetX, targetY, {
+              createProjectile(leftEdge, startY + (i - 1.5) * 30, targetX, targetY, {
                 color: 0xff44ff,
                 glowColor: 0xcc22cc,
                 size: 8,
@@ -5979,7 +5982,7 @@ const CombatCanvas = forwardRef(({
 
       case 'arcane_beam':
         elementalSounds.celestial_beam();
-        createLaserBeam(leftEdge, centerY, targetX, targetY, 0xff44ff);
+        createLaserBeam(leftEdge, startY, targetX, targetY, 0xff44ff);
         setTimeout(() => {
           createArcaneExplosion(targetX, targetY);
           if (onImpact) onImpact();

@@ -37,6 +37,16 @@ const getSkillPointsStore = async () => {
   return skillPointsStoreRef;
 };
 
+// Lazy import social store for leaderboard sync
+let socialStoreRef = null;
+const getSocialStore = async () => {
+  if (!socialStoreRef) {
+    const module = await import('./socialStore');
+    socialStoreRef = module.useSocialStore;
+  }
+  return socialStoreRef;
+};
+
 /**
  * Get perks that become newly available at a given level
  */
@@ -638,6 +648,20 @@ export const useGamificationStore = create(
           }
         }
 
+        // Sync XP to leaderboards (if user has opted in)
+        if (shouldSyncToDatabase && adjustedAmount > 0) {
+          try {
+            const SocialStore = await getSocialStore();
+            const socialStore = SocialStore.getState();
+            // Only sync if user has opted into leaderboards
+            if (socialStore.socialProfile?.show_on_leaderboards) {
+              await socialStore.syncToLeaderboards(newTotalXP, adjustedAmount, 0);
+            }
+          } catch (error) {
+            // Silently fail - leaderboard sync is not critical
+          }
+        }
+
         // Log event (only if userId is available - logEvent checks for this)
         get().logEvent('xp_gained', source, {
           amount: adjustedAmount,
@@ -1197,6 +1221,40 @@ export const useGamificationStore = create(
                 updated_at: new Date().toISOString(),
               })
               .eq('id', streak.id);
+
+            // Sync streak to leaderboards (if user has opted in and this is the global streak)
+            if (streak.is_global) {
+              try {
+                const SocialStore = await getSocialStore();
+                const socialStore = SocialStore.getState();
+                if (socialStore.socialProfile?.show_on_leaderboards) {
+                  await socialStore.syncToLeaderboards(get().totalXP, 0, newStreakCount);
+                }
+              } catch (e) {
+                // Silently fail - leaderboard sync is not critical
+              }
+            }
+
+            // Show streak celebration if global streak was extended (Duolingo-style)
+            // Only celebrate the global/daily streak to avoid too many popups
+            if (success && newStreakCount > streak.current_streak && streak.is_global) {
+              try {
+                const NotificationStore = await getNotificationStore();
+                const notifStore = NotificationStore.getState();
+                notifStore.showStreakCelebration({
+                  previousStreak: streak.current_streak,
+                  newStreak: newStreakCount,
+                  streak: {
+                    id: streak.id,
+                    name: 'Daily',
+                    module: streak.module_id,
+                    isGlobal: true,
+                  },
+                });
+              } catch (e) {
+                // Silently fail - celebration is not critical
+              }
+            }
 
             // Refresh streaks
             get().refreshStreaks();

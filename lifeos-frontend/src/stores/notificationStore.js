@@ -221,6 +221,49 @@ export const useNotificationStore = create((set, get) => ({
   },
 
   // ==========================================
+  // STREAK CELEBRATION NOTIFICATIONS
+  // ==========================================
+
+  // Streak celebration data
+  streakCelebration: null,
+
+  // Show streak extended celebration (Duolingo-style)
+  showStreakCelebration: async (data) => {
+    const timestamp = Date.now();
+
+    const streakData = {
+      previousStreak: data.previousStreak || 0,
+      newStreak: data.newStreak || 1,
+      streak: data.streak || null, // The streak object with name, module, etc.
+      timestamp,
+    };
+
+    set({ streakCelebration: streakData });
+
+    // Add to persistent history
+    try {
+      const addFn = await getHistoryStore();
+      if (addFn) {
+        const isMilestone = [7, 14, 30, 60, 100, 365].includes(streakData.newStreak);
+        addFn({
+          id: `streak-${streakData.newStreak}-${timestamp}`,
+          type: 'streak',
+          title: isMilestone ? `${streakData.newStreak} Day Milestone!` : 'Streak Extended!',
+          message: `${streakData.newStreak} day streak${streakData.streak?.name ? ` on ${streakData.streak.name}` : ''}!`,
+          data: streakData,
+        });
+      }
+    } catch (err) {
+      console.warn('[NotificationStore] Could not add streak to history:', err);
+    }
+  },
+
+  // Dismiss streak celebration
+  dismissStreakCelebration: () => {
+    set({ streakCelebration: null });
+  },
+
+  // ==========================================
   // UTILITY
   // ==========================================
 
@@ -232,6 +275,7 @@ export const useNotificationStore = create((set, get) => ({
       xpQueue: [],
       currentXP: null,
       levelUpNotification: null,
+      streakCelebration: null,
     });
   },
 }));

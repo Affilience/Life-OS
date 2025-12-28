@@ -1180,12 +1180,12 @@ export const useSocialStore = create(
           if (userIds.length > 0) {
             const { data: profiles } = await supabase
               .from('user_profiles')
-              .select('id, display_name, avatar_url, current_level, preferences')
+              .select('id, display_name, avatar_url, current_level, show_on_leaderboards')
               .in('id', userIds);
 
             profiles?.forEach(p => {
-              // Check if user has opted out of leaderboards
-              const showOnLeaderboards = p.preferences?.privacy?.showOnLeaderboards ?? true;
+              // Check if user has opted out of leaderboards (top-level column, defaults to true)
+              const showOnLeaderboards = p.show_on_leaderboards ?? true;
               if (!showOnLeaderboards) {
                 hiddenUserIds.add(p.id);
               } else {
@@ -1246,14 +1246,14 @@ export const useSocialStore = create(
         // Fallback: fetch from PostgreSQL
         const { data } = await supabase
           .from('user_profiles')
-          .select('id, display_name, avatar_url, current_level, total_xp, preferences')
+          .select('id, display_name, avatar_url, current_level, total_xp, show_on_leaderboards')
           .order('total_xp', { ascending: false })
           .limit(200); // Fetch more to account for filtered users
 
         if (data) {
-          // Filter out users who have opted out of leaderboards
+          // Filter out users who have opted out of leaderboards (top-level column, defaults to true)
           const visibleData = data.filter(p => {
-            const showOnLeaderboards = p.preferences?.privacy?.showOnLeaderboards ?? true;
+            const showOnLeaderboards = p.show_on_leaderboards ?? true;
             return showOnLeaderboards;
           }).slice(0, 100); // Limit to top 100 after filtering
 

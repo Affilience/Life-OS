@@ -402,14 +402,57 @@ const usePvpArenaStore = create((set, get) => ({
       .on('broadcast', { event: 'attack' }, (payload) => {
         if (payload.payload.attackerId !== userId) {
           // Opponent attacked us
-          const damage = payload.payload.damage;
-          const isCrit = payload.payload.isCrit;
+          const { damage, isCrit, element, attackType, weaponColor } = payload.payload;
 
           set(state => ({
             myHealth: Math.max(0, state.myHealth - damage),
             opponentTaps: state.opponentTaps + 1,
             opponentDamageDealt: state.opponentDamageDealt + damage,
           }));
+
+          // Trigger incoming attack visual via callback
+          const { onIncomingAttack } = get();
+          if (onIncomingAttack) {
+            onIncomingAttack({
+              type: 'attack',
+              damage,
+              isCrit,
+              element,
+              attackType,
+              weaponColor,
+            });
+          }
+
+          // Check if we died
+          const { myHealth, currentMatch } = get();
+          if (myHealth <= 0 && currentMatch) {
+            get().endMatch(currentMatch.id, payload.payload.attackerId);
+          }
+        }
+      })
+      // Listen for opponent abilities via broadcast
+      .on('broadcast', { event: 'ability' }, (payload) => {
+        if (payload.payload.attackerId !== userId) {
+          // Opponent used an ability on us
+          const { damage, abilityId, abilityName, element } = payload.payload;
+
+          set(state => ({
+            myHealth: Math.max(0, state.myHealth - damage),
+            opponentDamageDealt: state.opponentDamageDealt + damage,
+          }));
+
+          // Trigger incoming ability visual via callback
+          const { onIncomingAttack } = get();
+          if (onIncomingAttack) {
+            onIncomingAttack({
+              type: 'ability',
+              damage,
+              abilityId,
+              abilityName,
+              element,
+              isCrit: true, // Abilities always show as "big" hits
+            });
+          }
 
           // Check if we died
           const { myHealth, currentMatch } = get();
@@ -463,11 +506,15 @@ const usePvpArenaStore = create((set, get) => ({
 
   // === COMBAT ACTIONS ===
 
-  attack: async (userId, damage, isCrit = false) => {
+  // Callback for incoming attack visuals (set by PvPArena component)
+  onIncomingAttack: null,
+  setOnIncomingAttack: (callback) => set({ onIncomingAttack: callback }),
+
+  attack: async (userId, damage, isCrit = false, visualData = {}) => {
     const { currentMatch, matchChannel } = get();
     if (!currentMatch || !matchChannel) return;
 
-    // Broadcast attack to opponent
+    // Broadcast attack to opponent with visual data for CombatCanvas effects
     await matchChannel.send({
       type: 'broadcast',
       event: 'attack',
@@ -476,6 +523,10 @@ const usePvpArenaStore = create((set, get) => ({
         damage,
         isCrit,
         timestamp: Date.now(),
+        // Visual data for opponent's CombatCanvas
+        element: visualData.element || 'physical',
+        attackType: visualData.attackType || 'slash',
+        weaponColor: visualData.weaponColor || '#22c55e',
       },
     });
 
@@ -497,14 +548,16 @@ const usePvpArenaStore = create((set, get) => ({
     const { currentMatch, matchChannel } = get();
     if (!currentMatch || !matchChannel) return;
 
-    // Broadcast ability use
+    // Broadcast ability use with full ability data for opponent's visuals
     await matchChannel.send({
       type: 'broadcast',
-      event: 'attack',
+      event: 'ability',
       payload: {
         attackerId: userId,
         damage,
-        ability: ability.name,
+        abilityId: ability.id,
+        abilityName: ability.name,
+        element: ability.element || ability.elementColor || 'arcane',
         isCrit: false,
         timestamp: Date.now(),
       },

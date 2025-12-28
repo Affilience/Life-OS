@@ -455,6 +455,7 @@ export default function PvPArena({ onClose }) {
     attack,
     useAbility,
     exitMatch,
+    setOnIncomingAttack,
   } = usePvpArenaStore();
 
   const { level, equipped, characterGender, dyeColors, skinTone, prestige, currentTier } = useAvatarStore();
@@ -477,14 +478,10 @@ export default function PvPArena({ onClose }) {
   const [abilityLastUsed, setAbilityLastUsed] = useState(0);
   const [isAbilityAnimating, setIsAbilityAnimating] = useState(false);
   const [activeAbilityAnimation, setActiveAbilityAnimation] = useState(null);
-  const [playerProjectiles, setPlayerProjectiles] = useState([]);
-  const [opponentProjectiles, setOpponentProjectiles] = useState([]);
-  const [impactEffects, setImpactEffects] = useState([]);
   const [hitCount, setHitCount] = useState(0);
   const [critCount, setCritCount] = useState(0);
   const arenaRef = useRef(null);
   const cooldownIntervalRef = useRef(null);
-  const projectileIdRef = useRef(0);
 
   // Get weapon info
   const weaponId = equipped?.mainHand || equipped?.weapon;
@@ -560,6 +557,105 @@ export default function PvPArena({ onClose }) {
     };
   }, [weaponCooldown > 0, weaponCooldownMs]);
 
+  // Register incoming attack handler for CombatCanvas effects
+  const damageIdRef = useRef(0);
+  useEffect(() => {
+    if (!isInMatch) return;
+
+    const handleIncomingAttack = (attackData) => {
+      const { type, damage, isCrit, element, attackType, abilityId } = attackData;
+
+      // Calculate positions - opponent attacks come FROM top area TO bottom (player)
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const opponentX = width * 0.5;  // Opponent is centered at top
+      const opponentY = height * 0.25;
+      const playerX = width * 0.5;    // Player is centered at bottom
+      const playerY = height * 0.7;
+
+      // Show damage number when attack impacts
+      const showIncomingDamage = () => {
+        const id = damageIdRef.current++;
+        const randomX = 40 + Math.random() * 20; // Centered around player
+        const randomY = 55 + Math.random() * 10;
+        setDamageNumbers(prev => [...prev, {
+          id,
+          damage,
+          x: `${randomX}%`,
+          y: `${randomY}%`,
+          isCrit,
+          isPlayer: false, // Red color for damage TO player
+        }]);
+        // Shake screen
+        triggerShake(isCrit ? 'heavy' : 'normal');
+        // Play hit sound
+        if (isCrit) {
+          sounds.criticalHit?.();
+        } else {
+          sounds.attackHit?.();
+        }
+        // Clean up damage number
+        setTimeout(() => {
+          setDamageNumbers(prev => prev.filter(d => d.id !== id));
+        }, isCrit ? 1000 : 600);
+      };
+
+      if (type === 'ability' && abilityId && combatCanvasRef.current) {
+        // Play ability effect at player's position (incoming from opponent)
+        // Pass isIncoming=true so projectiles come FROM opponent TO player
+        combatCanvasRef.current.playAbility(abilityId, playerX, playerY, showIncomingDamage, true);
+      } else if (combatCanvasRef.current) {
+        // Comprehensive attack direction mapping for incoming attacks
+        //
+        // Attack types fall into these categories:
+        // 1. Direction-agnostic (centered on target) - work fine in any direction
+        //    Examples: cleave, spin_attack, punch, fireball, arcane_blast, etc.
+        // 2. Upward attacks - need to be mapped to downward equivalents
+        // 3. Uses actual coordinates - work correctly with swapped start/target
+        //    Examples: slash, thrust (these use startX/Y → targetX/Y)
+        //
+        // Directional attacks that need mapping for incoming (from opponent above):
+        const incomingAttackMap = {
+          // Upward attacks → downward equivalents
+          'rising_slash': 'falling_slash',
+          'uppercut': 'overhead_slam',
+          // Horizontal thrusts - keep as-is (centered on target)
+          'lunge': 'thrust',
+          'quick_stab': 'quick_stab',
+          'rapid_stab': 'rapid_stab',
+          // These are fine as-is since they're centered on target:
+          // cleave, spin_attack, smash, punch, kick, arcane_blast, magic_missile,
+          // fireball, x_slash, combo, flurry, backstab, critical_hit, etc.
+        };
+
+        let incomingAttackType = attackType || 'slash';
+        if (incomingAttackMap[incomingAttackType]) {
+          incomingAttackType = incomingAttackMap[incomingAttackType];
+        }
+
+        // Play weapon attack effect from opponent to player
+        combatCanvasRef.current.playWeaponAttack({
+          element: element || 'physical',
+          attackType: incomingAttackType,
+          startX: opponentX,
+          startY: opponentY,
+          targetX: playerX,
+          targetY: playerY,
+          onImpact: showIncomingDamage,
+        });
+      } else {
+        // Fallback if CombatCanvas not ready
+        showIncomingDamage();
+      }
+    };
+
+    setOnIncomingAttack(handleIncomingAttack);
+
+    return () => {
+      setOnIncomingAttack(null);
+    };
+  }, [isInMatch, setOnIncomingAttack, triggerShake]);
+
   // Handle tap attack
   const handleAttack = useCallback(async () => {
     if (!isInMatch || !userId || matchResult || !isAttackReady) return;
@@ -582,40 +678,80 @@ export default function PvPArena({ onClose }) {
       sounds.attackHit?.();
     }
 
-    // Spawn attack projectile from player to opponent
-    const projId = projectileIdRef.current++;
-    setPlayerProjectiles(prev => [...prev, { id: projId, weapon, isCrit }]);
+    // Get weapon element and attack type for visual effects
+    const weaponElement = weapon?.element || 'physical';
 
-    // Projectile hits opponent after animation
-    setTimeout(() => {
-      // Show damage number at opponent's position
-      setDamageNumbers(prev => [
-        ...prev,
-        { id: Date.now(), damage, x: '75%', y: '30%', isCrit, isPlayer: true },
-      ]);
+    // Map weapon types to appropriate attack visuals
+    // This ensures the right animation plays for each weapon category
+    const getAttackTypeFromWeapon = (wpn) => {
+      if (wpn?.attackType) return wpn.attackType;
+      const wType = wpn?.weaponType;
+      switch (wType) {
+        case 'sword': return 'slash';
+        case 'axe': return 'cleave';
+        case 'hammer': case 'mace': return 'smash';
+        case 'dagger': return 'quick_stab';
+        case 'spear': case 'polearm': return 'thrust';
+        case 'staff': return 'arcane_blast';
+        case 'wand': return 'magic_missile';
+        case 'bow': case 'crossbow': return 'fireball'; // projectile
+        case 'fist': case 'glove': return 'punch';
+        default: return 'slash';
+      }
+    };
+    const attackType = getAttackTypeFromWeapon(weapon);
 
-      // Impact effect at opponent
-      setImpactEffects(prev => [...prev, {
-        id: Date.now(),
-        color: isCrit ? '#fbbf24' : '#22c55e',
-        isPlayer: false,
+    // Calculate positions - player attacks go FROM bottom TO top (opponent)
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const playerX = width * 0.5;      // Player is centered at bottom
+    const playerY = height * 0.7;
+    const opponentX = width * 0.5;    // Opponent is centered at top
+    const opponentY = height * 0.25;
+
+    // Show damage number when attack impacts
+    const showDamageOnImpact = () => {
+      const id = damageIdRef.current++;
+      const randomX = 40 + Math.random() * 20; // Centered around opponent
+      const randomY = 20 + Math.random() * 10;
+      setDamageNumbers(prev => [...prev, {
+        id,
+        damage,
+        x: `${randomX}%`,
+        y: `${randomY}%`,
+        isCrit,
+        isPlayer: true, // Green color for damage TO opponent
       }]);
-
       // Shake screen on hit
       triggerShake(isCrit ? 'heavy' : 'light');
-
-      // Clean up projectile
-      setPlayerProjectiles(prev => prev.filter(p => p.id !== projId));
-
-      // Clean up effects
+      // Clean up damage number
       setTimeout(() => {
-        setDamageNumbers(prev => prev.slice(1));
-        setImpactEffects(prev => prev.slice(1));
-      }, 800);
-    }, 350);
+        setDamageNumbers(prev => prev.filter(d => d.id !== id));
+      }, isCrit ? 1000 : 600);
+    };
 
-    // Send attack to opponent
-    await attack(userId, damage, isCrit);
+    // Use CombatCanvas for weapon attack visual
+    if (combatCanvasRef.current) {
+      combatCanvasRef.current.playWeaponAttack({
+        element: weaponElement,
+        attackType,
+        startX: playerX,
+        startY: playerY,
+        targetX: opponentX,
+        targetY: opponentY,
+        onImpact: showDamageOnImpact,
+      });
+    } else {
+      // Fallback if CombatCanvas not ready
+      setTimeout(showDamageOnImpact, 350);
+    }
+
+    // Send attack to opponent with visual data
+    await attack(userId, damage, isCrit, {
+      element: weaponElement,
+      attackType,
+      weaponColor: weapon?.color || '#22c55e',
+    });
   }, [isInMatch, userId, matchResult, damagePerTap, attack, triggerShake, weapon, isAttackReady, weaponCooldownMs]);
 
   // Handle weapon ability
@@ -719,47 +855,9 @@ export default function PvPArena({ onClose }) {
     }, 1000);
   }, [isInMatch, userId, matchResult, isElementalAbilityReady, useElementalAbility, damagePerTap, triggerShake, useAbility]);
 
-  // Detect opponent attacks (when opponentTaps increases) and show incoming projectile
-  const prevOpponentTaps = useRef(opponentTaps);
-  useEffect(() => {
-    if (!isInMatch || !userId) return;
-
-    // If opponentTaps increased, they attacked us
-    if (opponentTaps > prevOpponentTaps.current) {
-      const attackCount = opponentTaps - prevOpponentTaps.current;
-
-      // Spawn incoming projectile(s)
-      for (let i = 0; i < attackCount; i++) {
-        setTimeout(() => {
-          const projId = projectileIdRef.current++;
-          const isCrit = Math.random() < 0.1;
-          setOpponentProjectiles(prev => [...prev, { id: projId, isCrit }]);
-
-          // Projectile hits us after animation
-          setTimeout(() => {
-            // Impact effect on player
-            setImpactEffects(prev => [...prev, {
-              id: Date.now(),
-              color: isCrit ? '#fbbf24' : '#ef4444',
-              isPlayer: true,
-            }]);
-
-            // Small shake when hit
-            triggerShake(isCrit ? 'normal' : 'light');
-
-            // Clean up projectile
-            setOpponentProjectiles(prev => prev.filter(p => p.id !== projId));
-
-            // Clean up impact
-            setTimeout(() => {
-              setImpactEffects(prev => prev.slice(1));
-            }, 300);
-          }, 350);
-        }, i * 100); // Stagger multiple attacks
-      }
-    }
-    prevOpponentTaps.current = opponentTaps;
-  }, [opponentTaps, isInMatch, userId, triggerShake]);
+  // NOTE: Incoming attacks are now handled via CombatCanvas in the onIncomingAttack callback
+  // registered above. The store broadcasts attack data which triggers playWeaponAttack()
+  // with reversed coordinates (opponent → player direction).
 
   // Join queue handler - always ranked
   const handleJoinQueue = async () => {
@@ -1216,39 +1314,9 @@ export default function PvPArena({ onClose }) {
             </div>
           </div>
 
-          {/* Attack Projectiles - Player to Opponent */}
-          <AnimatePresence>
-            {playerProjectiles.map(proj => (
-              <PlayerAttackProjectile
-                key={proj.id}
-                weapon={proj.weapon}
-                isCrit={proj.isCrit}
-                onComplete={() => setPlayerProjectiles(prev => prev.filter(p => p.id !== proj.id))}
-              />
-            ))}
-          </AnimatePresence>
-
-          {/* Attack Projectiles - Opponent to Player */}
-          <AnimatePresence>
-            {opponentProjectiles.map(proj => (
-              <OpponentAttackProjectile
-                key={proj.id}
-                isCrit={proj.isCrit}
-                onComplete={() => setOpponentProjectiles(prev => prev.filter(p => p.id !== proj.id))}
-              />
-            ))}
-          </AnimatePresence>
-
-          {/* Impact Effects */}
-          <AnimatePresence>
-            {impactEffects.map(effect => (
-              <ImpactEffect
-                key={effect.id}
-                color={effect.color}
-                isPlayer={effect.isPlayer}
-              />
-            ))}
-          </AnimatePresence>
+          {/* NOTE: Attack projectiles and impact effects are now rendered via CombatCanvas
+              using playWeaponAttack() with proper start/target coordinates for both
+              outgoing (player→opponent) and incoming (opponent→player) attacks */}
 
           {/* Damage Numbers */}
           <AnimatePresence>

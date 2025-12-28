@@ -1,10 +1,11 @@
 /**
- * GlobalNotifications - Global notification layer for achievements, XP, and level ups
+ * GlobalNotifications - Global notification layer for achievements, XP, level ups, and streaks
  *
  * Renders:
  * - Achievement unlock toasts (top-right)
  * - XP gain animations (center, floating up)
  * - Level up celebrations (full-screen modal with XP animation and level transition)
+ * - Streak extended celebrations (Duolingo-style full-screen celebration)
  */
 
 import React, { useCallback } from 'react';
@@ -13,6 +14,7 @@ import { useNotificationStore } from '../../stores/notificationStore';
 import AchievementToast from './AchievementToast';
 import XPGainAnimation from './XPGainAnimation';
 import LevelUpModal from './LevelUpModal';
+import { StreakExtendedCelebration } from '../ui/DuolingoCelebration';
 import { useGamificationModeStore, VISIBILITY } from '../../stores/gamificationModeStore';
 import useSettingsStore from '../../stores/settingsStore';
 
@@ -27,6 +29,8 @@ export default function GlobalNotifications() {
     dismissXP,
     levelUpNotification,
     dismissLevelUp,
+    streakCelebration,
+    dismissStreakCelebration,
   } = useNotificationStore();
 
   const mode = useGamificationModeStore((state) => state.mode);
@@ -37,6 +41,7 @@ export default function GlobalNotifications() {
   const achievementAlertsEnabled = notifications?.achievementAlerts ?? true;
   const xpToastEnabled = notifications?.xpToastEnabled ?? true;
   const xpToastMinThreshold = notifications?.xpToastMinThreshold ?? 15;
+  const streakAlertsEnabled = notifications?.streakAlerts ?? true;
 
   // Handle XP completion
   const handleXPComplete = useCallback(() => {
@@ -85,6 +90,15 @@ export default function GlobalNotifications() {
         isOpen={!!levelUpNotification && visibility.showLevelUpAnimation}
         onClose={dismissLevelUp}
         data={levelUpNotification}
+      />
+
+      {/* Streak Extended Celebration - Duolingo-style */}
+      <StreakExtendedCelebration
+        show={!!streakCelebration && visibility.showLevelUpAnimation && streakAlertsEnabled}
+        streak={streakCelebration?.streak}
+        previousStreak={streakCelebration?.previousStreak || 0}
+        newStreak={streakCelebration?.newStreak || 1}
+        onComplete={dismissStreakCelebration}
       />
     </>
   );
