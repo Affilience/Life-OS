@@ -1136,12 +1136,22 @@ export function isAbilityReady(lastUsed, cooldown) {
 /**
  * Ability Unlock Sources
  * Defines how each ability can be unlocked
- * Types: 'perk' (skill tree), 'achievement', 'boss', 'default' (starts unlocked)
+ * Types: 'perk' (skill tree), 'achievement', 'boss', 'bazaar' (purchase), 'default' (starts unlocked)
  */
 export const ABILITY_UNLOCKS = {
   // === UNLOCKED BY DEFAULT (starter abilities - only 2) ===
   fireball: { type: 'default', description: 'Available from the start' },
   magic_missile: { type: 'default', description: 'Available from the start' },
+
+  // === PURCHASABLE FROM BAZAAR ===
+  inferno: { type: 'bazaar', price: 300, rarity: 'rare', description: 'Purchase from the Bazaar' },
+  blizzard: { type: 'bazaar', price: 350, rarity: 'rare', description: 'Purchase from the Bazaar' },
+  thunder_storm: { type: 'bazaar', price: 400, rarity: 'rare', description: 'Purchase from the Bazaar' },
+  tornado: { type: 'bazaar', price: 350, rarity: 'rare', description: 'Purchase from the Bazaar' },
+  tidal_wave: { type: 'bazaar', price: 400, rarity: 'rare', description: 'Purchase from the Bazaar' },
+  poison_cloud: { type: 'bazaar', price: 300, rarity: 'rare', description: 'Purchase from the Bazaar' },
+  void_rift: { type: 'bazaar', price: 500, rarity: 'epic', description: 'Purchase from the Bazaar' },
+  smite: { type: 'bazaar', price: 500, rarity: 'epic', description: 'Purchase from the Bazaar' },
 
   // === EARLY ACHIEVEMENTS (former defaults) ===
   ice_spike: { type: 'achievement', achievementId: 'first_entry', name: 'First Entry', description: 'Write your first journal entry' },
@@ -1208,16 +1218,13 @@ export const ABILITY_UNLOCKS = {
 
   // === UNLOCKED VIA ACHIEVEMENTS ===
   // Fire achievements
-  inferno: { type: 'achievement', achievementId: 'one_week', name: 'One Week Streak', description: 'Maintain a 7-day streak' },
   flame_burst: { type: 'achievement', achievementId: 'workout_10', name: '10 Workouts', description: 'Complete 10 workouts' },
   blazing_combo: { type: 'achievement', achievementId: 'workout_streak_30', name: '30-Day Workout Streak', description: 'Complete 30 days of workouts in a row' },
 
   // Ice achievements
-  blizzard: { type: 'achievement', achievementId: 'two_weeks', name: 'Two Week Streak', description: 'Maintain a 14-day streak' },
   ice_beam: { type: 'achievement', achievementId: 'deep_work_10', name: 'Deep Focus', description: 'Log 10 deep work sessions' },
 
   // Lightning achievements
-  thunder_storm: { type: 'achievement', achievementId: 'task_500', name: 'Task Master', description: 'Complete 500 tasks' },
   static_shock: { type: 'achievement', achievementId: 'task_blitz', name: 'Task Blitz', description: 'Complete many tasks quickly' },
 
   // Earth achievements
@@ -1226,26 +1233,21 @@ export const ABILITY_UNLOCKS = {
   landslide: { type: 'achievement', achievementId: 'level_50', name: 'Level 50', description: 'Reach level 50' },
 
   // Wind achievements
-  tornado: { type: 'achievement', achievementId: 'bookworm', name: 'Bookworm', description: 'Finish multiple books' },
   gale_force: { type: 'achievement', achievementId: 'early_bird', name: 'Early Bird', description: 'Complete tasks early in the morning' },
   air_cutter: { type: 'achievement', achievementId: 'journal_streak_7', name: '7-Day Journal Streak', description: 'Write journal entries for 7 days in a row' },
 
   // Water achievements
-  tidal_wave: { type: 'achievement', achievementId: 'meal_log_30', name: 'Meal Logger', description: 'Log meals for 30 days' },
   hydro_pump: { type: 'achievement', achievementId: 'calorie_goal_30', name: 'Calorie Champion', description: 'Hit calorie goals for 30 days' },
   bubble_storm: { type: 'achievement', achievementId: 'protein_goal_14', name: 'Protein Pro', description: 'Hit protein goals for 14 days' },
 
   // Poison achievements
-  poison_cloud: { type: 'achievement', achievementId: 'chain_breaker', name: 'Chain Breaker', description: 'Break a negative chain' },
   venom_spray: { type: 'achievement', achievementId: 'comeback_kid', name: 'Comeback Kid', description: 'Make a comeback' },
   plague: { type: 'achievement', achievementId: 'triple_threat', name: 'Triple Threat', description: 'Excel in multiple areas' },
 
   // Dark achievements
-  void_rift: { type: 'achievement', achievementId: 'night_owl_streak', name: 'Night Owl Streak', description: 'Complete activities at night consistently' },
   dark_tendrils: { type: 'achievement', achievementId: 'deep_work_100', name: 'Deep Worker', description: 'Log 100 deep work sessions' },
 
   // Holy achievements
-  smite: { type: 'achievement', achievementId: 'journal_streak_30', name: 'Journal Master', description: 'Write journal entries for 30 days in a row' },
   radiant_burst: { type: 'achievement', achievementId: 'xp_1000', name: 'XP Collector', description: 'Earn 1000 XP' },
   consecrate: { type: 'achievement', achievementId: 'xp_10000', name: 'XP Master', description: 'Earn 10000 XP' },
 
@@ -1310,6 +1312,30 @@ export function getAbilitiesByUnlockType(type) {
   return Object.entries(ABILITY_UNLOCKS)
     .filter(([_, unlock]) => unlock.type === type)
     .map(([abilityId, _]) => abilityId);
+}
+
+/**
+ * Get all bazaar purchasable abilities with full data
+ * @returns {Array} Array of ability objects with price and rarity from ABILITY_UNLOCKS
+ */
+export function getBazaarAbilities() {
+  const bazaarAbilities = [];
+
+  for (const [abilityId, unlock] of Object.entries(ABILITY_UNLOCKS)) {
+    if (unlock.type === 'bazaar') {
+      const ability = getAbilityById(abilityId);
+      if (ability) {
+        bazaarAbilities.push({
+          ...ability,
+          price: unlock.price,
+          rarity: unlock.rarity,
+          unlockType: 'bazaar',
+        });
+      }
+    }
+  }
+
+  return bazaarAbilities;
 }
 
 /**

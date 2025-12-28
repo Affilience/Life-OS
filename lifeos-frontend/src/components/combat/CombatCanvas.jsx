@@ -37,16 +37,33 @@ const CombatCanvas = forwardRef(({
   // Canvas renderer doesn't support WebGL shaders, so filters are skipped
   const safeApplyFilters = (displayObject, filters) => {
     if (supportsFilters() && displayObject) {
-      displayObject.filters = filters;
+      try {
+        displayObject.filters = filters;
+      } catch (e) {
+        // Canvas renderer doesn't support WebGL filters - silently skip
+      }
     }
   };
 
   // Safe GlowFilter creation - returns filter or null based on renderer
-  const createGlowFilter = (options) => {
-    if (supportsFilters()) {
+  // Also catches errors in case filter creation fails
+  const createSafeGlowFilter = (options) => {
+    if (!supportsFilters()) return null;
+    try {
       return new GlowFilter(options);
+    } catch (e) {
+      return null;
     }
-    return null;
+  };
+
+  // Safe filter assignment helper - wraps the common pattern of creating and applying glow filters
+  const applyGlow = (displayObject, options) => {
+    if (!supportsFilters() || !displayObject) return;
+    try {
+      try { displayObject.filters = [new GlowFilter(options)]; } catch (e) { /* Canvas fallback */ }
+    } catch (e) {
+      // Canvas renderer doesn't support filters - skip silently
+    }
   };
 
   // Initialize PixiJS
@@ -337,22 +354,26 @@ const CombatCanvas = forwardRef(({
       }
     };
 
-    // Add filters
-    mainSlash.filters = [new GlowFilter({
-      distance: 20,
-      outerStrength: 3,
-      innerStrength: 1,
-      color: glowColor,
-      quality: 0.5,
-    })];
+    // Add filters (wrapped for Canvas fallback)
+    try {
+      mainSlash.filters = [new GlowFilter({
+        distance: 20,
+        outerStrength: 3,
+        innerStrength: 1,
+        color: glowColor,
+        quality: 0.5,
+      })];
+    } catch (e) { /* Canvas fallback */ }
 
-    glowSlash.filters = [new GlowFilter({
-      distance: 35,
-      outerStrength: 2,
-      innerStrength: 0,
-      color: glowColor,
-      quality: 0.3,
-    })];
+    try {
+      glowSlash.filters = [new GlowFilter({
+        distance: 35,
+        outerStrength: 2,
+        innerStrength: 0,
+        color: glowColor,
+        quality: 0.3,
+      })];
+    } catch (e) { /* Canvas fallback */ }
 
     // Spawn speed lines during animation
     const spawnSpeedLine = (t) => {
@@ -372,12 +393,14 @@ const CombatCanvas = forwardRef(({
       line.y = point.y;
       line.rotation = angle;
 
-      line.filters = [new GlowFilter({
-        distance: 8,
-        outerStrength: 1.5,
-        color: glowColor,
-        quality: 0.3,
-      })];
+      try {
+        line.filters = [new GlowFilter({
+          distance: 8,
+          outerStrength: 1.5,
+          color: glowColor,
+          quality: 0.3,
+        })];
+      } catch (e) { /* Canvas fallback */ }
 
       speedLines.addChild(line);
 
@@ -465,12 +488,14 @@ const CombatCanvas = forwardRef(({
     spark.y = y;
     spark.rotation = Math.random() * Math.PI * 2;
 
-    spark.filters = [new GlowFilter({
-      distance: 6,
-      outerStrength: 2,
-      color: glowColor,
-      quality: 0.3,
-    })];
+    try {
+      spark.filters = [new GlowFilter({
+        distance: 6,
+        outerStrength: 2,
+        color: glowColor,
+        quality: 0.3,
+      })];
+    } catch (e) { /* Canvas fallback */ }
 
     const vx = (Math.random() - 0.5) * 8;
     const vy = (Math.random() - 0.5) * 8;
@@ -570,13 +595,15 @@ const CombatCanvas = forwardRef(({
     drawProjectile();
     projectile.x = posX;
     projectile.y = posY;
-    projectile.filters = [new GlowFilter({
-      distance: 25,
-      outerStrength: 3,
-      innerStrength: 1,
-      color: glowColor,
-      quality: 0.5,
-    })];
+    try {
+      projectile.filters = [new GlowFilter({
+        distance: 25,
+        outerStrength: 3,
+        innerStrength: 1,
+        color: glowColor,
+        quality: 0.5,
+      })];
+    } catch (e) { /* Canvas fallback */ }
 
     container.addChild(projectile);
 
@@ -602,12 +629,14 @@ const CombatCanvas = forwardRef(({
         trail.endFill();
         trail.x = posX + (Math.random() - 0.5) * size;
         trail.y = posY + (Math.random() - 0.5) * size;
-        trail.filters = [new GlowFilter({
-          distance: 10,
-          outerStrength: 1.5,
-          color: glowColor,
-          quality: 0.3,
-        })];
+        try {
+          trail.filters = [new GlowFilter({
+            distance: 10,
+            outerStrength: 1.5,
+            color: glowColor,
+            quality: 0.3,
+          })];
+        } catch (e) { /* Canvas fallback */ }
         container.addChild(trail);
         trailParticles.push({ sprite: trail, life: 1 });
       }
@@ -710,13 +739,15 @@ const CombatCanvas = forwardRef(({
       particle.y = y + (Math.random() - 0.5) * 10;
       particle.rotation = Math.random() * Math.PI * 2;
 
-      particle.filters = [new GlowFilter({
-        distance: 10,
-        outerStrength: 1.8,
-        innerStrength: 0.5,
-        color: glowColor,
-        quality: 0.3,
-      })];
+      try {
+        particle.filters = [new GlowFilter({
+          distance: 10,
+          outerStrength: 1.8,
+          innerStrength: 0.5,
+          color: glowColor,
+          quality: 0.3,
+        })];
+      } catch (e) { /* Canvas fallback */ }
 
       // Random velocity with spread
       const angle = direction + (Math.random() - 0.5) * spread;
@@ -953,12 +984,14 @@ const CombatCanvas = forwardRef(({
     const middleBolt = drawBolt(mainPath, 6, 0xffffcc, 0.8);
     const coreBolt = drawBolt(mainPath, 2, 0xffffff, 1);
 
-    glowBolt.filters = [new GlowFilter({
-      distance: 40,
-      outerStrength: 3,
-      color: 0xffff00,
-      quality: 0.3,
-    })];
+    try {
+      glowBolt.filters = [new GlowFilter({
+        distance: 40,
+        outerStrength: 3,
+        color: 0xffff00,
+        quality: 0.3,
+      })];
+    } catch (e) { /* Canvas fallback */ }
 
     container.addChild(glowBolt);
     container.addChild(outerBolt);
@@ -1036,12 +1069,14 @@ const CombatCanvas = forwardRef(({
       impactRing.drawCircle(0, 0, 5);
       impactRing.x = x;
       impactRing.y = y;
-      impactRing.filters = [new GlowFilter({
-        distance: 15,
-        outerStrength: 2,
-        color: 0xffffaa,
-        quality: 0.3,
-      })];
+      try {
+        impactRing.filters = [new GlowFilter({
+          distance: 15,
+          outerStrength: 2,
+          color: 0xffffaa,
+          quality: 0.3,
+        })];
+      } catch (e) { /* Canvas fallback */ }
       app.layers.particles.addChild(impactRing);
 
       let ringProgress = 0;
@@ -1464,7 +1499,7 @@ const CombatCanvas = forwardRef(({
         bolt.lineStyle(4, 0xffff00, 1);
         bolt.moveTo(points[0].x, points[0].y);
         points.forEach(p => bolt.lineTo(p.x, p.y));
-        bolt.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xffffaa, quality: 0.3 })];
+        try { bolt.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xffffaa, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
         container.addChild(bolt);
 
         // Core
@@ -1531,7 +1566,7 @@ const CombatCanvas = forwardRef(({
       const height = Math.random() * 100;
       const speed = 0.05 + Math.random() * 0.05;
 
-      particle.filters = [new GlowFilter({ distance: 8, outerStrength: 1.5, color: 0x88bbdd, quality: 0.3 })];
+      try { particle.filters = [new GlowFilter({ distance: 8, outerStrength: 1.5, color: 0x88bbdd, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
       container.addChild(particle);
 
       particles.push({ sprite: particle, angle, radius, height, speed, baseRadius: radius });
@@ -1601,7 +1636,7 @@ const CombatCanvas = forwardRef(({
       plus.endFill();
       plus.x = x + (Math.random() - 0.5) * 40;
       plus.y = y;
-      plus.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0x44ff88, quality: 0.3 })];
+      try { plus.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0x44ff88, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
       app.layers.particles.addChild(plus);
 
       let progress = 0;
@@ -1649,7 +1684,7 @@ const CombatCanvas = forwardRef(({
     shield.endFill();
     shield.x = x;
     shield.y = y;
-    shield.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: 0x44aaff, quality: 0.3 })];
+    try { shield.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: 0x44aaff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
     container.addChild(shield);
 
     // Animate shield appearance
@@ -1714,7 +1749,7 @@ const CombatCanvas = forwardRef(({
       particle.endFill();
       particle.x = x + (Math.random() - 0.5) * 30;
       particle.y = y + 50;
-      particle.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color, quality: 0.3 })];
+      try { particle.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
       container.addChild(particle);
 
       const speed = 2 + Math.random() * 3;
@@ -1778,7 +1813,7 @@ const CombatCanvas = forwardRef(({
         );
       }
 
-      tendril.filters = [new GlowFilter({ distance: 8, outerStrength: 1.5, color: 0x880088, quality: 0.3 })];
+      try { tendril.filters = [new GlowFilter({ distance: 8, outerStrength: 1.5, color: 0x880088, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
       app.layers.particles.addChild(tendril);
 
       let progress = 0;
@@ -1847,7 +1882,7 @@ const CombatCanvas = forwardRef(({
     core.moveTo(startX, startY);
     core.lineTo(endX, endY);
 
-    beam.filters = [new GlowFilter({ distance: 25, outerStrength: 3, color, quality: 0.3 })];
+    try { beam.filters = [new GlowFilter({ distance: 25, outerStrength: 3, color, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
     container.addChild(beam);
     container.addChild(core);
 
@@ -1907,7 +1942,7 @@ const CombatCanvas = forwardRef(({
       const angle = Math.random() * Math.PI * 2;
       const radius = 30 + Math.random() * 50;
 
-      particle.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0x6622cc, quality: 0.3 })];
+      try { particle.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0x6622cc, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
       container.addChild(particle);
       diskParticles.push({ sprite: particle, angle, radius, speed: 0.03 + Math.random() * 0.04 });
     }
@@ -1997,12 +2032,14 @@ const CombatCanvas = forwardRef(({
     };
 
     drawBeam();
-    beam.filters = [new GlowFilter({
-      distance: 30,
-      outerStrength: 2,
-      color: 0xffff88,
-      quality: 0.3,
-    })];
+    try {
+      beam.filters = [new GlowFilter({
+        distance: 30,
+        outerStrength: 2,
+        color: 0xffff88,
+        quality: 0.3,
+      })];
+    } catch (e) { /* Canvas fallback */ }
     container.addChild(beam);
 
     // Create radiating light rays from impact point
@@ -2029,12 +2066,14 @@ const CombatCanvas = forwardRef(({
       ray.rotation = angle;
       ray.alpha = 0;
 
-      ray.filters = [new GlowFilter({
-        distance: 12,
-        outerStrength: 1.5,
-        color: 0xffffaa,
-        quality: 0.3,
-      })];
+      try {
+        ray.filters = [new GlowFilter({
+          distance: 12,
+          outerStrength: 1.5,
+          color: 0xffffaa,
+          quality: 0.3,
+        })];
+      } catch (e) { /* Canvas fallback */ }
 
       rayContainer.addChild(ray);
     }
@@ -2048,12 +2087,14 @@ const CombatCanvas = forwardRef(({
       ring.x = targetX;
       ring.y = targetY;
       ring.alpha = 0;
-      ring.filters = [new GlowFilter({
-        distance: 8,
-        outerStrength: 1.5,
-        color: 0xffffaa,
-        quality: 0.3,
-      })];
+      try {
+        ring.filters = [new GlowFilter({
+          distance: 8,
+          outerStrength: 1.5,
+          color: 0xffffaa,
+          quality: 0.3,
+        })];
+      } catch (e) { /* Canvas fallback */ }
       container.addChild(ring);
       rings.push({ sprite: ring, delay: i * 100, started: false });
     }
@@ -2580,7 +2621,7 @@ const CombatCanvas = forwardRef(({
             impact.endFill();
             impact.x = cx;
             impact.y = cy - 100;
-            impact.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: colors.glow, quality: 0.3 })];
+            try { impact.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: colors.glow, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(impact);
 
             let impactProgress = 0;
@@ -2743,7 +2784,7 @@ const CombatCanvas = forwardRef(({
             spark.endFill();
             spark.x = cx;
             spark.y = cy;
-            spark.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xaaaaff, quality: 0.3 })];
+            try { spark.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xaaaaff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(spark);
 
             // Clashing lines
@@ -2755,7 +2796,7 @@ const CombatCanvas = forwardRef(({
               line.lineTo(Math.cos(angle) * 40, Math.sin(angle) * 40);
               line.x = cx;
               line.y = cy;
-              line.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xaaaaff, quality: 0.3 })];
+              try { line.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xaaaaff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(line);
 
               let lineProgress = 0;
@@ -2859,7 +2900,7 @@ const CombatCanvas = forwardRef(({
             fist.endFill();
             fist.x = cx - 60;
             fist.y = cy;
-            fist.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: colors.glow, quality: 0.3 })];
+            try { fist.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: colors.glow, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(fist);
 
             let punchProgress = 0;
@@ -2925,7 +2966,7 @@ const CombatCanvas = forwardRef(({
               star.endFill();
               star.x = starX;
               star.y = starY;
-              star.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0xffff00, quality: 0.3 })];
+              try { star.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.particles.addChild(star);
 
               star.rotation = Math.random() * Math.PI;
@@ -2961,7 +3002,7 @@ const CombatCanvas = forwardRef(({
             body.endFill();
             body.x = cx - 100;
             body.y = cy - 50;
-            body.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: colors.glow, quality: 0.3 })];
+            try { body.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: colors.glow, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(body);
 
             let slamProgress = 0;
@@ -3000,7 +3041,7 @@ const CombatCanvas = forwardRef(({
               const ly = cy - 30 + i * 12;
               line.moveTo(cx - 100, ly);
               line.lineTo(cx + 50, ly);
-              line.filters = [new GlowFilter({ distance: 8, outerStrength: 1, color: colors.glow, quality: 0.3 })];
+              try { line.filters = [new GlowFilter({ distance: 8, outerStrength: 1, color: colors.glow, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(line);
 
               let lineProgress = 0;
@@ -3054,7 +3095,7 @@ const CombatCanvas = forwardRef(({
             dragonHead.lineTo(-40, 0);
             dragonHead.closePath();
             dragonHead.endFill();
-            dragonHead.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xff6600, quality: 0.3 })];
+            try { dragonHead.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xff6600, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             dragonContainer.addChild(dragonHead);
 
             // Dragon body trail
@@ -3065,7 +3106,7 @@ const CombatCanvas = forwardRef(({
               segment.endFill();
               segment.x = -i * 25;
               segment.y = Math.sin(i * 0.5) * 10;
-              segment.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xff2200, quality: 0.2 })];
+              try { segment.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xff2200, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
               dragonContainer.addChild(segment);
             }
 
@@ -3170,7 +3211,7 @@ const CombatCanvas = forwardRef(({
             aura.endFill();
             aura.x = cx;
             aura.y = cy;
-            aura.filters = [new GlowFilter({ distance: 40, outerStrength: 4, color: 0xff0000, quality: 0.3 })];
+            try { aura.filters = [new GlowFilter({ distance: 40, outerStrength: 4, color: 0xff0000, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(aura);
 
             let auraProgress = 0;
@@ -3266,7 +3307,7 @@ const CombatCanvas = forwardRef(({
               rift.drawEllipse(0, 0, 50 + ring * 15, 30 + ring * 10);
               rift.x = cx;
               rift.y = cy;
-              rift.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0x4488ff, quality: 0.3 })];
+              try { rift.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0x4488ff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               riftContainer.addChild(rift);
             }
 
@@ -3281,7 +3322,7 @@ const CombatCanvas = forwardRef(({
               symbol.x = cx + Math.cos(angle) * 80;
               symbol.y = cy + Math.sin(angle) * 50;
               symbol.startAngle = angle;
-              symbol.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0x88ccff, quality: 0.3 })];
+              try { symbol.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0x88ccff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               riftContainer.addChild(symbol);
             }
 
@@ -3362,7 +3403,7 @@ const CombatCanvas = forwardRef(({
               star.y = cy + Math.sin(angle) * dist;
               star.targetX = cx;
               star.targetY = cy;
-              star.filters = [new GlowFilter({ distance: 10, outerStrength: 3, color: 0xffffff, quality: 0.3 })];
+              try { star.filters = [new GlowFilter({ distance: 10, outerStrength: 3, color: 0xffffff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               cosmicContainer.addChild(star);
             }
 
@@ -3389,7 +3430,7 @@ const CombatCanvas = forwardRef(({
                 core.endFill();
                 core.x = cx;
                 core.y = cy;
-                core.filters = [new GlowFilter({ distance: 50, outerStrength: 6, color: 0xffffaa, quality: 0.3 })];
+                try { core.filters = [new GlowFilter({ distance: 50, outerStrength: 6, color: 0xffffaa, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(core);
 
                 let explodeProgress = 0;
@@ -3470,7 +3511,7 @@ const CombatCanvas = forwardRef(({
               mist.x = cx + (Math.random() - 0.5) * 200;
               mist.y = cy + 60;
               mist.vy = -1 - Math.random() * 2;
-              mist.filters = [new GlowFilter({ distance: 10, outerStrength: 1, color: 0x8800ff, quality: 0.2 })];
+              try { mist.filters = [new GlowFilter({ distance: 10, outerStrength: 1, color: 0x8800ff, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(mist);
 
               let mistProgress = 0;
@@ -3516,7 +3557,7 @@ const CombatCanvas = forwardRef(({
                   soul.endFill();
                   soul.x = cx + (Math.random() - 0.5) * 120;
                   soul.y = cy + (Math.random() - 0.5) * 80;
-                  soul.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0x8800ff, quality: 0.3 })];
+                  try { soul.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0x8800ff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                   app.layers.particles.addChild(soul);
 
                   let soulProgress = 0;
@@ -3555,7 +3596,7 @@ const CombatCanvas = forwardRef(({
               skull.endFill();
               skull.x = cx;
               skull.y = cy;
-              skull.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0x8800ff, quality: 0.3 })];
+              try { skull.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0x8800ff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(skull);
 
               let skullProgress = 0;
@@ -3601,7 +3642,7 @@ const CombatCanvas = forwardRef(({
               crystal.rotation = angle;
               crystal.targetX = cx + Math.cos(angle) * 30;
               crystal.targetY = cy + Math.sin(angle) * 20;
-              crystal.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0x00aaff, quality: 0.3 })];
+              try { crystal.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0x00aaff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(crystal);
               crystals.push(crystal);
             }
@@ -3700,7 +3741,7 @@ const CombatCanvas = forwardRef(({
                 star.endFill();
                 star.x = cx + point.x;
                 star.y = cy + point.y - 50;
-                star.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xffff00, quality: 0.3 })];
+                try { star.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(star);
                 stars.push(star);
 
@@ -3726,7 +3767,7 @@ const CombatCanvas = forwardRef(({
                 else lines.lineTo(cx + point.x, cy + point.y - 50);
               });
               lines.lineTo(cx + constellationPoints[0].x, cy + constellationPoints[0].y - 50);
-              lines.filters = [new GlowFilter({ distance: 10, outerStrength: 1, color: 0xffffaa, quality: 0.3 })];
+              try { lines.filters = [new GlowFilter({ distance: 10, outerStrength: 1, color: 0xffffaa, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(lines);
 
               // Stars fall down
@@ -3810,7 +3851,7 @@ const CombatCanvas = forwardRef(({
               waterRing.lineStyle(4 - ring * 0.5, 0x4488cc, 0.7 - ring * 0.1);
               waterRing.drawEllipse(0, 0, 30 + ring * 20, 20 + ring * 12);
               waterRing.y = ring * 8;
-              waterRing.filters = [new GlowFilter({ distance: 10, outerStrength: 1, color: 0x2266aa, quality: 0.2 })];
+              try { waterRing.filters = [new GlowFilter({ distance: 10, outerStrength: 1, color: 0x2266aa, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
               vortexContainer.addChild(waterRing);
             }
             vortexContainer.x = cx;
@@ -3828,7 +3869,7 @@ const CombatCanvas = forwardRef(({
               drop.speed = 0.08 + Math.random() * 0.04;
               drop.x = cx + Math.cos(drop.angle) * drop.dist;
               drop.y = cy + Math.sin(drop.angle) * drop.dist * 0.6;
-              drop.filters = [new GlowFilter({ distance: 6, outerStrength: 1, color: 0x4488cc, quality: 0.2 })];
+              try { drop.filters = [new GlowFilter({ distance: 6, outerStrength: 1, color: 0x4488cc, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
               vortexContainer.addChild(drop);
               droplets.push(drop);
             }
@@ -3920,7 +3961,7 @@ const CombatCanvas = forwardRef(({
                 }
                 spark.x = startX;
                 spark.y = startY;
-                spark.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0xffff00, quality: 0.3 })];
+                try { spark.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(spark);
 
                 let sparkProgress = 0;
@@ -3974,7 +4015,7 @@ const CombatCanvas = forwardRef(({
                   boltY += 20;
                   bolt.lineTo(boltX, boltY);
                 }
-                bolt.filters = [new GlowFilter({ distance: 15, outerStrength: 3, color: 0xffff00, quality: 0.3 })];
+                try { bolt.filters = [new GlowFilter({ distance: 15, outerStrength: 3, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(bolt);
 
                 let boltProgress = 0;
@@ -4037,7 +4078,7 @@ const CombatCanvas = forwardRef(({
             }
             pentagram.x = cx;
             pentagram.y = cy;
-            pentagram.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xff0000, quality: 0.3 })];
+            try { pentagram.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xff0000, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.background.addChild(pentagram);
 
             // Rotating pentagram
@@ -4069,7 +4110,7 @@ const CombatCanvas = forwardRef(({
                 flame.endFill();
                 flame.x = cx + (Math.random() - 0.5) * 120;
                 flame.y = cy + 80;
-                flame.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xff0000, quality: 0.2 })];
+                try { flame.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xff0000, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(flame);
 
                 let flameProgress = 0;
@@ -4151,7 +4192,7 @@ const CombatCanvas = forwardRef(({
             prism.endFill();
             prism.x = cx - 100;
             prism.y = cy;
-            prism.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xffffff, quality: 0.3 })];
+            try { prism.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xffffff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(prism);
 
             // Light beam enters prism
@@ -4161,7 +4202,7 @@ const CombatCanvas = forwardRef(({
             beam.lineTo(0, 0);
             beam.x = cx - 100;
             beam.y = cy;
-            beam.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xffffff, quality: 0.3 })];
+            try { beam.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xffffff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(beam);
 
             // Rainbow beams shoot out
@@ -4175,7 +4216,7 @@ const CombatCanvas = forwardRef(({
                   rainbowBeam.lineTo(Math.cos(angle) * 200, Math.sin(angle) * 120);
                   rainbowBeam.x = cx - 75;
                   rainbowBeam.y = cy;
-                  rainbowBeam.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color: color, quality: 0.3 })];
+                  try { rainbowBeam.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color: color, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                   app.layers.effects.addChild(rainbowBeam);
 
                   // Particles along beam
@@ -4277,7 +4318,7 @@ const CombatCanvas = forwardRef(({
             tome.endFill();
             tome.x = cx - 80;
             tome.y = cy;
-            tome.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xffaa00, quality: 0.3 })];
+            try { tome.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xffaa00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(tome);
 
             // Glowing runes float up from tome
@@ -4292,7 +4333,7 @@ const CombatCanvas = forwardRef(({
                 rune.y = cy;
                 rune.targetX = cx + (Math.random() - 0.5) * 150;
                 rune.targetY = cy + (Math.random() - 0.5) * 100;
-                rune.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color: 0xff00ff, quality: 0.3 })];
+                try { rune.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color: 0xff00ff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.particles.addChild(rune);
 
                 let runeProgress = 0;
@@ -4443,7 +4484,7 @@ const CombatCanvas = forwardRef(({
               ring.x = cx;
               ring.y = cy;
               ring.targetScale = 0.1;
-              ring.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xaa44ff, quality: 0.3 })];
+              try { ring.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xaa44ff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               chargeContainer.addChild(ring);
             }
 
@@ -4468,7 +4509,7 @@ const CombatCanvas = forwardRef(({
                 beam.endFill();
                 beam.x = cx;
                 beam.y = cy;
-                beam.filters = [new GlowFilter({ distance: 30, outerStrength: 5, color: 0xaa44ff, quality: 0.3 })];
+                try { beam.filters = [new GlowFilter({ distance: 30, outerStrength: 5, color: 0xaa44ff, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(beam);
 
                 let beamProgress = 0;
@@ -4540,7 +4581,7 @@ const CombatCanvas = forwardRef(({
             ritual.drawCircle(0, 0, 100);
             ritual.x = cx;
             ritual.y = cy;
-            ritual.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0x44ff44, quality: 0.3 })];
+            try { ritual.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0x44ff44, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.background.addChild(ritual);
 
             // Soul tendrils reaching out
@@ -4558,7 +4599,7 @@ const CombatCanvas = forwardRef(({
               tendril.x = cx;
               tendril.y = cy;
               tendril.angle = angle;
-              tendril.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0x44ff44, quality: 0.2 })];
+              try { tendril.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0x44ff44, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(tendril);
               tendrils.push(tendril);
             }
@@ -4763,7 +4804,7 @@ const CombatCanvas = forwardRef(({
             hammer.endFill();
             hammer.x = cx;
             hammer.y = cy - 100;
-            hammer.filters = [new GlowFilter({ distance: 25, outerStrength: 4, color: 0xffff00, quality: 0.3 })];
+            try { hammer.filters = [new GlowFilter({ distance: 25, outerStrength: 4, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(hammer);
 
             // Lightning gathering around hammer
@@ -4782,7 +4823,7 @@ const CombatCanvas = forwardRef(({
                 }
                 bolt.x = cx;
                 bolt.y = cy - 100;
-                bolt.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0xffff00, quality: 0.2 })];
+                try { bolt.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0xffff00, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(bolt);
 
                 let boltProgress = 0;
@@ -4875,7 +4916,7 @@ const CombatCanvas = forwardRef(({
                 spark.endFill();
                 spark.x = cx + (Math.random() - 0.5) * 100;
                 spark.y = cy - 80 + (Math.random() - 0.5) * 20;
-                spark.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0xff0000, quality: 0.3 })];
+                try { spark.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0xff0000, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.particles.addChild(spark);
 
                 let sparkProg = 0;
@@ -5201,7 +5242,7 @@ const CombatCanvas = forwardRef(({
             // Horizontal line
             cross.moveTo(targetX - 50, targetY - 20);
             cross.lineTo(targetX + 50, targetY - 20);
-            cross.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xffff00, quality: 0.3 })];
+            try { cross.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(cross);
 
             // Animate cross (flash in, expand, fade)
@@ -5265,7 +5306,7 @@ const CombatCanvas = forwardRef(({
                 ring.drawCircle(0, 0, 10);
                 ring.x = targetX;
                 ring.y = targetY;
-                ring.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xffff00, quality: 0.3 })];
+                try { ring.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(ring);
 
                 let ringProgress = 0;
@@ -5294,7 +5335,7 @@ const CombatCanvas = forwardRef(({
               ray.lineTo(Math.cos(angle) * 100, Math.sin(angle) * 100);
               ray.x = targetX;
               ray.y = targetY;
-              ray.filters = [new GlowFilter({ distance: 10, outerStrength: 1.5, color: 0xffff66, quality: 0.3 })];
+              try { ray.filters = [new GlowFilter({ distance: 10, outerStrength: 1.5, color: 0xffff66, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(ray);
 
               ray.scale.set(0);
@@ -5339,7 +5380,7 @@ const CombatCanvas = forwardRef(({
             dome.endFill();
             dome.x = targetX;
             dome.y = targetY + 20;
-            dome.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: 0xffff00, quality: 0.3 })];
+            try { dome.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             container.addChild(dome);
 
             // Rising particles inside dome
@@ -5418,7 +5459,7 @@ const CombatCanvas = forwardRef(({
             circle.lineTo(0, 60);
             circle.x = targetX;
             circle.y = targetY + 30;
-            circle.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xffaa00, quality: 0.3 })];
+            try { circle.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xffaa00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(circle);
 
             // Appear animation
@@ -5450,7 +5491,7 @@ const CombatCanvas = forwardRef(({
                   pillar.endFill();
                   pillar.x = px;
                   pillar.y = py;
-                  pillar.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xffff00, quality: 0.3 })];
+                  try { pillar.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                   app.layers.effects.addChild(pillar);
 
                   pillar.scale.y = 0;
@@ -5522,8 +5563,8 @@ const CombatCanvas = forwardRef(({
             rightWing.x = targetX + 10;
             rightWing.y = targetY - 20;
 
-            leftWing.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: 0xffff00, quality: 0.3 })];
-            rightWing.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: 0xffff00, quality: 0.3 })];
+            try { leftWing.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
+            try { rightWing.filters = [new GlowFilter({ distance: 20, outerStrength: 2, color: 0xffff00, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
 
             container.addChild(leftWing);
             container.addChild(rightWing);
@@ -5555,7 +5596,7 @@ const CombatCanvas = forwardRef(({
                   feather.x = targetX + (Math.random() - 0.5) * 60;
                   feather.y = targetY - 10;
                   feather.rotation = angle;
-                  feather.filters = [new GlowFilter({ distance: 8, outerStrength: 1.5, color: 0xffff66, quality: 0.3 })];
+                  try { feather.filters = [new GlowFilter({ distance: 8, outerStrength: 1.5, color: 0xffff66, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                   app.layers.particles.addChild(feather);
 
                   const speed = 8 + Math.random() * 6;
@@ -5987,7 +6028,7 @@ const CombatCanvas = forwardRef(({
           slime.endFill();
           slime.x = cx;
           slime.y = cy - 150;
-          slime.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0x6b21a8, quality: 0.3 })];
+          try { slime.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0x6b21a8, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
           app.layers.effects.addChild(slime);
 
           let bouncePhase = 0;
@@ -6103,7 +6144,7 @@ const CombatCanvas = forwardRef(({
           club.y = cy - 100;
           club.pivot.set(0, 40);
           club.rotation = -1.5;
-          club.filters = [new GlowFilter({ distance: 10, outerStrength: 1, color: 0x65a30d, quality: 0.2 })];
+          try { club.filters = [new GlowFilter({ distance: 10, outerStrength: 1, color: 0x65a30d, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
           app.layers.effects.addChild(club);
 
           let swingProgress = 0;
@@ -6149,7 +6190,7 @@ const CombatCanvas = forwardRef(({
             fist.endFill();
             fist.x = cx + (i === 0 ? -50 : 50);
             fist.y = cy - 120;
-            fist.filters = [new GlowFilter({ distance: 8, outerStrength: 1, color: 0x78716c, quality: 0.2 })];
+            try { fist.filters = [new GlowFilter({ distance: 8, outerStrength: 1, color: 0x78716c, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(fist);
             fists.push(fist);
           }
@@ -6197,7 +6238,7 @@ const CombatCanvas = forwardRef(({
           fireCore.endFill();
           fireCore.x = cx - 80;
           fireCore.y = cy - 40;
-          fireCore.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xff6600, quality: 0.3 })];
+          try { fireCore.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xff6600, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
           app.layers.effects.addChild(fireCore);
 
           const chargeInterval = setInterval(() => {
@@ -6268,7 +6309,7 @@ const CombatCanvas = forwardRef(({
                 breath.lineTo(120, 40 + wave * 3);
                 breath.closePath();
                 breath.endFill();
-                breath.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0x0891b2, quality: 0.3 })];
+                try { breath.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0x0891b2, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 breathContainer.addChild(breath);
                 let breathProgress = 0;
                 const animateBreath = () => {
@@ -6307,7 +6348,7 @@ const CombatCanvas = forwardRef(({
           }
           magicCircle.x = cx;
           magicCircle.y = cy;
-          magicCircle.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0x7c3aed, quality: 0.3 })];
+          try { magicCircle.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0x7c3aed, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
           app.layers.effects.addChild(magicCircle);
           for (let i = 0; i < 20; i++) {
             setTimeout(() => {
@@ -6359,7 +6400,7 @@ const CombatCanvas = forwardRef(({
           portal.x = cx;
           portal.y = cy + 30;
           portal.scale.set(0);
-          portal.filters = [new GlowFilter({ distance: 25, outerStrength: 3, color: 0x4c1d95, quality: 0.3 })];
+          try { portal.filters = [new GlowFilter({ distance: 25, outerStrength: 3, color: 0x4c1d95, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
           app.layers.effects.addChild(portal);
 
           let portalProgress = 0;
@@ -6378,7 +6419,7 @@ const CombatCanvas = forwardRef(({
                   tentacle.quadraticCurveTo(offsetX * 0.5, -40, offsetX, -80 - i * 10);
                   tentacle.x = cx;
                   tentacle.y = cy + 30;
-                  tentacle.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0x1e1b4b, quality: 0.2 })];
+                  try { tentacle.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0x1e1b4b, quality: 0.2 })]; } catch (e) { /* Canvas fallback */ }
                   app.layers.effects.addChild(tentacle);
                   let whipProgress = 0;
                   const animateWhip = () => {
@@ -6451,7 +6492,7 @@ const CombatCanvas = forwardRef(({
                 fireWave.endFill();
                 fireWave.x = cx - 80;
                 fireWave.y = cy - 20;
-                fireWave.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xff6600, quality: 0.3 })];
+                try { fireWave.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: 0xff6600, quality: 0.3 })]; } catch (e) { /* Canvas fallback */ }
                 breathContainer.addChild(fireWave);
                 let waveProgress = 0;
                 const animateWave = () => {
@@ -6508,7 +6549,6 @@ const CombatCanvas = forwardRef(({
   // Creates unique visually impressive projectiles for each boss attack type
   const createBossProjectile = useCallback((startX, startY, targetX, targetY, options = {}) => {
     const app = appRef.current;
-    if (!app || !app.layers) return;
 
     const {
       color = 0xff0000,
@@ -6517,6 +6557,14 @@ const CombatCanvas = forwardRef(({
       onImpact = null,
       attackType = 'default',
     } = options;
+
+    // If app isn't ready, still apply damage after a delay (fallback)
+    if (!app || !app.layers) {
+      if (onImpact) {
+        setTimeout(onImpact, 350); // Delay to simulate projectile travel time
+      }
+      return;
+    }
 
     const dx = targetX - startX;
     const dy = targetY - startY;
@@ -6540,7 +6588,7 @@ const CombatCanvas = forwardRef(({
         exp.endFill();
         exp.x = targetX; exp.y = targetY;
         exp.vx = Math.cos(a) * vel; exp.vy = Math.sin(a) * vel;
-        exp.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color })];
+        try { try { exp.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ } } catch (e) { /* Canvas fallback */ }
         app.layers.effects.addChild(exp);
         const animateExp = () => {
           exp.x += exp.vx; exp.y += exp.vy;
@@ -6566,7 +6614,7 @@ const CombatCanvas = forwardRef(({
         core.beginFill(0xffffff, 0.4);
         core.drawEllipse(-size * 0.3, -size * 0.2, size * 0.3, size * 0.2);
         core.endFill();
-        core.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color })];
+        try { core.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color })]; } catch (e) { /* Canvas fallback */ }
         blob.addChild(core);
         let posX = startX, posY = startY, frame = 0, bounceCount = 0;
         const bounceHeight = 80;
@@ -6610,7 +6658,7 @@ const CombatCanvas = forwardRef(({
               const a = (i / 12) * Math.PI * 2;
               splat.vx = Math.cos(a) * (5 + Math.random() * 8);
               splat.vy = Math.sin(a) * (3 + Math.random() * 5);
-              splat.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color })];
+              try { splat.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(splat);
               const animSplat = () => {
                 splat.x += splat.vx; splat.y += splat.vy;
@@ -6655,7 +6703,7 @@ const CombatCanvas = forwardRef(({
         blade.beginFill(color, 1);
         blade.drawCircle(-14, 0, 6);
         blade.endFill();
-        blade.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xc0c0c0 })];
+        try { blade.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color: 0xc0c0c0 })]; } catch (e) { /* Canvas fallback */ }
         dagger.addChild(blade);
         dagger.rotation = angle;
         dagger.x = startX; dagger.y = startY;
@@ -6739,7 +6787,7 @@ const CombatCanvas = forwardRef(({
             const a = arcAngle - i * 0.1;
             arc.lineStyle(6 - i * 0.5, i === 0 ? 0xffffff : color, 1 - i * 0.1);
             arc.arc(0, 0, arcWidth - i * 5, a - 0.8, a + 0.8);
-            arc.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color })];
+            try { arc.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
             slashContainer.addChild(arc);
           }
           // Bone particles
@@ -6772,7 +6820,7 @@ const CombatCanvas = forwardRef(({
             finalArc.lineStyle(10, 0xffffff, 1);
             finalArc.arc(0, 0, 100, -1, 1);
             finalArc.x = targetX; finalArc.y = targetY;
-            finalArc.filters = [new GlowFilter({ distance: 25, outerStrength: 4, color })];
+            try { finalArc.filters = [new GlowFilter({ distance: 25, outerStrength: 4, color })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(finalArc);
             let scale = 1;
             const animFinal = () => {
@@ -6804,7 +6852,7 @@ const CombatCanvas = forwardRef(({
           fist.drawEllipse(-15 + i * 12, -size * 0.8, 8, 15);
         }
         fist.endFill();
-        fist.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color })];
+        try { fist.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
         fist.x = startX; fist.y = startY - 100;
         app.layers.projectiles.addChild(fist);
         // Fist comes down
@@ -6839,7 +6887,7 @@ const CombatCanvas = forwardRef(({
                 crack.moveTo(0, -20 - i * 3);
                 crack.lineTo(0, 20 + i * 3);
                 crack.y = i * 2;
-                crack.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color })];
+                try { crack.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
                 shockwave.addChild(crack);
               }
               // Debris
@@ -6895,7 +6943,7 @@ const CombatCanvas = forwardRef(({
         rock.beginFill(0xa8a29e, 0.6);
         rock.drawPolygon([size * 0.2, -size * 0.6, size * 0.5, -size * 0.2, size * 0.3, 0]);
         rock.endFill();
-        rock.filters = [new GlowFilter({ distance: 10, outerStrength: 1.5, color: 0x78716c })];
+        try { rock.filters = [new GlowFilter({ distance: 10, outerStrength: 1.5, color: 0x78716c })]; } catch (e) { /* Canvas fallback */ }
         boulder.addChild(rock);
         boulder.x = startX; boulder.y = startY;
         let posX = startX, posY = startY, frame = 0;
@@ -6995,7 +7043,7 @@ const CombatCanvas = forwardRef(({
         core.beginFill(0xef4444, 0.7);
         core.drawCircle(0, 0, size);
         core.endFill();
-        core.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xef4444 })];
+        try { core.filters = [new GlowFilter({ distance: 30, outerStrength: 4, color: 0xef4444 })]; } catch (e) { /* Canvas fallback */ }
         fireball.addChild(core);
         fireball.x = startX; fireball.y = startY;
         let posX = startX, posY = startY, frame = 0;
@@ -7016,7 +7064,7 @@ const CombatCanvas = forwardRef(({
               flame.endFill();
               flame.x = posX + (Math.random() - 0.5) * 20 - dirX * 15;
               flame.y = posY + (Math.random() - 0.5) * 20 - dirY * 15;
-              flame.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xef4444 })];
+              try { flame.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color: 0xef4444 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(flame);
               const animFlame = () => {
                 flame.x -= dirX * 2;
@@ -7071,7 +7119,7 @@ const CombatCanvas = forwardRef(({
             );
             cone.closePath();
             cone.endFill();
-            cone.filters = [new GlowFilter({ distance: 15 - layer * 2, outerStrength: 3 - layer * 0.4, color: 0x22d3ee })];
+            try { cone.filters = [new GlowFilter({ distance: 15 - layer * 2, outerStrength: 3 - layer * 0.4, color: 0x22d3ee })]; } catch (e) { /* Canvas fallback */ }
             breathContainer.addChild(cone);
           }
           // Ice crystals
@@ -7084,7 +7132,7 @@ const CombatCanvas = forwardRef(({
             crystal.x = startX + dirX * coneLength * Math.random() - dirY * offset;
             crystal.y = startY + dirY * coneLength * Math.random() + dirX * offset;
             crystal.rotation = Math.random() * Math.PI;
-            crystal.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0x67e8f9 })];
+            try { crystal.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color: 0x67e8f9 })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(crystal);
             const animCrystal = () => {
               crystal.rotation += 0.1;
@@ -7123,7 +7171,7 @@ const CombatCanvas = forwardRef(({
         core.beginFill(color, 0.4);
         core.drawCircle(0, 0, size);
         core.endFill();
-        core.filters = [new GlowFilter({ distance: 25, outerStrength: 4, color })];
+        try { core.filters = [new GlowFilter({ distance: 25, outerStrength: 4, color })]; } catch (e) { /* Canvas fallback */ }
         spellOrb.addChild(core);
         // Orbiting runes as simple geometric shapes
         const runeGraphics = [];
@@ -7152,7 +7200,7 @@ const CombatCanvas = forwardRef(({
             rune.drawRect(-6, -6, 12, 12); // Square
           }
           rune.endFill();
-          rune.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color })];
+          try { rune.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
           runeContainer.addChild(rune);
           runeContainer.orbitAngle = (i / 5) * Math.PI * 2;
           runeContainer.orbitRadius = size * 1.5;
@@ -7173,7 +7221,7 @@ const CombatCanvas = forwardRef(({
             const a = Math.random() * Math.PI * 2;
             chargeP.x = startX + Math.cos(a) * 60;
             chargeP.y = startY + Math.sin(a) * 60;
-            chargeP.filters = [new GlowFilter({ distance: 6, outerStrength: 2, color })];
+            try { chargeP.filters = [new GlowFilter({ distance: 6, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(chargeP);
             const animCharge = () => {
               const cdx = startX - chargeP.x;
@@ -7215,7 +7263,7 @@ const CombatCanvas = forwardRef(({
               trail.endFill();
               trail.x = posX + (Math.random() - 0.5) * 15;
               trail.y = posY + (Math.random() - 0.5) * 15;
-              trail.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color })];
+              try { trail.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(trail);
               const animTrail = () => {
                 trail.scale.set(trail.scale.x * 0.9);
@@ -7251,7 +7299,7 @@ const CombatCanvas = forwardRef(({
                 const a = (i / 8) * Math.PI * 2;
                 expRune.vx = Math.cos(a) * 12;
                 expRune.vy = Math.sin(a) * 12;
-                expRune.filters = [new GlowFilter({ distance: 15, outerStrength: 3, color })];
+                try { expRune.filters = [new GlowFilter({ distance: 15, outerStrength: 3, color })]; } catch (e) { /* Canvas fallback */ }
                 app.layers.effects.addChild(expRune);
                 const animExpRune = () => {
                   expRune.x += expRune.vx; expRune.y += expRune.vy;
@@ -7313,7 +7361,7 @@ const CombatCanvas = forwardRef(({
             for (let p = 1; p < points.length; p++) {
               tendril.lineTo(points[p].x, points[p].y);
             }
-            tendril.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color })];
+            try { tendril.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
             tentacleContainer.addChild(tendril);
             // Tendril tip
             if (progress > 0.1) {
@@ -7323,7 +7371,7 @@ const CombatCanvas = forwardRef(({
               tip.endFill();
               tip.x = points[points.length - 1].x;
               tip.y = points[points.length - 1].y;
-              tip.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color })];
+              try { tip.filters = [new GlowFilter({ distance: 10, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
               tentacleContainer.addChild(tip);
             }
           });
@@ -7335,7 +7383,7 @@ const CombatCanvas = forwardRef(({
             dark.endFill();
             dark.x = startX + dx * progress * Math.random();
             dark.y = startY + dy * progress * Math.random();
-            dark.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color })];
+            try { dark.filters = [new GlowFilter({ distance: 8, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(dark);
             const animDark = () => {
               dark.scale.set(dark.scale.x * 1.03);
@@ -7359,7 +7407,7 @@ const CombatCanvas = forwardRef(({
               void_.endFill();
               void_.x = targetX + (Math.random() - 0.5) * 60;
               void_.y = targetY + (Math.random() - 0.5) * 60;
-              void_.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color })];
+              try { void_.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(void_);
               const animVoid = () => {
                 void_.scale.set(void_.scale.x * 0.95);
@@ -7423,7 +7471,7 @@ const CombatCanvas = forwardRef(({
             points.forEach(p => cone.lineTo(p.x, p.y));
             cone.closePath();
             cone.endFill();
-            cone.filters = [new GlowFilter({ distance: 20 - layer * 3, outerStrength: 4 - layer * 0.6, color: fireColors[layer] })];
+            try { cone.filters = [new GlowFilter({ distance: 20 - layer * 3, outerStrength: 4 - layer * 0.6, color: fireColors[layer] })]; } catch (e) { /* Canvas fallback */ }
             fireContainer.addChild(cone);
           }
           // Intense fire particles
@@ -7436,7 +7484,7 @@ const CombatCanvas = forwardRef(({
               const offset = (Math.random() - 0.5) * coneWidth * 1.2;
               fire.x = startX + dirX * coneLength * Math.random() - dirY * offset;
               fire.y = startY + dirY * coneLength * Math.random() + dirX * offset;
-              fire.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color: 0xef4444 })];
+              try { fire.filters = [new GlowFilter({ distance: 12, outerStrength: 2, color: 0xef4444 })]; } catch (e) { /* Canvas fallback */ }
               app.layers.effects.addChild(fire);
               const animFire = () => {
                 fire.y -= 2;
@@ -7487,7 +7535,7 @@ const CombatCanvas = forwardRef(({
         orb.beginFill(color, 0.5);
         orb.drawCircle(0, 0, size);
         orb.endFill();
-        orb.filters = [new GlowFilter({ distance: 25, outerStrength: 4, color })];
+        try { try { orb.filters = [new GlowFilter({ distance: 25, outerStrength: 4, color })]; } catch (e) { /* Canvas fallback */ } } catch (e) { /* Canvas fallback */ }
         container.addChild(orb);
         let posX = startX, posY = startY, frame = 0;
         screenShake(8, 150);
@@ -7503,7 +7551,7 @@ const CombatCanvas = forwardRef(({
             trail.drawCircle(0, 0, size * 0.5);
             trail.endFill();
             trail.x = posX; trail.y = posY;
-            trail.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color })];
+            try { try { trail.filters = [new GlowFilter({ distance: 15, outerStrength: 2, color })]; } catch (e) { /* Canvas fallback */ } } catch (e) { /* Canvas fallback */ }
             app.layers.effects.addChild(trail);
             const animTrail = () => {
               trail.alpha -= 0.08;

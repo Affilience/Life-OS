@@ -50,11 +50,12 @@ const useElementalAbilityStore = create(
       abilityCooldowns: {},
 
       // Unlocked abilities from various sources
-      // { unlockedPerks: [], achievements: [], bossDrops: [] }
+      // { unlockedPerks: [], achievements: [], bossDrops: [], bazaarPurchases: [] }
       unlockedSources: {
         unlockedPerks: [],
         achievements: [],
         bossDrops: [],
+        bazaarPurchases: [],
       },
 
       // Loading state
@@ -102,6 +103,7 @@ const useElementalAbilityStore = create(
               unlockedPerks: unlocksResult.data.unlocked_perks || [],
               achievements: unlocksResult.data.achievements || [],
               bossDrops: unlocksResult.data.boss_drops || [],
+              bazaarPurchases: unlocksResult.data.bazaar_purchases || [],
             };
           }
 
@@ -345,6 +347,8 @@ const useElementalAbilityStore = create(
             return unlockedSources.achievements.includes(unlock.achievementId);
           case 'boss':
             return unlockedSources.bossDrops.includes(abilityId);
+          case 'bazaar':
+            return unlockedSources.bazaarPurchases.includes(abilityId);
           default:
             return false;
         }
@@ -405,6 +409,24 @@ const useElementalAbilityStore = create(
       },
 
       /**
+       * Unlock an ability from a Bazaar purchase
+       */
+      unlockFromBazaar: (abilityId) => {
+        set(state => {
+          if (state.unlockedSources.bazaarPurchases.includes(abilityId)) {
+            return state;
+          }
+          return {
+            unlockedSources: {
+              ...state.unlockedSources,
+              bazaarPurchases: [...state.unlockedSources.bazaarPurchases, abilityId],
+            },
+          };
+        });
+        get().syncUnlocksToSupabase();
+      },
+
+      /**
        * Get all unlocked ability IDs
        */
       getUnlockedAbilities: () => {
@@ -440,6 +462,7 @@ const useElementalAbilityStore = create(
               unlocked_perks: unlockedSources.unlockedPerks,
               achievements: unlockedSources.achievements,
               boss_drops: unlockedSources.bossDrops,
+              bazaar_purchases: unlockedSources.bazaarPurchases,
               updated_at: new Date().toISOString(),
             }, { onConflict: 'user_id' });
         } catch (error) {
@@ -467,6 +490,7 @@ const useElementalAbilityStore = create(
                 unlockedPerks: data.unlocked_perks || [],
                 achievements: data.achievements || [],
                 bossDrops: data.boss_drops || [],
+                bazaarPurchases: data.bazaar_purchases || [],
               },
             });
           }

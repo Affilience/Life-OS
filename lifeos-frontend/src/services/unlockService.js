@@ -247,6 +247,53 @@ export const purchaseEquipment = async (itemId) => {
 };
 
 /**
+ * Purchase an ability from the Bazaar
+ * @param {string} abilityId - The ability to purchase
+ * @returns {Promise<Object>} Purchase result
+ */
+export const purchaseAbility = async (abilityId) => {
+  try {
+    // Get the ability data to check price
+    const { getAbilityById, ABILITY_UNLOCKS } = await import('../data/elementalAbilities');
+    const ability = getAbilityById(abilityId);
+    const unlock = ABILITY_UNLOCKS[abilityId];
+
+    if (!ability || !unlock || unlock.type !== 'bazaar') {
+      return { success: false, error: 'Ability not available for purchase' };
+    }
+
+    const price = unlock.price;
+
+    // Check if already unlocked
+    const abilityStore = await getElementalAbilityStore();
+    if (abilityStore.getState().isAbilityUnlocked(abilityId)) {
+      return { success: false, error: 'Ability already owned' };
+    }
+
+    // Spend credits
+    const gamificationStore = await getGamificationStore();
+    const spendResult = await gamificationStore.getState().spendCredits(price, 'ability_purchase');
+
+    if (!spendResult.success) {
+      return { success: false, error: spendResult.error || 'Insufficient credits' };
+    }
+
+    // Unlock the ability
+    abilityStore.getState().unlockFromBazaar(abilityId);
+
+    console.log('[UnlockService] Ability purchased:', ability.name);
+    return {
+      success: true,
+      ability,
+      price,
+    };
+  } catch (error) {
+    console.error('[UnlockService] Error purchasing ability:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Get all purchasable items from the Bazaar
  * @returns {Promise<Object>} Object with pets and equipment arrays
  */
@@ -307,6 +354,7 @@ export default {
   onPerkUnlock,
   purchasePet,
   purchaseEquipment,
+  purchaseAbility,
   getPurchasableItems,
   getUnlockProgress,
 };

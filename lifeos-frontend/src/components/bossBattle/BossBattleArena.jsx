@@ -2012,6 +2012,9 @@ export default function BossBattleArena({ bossId, onClose }) {
   const [isAbilityAnimating, setIsAbilityAnimating] = useState(false);
   const [activeAbilityAnimation, setActiveAbilityAnimation] = useState(null);
 
+  // Elemental ability cooldown state (for real-time UI updates)
+  const [elementalCooldowns, setElementalCooldowns] = useState([1, 1]); // progress 0-1 for each slot
+
   // Anime.js projectile and impact states
   const [playerProjectiles, setPlayerProjectiles] = useState([]);
   const [bossProjectiles, setBossProjectiles] = useState([]);
@@ -2188,10 +2191,17 @@ export default function BossBattleArena({ bossId, onClose }) {
     if (!isBattleActive || isCountdown || battleEnded) return;
 
     cooldownIntervalRef.current = setInterval(() => {
+      // Weapon cooldown
       const progress = getCooldownProgress();
       const ready = canAttack();
       setCooldownProgress(progress);
       setIsAttackReady(ready);
+
+      // Elemental ability cooldowns
+      const newElementalCooldowns = equippedAbilities.map((_, slot) => {
+        return getElementalCooldownProgress(slot);
+      });
+      setElementalCooldowns(newElementalCooldowns);
     }, 50);
 
     return () => {
@@ -2199,7 +2209,7 @@ export default function BossBattleArena({ bossId, onClose }) {
         clearInterval(cooldownIntervalRef.current);
       }
     };
-  }, [isBattleActive, isCountdown, battleEnded, getCooldownProgress, canAttack]);
+  }, [isBattleActive, isCountdown, battleEnded, getCooldownProgress, canAttack, equippedAbilities, getElementalCooldownProgress]);
 
   // Check for rage mode (boss below 30% health)
   useEffect(() => {
@@ -2607,7 +2617,7 @@ export default function BossBattleArena({ bossId, onClose }) {
 
       {/* Main battle area */}
       {!isCountdown && (
-        <div className="h-full flex flex-col p-4 max-w-lg mx-auto relative">
+        <div className="h-full flex flex-col p-4 max-w-lg mx-auto relative overflow-hidden">
           {/* Anime.js Player Projectiles */}
           {playerProjectiles.map(proj => (
             <AnimeProjectile
@@ -2648,7 +2658,7 @@ export default function BossBattleArena({ bossId, onClose }) {
           ))}
 
           {/* Boss section */}
-          <div className="flex-1 flex flex-col items-center justify-center relative pt-8">
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center relative pt-4 overflow-hidden">
             {/* Boss name and difficulty */}
             <div className="text-center mb-3">
               <h2 className="text-2xl font-black text-white drop-shadow-lg">{boss?.name}</h2>
@@ -2761,11 +2771,13 @@ export default function BossBattleArena({ bossId, onClose }) {
                 ))}
               </AnimatePresence>
             </motion.div>
+          </div>
 
-            {/* Attack and Ability Buttons */}
-            {isBattleActive && !battleResult && (
-              <>
-              <div className="flex gap-3 mt-4">
+          {/* Battle Controls - Fixed height section between boss and player */}
+          {isBattleActive && !battleResult && (
+            <div className="flex-shrink-0 py-2">
+              {/* Attack and Ability Buttons */}
+              <div className="flex gap-3 justify-center">
                 {/* Attack Button */}
                 <motion.button
                   onClick={handleAttack}
@@ -2828,8 +2840,9 @@ export default function BossBattleArena({ bossId, onClose }) {
                     const ability = getEquippedAbility(slot);
                     if (!ability) return null;
 
-                    const isReady = isElementalAbilityReady(slot);
-                    const progress = getElementalCooldownProgress(slot);
+                    // Use state-tracked progress for real-time updates
+                    const progress = elementalCooldowns[slot] ?? 1;
+                    const isReady = progress >= 1;
 
                     return (
                       <motion.button
@@ -2870,12 +2883,9 @@ export default function BossBattleArena({ bossId, onClose }) {
                   })}
                 </div>
               )}
-              </>
-            )}
 
-            {/* Cooldown indicators */}
-            {isBattleActive && !battleResult && (
-              <div className="w-full max-w-xs mx-auto">
+              {/* Cooldown indicators */}
+              <div className="w-full max-w-xs mx-auto mt-2">
                 <CooldownIndicator
                   progress={cooldownProgress}
                   weaponAttack={currentWeapon}
@@ -2889,31 +2899,29 @@ export default function BossBattleArena({ bossId, onClose }) {
                   />
                 )}
               </div>
-            )}
 
-            {/* Status text */}
-            {isBattleActive && !battleResult && (
+              {/* Status text */}
               <motion.p
                 animate={isAttackReady ? { opacity: [0.6, 1, 0.6] } : { opacity: 0.4 }}
                 transition={{ duration: 0.8, repeat: Infinity }}
-                className={`mt-2 text-xs font-medium ${isAttackReady ? 'text-green-400' : 'text-white/40'}`}
+                className={`mt-1 text-xs font-medium text-center ${isAttackReady ? 'text-green-400' : 'text-white/40'}`}
               >
                 {isAttackReady
                   ? 'READY!'
                   : `Cooldown: ${Math.ceil((1 - cooldownProgress) * (currentWeapon?.cooldown || 500))}ms`}
               </motion.p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Divider */}
-          <div className="flex items-center gap-4 my-4">
+          <div className="flex-shrink-0 flex items-center gap-4 my-2">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
             <Swords className="w-6 h-6 text-white/40" />
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
           </div>
 
           {/* Player section */}
-          <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm relative">
+          <div className="flex-shrink-0 flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm relative">
             {/* Player avatar */}
             <div className="w-20 h-20 relative flex-shrink-0">
               <AvatarRenderer

@@ -19,12 +19,15 @@ import {
   Search,
   PawPrint,
   HardHat,
+  Wand2,
 } from 'lucide-react';
 import { useGamificationStore, getRarityColor } from '../../stores/gamificationStore';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 import { useAvatarStore } from '../../stores/avatarStore';
 import { usePetStore, PET_DATABASE, TIER_INFO } from '../../stores/petStore';
+import useElementalAbilityStore from '../../stores/elementalAbilityStore';
 import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
+import { getBazaarAbilities } from '../../data/elementalAbilities';
 import unlockService from '../../services/unlockService';
 
 // ============================================
@@ -450,6 +453,7 @@ const CATEGORIES = [
   { id: 'all', label: 'All Items', icon: Package },
   { id: 'companions', label: 'Companions', icon: PawPrint },
   { id: 'gear', label: 'Gear', icon: HardHat },
+  { id: 'abilities', label: 'Abilities', icon: Wand2 },
   { id: 'equipment', label: 'Equipment', icon: Sword },
   { id: 'consumable', label: 'Consumables', icon: Zap },
   { id: 'cosmetic', label: 'Cosmetics', icon: Sparkles },
@@ -584,6 +588,21 @@ function ItemCard({ item, owned, canAfford, onPurchase, level, mode }) {
           </div>
         )}
 
+        {/* Ability Info (for abilities) */}
+        {item.itemType === 'ability' && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            <span className="text-xs bg-purple-500/10 border border-purple-500/20 rounded px-2 py-0.5 text-purple-400 capitalize">
+              {item.element}
+            </span>
+            <span className="text-xs bg-red-500/10 border border-red-500/20 rounded px-2 py-0.5 text-red-400">
+              {item.damage}x DMG
+            </span>
+            <span className="text-xs bg-blue-500/10 border border-blue-500/20 rounded px-2 py-0.5 text-blue-400">
+              {(item.cooldown / 1000).toFixed(0)}s CD
+            </span>
+          </div>
+        )}
+
         {/* Price & Purchase */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
           <div className="flex items-center gap-1">
@@ -695,6 +714,24 @@ function PurchaseModal({ item, onConfirm, onCancel, credits }) {
                   +{value} {stat.charAt(0).toUpperCase() + stat.slice(1)}
                 </span>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Ability Info */}
+        {item.itemType === 'ability' && (
+          <div className="bg-[#0c0a10] rounded-xl p-4 mb-6">
+            <div className="text-xs text-white/50 mb-2">ABILITY STATS</div>
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm bg-purple-500/10 border border-purple-500/20 rounded-lg px-3 py-1 text-purple-400 capitalize">
+                {item.element} Element
+              </span>
+              <span className="text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-1 text-red-400">
+                {item.damage}x Damage
+              </span>
+              <span className="text-sm bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-1 text-blue-400">
+                {(item.cooldown / 1000).toFixed(0)}s Cooldown
+              </span>
             </div>
           </div>
         )}
@@ -828,6 +865,7 @@ export default function BazaarMarketplace() {
   const [successItem, setSuccessItem] = useState(null);
   const [purchasablePets, setPurchasablePets] = useState([]);
   const [purchasableGear, setPurchasableGear] = useState([]);
+  const [purchasableAbilities, setPurchasableAbilities] = useState([]);
 
   // Get store data
   const {
@@ -841,12 +879,13 @@ export default function BazaarMarketplace() {
 
   const { addOwnedCosmetic, ownedCosmetics, unlockedEquipment, getPurchasableEquipment, unlockEquipment } = useAvatarStore();
   const { ownedPets, getPurchasablePets } = usePetStore();
+  const { isAbilityUnlocked, unlockFromBazaar } = useElementalAbilityStore();
 
   const { mode } = useGamificationModeStore();
   const terms = TERMINOLOGY[mode] || TERMINOLOGY.cosmic;
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
 
-  // Fetch purchasable pets and gear
+  // Fetch purchasable pets, gear, and abilities
   useEffect(() => {
     const fetchPurchasables = () => {
       // Get purchasable pets from pet store
@@ -898,6 +937,23 @@ export default function BazaarMarketplace() {
           itemType: 'gear',
         };
       }));
+
+      // Get purchasable abilities from elementalAbilities
+      const abilities = getBazaarAbilities();
+      setPurchasableAbilities(abilities.map(ability => ({
+        id: ability.id,
+        name: ability.name,
+        description: ability.description,
+        category: 'abilities',
+        rarity: ability.rarity,
+        price: ability.price,
+        icon: ability.icon,
+        element: ability.element,
+        damage: ability.damage,
+        cooldown: ability.cooldown,
+        tier: ability.tier,
+        itemType: 'ability',
+      })));
     };
 
     fetchPurchasables();
@@ -922,18 +978,24 @@ export default function BazaarMarketplace() {
     ownedPets.forEach(id => ids.add(id));
     // Add unlocked gear
     unlockedEquipment.forEach(id => ids.add(id));
+    // Add owned abilities
+    purchasableAbilities.forEach(ability => {
+      if (isAbilityUnlocked(ability.id)) {
+        ids.add(ability.id);
+      }
+    });
     // Also check localStorage for non-equipment items (legacy)
     try {
       const owned = JSON.parse(localStorage.getItem('owned_shop_items') || '[]');
       owned.forEach(id => ids.add(id));
     } catch (e) {}
     return ids;
-  }, [ownedEquipment, ownedCosmetics, ownedPets, unlockedEquipment]);
+  }, [ownedEquipment, ownedCosmetics, ownedPets, unlockedEquipment, purchasableAbilities, isAbilityUnlocked]);
 
-  // Combine all items including dynamic pets and gear
+  // Combine all items including dynamic pets, gear, and abilities
   const allItemsWithDynamic = useMemo(() => {
-    return [...ALL_ITEMS, ...purchasablePets, ...purchasableGear];
-  }, [purchasablePets, purchasableGear]);
+    return [...ALL_ITEMS, ...purchasablePets, ...purchasableGear, ...purchasableAbilities];
+  }, [purchasablePets, purchasableGear, purchasableAbilities]);
 
   // Filter items
   const filteredItems = useMemo(() => {
@@ -1007,6 +1069,23 @@ export default function BazaarMarketplace() {
         });
       } else {
         console.error('Failed to purchase gear:', result.error);
+        alert(`Purchase failed: ${result.error || 'Unknown error'}`);
+        setPurchaseItem(null);
+      }
+      return;
+    }
+
+    // Handle ability purchases
+    if (item.itemType === 'ability') {
+      const result = await unlockService.purchaseAbility(item.id);
+      if (result.success) {
+        setPurchaseItem(null);
+        setSuccessItem({
+          ...item,
+          purchaseResult: result,
+        });
+      } else {
+        console.error('Failed to purchase ability:', result.error);
         alert(`Purchase failed: ${result.error || 'Unknown error'}`);
         setPurchaseItem(null);
       }
@@ -1122,14 +1201,16 @@ export default function BazaarMarketplace() {
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           const isActive = selectedCategory === cat.id;
-          // Count items including dynamic pets and gear
+          // Count items including dynamic pets, gear, and abilities
           const count = cat.id === 'all'
             ? allItemsWithDynamic.length
             : cat.id === 'companions'
               ? purchasablePets.length
               : cat.id === 'gear'
                 ? purchasableGear.length
-                : ALL_ITEMS.filter(i => i.category === cat.id).length;
+                : cat.id === 'abilities'
+                  ? purchasableAbilities.length
+                  : ALL_ITEMS.filter(i => i.category === cat.id).length;
 
           return (
             <button
