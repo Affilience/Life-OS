@@ -11,6 +11,7 @@ import EquipmentPetsDemo from './demos/EquipmentPetsDemo';
 import SkillsDemo from './demos/SkillsDemo';
 import BazaarDemo from './demos/BazaarDemo';
 import StatsDemo from './demos/StatsDemo';
+import AbilitiesDemo from './demos/AbilitiesDemo';
 
 const DEMOS = [
   {
@@ -44,6 +45,14 @@ const DEMOS = [
     description: 'Unlock stars in your cosmic skill map.',
     color: '#3b82f6',
     icon: '⭐',
+  },
+  {
+    id: 'abilities',
+    component: AbilitiesDemo,
+    title: 'Combat Abilities',
+    description: 'Elemental powers for boss battles and PvP arena.',
+    color: '#ff6600',
+    icon: '🔥',
   },
   {
     id: 'bazaar',

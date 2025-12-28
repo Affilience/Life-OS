@@ -2553,8 +2553,8 @@ export default function BossBattleArena({ bossId, onClose }) {
       {/* Particle container for anime.js burst effects */}
       <div ref={particleContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
 
-      {/* PixiJS Combat Canvas for spectacular effects */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 50 }}>
+      {/* PixiJS Combat Canvas for spectacular effects - must be above all battle content */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 200 }}>
         <CombatCanvas
           ref={combatCanvasRef}
           width={window.innerWidth}

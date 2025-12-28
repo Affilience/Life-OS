@@ -28,6 +28,7 @@ const DEMOS = [
   { id: 'equipment', title: 'Equipment & Pets', color: '#a855f7', icon: '/assets/equipment/weapons/dragon_blade.png', description: 'Collect gear & companions' },
   { id: 'stats', title: 'Stats & Skills', color: '#ef4444', icon: '/assets/icons/module_skills.png', description: 'Allocate skill points' },
   { id: 'skills', title: 'Skill Constellation', color: '#3b82f6', icon: '/assets/icons/module_skills.png', description: 'Unlock abilities' },
+  { id: 'abilities', title: 'Combat Abilities', color: '#ff6600', icon: '/assets/icons/module_skills.png', description: 'Elemental battle powers' },
   { id: 'bazaar', title: 'Cosmic Bazaar', color: '#10b981', icon: '/assets/bazaar/sword_novice.png', description: 'Spend your rewards' },
 ];
 
@@ -677,6 +678,174 @@ function BazaarDemo({ isActive }: { isActive: boolean }) {
 }
 
 // ============================================
+// Combat Abilities Demo
+// ============================================
+function AbilitiesDemo({ isActive }: { isActive: boolean }) {
+  const [selectedAbility, setSelectedAbility] = useState<{ id: string; color: string } | null>(null);
+  const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
+  const [damageNumber, setDamageNumber] = useState<{ value: number; color: string; id: number } | null>(null);
+
+  const ABILITIES = [
+    { id: 'fireball', name: 'Fireball', icon: '🔥', element: 'fire', color: '#ff6600', damage: 45, cooldown: 6 },
+    { id: 'ice_spike', name: 'Ice Spike', icon: '🧊', element: 'ice', color: '#00d4ff', damage: 40, cooldown: 5 },
+    { id: 'lightning', name: 'Lightning', icon: '⚡', element: 'lightning', color: '#ffcc00', damage: 55, cooldown: 8 },
+    { id: 'dark_bolt', name: 'Shadow Bolt', icon: '🌑', element: 'dark', color: '#9933ff', damage: 50, cooldown: 7 },
+  ];
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (!isActive) return;
+
+    const interval = setInterval(() => {
+      setCooldowns(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(key => {
+          if (updated[key] > 0) {
+            updated[key] = Math.max(0, updated[key] - 0.1);
+          }
+        });
+        return updated;
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  const handleUseAbility = (ability: typeof ABILITIES[0]) => {
+    if (cooldowns[ability.id] > 0) return;
+
+    // Set cooldown
+    setCooldowns(prev => ({ ...prev, [ability.id]: ability.cooldown }));
+    setSelectedAbility(ability);
+
+    // Show damage number
+    const damage = Math.floor(ability.damage * (0.9 + Math.random() * 0.3));
+    setDamageNumber({ value: damage, color: ability.color, id: Date.now() });
+    setTimeout(() => setDamageNumber(null), 800);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-3 h-full">
+      {/* Battle preview */}
+      <div className="relative w-full h-24 bg-gradient-to-b from-purple-900/30 to-transparent rounded-xl flex items-center justify-center overflow-hidden">
+        {/* Enemy target */}
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500/20 to-red-700/20 border-2 border-red-500/50 flex items-center justify-center">
+          <span className="text-2xl">👹</span>
+        </div>
+
+        {/* Damage number */}
+        <AnimatePresence>
+          {damageNumber && (
+            <motion.div
+              key={damageNumber.id}
+              className="absolute top-2 font-black text-xl"
+              style={{ color: damageNumber.color, textShadow: `0 0 10px ${damageNumber.color}` }}
+              initial={{ opacity: 1, y: 20, scale: 0.5 }}
+              animate={{ opacity: 0, y: -20, scale: 1.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              -{damageNumber.value}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Ability effect */}
+        <AnimatePresence>
+          {selectedAbility && (
+            <motion.div
+              key={selectedAbility.id + Date.now()}
+              className="absolute inset-0 pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `radial-gradient(circle at center, ${selectedAbility.color}40 0%, transparent 70%)`,
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Ability slots label */}
+      <p className="text-xs text-white/50">Equip 2 abilities for battle</p>
+
+      {/* Ability buttons */}
+      <div className="grid grid-cols-2 gap-2 w-full">
+        {ABILITIES.map(ability => {
+          const onCooldown = cooldowns[ability.id] > 0;
+          const cooldownPercent = onCooldown ? (cooldowns[ability.id] / ability.cooldown) * 100 : 0;
+
+          return (
+            <motion.button
+              key={ability.id}
+              onClick={() => handleUseAbility(ability)}
+              disabled={onCooldown}
+              className={`relative p-2 rounded-xl border-2 transition-all overflow-hidden ${
+                onCooldown
+                  ? 'bg-white/5 border-white/10 cursor-not-allowed'
+                  : 'border-white/20 hover:border-white/40'
+              }`}
+              style={{
+                background: onCooldown ? undefined : `linear-gradient(135deg, ${ability.color}20, ${ability.color}10)`,
+                boxShadow: onCooldown ? undefined : `0 0 20px ${ability.color}20`,
+              }}
+              whileHover={!onCooldown ? { scale: 1.03 } : {}}
+              whileTap={!onCooldown ? { scale: 0.97 } : {}}
+            >
+              {/* Cooldown overlay */}
+              {onCooldown && (
+                <div
+                  className="absolute inset-0 bg-black/60"
+                  style={{
+                    clipPath: `inset(${100 - cooldownPercent}% 0 0 0)`,
+                  }}
+                />
+              )}
+
+              <div className="flex items-center gap-2 relative z-10">
+                <span className="text-xl">{ability.icon}</span>
+                <div className="flex-1 text-left">
+                  <p className={`text-xs font-bold ${onCooldown ? 'text-white/40' : 'text-white'}`}>
+                    {ability.name}
+                  </p>
+                  <p className="text-[10px] text-white/50">
+                    {onCooldown ? `${cooldowns[ability.id].toFixed(1)}s` : `${ability.damage} DMG`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Element indicator */}
+              <div
+                className="absolute top-1 right-1 w-2 h-2 rounded-full"
+                style={{ backgroundColor: ability.color }}
+              />
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* Battle info */}
+      <div className="flex justify-center gap-4 text-center mt-auto">
+        <div>
+          <p className="text-xs text-white/40">Use in</p>
+          <p className="text-sm font-bold text-orange-400">Boss Battles</p>
+        </div>
+        <div className="w-px bg-white/10" />
+        <div>
+          <p className="text-xs text-white/40">And in</p>
+          <p className="text-sm font-bold text-cyan-400">PvP Arena</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // Demo Components Map
 // ============================================
 const DemoComponents: Record<string, React.ComponentType<{ isActive: boolean }>> = {
@@ -684,6 +853,7 @@ const DemoComponents: Record<string, React.ComponentType<{ isActive: boolean }>>
   equipment: EquipmentPetsDemo,
   stats: StatsDemo,
   skills: SkillsDemo,
+  abilities: AbilitiesDemo,
   bazaar: BazaarDemo,
 };
 

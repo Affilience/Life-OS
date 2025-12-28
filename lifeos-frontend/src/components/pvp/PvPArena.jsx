@@ -904,8 +904,8 @@ export default function PvPArena({ onClose }) {
           </button>
         </div>
 
-        {/* PixiJS Combat Canvas for effects */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 50 }}>
+        {/* PixiJS Combat Canvas for effects - must be above all battle content */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 200 }}>
           <CombatCanvas
             ref={combatCanvasRef}
             width={window.innerWidth}
