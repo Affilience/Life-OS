@@ -27,7 +27,27 @@ const CombatCanvas = forwardRef(({
 }, ref) => {
   const containerRef = useRef(null);
   const appRef = useRef(null);
+  const isWebGLRef = useRef(true); // Track if using WebGL (for filter support)
   const [initError, setInitError] = useState(null);
+
+  // Helper to check if filters are supported (WebGL only)
+  const supportsFilters = () => isWebGLRef.current;
+
+  // Safe filter application - only applies filters when using WebGL renderer
+  // Canvas renderer doesn't support WebGL shaders, so filters are skipped
+  const safeApplyFilters = (displayObject, filters) => {
+    if (supportsFilters() && displayObject) {
+      displayObject.filters = filters;
+    }
+  };
+
+  // Safe GlowFilter creation - returns filter or null based on renderer
+  const createGlowFilter = (options) => {
+    if (supportsFilters()) {
+      return new GlowFilter(options);
+    }
+    return null;
+  };
 
   // Initialize PixiJS
   useEffect(() => {
@@ -46,6 +66,11 @@ const CombatCanvas = forwardRef(({
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
       });
+
+      // Detect renderer type - filters only work with WebGL
+      const rendererType = app.renderer.type;
+      isWebGLRef.current = rendererType === PIXI.RENDERER_TYPE.WEBGL || rendererType === PIXI.RENDERER_TYPE.WEBGL2;
+      console.log(`[CombatCanvas] Initialized with ${isWebGLRef.current ? 'WebGL' : 'Canvas'} renderer`);
 
       containerRef.current.appendChild(app.view);
       appRef.current = app;
