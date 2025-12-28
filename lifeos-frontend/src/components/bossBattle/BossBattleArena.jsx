@@ -2039,6 +2039,42 @@ export default function BossBattleArena({ bossId, onClose }) {
   const particleContainerRef = useRef(null);
   const combatCanvasRef = useRef(null);
 
+  // Track viewport dimensions for responsive attack coordinates
+  const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Calculate responsive attack positions based on screen size
+  // Mobile: more vertical layout, Desktop: diagonal layout
+  const getAttackPositions = useCallback(() => {
+    const { width, height } = dimensions;
+    const isMobile = width < 768;
+
+    if (isMobile) {
+      // Mobile: Boss at top center, Player at bottom center
+      return {
+        bossX: width * 0.5,
+        bossY: height * 0.22,
+        playerX: width * 0.5,
+        playerY: height * 0.72,
+      };
+    } else {
+      // Desktop: Diagonal layout - Boss top-right, Player bottom-left
+      return {
+        bossX: width * 0.75,
+        bossY: height * 0.2,
+        playerX: width * 0.25,
+        playerY: height * 0.75,
+      };
+    }
+  }, [dimensions]);
+
   // Initialize anime.js hooks
   const triggerShake = useScreenShake(arenaRef);
   const burstParticles = useParticleBurst(particleContainerRef);
@@ -2107,12 +2143,8 @@ export default function BossBattleArena({ bossId, onClose }) {
     const attackSpeed = boss?.attackSpeed || 1000;
 
     battleIntervalRef.current = setInterval(() => {
-      // Fixed coordinates for 1000x600 canvas (CombatDemo-style diagonal layout)
-      // Boss at top-right: (920, 130), Player at bottom-left: (120, 480)
-      const bossX = 920;
-      const bossY = 130;
-      const playerX = 120;
-      const playerY = 480;
+      // Get responsive attack positions based on current viewport
+      const { bossX, bossY, playerX, playerY } = getAttackPositions();
 
       // Use PixiJS createBossProjectile for spectacular effects
       const colorHex = parseInt((boss?.attackColor || '#ff0000').replace('#', ''), 16);
@@ -2130,12 +2162,13 @@ export default function BossBattleArena({ bossId, onClose }) {
             // Apply damage when projectile hits
             bossAttack();
 
-            // Show damage number on player side
+            // Show damage number on player side - responsive positioning
             const id = damageIdRef.current++;
+            const isMobile = dimensions.width < 768;
             setDamageNumbers(prev => [...prev, {
               id,
               damage: currentBattle?.boss?.damage || boss?.damage || 0,
-              position: { x: '30%', y: '70%' },
+              position: { x: isMobile ? '45%' : '30%', y: isMobile ? '65%' : '70%' },
               isPlayer: true,
               attackName: boss?.attackName || 'Attack',
             }]);
@@ -2162,10 +2195,11 @@ export default function BossBattleArena({ bossId, onClose }) {
           triggerShake('normal');
 
           const id = damageIdRef.current++;
+          const isMobileFallback = dimensions.width < 768;
           setDamageNumbers(prev => [...prev, {
             id,
             damage: currentBattle?.boss?.damage || boss?.damage || 0,
-            position: { x: '30%', y: '70%' },
+            position: { x: isMobileFallback ? '45%' : '30%', y: isMobileFallback ? '65%' : '70%' },
             isPlayer: true,
             attackName: boss?.attackName || 'Attack',
           }]);
@@ -2182,7 +2216,7 @@ export default function BossBattleArena({ bossId, onClose }) {
         clearInterval(battleIntervalRef.current);
       }
     };
-  }, [isBattleActive, isCountdown, battleEnded, bossAttack, currentBattle, boss]);
+  }, [isBattleActive, isCountdown, battleEnded, bossAttack, currentBattle, boss, getAttackPositions, dimensions]);
 
   // Cooldown progress tracking - updates every 50ms for smooth animation
   useEffect(() => {
@@ -2314,23 +2348,26 @@ export default function BossBattleArena({ bossId, onClose }) {
     const element = currentWeapon?.element || 'physical';
     const attackType = currentWeapon?.animation || 'slash';
 
-    // Fixed coordinates for 1000x600 canvas (CombatDemo-style diagonal layout)
-    // Boss at top-right: (870, 140) for attack impacts
-    const bossX = 870;
-    const bossY = 140;
+    // Get responsive attack positions based on viewport size
+    // Mobile: vertical layout (player bottom, boss top center)
+    // Desktop: diagonal layout (player bottom-left, boss top-right)
+    const { bossX, bossY, playerX, playerY } = getAttackPositions();
 
     // Use PixiJS for spectacular weapon attack effects
     if (combatCanvasRef.current) {
       // Show damage number when attack visually impacts the target
+      // Position damage numbers relative to boss position for responsive display
       const showDamageOnImpact = () => {
         const id = damageIdRef.current++;
-        const randomX = 40 + Math.random() * 80;
-        const randomY = 40 + Math.random() * 80;
+        // Calculate damage number position as percentage of screen for responsive display
+        const isMobile = dimensions.width < 768;
+        const damageX = isMobile ? '40%' : '65%';
+        const damageY = isMobile ? '18%' : '15%';
 
         setDamageNumbers(prev => [...prev, {
           id,
           damage,
-          position: { x: `${randomX}px`, y: `${randomY}px` },
+          position: { x: damageX, y: damageY },
           isPlayer: false,
           isCrit,
           color,
@@ -2344,6 +2381,8 @@ export default function BossBattleArena({ bossId, onClose }) {
       combatCanvasRef.current.playWeaponAttack({
         element,
         attackType,
+        startX: playerX,
+        startY: playerY,
         targetX: bossX,
         targetY: bossY,
         onImpact: showDamageOnImpact,
@@ -2391,7 +2430,7 @@ export default function BossBattleArena({ bossId, onClose }) {
         }, isCrit ? 1000 : 600);
       }, 250);
     }
-  }, [isBattleActive, isCountdown, battleResult, battleEnded, isAttackReady, playerAttack, currentBattle, lastAttackResult, currentWeapon, triggerShake, burstParticles]);
+  }, [isBattleActive, isCountdown, battleResult, battleEnded, isAttackReady, playerAttack, currentBattle, lastAttackResult, currentWeapon, triggerShake, burstParticles, getAttackPositions, dimensions]);
 
   // Handle ability use
   const handleAbility = useCallback(() => {
@@ -2405,19 +2444,18 @@ export default function BossBattleArena({ bossId, onClose }) {
     const baseDamage = currentBattle?.playerDamage || 10;
     const abilityDamage = calculateAbilityDamage(baseDamage, weaponAbility);
 
-    // Fixed coordinates for 1000x600 canvas (CombatDemo-style diagonal layout)
-    // Boss at top-right: (870, 140) for ability impacts
-    const bossX = 870;
-    const bossY = 140;
+    // Get responsive attack positions based on viewport size
+    const { bossX, bossY } = getAttackPositions();
 
     // Show damage when ability visually impacts the target
     const showAbilityDamageOnImpact = () => {
-      // Show damage number
+      // Show damage number - responsive position based on screen size
       const id = damageIdRef.current++;
+      const isMobile = dimensions.width < 768;
       setDamageNumbers(prev => [...prev, {
         id,
         damage: abilityDamage,
-        position: { x: '60px', y: '60px' },
+        position: { x: isMobile ? '40%' : '65%', y: isMobile ? '18%' : '15%' },
         isPlayer: false,
         isCrit: true,
         color: weaponAbility.color,
@@ -2456,7 +2494,7 @@ export default function BossBattleArena({ bossId, onClose }) {
     } else {
       sounds.attackHit();
     }
-  }, [isBattleActive, isCountdown, battleResult, battleEnded, canUseAbility, weaponAbility, currentBattle, playerAttack]);
+  }, [isBattleActive, isCountdown, battleResult, battleEnded, canUseAbility, weaponAbility, currentBattle, playerAttack, getAttackPositions, dimensions]);
 
   // Handle elemental ability use
   const handleElementalAbility = useCallback((slot) => {
@@ -2469,10 +2507,8 @@ export default function BossBattleArena({ bossId, onClose }) {
     const ability = useElementalAbility(slot);
     if (!ability) return;
 
-    // Fixed coordinates for 1000x600 canvas (CombatDemo-style diagonal layout)
-    // Boss at top-right: (870, 140) for elemental ability impacts
-    const bossX = 870;
-    const bossY = 140;
+    // Get responsive attack positions based on viewport size
+    const { bossX, bossY } = getAttackPositions();
 
     // Calculate damage before setting up callback
     const baseDamage = currentBattle?.playerDamage || 10;
@@ -2480,12 +2516,13 @@ export default function BossBattleArena({ bossId, onClose }) {
 
     // Show damage when ability visually impacts the target
     const showElementalDamageOnImpact = () => {
-      // Show damage number
+      // Show damage number - responsive position based on screen size
       const id = damageIdRef.current++;
+      const isMobile = dimensions.width < 768;
       setDamageNumbers(prev => [...prev, {
         id,
         damage: abilityDamage,
-        position: { x: '60px', y: '60px' },
+        position: { x: isMobile ? '40%' : '65%', y: isMobile ? '18%' : '15%' },
         isPlayer: false,
         isCrit: true,
         color: ability.elementColor || ability.color,
@@ -2520,7 +2557,7 @@ export default function BossBattleArena({ bossId, onClose }) {
     } else {
       sounds.attackHit();
     }
-  }, [isBattleActive, isCountdown, battleResult, battleEnded, isElementalAbilityReady, useElementalAbility, currentBattle, playerAttack, triggerShake]);
+  }, [isBattleActive, isCountdown, battleResult, battleEnded, isElementalAbilityReady, useElementalAbility, currentBattle, playerAttack, triggerShake, getAttackPositions, dimensions]);
 
   // Handle close/abandon - always ensure battle is properly ended
   const handleClose = async () => {
@@ -2555,16 +2592,14 @@ export default function BossBattleArena({ bossId, onClose }) {
       <div ref={particleContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
 
       {/* PixiJS Combat Canvas for spectacular effects - must be above all battle content */}
-      {/* Fixed 1000x600 canvas centered in viewport for consistent attack coordinates */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 200 }}>
-        <div className="relative" style={{ width: 1000, height: 600 }}>
-          <CombatCanvas
-            ref={combatCanvasRef}
-            width={1000}
-            height={600}
-            className="w-full h-full"
-          />
-        </div>
+      {/* Fullscreen responsive canvas for proper attack positioning on all devices */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 200 }}>
+        <CombatCanvas
+          ref={combatCanvasRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          className="w-full h-full"
+        />
       </div>
 
       {/* Background effects */}
@@ -2663,8 +2698,13 @@ export default function BossBattleArena({ bossId, onClose }) {
               />
             ))}
 
-            {/* Boss section - Top Right (positioned to match CombatCanvas target) */}
-            <div className="absolute right-4 top-2 z-0">
+            {/* Boss section - Responsive positioning to match attack coordinates */}
+            {/* Mobile: center-top, Desktop: top-right */}
+            <div className={`absolute z-0 ${
+              dimensions.width < 768
+                ? 'left-1/2 -translate-x-1/2 top-4'  // Mobile: centered at top
+                : 'right-4 top-2'                     // Desktop: top-right diagonal
+            }`}>
             {/* Boss name and difficulty */}
             <div className="text-center mb-3">
               <h2 className="text-2xl font-black text-white drop-shadow-lg">{boss?.name}</h2>
@@ -2919,8 +2959,13 @@ export default function BossBattleArena({ bossId, onClose }) {
             </div>
           )}
 
-          {/* Player section - Bottom Left */}
-          <div className="absolute left-8 bottom-8 z-0 flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
+          {/* Player section - Responsive positioning to match attack coordinates */}
+          {/* Mobile: center-bottom, Desktop: bottom-left */}
+          <div className={`absolute z-0 flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm ${
+            dimensions.width < 768
+              ? 'left-1/2 -translate-x-1/2 bottom-28'  // Mobile: centered at bottom (above controls)
+              : 'left-8 bottom-8'                       // Desktop: bottom-left diagonal
+          }`}>
             {/* Player avatar */}
             <div className="w-20 h-20 relative flex-shrink-0">
               <AvatarRenderer

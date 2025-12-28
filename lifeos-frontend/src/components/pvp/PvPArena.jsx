@@ -772,10 +772,11 @@ export default function PvPArena({ onClose }) {
       sounds.attackHit?.();
     }
 
-    // Show ability animation
+    // Show ability animation at opponent position
+    const opponentY = window.innerHeight * 0.25;
     setActiveAbilityAnimation({
       ability: weaponAbility,
-      position: { x: window.innerWidth / 2, y: window.innerHeight / 3 },
+      position: { x: window.innerWidth / 2, y: opponentY },
     });
 
     // Delay damage until animation completes
@@ -783,14 +784,14 @@ export default function PvPArena({ onClose }) {
       // Trigger screen shake
       triggerShake(weaponAbility.screenShake || 'heavy');
 
-      // Show damage number
+      // Show damage number at opponent area
       setDamageNumbers(prev => [
         ...prev,
         {
           id: Date.now(),
           damage: abilityDamage,
-          x: window.innerWidth / 2 - 50,
-          y: 100,
+          x: '45%',
+          y: '20%',
           isCrit: true,
           isPlayer: true,
         },
@@ -816,9 +817,11 @@ export default function PvPArena({ onClose }) {
     const ability = useElementalAbility(slot);
     if (!ability) return;
 
-    // Play PixiJS effect via CombatCanvas
+    // Play PixiJS effect via CombatCanvas - target opponent position
+    const opponentX = window.innerWidth * 0.5;
+    const opponentY = window.innerHeight * 0.25;
     if (combatCanvasRef.current) {
-      combatCanvasRef.current.playAbility(ability.id, window.innerWidth / 2, 150);
+      combatCanvasRef.current.playAbility(ability.id, opponentX, opponentY);
     }
 
     // Play sound

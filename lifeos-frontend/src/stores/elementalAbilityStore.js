@@ -338,17 +338,23 @@ const useElementalAbilityStore = create(
 
         if (!unlock) return false;
 
+        // Defensive: ensure arrays exist (handles old persisted state)
+        const perks = unlockedSources?.unlockedPerks || [];
+        const achievements = unlockedSources?.achievements || [];
+        const bossDrops = unlockedSources?.bossDrops || [];
+        const bazaarPurchases = unlockedSources?.bazaarPurchases || [];
+
         switch (unlock.type) {
           case 'default':
             return true;
           case 'perk':
-            return unlockedSources.unlockedPerks.includes(unlock.perkId);
+            return perks.includes(unlock.perkId);
           case 'achievement':
-            return unlockedSources.achievements.includes(unlock.achievementId);
+            return achievements.includes(unlock.achievementId);
           case 'boss':
-            return unlockedSources.bossDrops.includes(abilityId);
+            return bossDrops.includes(abilityId);
           case 'bazaar':
-            return unlockedSources.bazaarPurchases.includes(abilityId);
+            return bazaarPurchases.includes(abilityId);
           default:
             return false;
         }
@@ -359,13 +365,14 @@ const useElementalAbilityStore = create(
        */
       unlockFromPerk: (perkId) => {
         set(state => {
-          if (state.unlockedSources.unlockedPerks.includes(perkId)) {
+          const perks = state.unlockedSources?.unlockedPerks || [];
+          if (perks.includes(perkId)) {
             return state;
           }
           return {
             unlockedSources: {
               ...state.unlockedSources,
-              unlockedPerks: [...state.unlockedSources.unlockedPerks, perkId],
+              unlockedPerks: [...perks, perkId],
             },
           };
         });
@@ -377,13 +384,14 @@ const useElementalAbilityStore = create(
        */
       unlockFromAchievement: (achievementId) => {
         set(state => {
-          if (state.unlockedSources.achievements.includes(achievementId)) {
+          const achievements = state.unlockedSources?.achievements || [];
+          if (achievements.includes(achievementId)) {
             return state;
           }
           return {
             unlockedSources: {
               ...state.unlockedSources,
-              achievements: [...state.unlockedSources.achievements, achievementId],
+              achievements: [...achievements, achievementId],
             },
           };
         });
@@ -395,13 +403,14 @@ const useElementalAbilityStore = create(
        */
       unlockFromBossDrop: (abilityId) => {
         set(state => {
-          if (state.unlockedSources.bossDrops.includes(abilityId)) {
+          const bossDrops = state.unlockedSources?.bossDrops || [];
+          if (bossDrops.includes(abilityId)) {
             return state;
           }
           return {
             unlockedSources: {
               ...state.unlockedSources,
-              bossDrops: [...state.unlockedSources.bossDrops, abilityId],
+              bossDrops: [...bossDrops, abilityId],
             },
           };
         });
@@ -413,13 +422,14 @@ const useElementalAbilityStore = create(
        */
       unlockFromBazaar: (abilityId) => {
         set(state => {
-          if (state.unlockedSources.bazaarPurchases.includes(abilityId)) {
+          const bazaarPurchases = state.unlockedSources?.bazaarPurchases || [];
+          if (bazaarPurchases.includes(abilityId)) {
             return state;
           }
           return {
             unlockedSources: {
               ...state.unlockedSources,
-              bazaarPurchases: [...state.unlockedSources.bazaarPurchases, abilityId],
+              bazaarPurchases: [...bazaarPurchases, abilityId],
             },
           };
         });
@@ -511,6 +521,7 @@ const useElementalAbilityStore = create(
             unlockedPerks: [],
             achievements: [],
             bossDrops: [],
+            bazaarPurchases: [],
           },
           isLoading: false,
         });
