@@ -264,6 +264,42 @@ export const useNotificationStore = create((set, get) => ({
   },
 
   // ==========================================
+  // STREAK BROKEN NOTIFICATIONS
+  // ==========================================
+
+  // Broken streak data
+  brokenStreakNotification: null,
+
+  // Show broken streak notification
+  showBrokenStreak: (brokenStreaks) => {
+    if (!brokenStreaks || brokenStreaks.length === 0) return;
+
+    const timestamp = Date.now();
+
+    // Show the first broken streak (or combine if multiple)
+    const notification = brokenStreaks.length === 1
+      ? {
+          streak: brokenStreaks[0],
+          message: `Your ${brokenStreaks[0].name} streak was reset`,
+          previousStreak: brokenStreaks[0].previousStreak,
+          timestamp,
+        }
+      : {
+          streak: null,
+          message: `${brokenStreaks.length} streaks were reset`,
+          streaks: brokenStreaks,
+          timestamp,
+        };
+
+    set({ brokenStreakNotification: notification });
+  },
+
+  // Dismiss broken streak notification
+  dismissBrokenStreak: () => {
+    set({ brokenStreakNotification: null });
+  },
+
+  // ==========================================
   // UTILITY
   // ==========================================
 
@@ -276,6 +312,7 @@ export const useNotificationStore = create((set, get) => ({
       currentXP: null,
       levelUpNotification: null,
       streakCelebration: null,
+      brokenStreakNotification: null,
     });
   },
 }));

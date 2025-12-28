@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 import { feedback } from '../services/microInteractions';
+import { useNotificationStore } from './notificationStore';
 
 /**
  * Custom Streaks Store
@@ -189,6 +190,7 @@ const useCustomStreaksStore = create(
       completions: [], // { streakId, date, completedAt }
       isLoading: false,
       initialized: false,
+      brokenStreaks: [], // Streaks that were broken on last check
 
       // Initialize from Supabase
       initialize: async (passedUserId = null) => {
@@ -243,6 +245,21 @@ const useCustomStreaksStore = create(
             streaks: streaks || [],
             completions: completions || [],
           });
+
+          // Check for broken streaks after loading data
+          // This must happen after streaks and completions are set
+          if (streaks && streaks.length > 0) {
+            // Use setTimeout to ensure state is updated before checking
+            setTimeout(async () => {
+              const brokenStreaks = await get().checkAndResetBrokenStreaks();
+              if (brokenStreaks.length > 0) {
+                // Trigger notification for broken streaks
+                useNotificationStore.getState().showBrokenStreak(brokenStreaks);
+                console.log('[CustomStreaksStore] Broken streaks detected:', brokenStreaks.map(s => s.name));
+              }
+            }, 100);
+          }
+
           console.log('[CustomStreaksStore] ✅ Initialized');
         } catch (err) {
           console.error('[CustomStreaksStore] Error initializing:', err);
@@ -629,6 +646,83 @@ const useCustomStreaksStore = create(
         }
 
         return data;
+      },
+
+      /**
+       * Check and reset any broken streaks on app startup
+       * Updates database current_streak values when they become stale
+       * Returns array of broken streaks for optional notification
+       */
+      checkAndResetBrokenStreaks: async () => {
+        const { streaks, calculateCurrentStreak } = get();
+        const brokenStreaks = [];
+
+        for (const streak of streaks) {
+          const actualStreak = calculateCurrentStreak(streak.id);
+          const storedStreak = streak.current_streak || 0;
+
+          // If stored streak is higher than actual, the streak was broken
+          if (storedStreak > 0 && actualStreak < storedStreak) {
+            brokenStreaks.push({
+              id: streak.id,
+              name: streak.name,
+              icon: streak.icon,
+              previousStreak: storedStreak,
+              newStreak: actualStreak,
+            });
+
+            // Update database with correct value
+            try {
+              const userId = await getCurrentUserId();
+              if (userId) {
+                await supabase
+                  .from('custom_streaks')
+                  .update({
+                    current_streak: actualStreak,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', streak.id)
+                  .eq('user_id', userId);
+              }
+            } catch (err) {
+              console.error('[CustomStreaks] Error updating broken streak:', err);
+            }
+
+            // Update local state
+            set(state => ({
+              streaks: state.streaks.map(s =>
+                s.id === streak.id ? { ...s, current_streak: actualStreak } : s
+              ),
+            }));
+
+            console.log('[CustomStreaks] Streak broken:', {
+              name: streak.name,
+              was: storedStreak,
+              now: actualStreak,
+            });
+          }
+        }
+
+        if (brokenStreaks.length > 0) {
+          console.log(`[CustomStreaks] ${brokenStreaks.length} streak(s) were reset`);
+
+          // Store broken streaks in state for UI notification
+          set({ brokenStreaks });
+
+          // Clear after 10 seconds (gives UI time to show notification)
+          setTimeout(() => {
+            set({ brokenStreaks: [] });
+          }, 10000);
+        }
+
+        return brokenStreaks;
+      },
+
+      /**
+       * Clear broken streaks notification (call after showing notification)
+       */
+      clearBrokenStreaks: () => {
+        set({ brokenStreaks: [] });
       },
 
       /**

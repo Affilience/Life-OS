@@ -8,8 +8,8 @@
  * - Streak extended celebrations (Duolingo-style full-screen celebration)
  */
 
-import React, { useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useNotificationStore } from '../../stores/notificationStore';
 import AchievementToast from './AchievementToast';
 import XPGainAnimation from './XPGainAnimation';
@@ -17,6 +17,7 @@ import LevelUpModal from './LevelUpModal';
 import { StreakExtendedCelebration } from '../ui/DuolingoCelebration';
 import { useGamificationModeStore, VISIBILITY } from '../../stores/gamificationModeStore';
 import useSettingsStore from '../../stores/settingsStore';
+import { X, Flame } from 'lucide-react';
 
 /**
  * Main Global Notifications Component
@@ -31,6 +32,8 @@ export default function GlobalNotifications() {
     dismissLevelUp,
     streakCelebration,
     dismissStreakCelebration,
+    brokenStreakNotification,
+    dismissBrokenStreak,
   } = useNotificationStore();
 
   const mode = useGamificationModeStore((state) => state.mode);
@@ -47,6 +50,16 @@ export default function GlobalNotifications() {
   const handleXPComplete = useCallback(() => {
     dismissXP();
   }, [dismissXP]);
+
+  // Auto-dismiss broken streak notification after 8 seconds
+  useEffect(() => {
+    if (brokenStreakNotification) {
+      const timer = setTimeout(() => {
+        dismissBrokenStreak();
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [brokenStreakNotification, dismissBrokenStreak]);
 
   // In minimal mode, don't show any notifications
   if (mode === 'minimal') {
@@ -100,6 +113,59 @@ export default function GlobalNotifications() {
         newStreak={streakCelebration?.newStreak || 1}
         onComplete={dismissStreakCelebration}
       />
+
+      {/* Broken Streak Notification */}
+      <AnimatePresence>
+        {brokenStreakNotification && streakAlertsEnabled && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: -50, x: '-50%' }}
+            className="fixed top-20 left-1/2 z-[9999] max-w-sm w-full mx-4"
+          >
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 border border-red-500/30 rounded-2xl p-4 shadow-2xl shadow-red-500/20">
+              <div className="flex items-start gap-3">
+                {/* Icon */}
+                <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <Flame className="w-5 h-5 text-red-400" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-white text-sm">
+                    {brokenStreakNotification.streak
+                      ? `${brokenStreakNotification.streak.icon || '🔥'} Streak Reset`
+                      : 'Streaks Reset'}
+                  </h4>
+                  <p className="text-slate-400 text-xs mt-0.5">
+                    {brokenStreakNotification.message}
+                  </p>
+                  {brokenStreakNotification.previousStreak > 0 && (
+                    <p className="text-red-400/70 text-xs mt-1">
+                      Was {brokenStreakNotification.previousStreak} days
+                    </p>
+                  )}
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={dismissBrokenStreak}
+                  className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Encouragement */}
+              <div className="mt-3 pt-3 border-t border-slate-700/50">
+                <p className="text-xs text-slate-500 text-center">
+                  Don't worry! Start fresh today and build it back up 💪
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
