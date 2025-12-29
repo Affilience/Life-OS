@@ -19,6 +19,30 @@ const debug = import.meta.env.DEV ? console.log.bind(console) : () => {};
 let wsErrorCount = 0;
 let lastWsErrorLog = 0;
 
+// Debounce map to prevent rapid consecutive refreshes
+const debounceTimers = new Map();
+const DEBOUNCE_DELAY = 500; // ms - wait before executing refresh
+
+/**
+ * Debounced refresh helper - prevents rapid consecutive refreshes
+ * This is crucial for cost optimization as it prevents multiple
+ * database calls when many changes happen in quick succession
+ */
+const debouncedRefresh = (key, refreshFn) => {
+  if (!refreshFn) return;
+
+  // Clear existing timer for this key
+  if (debounceTimers.has(key)) {
+    clearTimeout(debounceTimers.get(key));
+  }
+
+  // Set new timer
+  debounceTimers.set(key, setTimeout(() => {
+    debounceTimers.delete(key);
+    refreshFn();
+  }, DEBOUNCE_DELAY));
+};
+
 // Import stores for updating (mixed export styles)
 import useSkillsStore from '../stores/skillsStore';  // default export
 import useProductivityStore from '../stores/productivityStore';  // default export
@@ -179,7 +203,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Skills changed:', payload.eventType);
-        refreshSkills?.();
+        debouncedRefresh('skills', refreshSkills);
       })
       .on('postgres_changes', {
         event: '*',
@@ -188,7 +212,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Practice logged:', payload.eventType);
-        refreshSkills?.();
+        debouncedRefresh('skills', refreshSkills);
       })
       .subscribe(handleSubscriptionStatus('Skills'));
     channels.push(skillsChannel);
@@ -205,7 +229,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Task changed:', payload.eventType);
-        refreshTasks?.();
+        debouncedRefresh('productivity', refreshTasks);
       })
       .on('postgres_changes', {
         event: '*',
@@ -214,7 +238,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Project changed:', payload.eventType);
-        refreshTasks?.();
+        debouncedRefresh('productivity', refreshTasks);
       })
       .subscribe(handleSubscriptionStatus('Productivity'));
     channels.push(productivityChannel);
@@ -231,7 +255,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Workout changed:', payload.eventType);
-        refreshWorkouts?.();
+        debouncedRefresh('workouts', refreshWorkouts);
       })
       .subscribe(handleSubscriptionStatus('Workouts'));
     channels.push(workoutsChannel);
@@ -248,7 +272,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Transaction changed:', payload.eventType);
-        refreshFinancial?.();
+        debouncedRefresh('financial', refreshFinancial);
       })
       .on('postgres_changes', {
         event: '*',
@@ -257,7 +281,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Goal changed:', payload.eventType);
-        refreshFinancial?.();
+        debouncedRefresh('financial', refreshFinancial);
       })
       .subscribe(handleSubscriptionStatus('Financial'));
     channels.push(financialChannel);
@@ -274,7 +298,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Time block changed:', payload.eventType);
-        refreshCalendar?.();
+        debouncedRefresh('calendar', refreshCalendar);
       })
       .on('postgres_changes', {
         event: '*',
@@ -283,7 +307,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Event changed:', payload.eventType);
-        refreshCalendar?.();
+        debouncedRefresh('calendar', refreshCalendar);
       })
       .subscribe(handleSubscriptionStatus('Calendar'));
     channels.push(calendarChannel);
@@ -300,7 +324,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Note changed:', payload.eventType);
-        refreshKnowledge?.();
+        debouncedRefresh('knowledge', refreshKnowledge);
       })
       .on('postgres_changes', {
         event: '*',
@@ -309,7 +333,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Media changed:', payload.eventType);
-        refreshKnowledge?.();
+        debouncedRefresh('knowledge', refreshKnowledge);
       })
       .subscribe(handleSubscriptionStatus('Knowledge'));
     channels.push(knowledgeChannel);
@@ -326,7 +350,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Nutrition changed:', payload.eventType);
-        refreshHealth?.();
+        debouncedRefresh('health', refreshHealth);
       })
       .on('postgres_changes', {
         event: '*',
@@ -335,7 +359,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Water changed:', payload.eventType);
-        refreshHealth?.();
+        debouncedRefresh('health', refreshHealth);
       })
       .on('postgres_changes', {
         event: '*',
@@ -344,7 +368,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Recipe changed:', payload.eventType);
-        refreshHealth?.();
+        debouncedRefresh('health', refreshHealth);
       })
       .on('postgres_changes', {
         event: '*',
@@ -353,7 +377,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Supplement changed:', payload.eventType);
-        refreshHealth?.();
+        debouncedRefresh('health', refreshHealth);
       })
       .subscribe(handleSubscriptionStatus('Health'));
     channels.push(healthChannel);
@@ -370,9 +394,9 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Profile updated (possible level up):', payload.new);
-        refreshAvatar?.();
+        debouncedRefresh('avatar', refreshAvatar);
 
-        // Check for level up
+        // Check for level up (immediate notification, not debounced)
         if (payload.old && payload.new && payload.new.level > payload.old.level) {
           toast.success(`Level Up! You're now level ${payload.new.level}`, {
             title: '🎉 Level Up!',
@@ -387,9 +411,9 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Achievement unlocked!', payload.new);
-        refreshAchievements?.();
+        debouncedRefresh('achievements', refreshAchievements);
 
-        // Show achievement notification
+        // Show achievement notification (immediate)
         const achievement = payload.new;
         toast.success(achievement.description || 'New achievement unlocked!', {
           title: `🏆 ${achievement.name || 'Achievement Unlocked'}`,
@@ -403,7 +427,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Cosmic credits changed:', payload.eventType);
-        refreshGamification?.();
+        debouncedRefresh('gamification', refreshGamification);
       })
       .subscribe(handleSubscriptionStatus('Gamification'));
     channels.push(gamificationChannel);
@@ -420,7 +444,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Resolution changed:', payload.eventType);
-        refreshResolutions?.();
+        debouncedRefresh('resolutions', refreshResolutions);
       })
       .on('postgres_changes', {
         event: '*',
@@ -429,7 +453,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Resolution check-in:', payload.eventType);
-        refreshResolutions?.();
+        debouncedRefresh('resolutions', refreshResolutions);
       })
       .subscribe(handleSubscriptionStatus('Resolutions'));
     channels.push(resolutionsChannel);
@@ -446,7 +470,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Content changed:', payload.eventType);
-        refreshContent?.();
+        debouncedRefresh('content', refreshContent);
       })
       .subscribe(handleSubscriptionStatus('Content'));
     channels.push(contentChannel);
@@ -463,7 +487,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Purpose changed:', payload.eventType);
-        refreshPurpose?.();
+        debouncedRefresh('purpose', refreshPurpose);
       })
       .on('postgres_changes', {
         event: '*',
@@ -472,7 +496,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Values changed:', payload.eventType);
-        refreshPurpose?.();
+        debouncedRefresh('purpose', refreshPurpose);
       })
       .on('postgres_changes', {
         event: '*',
@@ -481,7 +505,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Decisions changed:', payload.eventType);
-        refreshPurpose?.();
+        debouncedRefresh('purpose', refreshPurpose);
       })
       .on('postgres_changes', {
         event: '*',
@@ -490,7 +514,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Identity check-in changed:', payload.eventType);
-        refreshPurpose?.();
+        debouncedRefresh('purpose', refreshPurpose);
       })
       .subscribe(handleSubscriptionStatus('Purpose'));
     channels.push(purposeChannel);
@@ -507,7 +531,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Quote changed:', payload.eventType);
-        refreshQuotes?.();
+        debouncedRefresh('quotes', refreshQuotes);
       })
       .subscribe(handleSubscriptionStatus('Quotes'));
     channels.push(quotesChannel);
@@ -524,7 +548,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Daily task changed:', payload.eventType);
-        refreshDailyTasks?.();
+        debouncedRefresh('dailyTasks', refreshDailyTasks);
       })
       .on('postgres_changes', {
         event: '*',
@@ -533,7 +557,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Task template changed:', payload.eventType);
-        refreshDailyTasks?.();
+        debouncedRefresh('dailyTasks', refreshDailyTasks);
       })
       .subscribe(handleSubscriptionStatus('Daily Tasks'));
     channels.push(dailyTasksChannel);
@@ -551,8 +575,8 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `requester_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Friendship changed (requester):', payload.eventType);
-        refreshFriends?.();
-        refreshPendingRequests?.();
+        debouncedRefresh('friends', refreshFriends);
+        debouncedRefresh('pendingRequests', refreshPendingRequests);
         if (payload.eventType === 'UPDATE' && payload.new?.status === 'accepted') {
           toast.success('Friend request accepted!', { duration: 3000 });
         }
@@ -564,8 +588,8 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `addressee_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Friendship changed (addressee):', payload.eventType);
-        refreshFriends?.();
-        refreshPendingRequests?.();
+        debouncedRefresh('friends', refreshFriends);
+        debouncedRefresh('pendingRequests', refreshPendingRequests);
         if (payload.eventType === 'INSERT' && payload.new?.status === 'pending') {
           toast.info('New friend request!', {
             title: '👋 Friend Request',
@@ -581,8 +605,8 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `creator_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Challenge changed (creator):', payload.eventType);
-        refreshChallenges?.();
-        refreshH2HInvites?.();
+        debouncedRefresh('challenges', refreshChallenges);
+        debouncedRefresh('h2hInvites', refreshH2HInvites);
       })
       .on('postgres_changes', {
         event: 'INSERT',
@@ -592,7 +616,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         // Check if this challenge is for us (H2H opponent)
         if (payload.new?.event_data?.opponent_id === userId) {
           debug('[Realtime] New H2H challenge received!');
-          refreshH2HInvites?.();
+          debouncedRefresh('h2hInvites', refreshH2HInvites);
           toast.info('New head-to-head challenge!', {
             title: '⚔️ Challenge Received',
             duration: 5000,
@@ -607,8 +631,8 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         // Check if challenge status changed (accepted/completed)
         if (payload.new?.creator_id === userId || payload.new?.event_data?.opponent_id === userId) {
           debug('[Realtime] Challenge updated:', payload.eventType);
-          refreshChallenges?.();
-          refreshH2HInvites?.();
+          debouncedRefresh('challenges', refreshChallenges);
+          debouncedRefresh('h2hInvites', refreshH2HInvites);
           if (payload.new?.status === 'active' && payload.old?.status === 'pending') {
             toast.success('Challenge accepted!', { duration: 3000 });
           }
@@ -622,7 +646,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] New activity:', payload.eventType);
-        refreshActivityFeed?.();
+        debouncedRefresh('activityFeed', refreshActivityFeed);
       })
       .subscribe(handleSubscriptionStatus('Social'));
     channels.push(socialChannel);
@@ -639,7 +663,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Bad habit changed:', payload.eventType);
-        refreshBadHabits?.();
+        debouncedRefresh('badHabits', refreshBadHabits);
       })
       .on('postgres_changes', {
         event: '*',
@@ -648,7 +672,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Bad habit relapse:', payload.eventType);
-        refreshBadHabits?.();
+        debouncedRefresh('badHabits', refreshBadHabits);
       })
       .subscribe(handleSubscriptionStatus('Bad Habits'));
     channels.push(badHabitsChannel);
@@ -665,7 +689,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
       }, (payload) => {
         // Check if user is a participant
         debug('[Realtime] Boss battle changed:', payload.eventType);
-        refreshBoss?.();
+        refreshBoss?.(); // No debounce - time-sensitive combat
       })
       .on('postgres_changes', {
         event: '*',
@@ -674,7 +698,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Boss participation changed:', payload.eventType);
-        refreshBoss?.();
+        refreshBoss?.(); // No debounce - time-sensitive combat
       })
       .on('postgres_changes', {
         event: '*',
@@ -683,7 +707,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Boss damage logged:', payload.eventType);
-        refreshBoss?.();
+        refreshBoss?.(); // No debounce - time-sensitive combat
       })
       .subscribe(handleSubscriptionStatus('Boss Battles'));
     channels.push(bossChannel);
@@ -700,7 +724,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Custom streak changed:', payload.eventType);
-        refreshCustomStreaks?.();
+        debouncedRefresh('streaks', refreshCustomStreaks);
       })
       .on('postgres_changes', {
         event: '*',
@@ -709,7 +733,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Streak check-in:', payload.eventType);
-        refreshCustomStreaks?.();
+        debouncedRefresh('streaks', refreshCustomStreaks);
       })
       .subscribe(handleSubscriptionStatus('Custom Streaks'));
     channels.push(streaksChannel);
@@ -726,7 +750,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Pet changed:', payload.eventType);
-        refreshPets?.();
+        debouncedRefresh('pets', refreshPets);
       })
       .subscribe(handleSubscriptionStatus('Pets'));
     channels.push(petsChannel);
@@ -743,7 +767,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `player1_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] PvP arena match (p1):', payload.eventType);
-        refreshPvpArena?.(userId);
+        refreshPvpArena?.(userId); // No debounce - time-sensitive combat
         refreshPvpArenaStats?.(userId);
       })
       .on('postgres_changes', {
@@ -753,7 +777,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `player2_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] PvP arena match (p2):', payload.eventType);
-        refreshPvpArena?.(userId);
+        refreshPvpArena?.(userId); // No debounce - time-sensitive combat
         refreshPvpArenaStats?.(userId);
       })
       .on('postgres_changes', {
@@ -763,7 +787,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] PvP arena stats:', payload.eventType);
-        refreshPvpArenaStats?.(userId);
+        refreshPvpArenaStats?.(userId); // No debounce - time-sensitive combat
       })
       .subscribe(handleSubscriptionStatus('PvP Arena'));
     channels.push(pvpArenaChannel);
@@ -780,7 +804,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `player1_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] PvP battle (p1):', payload.eventType);
-        refreshPvp?.(userId);
+        refreshPvp?.(userId); // No debounce - time-sensitive combat
       })
       .on('postgres_changes', {
         event: '*',
@@ -789,7 +813,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `player2_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] PvP battle (p2):', payload.eventType);
-        refreshPvp?.(userId);
+        refreshPvp?.(userId); // No debounce - time-sensitive combat
       })
       .subscribe(handleSubscriptionStatus('PvP Battles'));
     channels.push(pvpChannel);
@@ -806,7 +830,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Quest changed:', payload.eventType);
-        refreshQuests?.();
+        debouncedRefresh('quests', refreshQuests);
       })
       .on('postgres_changes', {
         event: '*',
@@ -815,7 +839,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] User quest progress:', payload.eventType);
-        refreshQuests?.();
+        debouncedRefresh('quests', refreshQuests);
       })
       .on('postgres_changes', {
         event: '*',
@@ -823,7 +847,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         table: 'quest_objectives',
       }, (payload) => {
         debug('[Realtime] Quest objective:', payload.eventType);
-        refreshQuests?.();
+        debouncedRefresh('quests', refreshQuests);
       })
       .subscribe(handleSubscriptionStatus('Quests'));
     channels.push(questsChannel);
@@ -840,7 +864,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Settings changed:', payload.eventType);
-        refreshSettings?.();
+        debouncedRefresh('settings', refreshSettings);
       })
       .subscribe(handleSubscriptionStatus('Settings'));
     channels.push(settingsChannel);
@@ -857,7 +881,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Module mastery changed:', payload.eventType);
-        refreshModuleMastery?.();
+        debouncedRefresh('mastery', refreshModuleMastery);
       })
       .subscribe(handleSubscriptionStatus('Module Mastery'));
     channels.push(masteryChannel);
@@ -874,7 +898,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Perk changed:', payload.eventType);
-        refreshPerks?.();
+        debouncedRefresh('perks', refreshPerks);
         if (payload.eventType === 'INSERT') {
           toast.success('New perk unlocked!', {
             title: '✨ Perk Unlocked',
@@ -897,8 +921,8 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] New notification:', payload.new);
-        refreshNotifications?.();
-        // Show toast for new notifications
+        debouncedRefresh('notifications', refreshNotifications);
+        // Show toast for new notifications (immediate, not debounced)
         const notif = payload.new;
         if (notif?.title) {
           toast.info(notif.message || 'New notification', {
@@ -914,7 +938,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Notification updated:', payload.eventType);
-        refreshNotifications?.();
+        debouncedRefresh('notifications', refreshNotifications);
       })
       .subscribe(handleSubscriptionStatus('Notifications'));
     channels.push(notificationsChannel);
@@ -931,7 +955,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Dashboard widget changed:', payload.eventType);
-        refreshDashboard?.();
+        debouncedRefresh('dashboard', refreshDashboard);
       })
       .on('postgres_changes', {
         event: '*',
@@ -940,7 +964,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Dashboard layout changed:', payload.eventType);
-        refreshDashboard?.();
+        debouncedRefresh('dashboard', refreshDashboard);
       })
       .subscribe(handleSubscriptionStatus('Dashboard'));
     channels.push(dashboardChannel);
@@ -957,7 +981,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Avatar changed:', payload.eventType);
-        refreshAvatar?.();
+        debouncedRefresh('avatar', refreshAvatar);
       })
       .on('postgres_changes', {
         event: '*',
@@ -966,7 +990,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Equipment changed:', payload.eventType);
-        refreshAvatar?.();
+        debouncedRefresh('avatar', refreshAvatar);
       })
       .subscribe(handleSubscriptionStatus('Avatar'));
     channels.push(avatarChannel);
@@ -984,7 +1008,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
       }, (payload) => {
         debug('[Realtime] Journal entry changed:', payload.eventType);
         // Journal might use knowledge store or its own
-        refreshKnowledge?.();
+        debouncedRefresh('journal', refreshKnowledge);
       })
       .subscribe(handleSubscriptionStatus('Journal'));
     channels.push(journalChannel);
@@ -1001,7 +1025,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Habit changed:', payload.eventType);
-        refreshDailyTasks?.();
+        debouncedRefresh('habits', refreshDailyTasks);
       })
       .on('postgres_changes', {
         event: '*',
@@ -1010,7 +1034,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
         filter: `user_id=eq.${userId}`,
       }, (payload) => {
         debug('[Realtime] Habit completion:', payload.eventType);
-        refreshDailyTasks?.();
+        debouncedRefresh('habits', refreshDailyTasks);
       })
       .subscribe(handleSubscriptionStatus('Habits'));
     channels.push(habitsChannel);
