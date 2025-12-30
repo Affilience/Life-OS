@@ -142,6 +142,7 @@ const queryClient = new QueryClient({
 
 // Auth page for login/signup
 const Auth = lazy(() => import('./pages/Auth'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 
 // Lazy load all page components
 const Dashboard = lazy(() => import('./pages/DashboardNew'));
@@ -182,6 +183,7 @@ const EquipmentTest = lazy(() => import('./pages/EquipmentTest'));
 const EquipmentTestHeroine = lazy(() => import('./pages/EquipmentTestHeroine'));
 const CombatDemo = lazy(() => import('./pages/CombatDemo'));
 const LevelUpTest = lazy(() => import('./pages/LevelUpTest'));
+const AvatarEthnicities = lazy(() => import('./pages/AvatarEthnicities'));
 
 // Protected Route - requires authentication
 function ProtectedRoute({ children }) {
@@ -401,6 +403,7 @@ function AppContent() {
             <Routes>
               {/* Auth route - login/signup */}
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
 
               {/* Onboarding route - outside MainLayout for full-screen experience */}
               <Route path="/onboarding" element={
@@ -496,6 +499,9 @@ function AppContent() {
                   } />
                   <Route path="/level-up-test" element={
                     <LevelUpTest />
+                  } />
+                  <Route path="/avatar-ethnicities" element={
+                    <AvatarEthnicities />
                   } />
                 </Routes>
                 </MainLayout>

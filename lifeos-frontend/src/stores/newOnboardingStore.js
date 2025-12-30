@@ -20,7 +20,6 @@ const getGamificationStore = async () => {
 
 // Onboarding steps
 export const ONBOARDING_STEPS = {
-  GAMIFICATION_MODE: 'gamification_mode',
   PROFILE_SETUP: 'profile_setup',
   LIFE_FOCUS: 'life_focus',
   MODULE_SETUP: 'module_setup',
@@ -32,7 +31,6 @@ export const ONBOARDING_STEPS = {
 
 // Step order for navigation
 export const STEP_ORDER = [
-  ONBOARDING_STEPS.GAMIFICATION_MODE,
   ONBOARDING_STEPS.PROFILE_SETUP,
   ONBOARDING_STEPS.LIFE_FOCUS,
   ONBOARDING_STEPS.MODULE_SETUP,
@@ -96,19 +94,10 @@ export const LIFE_GOALS = [
 
 // Nova dialogue for each step
 export const NOVA_DIALOGUES = {
-  [ONBOARDING_STEPS.GAMIFICATION_MODE]: {
-    intro: [
-      "Welcome, traveler. I am Nova, your guide through the cosmos of self-improvement.",
-      "Before we begin your journey, I must ask you something important...",
-      "How would you like to experience LifeOS?",
-    ],
-    cosmic: "Excellent choice! Embrace the full cosmic experience - XP, evolution, quests, and glory await!",
-    minimal: "Pure and simple. Let's cut through the noise and focus on what matters most.",
-  },
   [ONBOARDING_STEPS.PROFILE_SETUP]: {
     intro: [
-      "Now, let's create your identity in this realm...",
-      "Who will you become on this journey?",
+      "Welcome, traveler. I am Nova, your guide through the cosmos of self-improvement.",
+      "Let's create your identity in this realm... Who will you become on this journey?",
     ],
     genderSelect: "Choose your path - will you walk as Hero or Heroine?",
     complete: "A powerful identity. The cosmos recognizes you now.",
@@ -157,7 +146,7 @@ export const NOVA_DIALOGUES = {
       "You stand at the threshold of transformation.",
     ],
     celebration: [
-      "Welcome to LifeOS, {name}!",
+      "Welcome to Ascynt, {name}!",
       "Your first quest awaits. Go forth and conquer!",
       "I'll be here whenever you need guidance. Just look for me.",
     ],
@@ -188,7 +177,7 @@ export const useNewOnboardingStore = create(
     completedAt: null,
 
       // User selections
-      gamificationMode: null, // 'cosmic' | 'minimal'
+      gamificationMode: 'cosmic', // Always cosmic mode
 
       profile: {
         username: '',
@@ -300,7 +289,7 @@ export const useNewOnboardingStore = create(
               _hasAuthoritativeData: true,
               isOnboardingComplete: false,
               isOnboardingActive: true,
-              currentStep: ONBOARDING_STEPS.GAMIFICATION_MODE,
+              currentStep: ONBOARDING_STEPS.PROFILE_SETUP,
             });
             console.log('[OnboardingStore] ✅ Initialized (no user)');
             return;
@@ -361,7 +350,7 @@ export const useNewOnboardingStore = create(
                 _hasAuthoritativeData: true,
                 isOnboardingComplete: false,
                 isOnboardingActive: true,
-                currentStep: ONBOARDING_STEPS.GAMIFICATION_MODE,
+                currentStep: ONBOARDING_STEPS.PROFILE_SETUP,
               });
             }
             console.log('[OnboardingStore] ✅ Initialized (new user)');
@@ -388,10 +377,10 @@ export const useNewOnboardingStore = create(
               },
               lifeGoals: preferences.life_goals || [],
               dailyCommitment: preferences.daily_commitment || 15,
-              gamificationMode: preferences.gamification_mode || null,
+              gamificationMode: 'cosmic',
               isOnboardingComplete: isComplete,
               isOnboardingActive: !isComplete,
-              currentStep: isComplete ? ONBOARDING_STEPS.COMPLETED : ONBOARDING_STEPS.GAMIFICATION_MODE,
+              currentStep: isComplete ? ONBOARDING_STEPS.COMPLETED : ONBOARDING_STEPS.PROFILE_SETUP,
               _hasAuthoritativeData: true,
               _lastSyncedAt: new Date().toISOString(),
               _isLoading: false,
@@ -475,7 +464,7 @@ export const useNewOnboardingStore = create(
         set({
           isOnboardingActive: true,
           isOnboardingComplete: false,
-          currentStep: ONBOARDING_STEPS.GAMIFICATION_MODE,
+          currentStep: ONBOARDING_STEPS.PROFILE_SETUP,
           startedAt: new Date().toISOString(),
           novaState: 'welcoming',
           novaDialogueIndex: 0,
@@ -719,12 +708,12 @@ export const useNewOnboardingStore = create(
       // Reset onboarding (for re-onboard feature)
       resetOnboarding: async () => {
         set({
-          currentStep: ONBOARDING_STEPS.GAMIFICATION_MODE,
+          currentStep: ONBOARDING_STEPS.PROFILE_SETUP,
           isOnboardingActive: true,
           isOnboardingComplete: false,
           startedAt: new Date().toISOString(),
           completedAt: null,
-          gamificationMode: null,
+          gamificationMode: 'cosmic',
           profile: {
             username: '',
             displayName: '',
@@ -814,7 +803,6 @@ export const useNewOnboardingStore = create(
       // Check if step is required
       isStepRequired: (step) => {
         return [
-          ONBOARDING_STEPS.GAMIFICATION_MODE,
           ONBOARDING_STEPS.PROFILE_SETUP,
         ].includes(step);
       },

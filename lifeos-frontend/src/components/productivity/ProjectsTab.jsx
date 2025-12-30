@@ -355,17 +355,17 @@ export default function ProjectsTab() {
 
         <div className="flex-1" />
 
-        {/* View Toggle */}
-        <div className="flex bg-[#1a1724] border border-white/10 rounded-lg p-1">
+        {/* View Toggle - hidden on mobile since both views are single column */}
+        <div className="hidden md:flex bg-[#1a1724] border border-white/10 rounded-lg p-1">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded ${viewMode === 'grid' ? 'bg-violet-500 text-white' : 'text-white/60 hover:text-white'}`}
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${viewMode === 'grid' ? 'bg-violet-500 text-white' : 'text-white/60 hover:text-white'}`}
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded ${viewMode === 'list' ? 'bg-violet-500 text-white' : 'text-white/60 hover:text-white'}`}
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${viewMode === 'list' ? 'bg-violet-500 text-white' : 'text-white/60 hover:text-white'}`}
           >
             <List className="w-4 h-4" />
           </button>
@@ -619,10 +619,10 @@ export default function ProjectsTab() {
 
       {/* Create/Edit Project Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={handleCloseModal}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto" onClick={handleCloseModal}>
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-lg bg-[#1a1724] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-[#1a1724] border border-white/10 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -672,7 +672,7 @@ export default function ProjectsTab() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 max-h-[60vh] overflow-y-auto">
+            <div className="p-6">
               {/* Step 1: Basics */}
               {(createStep === 0 || editingProject) && (
                 <div className="space-y-4">

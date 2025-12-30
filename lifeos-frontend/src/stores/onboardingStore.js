@@ -236,7 +236,7 @@ const useOnboardingStore = create(
           state: ONBOARDING_STATES.COMPLETED,
           completedAt: new Date().toISOString(),
           novaEmotion: 'celebratory',
-          novaMessage: "Welcome to YOUR LifeOS! I'll be here whenever you need me. 🎉"
+          novaMessage: "Welcome to YOUR Ascynt! I'll be here whenever you need me. 🎉"
         });
       },
 

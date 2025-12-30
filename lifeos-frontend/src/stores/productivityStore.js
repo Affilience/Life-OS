@@ -742,7 +742,8 @@ const useProductivityStore = create(
           const nowCompleted = !wasCompleted;
 
           // Award XP when completing a task (not when uncompleting)
-          if (nowCompleted) {
+          // Only award XP if we haven't already awarded it for this task
+          if (nowCompleted && !task.xpAwarded) {
             // Base XP by priority (EASY tier: 5-10 XP)
             const xpByPriority = { high: 10, medium: 8, low: 5 };
             const xpEarned = xpByPriority[task.priority] || 8;
@@ -763,6 +764,8 @@ const useProductivityStore = create(
                   status: t.status === 'completed' ? 'active' : 'completed',
                   completedAt:
                     t.status === 'completed' ? null : new Date().toISOString(),
+                  // Mark XP as awarded when completing (but don't remove flag when uncompleting)
+                  xpAwarded: t.status !== 'completed' ? true : t.xpAwarded,
                 }
               : t
           ),
@@ -849,7 +852,8 @@ const useProductivityStore = create(
           const nowCompleted = !wasCompleted;
 
           // Award XP when completing a subtask (TRIVIAL tier: 2-5 XP)
-          if (nowCompleted) {
+          // Only award if XP hasn't already been awarded for this subtask
+          if (nowCompleted && !subtask.xpAwarded) {
             const xpByPriority = { high: 5, medium: 4, low: 3 };
             const xpEarned = xpByPriority[subtask.priority] || 4;
 
@@ -868,6 +872,8 @@ const useProductivityStore = create(
                   status: t.status === 'completed' ? 'pending' : 'completed',
                   completedAt:
                     t.status === 'completed' ? null : new Date().toISOString(),
+                  // Mark XP as awarded when completing
+                  xpAwarded: t.status !== 'completed' ? true : t.xpAwarded,
                 }
               : t
           ),

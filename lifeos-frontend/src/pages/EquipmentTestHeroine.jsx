@@ -1,19 +1,25 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
-// All equipment files from the actual asset folders
+// All equipment files from the actual asset folders (matching EquipmentTest.jsx)
 const EQUIPMENT_FILES = {
   helmets: [
     'archmage_diadem', 'basic', 'celestial_circlet', 'cloth_cap', 'dragon',
     'dragon_helm', 'eternal_crown', 'iron', 'iron_helmet', 'leather_hood',
     'mindguard_helmet', 'phoenix_crown', 'reinforced_coif', 'sage_crown',
-    'scholar_circlet', 'steel_greathelm', 'titanium_helm', 'training_helmet'
+    'scholar_circlet', 'steel_greathelm', 'titanium_helm', 'training_helmet',
+    // Mythical helmets
+    'void_crown', 'crystal_diadem', 'celestial_halo_crown', 'abyssal_visage',
+    'stormforged_helm', 'infernal_visage'
   ],
   chests: [
     'aegis_titan', 'armor_chainmail', 'armor_cosmic', 'armor_leather', 'armor_plate',
     'chainmail_shirt', 'cloth_tunic', 'dragon_bone_cuirass', 'dragon_cuirass',
     'dragon_scale_chestplate', 'leather_vest', 'padded_armor', 'paladin_chestguard',
-    'phoenix_battleplate', 'reinforced_breastplate', 'steel_plate', 'titanium_platemail'
+    'phoenix_battleplate', 'reinforced_breastplate', 'steel_plate', 'titanium_platemail',
+    // Mythical chests
+    'void_platemail', 'crystal_aegis', 'celestial_raiment', 'abyssal_cuirass',
+    'stormforged_breastplate', 'infernal_harness'
   ],
   weapons: [
     'archmage_staff', 'basic_sword', 'battle_axe', 'bloodfang', 'crystal_wand',
@@ -21,21 +27,39 @@ const EQUIPMENT_FILES = {
     'focus_blade', 'godslayer', 'iron_dagger', 'iron_sword', 'quill_of_wisdom',
     'scholars_tome', 'steel_longsword', 'sword_celestial', 'sword_crystal',
     'sword_iron', 'sword_novice', 'sword_void', 'taskmaster_hammer',
-    'thunder_hammer', 'training_sword', 'warlock_scepter', 'wizard_wand', 'wooden_staff'
+    'thunder_hammer', 'training_sword', 'warlock_scepter', 'wizard_wand', 'wooden_staff',
+    // Mythical weapons
+    'void_scythe', 'frostbite_blade', 'celestial_mace', 'abyssal_trident',
+    'thunderstrike_axe', 'infernal_greatsword'
   ],
   shields: [
     'aegis_of_mastery', 'basic', 'dragon_shield', 'fortress_shield',
     'guardian_bulwark', 'immortal_shield', 'iron', 'iron_shield',
-    'phoenix_wing_shield', 'steel_kite', 'steel_tower_shield', 'tower_shield', 'wooden_buckler'
+    'phoenix_wing_shield', 'steel_kite', 'steel_tower_shield', 'tower_shield', 'wooden_buckler',
+    // Mythical shields
+    'void_bulwark', 'glacial_aegis', 'divine_barrier'
   ],
   capes: [
     'ancient_cloak', 'basic', 'cloak_shadows', 'enchanter_mantle', 'leather_cape',
     'memory_mantle', 'mystic_robe', 'oracle_shroud', 'sage_cloak', 'shadow',
-    'shadow_cloak', 'storyteller_cloak', 'traveler_cloak'
+    'shadow_cloak', 'storyteller_cloak', 'traveler_cloak',
+    // Mythical capes
+    'void_shroud', 'frostweave_mantle', 'celestial_wings_cape', 'abyssal_tentacle_cloak'
   ],
   legs: [
     'chainmail_leggings', 'cloth_pants', 'dragon_legguards', 'iron_legguards',
-    'leather_leggings', 'phoenix_legguards'
+    'leather_leggings', 'phoenix_legguards',
+    // Mythical legs
+    'void_greaves', 'crystal_legguards', 'celestial_tassets', 'abyssal_cuisses',
+    'stormforged_greaves', 'infernal_legguards'
+  ],
+  // Female-specific legs (narrower stance)
+  legs_female: [
+    'chainmail_leggings', 'cloth_pants', 'dragon_legguards', 'iron_legguards',
+    'leather_leggings', 'phoenix_legguards',
+    // Mythical legs
+    'void_greaves', 'crystal_legguards', 'celestial_tassets', 'abyssal_cuisses',
+    'stormforged_greaves', 'infernal_legguards'
   ]
 };
 
@@ -53,15 +77,14 @@ const DEFAULT_POSITIONS = {
 
 const LAYER_ORDER = ['capes', 'legs', 'chests', 'shields', 'helmets', 'weapons'];
 
-// Local storage key for heroine positions
-const STORAGE_KEY = 'lifeos-equipment-positions-heroine';
+// Local storage key for heroine positions (per skin tone)
+const getStorageKey = (skinTone) => `ascynt-equipment-positions-female-${skinTone}`;
 
-// Skin tone options for heroine
+// Skin tone options for heroine (using diverse folder)
 const SKIN_TONES = [
-  { id: 'default', name: 'Light', path: '/assets/avatar/base-evolution/heroine_base_stage_20_veteran.png', color: '#f5d0c5' },
-  { id: 'olive', name: 'Olive', path: '/assets/avatar/skin-tones/heroine_base_stage_20_veteran_olive.png', color: '#c8c870' },
-  { id: 'brown', name: 'Brown', path: '/assets/avatar/skin-tones/heroine_base_stage_20_veteran_brown.png', color: '#8b5a3c' },
-  { id: 'black', name: 'Black', path: '/assets/avatar/skin-tones/heroine_base_stage_20_veteran_black.png', color: '#4a3228' },
+  { id: 'white', name: 'White', path: '/assets/avatar/diverse/heroine_stage_10_white.png', color: '#f5d0c5' },
+  { id: 'brown', name: 'Brown', path: '/assets/avatar/diverse/heroine_stage_10_brown.png', color: '#8b5a3c' },
+  { id: 'black', name: 'Black', path: '/assets/avatar/diverse/heroine_stage_10_black.png', color: '#4a3228' },
 ];
 
 // Base avatar for equipment positioning - Stage 20 Veteran (heroine equivalent of hero's Stage 10 Swordsman)
@@ -95,63 +118,100 @@ export default function EquipmentTestHeroine() {
   const [hoverTarget, setHoverTarget] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Load global positions from Supabase on mount
+  // Load positions from Supabase for ALL female skin tones on mount
   useEffect(() => {
     const loadFromCloud = async () => {
       try {
         setSyncStatus('Loading heroine positions...');
 
+        // Load positions for all female skin tones
         const { data, error } = await supabase
           .from('equipment_default_positions')
           .select('position_key, x, y, scale')
-          .like('position_key', 'heroine_%');
+          .like('position_key', 'female_%');
 
         if (error) {
           console.error('[EquipmentTestHeroine] Failed to load from cloud:', error);
           setSyncStatus('Cloud load failed - using local');
+          setCloudLoaded(true);
           return;
         }
 
         if (data && data.length > 0) {
-          const cloudPositions = {};
+          // Group positions by skin tone
+          const positionsBySkinTone = { white: {}, brown: {}, black: {} };
+
           data.forEach(row => {
-            // Remove 'heroine_' prefix for local use
-            const key = row.position_key.replace('heroine_', '');
-            cloudPositions[key] = {
-              x: parseFloat(row.x),
-              y: parseFloat(row.y),
-              scale: parseFloat(row.scale)
-            };
+            // Parse key format: "female_white_helmets/basic" -> skinTone: "white", key: "helmets/basic"
+            const match = row.position_key.match(/^female_(white|brown|black)_(.+)$/);
+            if (match) {
+              const [, skinTone, key] = match;
+              if (positionsBySkinTone[skinTone]) {
+                positionsBySkinTone[skinTone][key] = {
+                  x: parseFloat(row.x),
+                  y: parseFloat(row.y),
+                  scale: parseFloat(row.scale)
+                };
+              }
+            }
           });
 
-          console.log('[EquipmentTestHeroine] Loaded HEROINE positions:', Object.keys(cloudPositions));
-          setSavedPositions(cloudPositions);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudPositions));
-          setSyncStatus(`Loaded ${Object.keys(cloudPositions).length} heroine positions`);
+          // Save each skin tone's positions to localStorage
+          Object.entries(positionsBySkinTone).forEach(([skinTone, positions]) => {
+            if (Object.keys(positions).length > 0) {
+              localStorage.setItem(getStorageKey(skinTone), JSON.stringify(positions));
+            }
+          });
+
+          const totalLoaded = Object.values(positionsBySkinTone).reduce((sum, p) => sum + Object.keys(p).length, 0);
+          console.log('[EquipmentTestHeroine] Loaded positions by skin tone:', positionsBySkinTone);
+          setSyncStatus(`Loaded ${totalLoaded} heroine positions`);
           setLastSyncTime(new Date());
         } else {
           console.log('[EquipmentTestHeroine] No heroine positions found in cloud');
-          setSavedPositions({});
-          localStorage.removeItem(STORAGE_KEY);
           setSyncStatus('No heroine positions yet - start configuring!');
         }
         setCloudLoaded(true);
       } catch (err) {
         console.error('[EquipmentTestHeroine] Cloud sync error:', err);
         setSyncStatus('Sync error - using local');
+        setCloudLoaded(true);
       }
     };
 
     loadFromCloud();
   }, []);
 
-  // Save to Supabase with heroine_ prefix
+  // Load positions when skin tone changes OR when cloud data finishes loading
+  // Each skin tone has COMPLETELY SEPARATE positions - no fallback!
+  useEffect(() => {
+    if (!cloudLoaded) return; // Wait for cloud to load first
+
+    // CRITICAL: Clear unsaved edits when switching skin tones!
+    // This prevents edits from one skin tone bleeding into another
+    setCurrentPositions({});
+
+    try {
+      const currentSaved = localStorage.getItem(getStorageKey(selectedSkinTone.id));
+      const currentPositionsObj = currentSaved ? JSON.parse(currentSaved) : {};
+
+      // Each skin tone uses ONLY its own positions - completely separate!
+      setSavedPositions(currentPositionsObj);
+
+      console.log(`[EquipmentTestHeroine] Loaded ${Object.keys(currentPositionsObj).length} positions for ${selectedSkinTone.id}`);
+    } catch {
+      setSavedPositions({});
+    }
+  }, [selectedSkinTone, cloudLoaded]);
+
+  // Save to Supabase - each skin tone has separate positions with prefix
   const syncToCloud = useCallback(async (positions) => {
     try {
-      setSyncStatus('Saving heroine positions...');
+      setSyncStatus(`Saving ${selectedSkinTone.id} heroine positions...`);
 
+      // Add skin tone prefix to position keys (e.g., "female_white_helmets/basic")
       const upsertData = Object.entries(positions).map(([key, pos]) => ({
-        position_key: `heroine_${key}`,
+        position_key: `female_${selectedSkinTone.id}_${key}`,
         x: pos.x,
         y: pos.y,
         scale: pos.scale,
@@ -169,7 +229,7 @@ export default function EquipmentTestHeroine() {
       }
 
       console.log('[EquipmentTestHeroine] Saved positions:', Object.keys(positions).length);
-      setSyncStatus(`Saved ${Object.keys(positions).length} HEROINE positions (applies to all users!)`);
+      setSyncStatus(`✓ Saved ${Object.keys(positions).length} positions for ${selectedSkinTone.name}`);
       setLastSyncTime(new Date());
       return true;
     } catch (err) {
@@ -177,7 +237,7 @@ export default function EquipmentTestHeroine() {
       setSyncStatus('Sync error - saved locally');
       return false;
     }
-  }, []);
+  }, [selectedSkinTone]);
 
   // Load base avatar (Stage 20 Veteran) - reloads when skin tone changes
   useEffect(() => {
@@ -196,9 +256,14 @@ export default function EquipmentTestHeroine() {
       const total = Object.values(EQUIPMENT_FILES).flat().length;
 
       for (const [folder, items] of Object.entries(EQUIPMENT_FILES)) {
+        // Skip legs_female in loop - we'll handle it specially
+        if (folder === 'legs_female') continue;
+
         equipment[folder] = {};
         for (const item of items) {
-          const path = `/assets/equipment/${folder}/${item}.png`;
+          // Use legs_female folder for legs on heroine
+          const actualFolder = folder === 'legs' ? 'legs_female' : folder;
+          const path = `/assets/equipment/${actualFolder}/${item}.png`;
           try {
             const img = await new Promise((resolve, reject) => {
               const image = new Image();
@@ -479,7 +544,7 @@ export default function EquipmentTestHeroine() {
     const pos = getPosition(folder, item, folder === 'shields' ? editingShieldHand : null);
     const newSaved = { ...savedPositions, [key]: pos };
     setSavedPositions(newSaved);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSaved));
+    localStorage.setItem(getStorageKey(selectedSkinTone.id), JSON.stringify(newSaved));
     await syncToCloud(newSaved);
   };
 
@@ -489,7 +554,7 @@ export default function EquipmentTestHeroine() {
       allPositions[key] = pos;
     });
     setSavedPositions(allPositions);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allPositions));
+    localStorage.setItem(getStorageKey(selectedSkinTone.id), JSON.stringify(allPositions));
 
     const success = await syncToCloud(allPositions);
     if (success) {
@@ -528,7 +593,7 @@ export default function EquipmentTestHeroine() {
       try {
         const imported = JSON.parse(event.target.result);
         setSavedPositions(imported);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+        localStorage.setItem(getStorageKey(selectedSkinTone.id), JSON.stringify(imported));
         const success = await syncToCloud(imported);
         if (success) {
           alert(`Imported and synced ${Object.keys(imported).length} positions!`);
@@ -592,6 +657,31 @@ export default function EquipmentTestHeroine() {
                   ))}
                 </div>
                 <span className="text-xs text-slate-500 ml-1">{selectedSkinTone.name}</span>
+                {selectedSkinTone.id !== 'white' && (
+                  <button
+                    onClick={async () => {
+                      // COPY white positions to this skin tone (completely separate copy)
+                      const whitePositions = localStorage.getItem(getStorageKey('white'));
+                      if (whitePositions) {
+                        const positions = JSON.parse(whitePositions);
+                        // Save to this skin tone's localStorage
+                        localStorage.setItem(getStorageKey(selectedSkinTone.id), whitePositions);
+                        setSavedPositions(positions);
+                        setCurrentPositions({});
+                        // Sync to cloud with THIS skin tone's prefix
+                        await syncToCloud(positions);
+                        console.log(`[EquipmentTestHeroine] Copied white positions to ${selectedSkinTone.id}`);
+                        alert(`✓ Copied ${Object.keys(positions).length} positions from white to ${selectedSkinTone.name}`);
+                      } else {
+                        alert('No white positions to copy!');
+                      }
+                    }}
+                    className="px-2 py-1 text-xs rounded bg-amber-600 text-white hover:bg-amber-500"
+                    title="Copy white positions to this skin tone (as separate positions)"
+                  >
+                    Copy from White
+                  </button>
+                )}
               </div>
 
               <canvas
@@ -752,7 +842,7 @@ export default function EquipmentTestHeroine() {
                       .like('position_key', 'heroine_%');
                     if (!error) {
                       setSavedPositions({});
-                      localStorage.removeItem(STORAGE_KEY);
+                      localStorage.removeItem(getStorageKey(selectedSkinTone.id));
                       setSyncStatus('Cleared all heroine positions');
                     }
                   }

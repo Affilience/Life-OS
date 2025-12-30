@@ -1,7 +1,7 @@
 /**
  * Tours Module
  *
- * Nova-guided feature tours for LifeOS.
+ * Nova-guided feature tours for Ascynt.
  */
 
 export { default as FeatureTour, useTour } from './FeatureTour';

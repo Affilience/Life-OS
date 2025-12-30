@@ -1,5 +1,5 @@
 /**
- * Redis Service for LifeOS
+ * Redis Service for Ascynt
  * Uses Upstash Redis for leaderboards and caching
  *
  * SECURITY: User IDs are hashed before use in cache keys to prevent:

@@ -172,7 +172,7 @@ export const NOVA_MESSAGES = {
     complete: "Your resolutions are set. Let's make this year amazing!"
   },
   completion: {
-    celebrate: "You did it! Your LifeOS is fully configured.",
+    celebrate: "You did it! Your Ascynt is fully configured.",
     next: "Now the real journey begins. I'll be here whenever you need me."
   }
 };

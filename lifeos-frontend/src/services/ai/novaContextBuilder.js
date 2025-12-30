@@ -3,7 +3,7 @@
  * Unified service that combines all context sources for Nova AI
  *
  * Sources:
- * - System Knowledge (what LifeOS is and how it works)
+ * - System Knowledge (what Ascynt is and how it works)
  * - User Data (current state from all modules)
  * - Memory (learned facts, routines, past events)
  * - Patterns (productivity peaks, correlations)

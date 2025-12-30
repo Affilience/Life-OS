@@ -3,6 +3,8 @@
 /* Journal Writer */
 .journal-writer {
   min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%);
   display: grid;
   grid-template-columns: 1fr 320px;
@@ -300,42 +302,67 @@
   .journal-writer {
     grid-template-columns: 1fr;
     padding: 20px;
+    gap: 20px;
   }
 
   .writer-side-panel {
     flex-direction: row;
   }
+
+  .panel-section {
+    flex: 1;
+  }
 }
 
 @media (max-width: 768px) {
+  .journal-writer {
+    padding: 16px;
+    gap: 16px;
+    padding-bottom: 100px;
+  }
+
   .writer-paper {
-    padding: 40px 30px;
+    padding: 24px 20px;
     min-height: auto;
   }
 
   .writer-header {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     align-items: stretch;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
   }
 
   .writer-actions {
     justify-content: stretch;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .cancel-btn,
-  .save-btn {
+  .save-btn,
+  .delete-btn {
     flex: 1;
     justify-content: center;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .cancel-btn span,
+  .delete-btn span {
+    display: none;
   }
 
   .title-input {
-    font-size: 24px;
+    font-size: 22px;
+    line-height: 28px;
   }
 
   .content-textarea {
     font-size: 16px;
     line-height: 30px;
+    min-height: 300px;
     /* Adjust lines for mobile */
     background-image: repeating-linear-gradient(
       transparent,
@@ -362,7 +389,16 @@
     justify-content: space-between;
   }
 
+  .mood-btn {
+    width: 32px;
+    height: 32px;
+  }
+
   .writer-side-panel {
     flex-direction: column;
+  }
+
+  .panel-section {
+    padding: 16px;
   }
 }

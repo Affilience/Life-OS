@@ -40,7 +40,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Fireball',
         icon: '🔥',
         element: 'fire',
-        damage: 2.0,
+        damage: 1.5, // Default starter ability - low damage
         cooldown: 6000,
         tier: 1,
         description: 'Launch a blazing fireball at your enemy',
@@ -50,7 +50,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Meteor',
         icon: '☄️',
         element: 'fire',
-        damage: 4.0,
+        damage: 4.5, // Perk unlock (mind tree) - high damage
         cooldown: 18000,
         tier: 3,
         description: 'Call down a devastating meteor from the sky',
@@ -60,7 +60,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Inferno',
         icon: '🌋',
         element: 'fire',
-        damage: 3.0,
+        damage: 3.5, // Bazaar purchase - medium-high damage
         cooldown: 12000,
         tier: 2,
         description: 'Unleash a raging inferno that engulfs your foe',
@@ -70,7 +70,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Flame Burst',
         icon: '💥',
         element: 'fire',
-        damage: 2.5,
+        damage: 2.8, // Achievement unlock - medium damage
         cooldown: 8000,
         tier: 2,
         description: 'Release an explosive burst of flames',
@@ -80,7 +80,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Blazing Combo',
         icon: '🔥',
         element: 'fire',
-        damage: 3.5,
+        damage: 3.8, // Achievement unlock (hard) - medium-high damage
         cooldown: 14000,
         tier: 3,
         description: 'A rapid series of fiery strikes',
@@ -99,7 +99,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Ice Spike',
         icon: '🧊',
         element: 'ice',
-        damage: 2.0,
+        damage: 2.0, // Early achievement - low-medium damage
         cooldown: 6000,
         tier: 1,
         description: 'Impale your enemy with a sharp ice spike',
@@ -109,7 +109,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Blizzard',
         icon: '❄️',
         element: 'ice',
-        damage: 3.5,
+        damage: 4.0, // Bazaar purchase - medium-high damage
         cooldown: 15000,
         tier: 3,
         description: 'Summon a freezing blizzard',
@@ -119,7 +119,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Frost Nova',
         icon: '💠',
         element: 'ice',
-        damage: 2.5,
+        damage: 3.0, // Perk unlock (mind tree) - medium damage
         cooldown: 10000,
         tier: 2,
         description: 'Release an expanding wave of frost',
@@ -129,7 +129,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Ice Beam',
         icon: '🌊',
         element: 'ice',
-        damage: 3.0,
+        damage: 3.2, // Achievement unlock - medium damage
         cooldown: 12000,
         tier: 2,
         description: 'Fire a concentrated beam of freezing energy',
@@ -148,7 +148,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Lightning Strike',
         icon: '⚡',
         element: 'lightning',
-        damage: 2.2,
+        damage: 2.0, // Early achievement - low-medium damage
         cooldown: 5000,
         tier: 1,
         description: 'Call down a bolt of lightning',
@@ -158,7 +158,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Chain Lightning',
         icon: '⛓️',
         element: 'lightning',
-        damage: 2.5,
+        damage: 3.0, // Perk unlock (mind tree) - medium damage
         cooldown: 8000,
         tier: 2,
         description: 'Lightning that arcs between enemies',
@@ -168,7 +168,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Thunder Storm',
         icon: '🌩️',
         element: 'lightning',
-        damage: 4.0,
+        damage: 4.2, // Bazaar purchase - medium-high damage
         cooldown: 16000,
         tier: 3,
         description: 'Summon a devastating electrical storm',
@@ -178,7 +178,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Static Shock',
         icon: '💫',
         element: 'lightning',
-        damage: 1.8,
+        damage: 2.2, // Achievement unlock - low-medium damage
         cooldown: 4000,
         tier: 1,
         description: 'A quick jolt of static electricity',
@@ -197,7 +197,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Shadow Burst',
         icon: '🌑',
         element: 'dark',
-        damage: 2.3,
+        damage: 2.2, // Early achievement - low-medium damage
         cooldown: 7000,
         tier: 1,
         description: 'Explode with dark energy',
@@ -207,7 +207,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Black Hole',
         icon: '🕳️',
         element: 'dark',
-        damage: 4.5,
+        damage: 5.5, // Boss drop (Void Titan) - very high damage
         cooldown: 20000,
         tier: 3,
         description: 'Create a miniature black hole that devours all',
@@ -217,7 +217,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Soul Drain',
         icon: '👻',
         element: 'dark',
-        damage: 2.0,
+        damage: 2.5, // Perk unlock (mind tree) - medium damage (has heal)
         cooldown: 10000,
         tier: 2,
         description: 'Drain the life force from your enemy',
@@ -228,7 +228,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Void Rift',
         icon: '🌀',
         element: 'dark',
-        damage: 3.0,
+        damage: 3.8, // Bazaar purchase (epic) - medium-high damage
         cooldown: 12000,
         tier: 2,
         description: 'Tear open a rift to the void',
@@ -238,7 +238,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Dark Tendrils',
         icon: '🦑',
         element: 'dark',
-        damage: 2.8,
+        damage: 3.2, // Achievement unlock - medium damage
         cooldown: 9000,
         tier: 2,
         description: 'Summon tendrils of darkness to ensnare your foe',
@@ -257,7 +257,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Holy Light',
         icon: '✨',
         element: 'holy',
-        damage: 2.0,
+        damage: 2.0, // Early achievement - low-medium damage
         cooldown: 6000,
         tier: 1,
         description: 'Blast your enemy with purifying light',
@@ -267,7 +267,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Divine Judgment',
         icon: '👼',
         element: 'holy',
-        damage: 4.0,
+        damage: 5.5, // Boss drop (Celestial Guardian) - very high damage
         cooldown: 18000,
         tier: 3,
         description: 'Pass divine judgment upon your foe',
@@ -277,7 +277,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Smite',
         icon: '✝️',
         element: 'holy',
-        damage: 2.5,
+        damage: 3.5, // Bazaar purchase (epic) - medium-high damage
         cooldown: 8000,
         tier: 2,
         description: 'Strike down your enemy with holy power',
@@ -287,7 +287,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Radiant Burst',
         icon: '☀️',
         element: 'holy',
-        damage: 3.0,
+        damage: 3.0, // Achievement unlock - medium damage
         cooldown: 12000,
         tier: 2,
         description: 'Explode with radiant energy',
@@ -298,7 +298,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Consecrate',
         icon: '⭕',
         element: 'holy',
-        damage: 2.8,
+        damage: 3.2, // Achievement unlock - medium damage
         cooldown: 10000,
         tier: 2,
         description: 'Consecrate the ground beneath your enemy',
@@ -308,7 +308,7 @@ export const ELEMENTAL_ABILITIES = {
         name: "Angel's Wrath",
         icon: '🪽',
         element: 'holy',
-        damage: 5.0,
+        damage: 6.0, // Boss drop (Archangel) - highest holy damage
         cooldown: 22000,
         tier: 4,
         description: 'Invoke the wrath of the heavens',
@@ -327,7 +327,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Earthquake',
         icon: '🌍',
         element: 'earth',
-        damage: 3.5,
+        damage: 3.8, // Achievement unlock (level 25) - medium-high damage
         cooldown: 14000,
         tier: 3,
         description: 'Shake the earth with tremendous force',
@@ -337,7 +337,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Rock Throw',
         icon: '🪨',
         element: 'earth',
-        damage: 2.0,
+        damage: 2.0, // Early achievement - low-medium damage
         cooldown: 5000,
         tier: 1,
         description: 'Hurl a boulder at your enemy',
@@ -347,7 +347,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Stone Spike',
         icon: '⛰️',
         element: 'earth',
-        damage: 2.5,
+        damage: 2.8, // Achievement unlock - medium damage
         cooldown: 8000,
         tier: 2,
         description: 'Impale your foe with a stone spike',
@@ -357,7 +357,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Landslide',
         icon: '🏔️',
         element: 'earth',
-        damage: 4.0,
+        damage: 4.5, // Achievement unlock (level 50) - high damage
         cooldown: 16000,
         tier: 3,
         description: 'Trigger a devastating landslide',
@@ -376,7 +376,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Wind Slash',
         icon: '💨',
         element: 'wind',
-        damage: 2.0,
+        damage: 2.0, // Early achievement - low-medium damage
         cooldown: 5000,
         tier: 1,
         description: 'Slash your enemy with concentrated wind',
@@ -386,7 +386,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Tornado',
         icon: '🌪️',
         element: 'wind',
-        damage: 3.5,
+        damage: 4.0, // Bazaar purchase - medium-high damage
         cooldown: 14000,
         tier: 3,
         description: 'Summon a devastating tornado',
@@ -396,7 +396,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Gale Force',
         icon: '🌬️',
         element: 'wind',
-        damage: 2.5,
+        damage: 2.8, // Achievement unlock - medium damage
         cooldown: 8000,
         tier: 2,
         description: 'Unleash gale-force winds',
@@ -406,7 +406,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Air Cutter',
         icon: '✂️',
         element: 'wind',
-        damage: 2.2,
+        damage: 2.5, // Achievement unlock - low-medium damage
         cooldown: 6000,
         tier: 1,
         description: 'Cut through the air with razor-sharp blades',
@@ -425,7 +425,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Water Blast',
         icon: '💧',
         element: 'water',
-        damage: 2.0,
+        damage: 2.0, // Early achievement - low-medium damage
         cooldown: 6000,
         tier: 1,
         description: 'Blast your enemy with pressurised water',
@@ -435,7 +435,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Tidal Wave',
         icon: '🌊',
         element: 'water',
-        damage: 4.0,
+        damage: 4.2, // Bazaar purchase - medium-high damage
         cooldown: 16000,
         tier: 3,
         description: 'Summon a massive tidal wave',
@@ -445,7 +445,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Hydro Pump',
         icon: '🚿',
         element: 'water',
-        damage: 3.0,
+        damage: 3.2, // Achievement unlock - medium damage
         cooldown: 10000,
         tier: 2,
         description: 'Fire a high-pressure water jet',
@@ -455,7 +455,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Bubble Storm',
         icon: '🫧',
         element: 'water',
-        damage: 2.5,
+        damage: 2.8, // Achievement unlock - medium damage
         cooldown: 8000,
         tier: 2,
         description: 'Surround your enemy with explosive bubbles',
@@ -474,7 +474,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Poison Cloud',
         icon: '☠️',
         element: 'poison',
-        damage: 2.5,
+        damage: 3.5, // Bazaar purchase - medium-high damage
         cooldown: 10000,
         tier: 2,
         description: 'Create a cloud of toxic gas',
@@ -484,7 +484,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Toxic Spit',
         icon: '🤮',
         element: 'poison',
-        damage: 2.0,
+        damage: 2.0, // Early achievement - low-medium damage
         cooldown: 6000,
         tier: 1,
         description: 'Spit corrosive acid at your enemy',
@@ -494,7 +494,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Venom Spray',
         icon: '🐍',
         element: 'poison',
-        damage: 2.8,
+        damage: 3.0, // Achievement unlock - medium damage
         cooldown: 9000,
         tier: 2,
         description: 'Spray deadly venom',
@@ -504,7 +504,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Plague',
         icon: '🦠',
         element: 'poison',
-        damage: 3.5,
+        damage: 3.8, // Achievement unlock (triple threat) - medium-high damage
         cooldown: 14000,
         tier: 3,
         description: 'Inflict a devastating plague',
@@ -523,7 +523,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Arcane Blast',
         icon: '🔮',
         element: 'arcane',
-        damage: 2.2,
+        damage: 2.5, // Perk unlock (mind tree) - medium damage
         cooldown: 6000,
         tier: 1,
         description: 'Fire a blast of pure arcane energy',
@@ -533,7 +533,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Magic Missile',
         icon: '✴️',
         element: 'arcane',
-        damage: 1.8,
+        damage: 1.5, // Default starter ability - low damage
         cooldown: 4000,
         tier: 1,
         description: 'Launch homing magic missiles',
@@ -543,7 +543,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Arcane Beam',
         icon: '📡',
         element: 'arcane',
-        damage: 3.0,
+        damage: 3.2, // Perk unlock (mind tree) - medium damage
         cooldown: 12000,
         tier: 2,
         description: 'Fire a concentrated beam of arcane power',
@@ -553,7 +553,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Mystic Explosion',
         icon: '💜',
         element: 'arcane',
-        damage: 4.0,
+        damage: 4.5, // Perk unlock (mind tree tier 3) - high damage
         cooldown: 16000,
         tier: 3,
         description: 'Detonate a massive arcane explosion',
@@ -594,7 +594,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Supernova',
         icon: '🌟',
         element: 'ultimate',
-        damage: 6.0,
+        damage: 7.0, // Boss drop (Solar Emperor) - ultra rare, highest damage
         cooldown: 30000,
         tier: 4,
         description: 'Unleash the power of an exploding star',
@@ -604,7 +604,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Absolute Zero',
         icon: '🥶',
         element: 'ultimate',
-        damage: 5.5,
+        damage: 6.5, // Boss drop (Frost Monarch) - ultra rare
         cooldown: 28000,
         tier: 4,
         description: 'Freeze everything to absolute zero',
@@ -614,7 +614,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Divine Storm',
         icon: '⚡',
         element: 'ultimate',
-        damage: 6.0,
+        damage: 7.0, // Boss drop (Storm Lord) - ultra rare
         cooldown: 30000,
         tier: 4,
         description: 'Summon a storm of divine lightning',
@@ -624,7 +624,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Void Collapse',
         icon: '🕳️',
         element: 'ultimate',
-        damage: 6.5,
+        damage: 7.5, // Boss drop (Void Titan) - legendary, extremely rare
         cooldown: 35000,
         tier: 4,
         description: 'Collapse reality into the void',
@@ -634,7 +634,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Elemental Fury',
         icon: '🌈',
         element: 'ultimate',
-        damage: 7.0,
+        damage: 8.0, // Boss drop (Elemental King) - legendary, rarest ability
         cooldown: 40000,
         tier: 4,
         description: 'Channel all elements in a devastating attack',
@@ -644,7 +644,7 @@ export const ELEMENTAL_ABILITIES = {
 
   // === SKILL TREE THEMED ABILITIES ===
 
-  // Physical abilities (BODY tree)
+  // Physical abilities (BODY tree) - Perk unlocks with tiered damage
   physical: {
     name: 'Physical',
     color: '#d97757',
@@ -656,7 +656,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Power Slash',
         icon: '⚔️',
         element: 'physical',
-        damage: 1.8,
+        damage: 2.2, // Perk tier 1 - low-medium
         cooldown: 5000,
         tier: 1,
         description: 'A powerful slashing attack',
@@ -666,7 +666,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Cleaving Blow',
         icon: '🪓',
         element: 'physical',
-        damage: 2.2,
+        damage: 2.5, // Perk tier 1 - medium
         cooldown: 7000,
         tier: 1,
         description: 'A wide sweeping attack',
@@ -676,7 +676,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Blade Dance',
         icon: '💃',
         element: 'physical',
-        damage: 2.8,
+        damage: 3.2, // Perk tier 2 - medium
         cooldown: 10000,
         tier: 2,
         description: 'A flurry of rapid blade strikes',
@@ -686,7 +686,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Earthshatter',
         icon: '💥',
         element: 'physical',
-        damage: 3.5,
+        damage: 3.8, // Perk tier 2 - medium-high
         cooldown: 14000,
         tier: 2,
         description: 'Slam the ground with tremendous force',
@@ -696,7 +696,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Thunderous Blow',
         icon: '🔨',
         element: 'physical',
-        damage: 4.0,
+        damage: 4.5, // Perk tier 3 - high
         cooldown: 16000,
         tier: 3,
         description: 'A devastating strike that echoes like thunder',
@@ -706,7 +706,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Berserker Rage',
         icon: '😤',
         element: 'physical',
-        damage: 5.0,
+        damage: 5.2, // Perk tier 3 - high
         cooldown: 20000,
         tier: 3,
         description: 'Enter a berserker state for massive damage',
@@ -716,7 +716,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Shadow Strike',
         icon: '🗡️',
         element: 'physical',
-        damage: 4.5,
+        damage: 4.8, // Perk tier 3 - high
         cooldown: 18000,
         tier: 3,
         description: 'Strike from the shadows with lethal precision',
@@ -726,7 +726,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Assassinate',
         icon: '☠️',
         element: 'physical',
-        damage: 6.0,
+        damage: 6.0, // Perk tier 4 - very high
         cooldown: 25000,
         tier: 4,
         description: 'A lethal assassination technique',
@@ -734,7 +734,7 @@ export const ELEMENTAL_ABILITIES = {
     },
   },
 
-  // Spirit/Holy abilities (SPIRIT tree)
+  // Spirit/Holy abilities (SPIRIT tree) - Perk unlocks with tiered damage
   spirit: {
     name: 'Spirit',
     color: '#57d9d4',
@@ -746,7 +746,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Inner Light',
         icon: '💫',
         element: 'spirit',
-        damage: 1.5,
+        damage: 2.0, // Perk tier 1 - low-medium (has heal)
         cooldown: 5000,
         tier: 1,
         description: 'Channel your inner light as an attack',
@@ -757,7 +757,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Serenity Wave',
         icon: '🌊',
         element: 'spirit',
-        damage: 2.0,
+        damage: 2.3, // Perk tier 1 - medium
         cooldown: 8000,
         tier: 1,
         description: 'Release a calming wave that damages enemies',
@@ -767,7 +767,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Meditation Burst',
         icon: '🧘',
         element: 'spirit',
-        damage: 2.5,
+        damage: 3.0, // Perk tier 2 - medium
         cooldown: 10000,
         tier: 2,
         description: 'Release stored meditative energy',
@@ -777,7 +777,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Zen Strike',
         icon: '☯️',
         element: 'spirit',
-        damage: 3.0,
+        damage: 3.5, // Perk tier 2 - medium-high
         cooldown: 12000,
         tier: 2,
         description: 'A perfectly balanced attack',
@@ -787,7 +787,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Enlightened Blast',
         icon: '🌟',
         element: 'spirit',
-        damage: 4.0,
+        damage: 4.5, // Perk tier 3 - high
         cooldown: 16000,
         tier: 3,
         description: 'Channel enlightenment into a powerful blast',
@@ -797,7 +797,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Transcendence',
         icon: '👼',
         element: 'spirit',
-        damage: 5.5,
+        damage: 5.8, // Perk tier 4 - very high (has heal)
         cooldown: 24000,
         tier: 4,
         description: 'Transcend mortal limits for ultimate power',
@@ -806,7 +806,7 @@ export const ELEMENTAL_ABILITIES = {
     },
   },
 
-  // Fortune abilities (WEALTH tree)
+  // Fortune abilities (WEALTH tree) - Perk unlocks with tiered damage
   fortune: {
     name: 'Fortune',
     color: '#d9c157',
@@ -818,7 +818,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Golden Strike',
         icon: '💰',
         element: 'fortune',
-        damage: 1.8,
+        damage: 2.2, // Perk tier 1 - medium (has gold bonus)
         cooldown: 5000,
         tier: 1,
         description: 'Strike with the power of gold',
@@ -829,7 +829,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Coin Barrage',
         icon: '🪙',
         element: 'fortune',
-        damage: 2.2,
+        damage: 2.5, // Perk tier 1 - medium (has gold bonus)
         cooldown: 8000,
         tier: 1,
         description: 'Hurl a barrage of golden coins',
@@ -840,7 +840,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Wealth Explosion',
         icon: '💎',
         element: 'fortune',
-        damage: 3.0,
+        damage: 3.5, // Perk tier 2 - medium-high (has gold bonus)
         cooldown: 12000,
         tier: 2,
         description: 'Explode with the power of accumulated wealth',
@@ -851,7 +851,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Lucky Strike',
         icon: '🍀',
         element: 'fortune',
-        damage: 2.5,
+        damage: 3.0, // Perk tier 2 - medium (has crit bonus)
         cooldown: 10000,
         tier: 2,
         description: 'A strike blessed by fortune',
@@ -862,7 +862,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Treasure Blast',
         icon: '👑',
         element: 'fortune',
-        damage: 4.0,
+        damage: 4.5, // Perk tier 3 - high (has gold bonus)
         cooldown: 16000,
         tier: 3,
         description: 'Unleash the power of a treasure hoard',
@@ -873,7 +873,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Midas Touch',
         icon: '✨',
         element: 'fortune',
-        damage: 5.0,
+        damage: 5.5, // Perk tier 4 - very high (has gold bonus)
         cooldown: 22000,
         tier: 4,
         description: 'Turn your enemies to gold',
@@ -882,7 +882,7 @@ export const ELEMENTAL_ABILITIES = {
     },
   },
 
-  // Social/Charm abilities (SOCIAL tree)
+  // Social/Charm abilities (SOCIAL tree) - Perk unlocks with tiered damage
   charm: {
     name: 'Charm',
     color: '#e85da1',
@@ -894,7 +894,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Charm Strike',
         icon: '💕',
         element: 'charm',
-        damage: 1.6,
+        damage: 2.0, // Perk tier 1 - low-medium
         cooldown: 5000,
         tier: 1,
         description: 'A charming attack that confuses enemies',
@@ -904,7 +904,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Inspiring Words',
         icon: '📢',
         element: 'charm',
-        damage: 2.0,
+        damage: 2.3, // Perk tier 1 - medium
         cooldown: 8000,
         tier: 1,
         description: 'Words so inspiring they deal damage',
@@ -914,7 +914,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Rally Cry',
         icon: '📣',
         element: 'charm',
-        damage: 2.5,
+        damage: 3.0, // Perk tier 2 - medium (has damage boost)
         cooldown: 10000,
         tier: 2,
         description: 'A rallying cry that empowers and damages',
@@ -926,7 +926,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Social Butterfly',
         icon: '🦋',
         element: 'charm',
-        damage: 3.0,
+        damage: 3.5, // Perk tier 2 - medium-high
         cooldown: 12000,
         tier: 2,
         description: 'Flutter around dealing multiple hits',
@@ -936,7 +936,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Influence Blast',
         icon: '🌐',
         element: 'charm',
-        damage: 4.0,
+        damage: 4.5, // Perk tier 3 - high
         cooldown: 16000,
         tier: 3,
         description: 'Blast enemies with your social influence',
@@ -946,7 +946,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Viral Strike',
         icon: '📱',
         element: 'charm',
-        damage: 5.0,
+        damage: 5.5, // Perk tier 4 - very high
         cooldown: 20000,
         tier: 4,
         description: 'An attack that goes viral, hitting everything',
@@ -954,7 +954,7 @@ export const ELEMENTAL_ABILITIES = {
     },
   },
 
-  // Tech/Craft abilities (CRAFT tree)
+  // Tech/Craft abilities (CRAFT tree) - Perk unlocks with tiered damage
   tech: {
     name: 'Tech',
     color: '#7088e8',
@@ -966,7 +966,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Gadget Throw',
         icon: '🔧',
         element: 'tech',
-        damage: 1.8,
+        damage: 2.2, // Perk tier 1 - low-medium
         cooldown: 5000,
         tier: 1,
         description: 'Throw a crafted gadget at your enemy',
@@ -976,7 +976,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Gear Grind',
         icon: '⚙️',
         element: 'tech',
-        damage: 2.2,
+        damage: 2.5, // Perk tier 1 - medium
         cooldown: 7000,
         tier: 1,
         description: 'Grind enemies with mechanical gears',
@@ -986,7 +986,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Bomb Toss',
         icon: '💣',
         element: 'tech',
-        damage: 3.0,
+        damage: 3.5, // Perk tier 2 - medium-high
         cooldown: 10000,
         tier: 2,
         description: 'Toss a crafted explosive',
@@ -996,7 +996,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Turret Blast',
         icon: '🔫',
         element: 'tech',
-        damage: 2.8,
+        damage: 3.2, // Perk tier 2 - medium
         cooldown: 12000,
         tier: 2,
         description: 'Deploy a temporary turret that fires',
@@ -1006,7 +1006,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Mech Strike',
         icon: '🤖',
         element: 'tech',
-        damage: 4.0,
+        damage: 4.5, // Perk tier 3 - high
         cooldown: 16000,
         tier: 3,
         description: 'Summon a mechanical arm to strike',
@@ -1016,7 +1016,7 @@ export const ELEMENTAL_ABILITIES = {
         name: 'Invention Overload',
         icon: '⚡',
         element: 'tech',
-        damage: 5.5,
+        damage: 5.8, // Perk tier 4 - very high
         cooldown: 22000,
         tier: 4,
         description: 'Overload all your inventions for massive damage',

@@ -524,7 +524,7 @@ function FilterButton({ active, onClick, label, color }) {
   return (
     <button
       onClick={onClick}
-      className="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all"
+      className="px-5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all min-w-[80px]"
       style={{
         background: active ? (color ? `${color}20` : 'rgba(139, 92, 246, 0.2)') : 'rgba(39, 39, 42, 0.4)',
         border: active
@@ -696,10 +696,11 @@ function PetDetailModal({ pet, onClose }) {
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] rounded-t-xl sm:rounded-xl overflow-hidden flex flex-col"
+        className="w-full sm:max-w-2xl max-h-[80vh] sm:max-h-[90vh] mb-safe rounded-t-2xl sm:rounded-xl overflow-hidden flex flex-col"
         style={{
           background: 'rgba(24, 24, 27, 0.98)',
           border: `2px solid ${tierColor}`,
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -835,12 +836,12 @@ function PetDetailModal({ pet, onClose }) {
               )}
             </>
           ) : (
-            <div className="text-center py-4 sm:py-8">
+            <div className="text-center py-4 sm:py-8 pb-8">
               <Lock className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" style={{ color: 'rgba(255, 255, 255, 0.2)' }} />
               <h3 className="text-lg font-bold mb-2" style={{ color: 'rgba(255, 255, 255, 0.87)' }}>
                 Locked
               </h3>
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center pb-6">
                 <UnlockBadge
                   method={pet.unlockMethod}
                   description={pet.unlockDescription}
@@ -856,7 +857,7 @@ function PetDetailModal({ pet, onClose }) {
         {/* Fixed Actions Footer - Always visible */}
         {unlocked && (
           <div
-            className="flex-shrink-0 p-4 sm:p-6 border-t"
+            className="flex-shrink-0 p-4 pb-6 sm:p-6 border-t"
             style={{ borderColor: `${tierColor}40`, background: 'rgba(24, 24, 27, 0.98)' }}
           >
             <button

@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.lifeos.app',
-  appName: 'LifeOS',
+  appId: 'com.ascynt.app',
+  appName: 'Ascynt',
   webDir: 'dist',
 
   // Server configuration
@@ -18,7 +18,7 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
-    scheme: 'lifeos',
+    scheme: 'ascynt',
     backgroundColor: '#0c0a10',
     // Handle safe areas properly
     scrollEnabled: true,
@@ -48,7 +48,7 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     LocalNotifications: {
-      smallIcon: 'ic_stat_lifeos',
+      smallIcon: 'ic_stat_ascynt',
       iconColor: '#8b5cf6',
       sound: 'notification.wav',
     },

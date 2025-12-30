@@ -563,27 +563,101 @@
     max-width: none;
     left: 16px !important;
     right: 16px;
+    border-radius: 14px;
+  }
+
+  /* Compact Nova section on mobile */
+  .tour-tooltip-nova {
+    padding: 10px 12px 6px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .tour-tooltip-nova .nova-container {
+    padding: 4px;
   }
 
   .tour-tooltip-nova img {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .nova-expression {
+    font-size: 14px;
+    top: -4px;
+    right: -4px;
   }
 
   .tour-tooltip-content {
-    padding: 0 16px 12px;
+    padding: 0 12px 10px;
+  }
+
+  .tour-tooltip-header {
+    margin-bottom: 6px;
+    gap: 8px;
   }
 
   .tour-tooltip-header h4 {
-    font-size: 15px;
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  .tour-close-btn {
+    padding: 4px;
   }
 
   .tour-tooltip-content p {
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .tour-action-hint {
+    margin-top: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .tour-action-hint .hint-icon {
+    font-size: 14px;
   }
 
   .tour-tooltip-footer {
-    padding: 10px 16px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .tour-progress span {
+    font-size: 10px;
+  }
+
+  .tour-progress-dots {
+    gap: 4px;
+  }
+
+  .tour-progress-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  .tour-nav-buttons {
+    gap: 6px;
+  }
+
+  .tour-nav-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .tour-btn-complete {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* Hide arrow on mobile - positioning is adaptive */
+  .tour-tooltip-arrow {
+    display: none;
   }
 
   .tour-prompt {
@@ -601,6 +675,32 @@
 
   .tour-prompt-content p {
     font-size: 13px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 380px) {
+  .tour-tooltip-nova img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .tour-tooltip-header h4 {
+    font-size: 13px;
+  }
+
+  .tour-tooltip-content p {
+    font-size: 11px;
+  }
+
+  .tour-nav-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .tour-btn-complete {
+    padding: 5px 10px;
+    font-size: 11px;
   }
 }
 

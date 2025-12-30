@@ -129,7 +129,7 @@ const NOVA_DIALOGUES = {
     "Together, we'll build the life you've always wanted.",
     "This will only take a couple minutes. Ready?"
   ],
-  modeIntro: "First, how would you like to experience LifeOS?",
+  modeIntro: "First, how would you like to experience Ascynt?",
   modeReactions: {
     cosmic: "Excellent choice! Embrace the full cosmic experience - XP, evolution, and glory await!",
     minimal: "Pure and simple. Let's focus on what matters most without distractions.",
@@ -471,7 +471,7 @@ function NovaSpeechBubble({ messages, isTyping = false, onComplete }) {
 
 function IntroAnimation({ onComplete }) {
   const [phase, setPhase] = useState(0);
-  const letters = "LifeOS".split('');
+  const letters = "Ascynt".split('');
 
   useEffect(() => {
     const timers = [
@@ -2074,7 +2074,7 @@ function LaunchCelebration({ xpEarned, selectedGoals, commitment, username, onCo
         whileTap={{ scale: 0.98 }}
         disabled={celebrationPhase < 3}
       >
-        <span>Enter LifeOS</span>
+        <span>Enter Ascynt</span>
         <Rocket size={20} />
       </motion.button>
     </motion.div>

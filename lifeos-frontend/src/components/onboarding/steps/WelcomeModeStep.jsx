@@ -94,7 +94,7 @@ export default function WelcomeModeStep({
           transition={{ delay: 0.2 }}
         >
           <Zap className="w-4 h-4 text-purple-400" />
-          <span className="text-purple-300 text-sm">Welcome to LifeOS</span>
+          <span className="text-purple-300 text-sm">Welcome to Ascynt</span>
         </motion.div>
 
         <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">

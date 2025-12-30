@@ -1,10 +1,11 @@
 /**
  * Nutrition AI Service
- * Uses Claude Haiku to parse natural language meal descriptions
- * and USDA FoodData Central for accurate nutrition data
+ * Uses Edamam Food Database API for accurate nutrition data
+ * with local cache fallback for common foods
  */
 
 import { supabase } from '../lib/supabase';
+import { parseMeal as edamamParseMeal, getAutocompleteSuggestions as edamamSuggestions } from './edamamAPI';
 
 // ============================================================================
 // RETRY & ERROR HANDLING
@@ -424,6 +425,127 @@ const LOCAL_FOOD_CACHE = {
   'italian dressing': { calories: 270, protein: 0.3, carbs: 8, fat: 27, fiber: 0.2, sugar: 7, saturatedFat: 3.8, transFat: 0, cholesterol: 0, sodium: 950, potassium: 45, calcium: 8, iron: 0.2, magnesium: 3, phosphorus: 12, zinc: 0.1, vitaminA: 8, vitaminC: 0.5, vitaminD: 0, vitaminE: 3.5, vitaminK: 45, vitaminB6: 0.02, vitaminB12: 0, folate: 2, serving: '100g' },
   'guacamole': { calories: 157, protein: 2, carbs: 8.5, fat: 14, fiber: 6, sugar: 0.7, saturatedFat: 2.0, transFat: 0, cholesterol: 0, sodium: 375, potassium: 440, calcium: 12, iron: 0.5, magnesium: 28, phosphorus: 50, zinc: 0.6, vitaminA: 10, vitaminC: 10, vitaminD: 0, vitaminE: 2.0, vitaminK: 20, vitaminB6: 0.25, vitaminB12: 0, folate: 75, serving: '100g' },
   'pesto': { calories: 314, protein: 6, carbs: 5, fat: 30, fiber: 2, sugar: 1.2, saturatedFat: 5.8, transFat: 0, cholesterol: 8, sodium: 680, potassium: 195, calcium: 175, iron: 2.0, magnesium: 40, phosphorus: 115, zinc: 1.0, vitaminA: 90, vitaminC: 3, vitaminD: 0, vitaminE: 4.5, vitaminK: 175, vitaminB6: 0.12, vitaminB12: 0.1, folate: 35, serving: '100g' },
+
+  // ===== BREAKFAST FOODS =====
+  'pancake': { calories: 227, protein: 6.4, carbs: 28, fat: 10, fiber: 1.0, sugar: 6.5, saturatedFat: 2.2, transFat: 0.1, cholesterol: 58, sodium: 439, potassium: 115, calcium: 83, iron: 1.7, magnesium: 15, phosphorus: 136, zinc: 0.5, vitaminA: 48, vitaminC: 0.1, vitaminD: 0.4, vitaminE: 0.5, vitaminK: 1.8, vitaminB6: 0.06, vitaminB12: 0.24, folate: 46, serving: '100g (2-3 pancakes)' },
+  'pancakes': { calories: 227, protein: 6.4, carbs: 28, fat: 10, fiber: 1.0, sugar: 6.5, saturatedFat: 2.2, transFat: 0.1, cholesterol: 58, sodium: 439, potassium: 115, calcium: 83, iron: 1.7, magnesium: 15, phosphorus: 136, zinc: 0.5, vitaminA: 48, vitaminC: 0.1, vitaminD: 0.4, vitaminE: 0.5, vitaminK: 1.8, vitaminB6: 0.06, vitaminB12: 0.24, folate: 46, serving: '100g (2-3 pancakes)' },
+  'waffle': { calories: 291, protein: 8, carbs: 33, fat: 14, fiber: 1.7, sugar: 5.6, saturatedFat: 2.8, transFat: 0.3, cholesterol: 79, sodium: 511, potassium: 120, calcium: 197, iron: 2.4, magnesium: 18, phosphorus: 222, zinc: 0.8, vitaminA: 60, vitaminC: 0.2, vitaminD: 0.5, vitaminE: 0.6, vitaminK: 2.5, vitaminB6: 0.1, vitaminB12: 0.3, folate: 52, serving: '100g (2 waffles)' },
+  'waffles': { calories: 291, protein: 8, carbs: 33, fat: 14, fiber: 1.7, sugar: 5.6, saturatedFat: 2.8, transFat: 0.3, cholesterol: 79, sodium: 511, potassium: 120, calcium: 197, iron: 2.4, magnesium: 18, phosphorus: 222, zinc: 0.8, vitaminA: 60, vitaminC: 0.2, vitaminD: 0.5, vitaminE: 0.6, vitaminK: 2.5, vitaminB6: 0.1, vitaminB12: 0.3, folate: 52, serving: '100g (2 waffles)' },
+  'french toast': { calories: 229, protein: 8.7, carbs: 24, fat: 11, fiber: 0.9, sugar: 5.8, saturatedFat: 2.9, transFat: 0.2, cholesterol: 115, sodium: 364, potassium: 145, calcium: 85, iron: 2.0, magnesium: 18, phosphorus: 130, zinc: 0.8, vitaminA: 85, vitaminC: 0.2, vitaminD: 0.6, vitaminE: 0.7, vitaminK: 2.0, vitaminB6: 0.08, vitaminB12: 0.35, folate: 48, serving: '100g (2 slices)' },
+  'muesli': { calories: 340, protein: 10, carbs: 66, fat: 6, fiber: 7.5, sugar: 26, saturatedFat: 1.0, transFat: 0, cholesterol: 0, sodium: 232, potassium: 486, calcium: 46, iron: 3.5, magnesium: 90, phosphorus: 280, zinc: 2.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 1.5, vitaminK: 1.2, vitaminB6: 0.25, vitaminB12: 0, folate: 40, serving: '100g' },
+  'porridge': { calories: 71, protein: 2.5, carbs: 12, fat: 1.5, fiber: 1.7, sugar: 0.5, saturatedFat: 0.3, transFat: 0, cholesterol: 0, sodium: 4, potassium: 70, calcium: 9, iron: 0.9, magnesium: 27, phosphorus: 77, zinc: 0.6, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.1, vitaminK: 0, vitaminB6: 0.04, vitaminB12: 0, folate: 6, serving: '100g cooked' },
+  'overnight oats': { calories: 155, protein: 5.2, carbs: 24, fat: 4.5, fiber: 3.2, sugar: 8, saturatedFat: 1.2, transFat: 0, cholesterol: 5, sodium: 45, potassium: 180, calcium: 85, iron: 1.5, magnesium: 45, phosphorus: 150, zinc: 1.0, vitaminA: 25, vitaminC: 0.5, vitaminD: 0.5, vitaminE: 0.3, vitaminK: 0.5, vitaminB6: 0.08, vitaminB12: 0.2, folate: 15, serving: '100g' },
+  'hash brown': { calories: 326, protein: 3.2, carbs: 35, fat: 20, fiber: 3.2, sugar: 0.5, saturatedFat: 3.2, transFat: 0.1, cholesterol: 0, sodium: 342, potassium: 390, calcium: 14, iron: 0.6, magnesium: 26, phosphorus: 65, zinc: 0.4, vitaminA: 0, vitaminC: 6.5, vitaminD: 0, vitaminE: 1.5, vitaminK: 12, vitaminB6: 0.3, vitaminB12: 0, folate: 15, serving: '100g' },
+  'breakfast burrito': { calories: 206, protein: 10, carbs: 18, fat: 10, fiber: 2.0, sugar: 2.5, saturatedFat: 3.5, transFat: 0.1, cholesterol: 145, sodium: 480, potassium: 210, calcium: 95, iron: 1.8, magnesium: 22, phosphorus: 160, zinc: 1.2, vitaminA: 75, vitaminC: 3, vitaminD: 0.5, vitaminE: 0.6, vitaminK: 2.5, vitaminB6: 0.15, vitaminB12: 0.6, folate: 35, serving: '100g' },
+  'smoothie': { calories: 85, protein: 2.5, carbs: 18, fat: 0.8, fiber: 2.0, sugar: 14, saturatedFat: 0.3, transFat: 0, cholesterol: 2, sodium: 25, potassium: 280, calcium: 65, iron: 0.4, magnesium: 22, phosphorus: 50, zinc: 0.3, vitaminA: 40, vitaminC: 25, vitaminD: 0.3, vitaminE: 0.8, vitaminK: 6, vitaminB6: 0.2, vitaminB12: 0.2, folate: 25, serving: '100ml' },
+  'protein shake': { calories: 120, protein: 20, carbs: 8, fat: 2, fiber: 1.0, sugar: 4, saturatedFat: 0.5, transFat: 0, cholesterol: 30, sodium: 150, potassium: 350, calcium: 200, iron: 0.8, magnesium: 40, phosphorus: 180, zinc: 1.5, vitaminA: 0, vitaminC: 0, vitaminD: 2.0, vitaminE: 0.5, vitaminK: 0, vitaminB6: 0.3, vitaminB12: 1.0, folate: 20, serving: '100ml' },
+  'acai bowl': { calories: 195, protein: 4, carbs: 38, fat: 4, fiber: 5, sugar: 25, saturatedFat: 1.0, transFat: 0, cholesterol: 0, sodium: 15, potassium: 350, calcium: 60, iron: 1.2, magnesium: 35, phosphorus: 45, zinc: 0.5, vitaminA: 30, vitaminC: 15, vitaminD: 0, vitaminE: 1.5, vitaminK: 8, vitaminB6: 0.15, vitaminB12: 0, folate: 20, serving: '100g' },
+
+  // ===== SNACKS & CHIPS =====
+  'potato chips': { calories: 536, protein: 7, carbs: 53, fat: 35, fiber: 4.4, sugar: 0.5, saturatedFat: 4.5, transFat: 0, cholesterol: 0, sodium: 525, potassium: 1275, calcium: 24, iron: 1.6, magnesium: 67, phosphorus: 155, zinc: 1.0, vitaminA: 0, vitaminC: 31, vitaminD: 0, vitaminE: 5.2, vitaminK: 13.6, vitaminB6: 0.64, vitaminB12: 0, folate: 45, serving: '100g' },
+  'tortilla chips': { calories: 490, protein: 7, carbs: 63, fat: 24, fiber: 4.5, sugar: 0.8, saturatedFat: 3.2, transFat: 0, cholesterol: 0, sodium: 420, potassium: 195, calcium: 120, iron: 1.8, magnesium: 55, phosphorus: 175, zinc: 1.0, vitaminA: 15, vitaminC: 0, vitaminD: 0, vitaminE: 2.5, vitaminK: 5.5, vitaminB6: 0.15, vitaminB12: 0, folate: 28, serving: '100g' },
+  'doritos': { calories: 488, protein: 6.5, carbs: 61, fat: 24, fiber: 4, sugar: 2.8, saturatedFat: 3.5, transFat: 0, cholesterol: 1, sodium: 570, potassium: 200, calcium: 85, iron: 1.4, magnesium: 45, phosphorus: 160, zinc: 0.8, vitaminA: 25, vitaminC: 0, vitaminD: 0, vitaminE: 2.0, vitaminK: 5, vitaminB6: 0.12, vitaminB12: 0.02, folate: 25, serving: '100g' },
+  'pretzels': { calories: 380, protein: 9, carbs: 79, fat: 3.5, fiber: 3, sugar: 2.5, saturatedFat: 0.8, transFat: 0, cholesterol: 0, sodium: 1715, potassium: 88, calcium: 22, iron: 4.3, magnesium: 21, phosphorus: 88, zinc: 0.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.3, vitaminB6: 0.04, vitaminB12: 0, folate: 108, serving: '100g' },
+  'crackers': { calories: 502, protein: 10, carbs: 61, fat: 25, fiber: 2.5, sugar: 7, saturatedFat: 6.5, transFat: 0.8, cholesterol: 0, sodium: 770, potassium: 130, calcium: 80, iron: 4.5, magnesium: 25, phosphorus: 115, zinc: 0.8, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 1.5, vitaminK: 8, vitaminB6: 0.08, vitaminB12: 0, folate: 85, serving: '100g' },
+  'popcorn': { calories: 387, protein: 13, carbs: 78, fat: 4.5, fiber: 15, sugar: 0.9, saturatedFat: 0.6, transFat: 0, cholesterol: 0, sodium: 8, potassium: 329, calcium: 7, iron: 3.2, magnesium: 144, phosphorus: 358, zinc: 3.1, vitaminA: 10, vitaminC: 0, vitaminD: 0, vitaminE: 0.3, vitaminK: 1.2, vitaminB6: 0.16, vitaminB12: 0, folate: 31, serving: '100g air-popped' },
+  'popcorn buttered': { calories: 535, protein: 9, carbs: 55, fat: 31, fiber: 10.5, sugar: 0.8, saturatedFat: 18, transFat: 0.5, cholesterol: 35, sodium: 648, potassium: 240, calcium: 10, iron: 2.8, magnesium: 95, phosphorus: 240, zinc: 2.0, vitaminA: 180, vitaminC: 0, vitaminD: 0.1, vitaminE: 1.5, vitaminK: 8, vitaminB6: 0.12, vitaminB12: 0.05, folate: 22, serving: '100g' },
+  'trail mix': { calories: 462, protein: 13, carbs: 44, fat: 29, fiber: 4.5, sugar: 28, saturatedFat: 5.5, transFat: 0, cholesterol: 1, sodium: 105, potassium: 525, calcium: 68, iron: 2.5, magnesium: 105, phosphorus: 260, zinc: 2.5, vitaminA: 8, vitaminC: 1.0, vitaminD: 0, vitaminE: 5.5, vitaminK: 2.5, vitaminB6: 0.25, vitaminB12: 0.02, folate: 42, serving: '100g' },
+  'mixed nuts': { calories: 607, protein: 20, carbs: 21, fat: 54, fiber: 7, sugar: 4, saturatedFat: 7, transFat: 0, cholesterol: 0, sodium: 450, potassium: 632, calcium: 72, iron: 2.6, magnesium: 173, phosphorus: 400, zinc: 3.5, vitaminA: 1, vitaminC: 0.5, vitaminD: 0, vitaminE: 7.2, vitaminK: 4.5, vitaminB6: 0.35, vitaminB12: 0, folate: 60, serving: '100g' },
+  'beef jerky': { calories: 410, protein: 33, carbs: 11, fat: 26, fiber: 1.8, sugar: 9, saturatedFat: 10.5, transFat: 1.0, cholesterol: 75, sodium: 2081, potassium: 597, calcium: 15, iron: 4.5, magnesium: 51, phosphorus: 315, zinc: 8.0, vitaminA: 0, vitaminC: 0, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 2.5, vitaminB6: 0.45, vitaminB12: 3.0, folate: 35, serving: '100g' },
+  'protein bar': { calories: 380, protein: 20, carbs: 40, fat: 14, fiber: 5, sugar: 20, saturatedFat: 6, transFat: 0, cholesterol: 10, sodium: 250, potassium: 300, calcium: 200, iron: 3.5, magnesium: 70, phosphorus: 200, zinc: 3.0, vitaminA: 75, vitaminC: 10, vitaminD: 1.5, vitaminE: 3.5, vitaminK: 15, vitaminB6: 0.5, vitaminB12: 2.0, folate: 100, serving: '100g' },
+  'granola bar': { calories: 471, protein: 10, carbs: 64, fat: 20, fiber: 5.5, sugar: 28, saturatedFat: 3.5, transFat: 0, cholesterol: 0, sodium: 300, potassium: 350, calcium: 60, iron: 3.0, magnesium: 85, phosphorus: 220, zinc: 2.5, vitaminA: 0, vitaminC: 0.5, vitaminD: 0, vitaminE: 3.0, vitaminK: 3.5, vitaminB6: 0.25, vitaminB12: 0, folate: 45, serving: '100g' },
+  'rice cakes': { calories: 387, protein: 8, carbs: 82, fat: 2.8, fiber: 3.8, sugar: 0.5, saturatedFat: 0.6, transFat: 0, cholesterol: 0, sodium: 29, potassium: 200, calcium: 3, iron: 0.6, magnesium: 52, phosphorus: 182, zinc: 1.2, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.1, vitaminB6: 0.12, vitaminB12: 0, folate: 8, serving: '100g' },
+
+  // ===== DESSERTS & SWEETS =====
+  'ice cream': { calories: 207, protein: 3.5, carbs: 24, fat: 11, fiber: 0.5, sugar: 21, saturatedFat: 6.8, transFat: 0, cholesterol: 44, sodium: 80, potassium: 199, calcium: 128, iron: 0.1, magnesium: 14, phosphorus: 105, zinc: 0.7, vitaminA: 120, vitaminC: 0.6, vitaminD: 0.2, vitaminE: 0.3, vitaminK: 0.3, vitaminB6: 0.05, vitaminB12: 0.4, folate: 5, serving: '100g' },
+  'vanilla ice cream': { calories: 207, protein: 3.5, carbs: 24, fat: 11, fiber: 0.5, sugar: 21, saturatedFat: 6.8, transFat: 0, cholesterol: 44, sodium: 80, potassium: 199, calcium: 128, iron: 0.1, magnesium: 14, phosphorus: 105, zinc: 0.7, vitaminA: 120, vitaminC: 0.6, vitaminD: 0.2, vitaminE: 0.3, vitaminK: 0.3, vitaminB6: 0.05, vitaminB12: 0.4, folate: 5, serving: '100g' },
+  'chocolate ice cream': { calories: 216, protein: 3.8, carbs: 28, fat: 11, fiber: 1.2, sugar: 24, saturatedFat: 6.8, transFat: 0, cholesterol: 34, sodium: 76, potassium: 269, calcium: 109, iron: 0.9, magnesium: 29, phosphorus: 107, zinc: 0.5, vitaminA: 85, vitaminC: 0.3, vitaminD: 0.2, vitaminE: 0.2, vitaminK: 0.3, vitaminB6: 0.04, vitaminB12: 0.35, folate: 8, serving: '100g' },
+  'frozen yogurt': { calories: 127, protein: 3, carbs: 24, fat: 2, fiber: 0, sugar: 22, saturatedFat: 1.2, transFat: 0, cholesterol: 8, sodium: 68, potassium: 175, calcium: 110, iron: 0.1, magnesium: 12, phosphorus: 85, zinc: 0.5, vitaminA: 25, vitaminC: 0.8, vitaminD: 0.1, vitaminE: 0.1, vitaminK: 0.2, vitaminB6: 0.04, vitaminB12: 0.3, folate: 4, serving: '100g' },
+  'chocolate': { calories: 535, protein: 5, carbs: 60, fat: 30, fiber: 7, sugar: 48, saturatedFat: 18.5, transFat: 0, cholesterol: 8, sodium: 24, potassium: 559, calcium: 56, iron: 8.0, magnesium: 146, phosphorus: 206, zinc: 2.0, vitaminA: 8, vitaminC: 0, vitaminD: 0, vitaminE: 0.6, vitaminK: 7.3, vitaminB6: 0.04, vitaminB12: 0.2, folate: 12, serving: '100g' },
+  'dark chocolate': { calories: 598, protein: 8, carbs: 46, fat: 43, fiber: 11, sugar: 24, saturatedFat: 25, transFat: 0, cholesterol: 3, sodium: 20, potassium: 715, calcium: 73, iron: 12, magnesium: 228, phosphorus: 308, zinc: 3.3, vitaminA: 2, vitaminC: 0, vitaminD: 0, vitaminE: 0.6, vitaminK: 7.2, vitaminB6: 0.04, vitaminB12: 0.3, folate: 12, serving: '100g' },
+  'milk chocolate': { calories: 535, protein: 8, carbs: 59, fat: 30, fiber: 3.4, sugar: 52, saturatedFat: 18.5, transFat: 0, cholesterol: 23, sodium: 79, potassium: 372, calcium: 189, iron: 2.4, magnesium: 63, phosphorus: 208, zinc: 2.3, vitaminA: 60, vitaminC: 0, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 5.7, vitaminB6: 0.05, vitaminB12: 0.75, folate: 12, serving: '100g' },
+  'brownie': { calories: 466, protein: 5.5, carbs: 64, fat: 22, fiber: 2.5, sugar: 47, saturatedFat: 5.5, transFat: 0.2, cholesterol: 55, sodium: 254, potassium: 180, calcium: 35, iron: 2.8, magnesium: 45, phosphorus: 95, zinc: 0.8, vitaminA: 60, vitaminC: 0.1, vitaminD: 0.2, vitaminE: 1.0, vitaminK: 4.5, vitaminB6: 0.05, vitaminB12: 0.15, folate: 25, serving: '100g' },
+  'cookie': { calories: 502, protein: 5.5, carbs: 64, fat: 25, fiber: 2, sugar: 35, saturatedFat: 8, transFat: 0.5, cholesterol: 30, sodium: 370, potassium: 110, calcium: 30, iron: 2.5, magnesium: 30, phosphorus: 85, zinc: 0.6, vitaminA: 40, vitaminC: 0, vitaminD: 0.1, vitaminE: 1.5, vitaminK: 7, vitaminB6: 0.04, vitaminB12: 0.1, folate: 45, serving: '100g' },
+  'chocolate chip cookie': { calories: 488, protein: 5.4, carbs: 66, fat: 23, fiber: 2.6, sugar: 37, saturatedFat: 9.4, transFat: 0.4, cholesterol: 28, sodium: 349, potassium: 140, calcium: 25, iron: 2.5, magnesium: 35, phosphorus: 80, zinc: 0.7, vitaminA: 45, vitaminC: 0, vitaminD: 0.1, vitaminE: 1.2, vitaminK: 6.5, vitaminB6: 0.04, vitaminB12: 0.1, folate: 42, serving: '100g' },
+  'cake': { calories: 371, protein: 5, carbs: 52, fat: 16, fiber: 0.8, sugar: 36, saturatedFat: 4, transFat: 0.3, cholesterol: 62, sodium: 280, potassium: 75, calcium: 48, iron: 1.2, magnesium: 12, phosphorus: 68, zinc: 0.4, vitaminA: 65, vitaminC: 0.1, vitaminD: 0.2, vitaminE: 0.7, vitaminK: 2.5, vitaminB6: 0.04, vitaminB12: 0.15, folate: 30, serving: '100g' },
+  'chocolate cake': { calories: 389, protein: 5, carbs: 52, fat: 19, fiber: 2.3, sugar: 38, saturatedFat: 5.5, transFat: 0.3, cholesterol: 60, sodium: 335, potassium: 155, calcium: 50, iron: 2.5, magnesium: 35, phosphorus: 95, zinc: 0.8, vitaminA: 55, vitaminC: 0.1, vitaminD: 0.2, vitaminE: 0.8, vitaminK: 3.5, vitaminB6: 0.05, vitaminB12: 0.15, folate: 28, serving: '100g' },
+  'cheesecake': { calories: 321, protein: 6, carbs: 26, fat: 22, fiber: 0.4, sugar: 20, saturatedFat: 12, transFat: 0, cholesterol: 95, sodium: 280, potassium: 120, calcium: 85, iron: 0.8, magnesium: 12, phosphorus: 105, zinc: 0.6, vitaminA: 185, vitaminC: 0.5, vitaminD: 0.2, vitaminE: 0.5, vitaminK: 1.5, vitaminB6: 0.04, vitaminB12: 0.35, folate: 15, serving: '100g' },
+  'donut': { calories: 452, protein: 5, carbs: 51, fat: 25, fiber: 1.5, sugar: 23, saturatedFat: 6.5, transFat: 0.5, cholesterol: 20, sodium: 410, potassium: 70, calcium: 26, iron: 2.0, magnesium: 14, phosphorus: 95, zinc: 0.5, vitaminA: 15, vitaminC: 0, vitaminD: 0.1, vitaminE: 1.5, vitaminK: 8.5, vitaminB6: 0.04, vitaminB12: 0.08, folate: 52, serving: '100g' },
+  'doughnut': { calories: 452, protein: 5, carbs: 51, fat: 25, fiber: 1.5, sugar: 23, saturatedFat: 6.5, transFat: 0.5, cholesterol: 20, sodium: 410, potassium: 70, calcium: 26, iron: 2.0, magnesium: 14, phosphorus: 95, zinc: 0.5, vitaminA: 15, vitaminC: 0, vitaminD: 0.1, vitaminE: 1.5, vitaminK: 8.5, vitaminB6: 0.04, vitaminB12: 0.08, folate: 52, serving: '100g' },
+  'muffin': { calories: 377, protein: 6.5, carbs: 51, fat: 17, fiber: 2.5, sugar: 28, saturatedFat: 3.2, transFat: 0.2, cholesterol: 65, sodium: 435, potassium: 130, calcium: 60, iron: 2.2, magnesium: 25, phosphorus: 145, zinc: 0.6, vitaminA: 55, vitaminC: 0.3, vitaminD: 0.3, vitaminE: 1.0, vitaminK: 3.5, vitaminB6: 0.06, vitaminB12: 0.2, folate: 40, serving: '100g' },
+  'blueberry muffin': { calories: 377, protein: 6, carbs: 56, fat: 15, fiber: 2, sugar: 32, saturatedFat: 2.8, transFat: 0.1, cholesterol: 58, sodium: 420, potassium: 95, calcium: 55, iron: 2.0, magnesium: 20, phosphorus: 135, zinc: 0.5, vitaminA: 45, vitaminC: 1.5, vitaminD: 0.2, vitaminE: 0.8, vitaminK: 4, vitaminB6: 0.06, vitaminB12: 0.18, folate: 38, serving: '100g' },
+  'pie': { calories: 237, protein: 2, carbs: 34, fat: 11, fiber: 1.5, sugar: 16, saturatedFat: 4, transFat: 0.2, cholesterol: 0, sodium: 185, potassium: 65, calcium: 10, iron: 0.8, magnesium: 8, phosphorus: 25, zinc: 0.2, vitaminA: 15, vitaminC: 1.5, vitaminD: 0, vitaminE: 0.5, vitaminK: 2.5, vitaminB6: 0.03, vitaminB12: 0, folate: 15, serving: '100g' },
+  'apple pie': { calories: 237, protein: 2, carbs: 34, fat: 11, fiber: 1.6, sugar: 15, saturatedFat: 3.8, transFat: 0.2, cholesterol: 0, sodium: 185, potassium: 80, calcium: 10, iron: 0.8, magnesium: 6, phosphorus: 25, zinc: 0.2, vitaminA: 30, vitaminC: 2, vitaminD: 0, vitaminE: 0.5, vitaminK: 2.5, vitaminB6: 0.04, vitaminB12: 0, folate: 15, serving: '100g' },
+  'pudding': { calories: 119, protein: 2.8, carbs: 20, fat: 3.5, fiber: 0.3, sugar: 14, saturatedFat: 1.8, transFat: 0, cholesterol: 14, sodium: 135, potassium: 138, calcium: 99, iron: 0.2, magnesium: 12, phosphorus: 85, zinc: 0.4, vitaminA: 45, vitaminC: 0.5, vitaminD: 0.5, vitaminE: 0.1, vitaminK: 0.2, vitaminB6: 0.04, vitaminB12: 0.35, folate: 5, serving: '100g' },
+  'jello': { calories: 62, protein: 1.2, carbs: 15, fat: 0, fiber: 0, sugar: 14, saturatedFat: 0, transFat: 0, cholesterol: 0, sodium: 75, potassium: 1, calcium: 1, iron: 0, magnesium: 0, phosphorus: 25, zinc: 0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0, vitaminK: 0, vitaminB6: 0, vitaminB12: 0, folate: 0, serving: '100g' },
+  'candy': { calories: 400, protein: 1, carbs: 90, fat: 4, fiber: 0.5, sugar: 70, saturatedFat: 2.5, transFat: 0, cholesterol: 2, sodium: 45, potassium: 35, calcium: 8, iron: 0.3, magnesium: 8, phosphorus: 20, zinc: 0.1, vitaminA: 5, vitaminC: 0, vitaminD: 0, vitaminE: 0.2, vitaminK: 0.5, vitaminB6: 0.01, vitaminB12: 0, folate: 2, serving: '100g' },
+
+  // ===== INTERNATIONAL & ETHNIC FOODS =====
+  'pad thai': { calories: 178, protein: 8.5, carbs: 23, fat: 6, fiber: 1.5, sugar: 5.5, saturatedFat: 1.0, transFat: 0, cholesterol: 65, sodium: 620, potassium: 185, calcium: 35, iron: 1.5, magnesium: 25, phosphorus: 120, zinc: 1.0, vitaminA: 45, vitaminC: 5, vitaminD: 0.2, vitaminE: 0.8, vitaminK: 8, vitaminB6: 0.15, vitaminB12: 0.4, folate: 35, serving: '100g' },
+  'curry': { calories: 145, protein: 8, carbs: 8, fat: 10, fiber: 2, sugar: 3, saturatedFat: 5, transFat: 0, cholesterol: 35, sodium: 450, potassium: 320, calcium: 45, iron: 1.8, magnesium: 25, phosphorus: 95, zinc: 1.2, vitaminA: 85, vitaminC: 8, vitaminD: 0.1, vitaminE: 1.2, vitaminK: 15, vitaminB6: 0.2, vitaminB12: 0.3, folate: 20, serving: '100g' },
+  'chicken curry': { calories: 155, protein: 12, carbs: 8, fat: 9, fiber: 1.8, sugar: 3.5, saturatedFat: 4.5, transFat: 0, cholesterol: 45, sodium: 520, potassium: 280, calcium: 40, iron: 1.5, magnesium: 22, phosphorus: 120, zinc: 1.4, vitaminA: 75, vitaminC: 6, vitaminD: 0.1, vitaminE: 1.0, vitaminK: 12, vitaminB6: 0.25, vitaminB12: 0.35, folate: 18, serving: '100g' },
+  'butter chicken': { calories: 195, protein: 14, carbs: 8, fat: 12, fiber: 1.5, sugar: 4, saturatedFat: 6, transFat: 0, cholesterol: 55, sodium: 580, potassium: 300, calcium: 55, iron: 1.8, magnesium: 25, phosphorus: 135, zinc: 1.6, vitaminA: 125, vitaminC: 6, vitaminD: 0.2, vitaminE: 1.2, vitaminK: 10, vitaminB6: 0.22, vitaminB12: 0.4, folate: 15, serving: '100g' },
+  'tikka masala': { calories: 175, protein: 13, carbs: 7, fat: 11, fiber: 1.5, sugar: 3.5, saturatedFat: 5.5, transFat: 0, cholesterol: 50, sodium: 550, potassium: 285, calcium: 50, iron: 1.6, magnesium: 24, phosphorus: 125, zinc: 1.5, vitaminA: 110, vitaminC: 5, vitaminD: 0.1, vitaminE: 1.0, vitaminK: 8, vitaminB6: 0.2, vitaminB12: 0.35, folate: 14, serving: '100g' },
+  'dal': { calories: 104, protein: 6.5, carbs: 15, fat: 2.5, fiber: 5, sugar: 1.5, saturatedFat: 0.5, transFat: 0, cholesterol: 0, sodium: 380, potassium: 350, calcium: 25, iron: 2.5, magnesium: 38, phosphorus: 110, zinc: 1.0, vitaminA: 15, vitaminC: 3, vitaminD: 0, vitaminE: 0.3, vitaminK: 2, vitaminB6: 0.12, vitaminB12: 0, folate: 95, serving: '100g' },
+  'biryani': { calories: 168, protein: 7, carbs: 24, fat: 5, fiber: 1.2, sugar: 1.5, saturatedFat: 1.5, transFat: 0, cholesterol: 35, sodium: 420, potassium: 150, calcium: 25, iron: 1.2, magnesium: 22, phosphorus: 95, zinc: 1.0, vitaminA: 35, vitaminC: 3, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 5, vitaminB6: 0.15, vitaminB12: 0.2, folate: 20, serving: '100g' },
+  'samosa': { calories: 262, protein: 5, carbs: 28, fat: 14, fiber: 2.5, sugar: 2, saturatedFat: 3.5, transFat: 0.2, cholesterol: 8, sodium: 380, potassium: 180, calcium: 18, iron: 1.5, magnesium: 20, phosphorus: 55, zinc: 0.5, vitaminA: 15, vitaminC: 5, vitaminD: 0, vitaminE: 1.5, vitaminK: 8, vitaminB6: 0.12, vitaminB12: 0.02, folate: 25, serving: '100g' },
+  'spring roll': { calories: 230, protein: 6, carbs: 28, fat: 10, fiber: 2, sugar: 3, saturatedFat: 2, transFat: 0.1, cholesterol: 12, sodium: 480, potassium: 145, calcium: 25, iron: 1.5, magnesium: 18, phosphorus: 65, zinc: 0.6, vitaminA: 55, vitaminC: 8, vitaminD: 0.1, vitaminE: 1.0, vitaminK: 25, vitaminB6: 0.1, vitaminB12: 0.1, folate: 30, serving: '100g' },
+  'egg roll': { calories: 223, protein: 7, carbs: 24, fat: 11, fiber: 1.5, sugar: 2.5, saturatedFat: 2.5, transFat: 0.1, cholesterol: 25, sodium: 510, potassium: 155, calcium: 30, iron: 1.8, magnesium: 18, phosphorus: 75, zinc: 0.7, vitaminA: 65, vitaminC: 6, vitaminD: 0.2, vitaminE: 0.8, vitaminK: 18, vitaminB6: 0.12, vitaminB12: 0.15, folate: 35, serving: '100g' },
+  'lo mein': { calories: 158, protein: 7, carbs: 22, fat: 5, fiber: 1.5, sugar: 2, saturatedFat: 0.8, transFat: 0, cholesterol: 25, sodium: 590, potassium: 130, calcium: 20, iron: 1.4, magnesium: 18, phosphorus: 70, zinc: 0.7, vitaminA: 50, vitaminC: 6, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 15, vitaminB6: 0.1, vitaminB12: 0.1, folate: 22, serving: '100g' },
+  'chow mein': { calories: 175, protein: 7, carbs: 21, fat: 7, fiber: 2, sugar: 3, saturatedFat: 1.2, transFat: 0, cholesterol: 28, sodium: 650, potassium: 145, calcium: 22, iron: 1.5, magnesium: 20, phosphorus: 75, zinc: 0.8, vitaminA: 55, vitaminC: 8, vitaminD: 0.1, vitaminE: 0.6, vitaminK: 18, vitaminB6: 0.12, vitaminB12: 0.12, folate: 25, serving: '100g' },
+  'general tso chicken': { calories: 252, protein: 15, carbs: 17, fat: 14, fiber: 0.5, sugar: 9, saturatedFat: 2.5, transFat: 0.1, cholesterol: 55, sodium: 720, potassium: 180, calcium: 18, iron: 1.2, magnesium: 20, phosphorus: 125, zinc: 0.9, vitaminA: 25, vitaminC: 3, vitaminD: 0.1, vitaminE: 1.0, vitaminK: 8, vitaminB6: 0.22, vitaminB12: 0.2, folate: 15, serving: '100g' },
+  'orange chicken': { calories: 265, protein: 14, carbs: 22, fat: 14, fiber: 0.5, sugar: 15, saturatedFat: 2.5, transFat: 0.1, cholesterol: 50, sodium: 680, potassium: 170, calcium: 15, iron: 1.0, magnesium: 18, phosphorus: 115, zinc: 0.8, vitaminA: 20, vitaminC: 12, vitaminD: 0.1, vitaminE: 0.8, vitaminK: 5, vitaminB6: 0.2, vitaminB12: 0.18, folate: 12, serving: '100g' },
+  'kung pao chicken': { calories: 190, protein: 17, carbs: 10, fat: 10, fiber: 1.5, sugar: 5, saturatedFat: 1.8, transFat: 0, cholesterol: 65, sodium: 720, potassium: 280, calcium: 25, iron: 1.5, magnesium: 30, phosphorus: 165, zinc: 1.2, vitaminA: 45, vitaminC: 15, vitaminD: 0.1, vitaminE: 1.5, vitaminK: 15, vitaminB6: 0.35, vitaminB12: 0.22, folate: 25, serving: '100g' },
+  'sweet and sour chicken': { calories: 205, protein: 12, carbs: 20, fat: 9, fiber: 1, sugar: 14, saturatedFat: 1.8, transFat: 0.1, cholesterol: 40, sodium: 520, potassium: 160, calcium: 15, iron: 0.8, magnesium: 16, phosphorus: 100, zinc: 0.7, vitaminA: 30, vitaminC: 10, vitaminD: 0.1, vitaminE: 0.6, vitaminK: 5, vitaminB6: 0.15, vitaminB12: 0.15, folate: 12, serving: '100g' },
+  'teriyaki chicken': { calories: 175, protein: 18, carbs: 10, fat: 7, fiber: 0.3, sugar: 8, saturatedFat: 1.5, transFat: 0, cholesterol: 55, sodium: 850, potassium: 230, calcium: 12, iron: 0.9, magnesium: 22, phosphorus: 150, zinc: 0.9, vitaminA: 12, vitaminC: 1, vitaminD: 0.1, vitaminE: 0.4, vitaminK: 2, vitaminB6: 0.35, vitaminB12: 0.22, folate: 8, serving: '100g' },
+  'pho': { calories: 75, protein: 6, carbs: 8, fat: 2, fiber: 0.5, sugar: 1, saturatedFat: 0.8, transFat: 0, cholesterol: 20, sodium: 580, potassium: 150, calcium: 12, iron: 0.8, magnesium: 12, phosphorus: 65, zinc: 0.8, vitaminA: 15, vitaminC: 2, vitaminD: 0, vitaminE: 0.2, vitaminK: 8, vitaminB6: 0.1, vitaminB12: 0.3, folate: 15, serving: '100ml (broth with noodles)' },
+  'ramen': { calories: 436, protein: 17, carbs: 62, fat: 14, fiber: 2, sugar: 2, saturatedFat: 5.5, transFat: 0.1, cholesterol: 110, sodium: 2380, potassium: 340, calcium: 35, iron: 3.5, magnesium: 35, phosphorus: 180, zinc: 1.5, vitaminA: 65, vitaminC: 2, vitaminD: 0.4, vitaminE: 0.5, vitaminK: 12, vitaminB6: 0.2, vitaminB12: 0.6, folate: 55, serving: '100g' },
+  'sushi roll': { calories: 145, protein: 5.5, carbs: 24, fat: 3.5, fiber: 1, sugar: 4.5, saturatedFat: 0.6, transFat: 0, cholesterol: 12, sodium: 480, potassium: 95, calcium: 12, iron: 0.5, magnesium: 14, phosphorus: 55, zinc: 0.35, vitaminA: 25, vitaminC: 2, vitaminD: 0.4, vitaminE: 0.3, vitaminK: 3, vitaminB6: 0.08, vitaminB12: 0.4, folate: 12, serving: '100g' },
+  'california roll': { calories: 145, protein: 5, carbs: 27, fat: 2.5, fiber: 1.2, sugar: 5, saturatedFat: 0.4, transFat: 0, cholesterol: 8, sodium: 420, potassium: 120, calcium: 20, iron: 0.4, magnesium: 15, phosphorus: 50, zinc: 0.3, vitaminA: 25, vitaminC: 3, vitaminD: 0.2, vitaminE: 0.4, vitaminK: 4, vitaminB6: 0.08, vitaminB12: 0.3, folate: 10, serving: '100g' },
+  'tacos': { calories: 210, protein: 10, carbs: 16, fat: 12, fiber: 2, sugar: 2, saturatedFat: 4.5, transFat: 0.2, cholesterol: 40, sodium: 480, potassium: 220, calcium: 85, iron: 1.8, magnesium: 25, phosphorus: 140, zinc: 2.2, vitaminA: 55, vitaminC: 4, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 8, vitaminB6: 0.15, vitaminB12: 0.7, folate: 25, serving: '100g' },
+  'taco': { calories: 210, protein: 10, carbs: 16, fat: 12, fiber: 2, sugar: 2, saturatedFat: 4.5, transFat: 0.2, cholesterol: 40, sodium: 480, potassium: 220, calcium: 85, iron: 1.8, magnesium: 25, phosphorus: 140, zinc: 2.2, vitaminA: 55, vitaminC: 4, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 8, vitaminB6: 0.15, vitaminB12: 0.7, folate: 25, serving: '100g' },
+  'burrito': { calories: 195, protein: 9, carbs: 25, fat: 7, fiber: 3, sugar: 2, saturatedFat: 2.8, transFat: 0.1, cholesterol: 25, sodium: 520, potassium: 280, calcium: 75, iron: 2.0, magnesium: 35, phosphorus: 145, zinc: 1.8, vitaminA: 45, vitaminC: 5, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 10, vitaminB6: 0.15, vitaminB12: 0.4, folate: 50, serving: '100g' },
+  'quesadilla': { calories: 280, protein: 12, carbs: 24, fat: 15, fiber: 1.5, sugar: 1.5, saturatedFat: 7, transFat: 0.2, cholesterol: 45, sodium: 620, potassium: 150, calcium: 220, iron: 1.8, magnesium: 25, phosphorus: 190, zinc: 1.8, vitaminA: 85, vitaminC: 1, vitaminD: 0.2, vitaminE: 0.5, vitaminK: 5, vitaminB6: 0.1, vitaminB12: 0.5, folate: 45, serving: '100g' },
+  'enchilada': { calories: 168, protein: 9, carbs: 15, fat: 8, fiber: 2.5, sugar: 3, saturatedFat: 3.5, transFat: 0.1, cholesterol: 35, sodium: 540, potassium: 240, calcium: 130, iron: 1.5, magnesium: 28, phosphorus: 145, zinc: 1.5, vitaminA: 85, vitaminC: 5, vitaminD: 0.1, vitaminE: 0.8, vitaminK: 8, vitaminB6: 0.15, vitaminB12: 0.4, folate: 30, serving: '100g' },
+  'nachos': { calories: 346, protein: 10, carbs: 36, fat: 18, fiber: 3.5, sugar: 2.5, saturatedFat: 7.5, transFat: 0.2, cholesterol: 35, sodium: 815, potassium: 260, calcium: 185, iron: 1.8, magnesium: 40, phosphorus: 220, zinc: 2.0, vitaminA: 75, vitaminC: 3, vitaminD: 0.1, vitaminE: 1.2, vitaminK: 8, vitaminB6: 0.15, vitaminB12: 0.4, folate: 35, serving: '100g' },
+  'falafel': { calories: 333, protein: 13, carbs: 32, fat: 18, fiber: 4.5, sugar: 2, saturatedFat: 2.5, transFat: 0, cholesterol: 0, sodium: 580, potassium: 410, calcium: 55, iron: 3.5, magnesium: 65, phosphorus: 190, zinc: 1.8, vitaminA: 15, vitaminC: 3, vitaminD: 0, vitaminE: 1.5, vitaminK: 25, vitaminB6: 0.2, vitaminB12: 0, folate: 95, serving: '100g' },
+  'gyro': { calories: 217, protein: 14, carbs: 14, fat: 12, fiber: 1.5, sugar: 2.5, saturatedFat: 4.5, transFat: 0.3, cholesterol: 50, sodium: 620, potassium: 220, calcium: 55, iron: 2.2, magnesium: 22, phosphorus: 145, zinc: 3.0, vitaminA: 25, vitaminC: 3, vitaminD: 0.1, vitaminE: 0.4, vitaminK: 8, vitaminB6: 0.15, vitaminB12: 1.2, folate: 20, serving: '100g' },
+  'shawarma': { calories: 195, protein: 16, carbs: 8, fat: 11, fiber: 1, sugar: 1.5, saturatedFat: 4, transFat: 0.2, cholesterol: 55, sodium: 580, potassium: 260, calcium: 25, iron: 2.0, magnesium: 25, phosphorus: 165, zinc: 3.5, vitaminA: 15, vitaminC: 3, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 5, vitaminB6: 0.2, vitaminB12: 1.5, folate: 15, serving: '100g' },
+  'kebab': { calories: 175, protein: 18, carbs: 3, fat: 10, fiber: 0.5, sugar: 1.5, saturatedFat: 4, transFat: 0.3, cholesterol: 65, sodium: 520, potassium: 300, calcium: 15, iron: 2.2, magnesium: 25, phosphorus: 175, zinc: 4.0, vitaminA: 10, vitaminC: 2, vitaminD: 0.1, vitaminE: 0.3, vitaminK: 3, vitaminB6: 0.2, vitaminB12: 2.0, folate: 10, serving: '100g' },
+  'dim sum': { calories: 220, protein: 8, carbs: 22, fat: 11, fiber: 1.2, sugar: 2.5, saturatedFat: 3, transFat: 0.1, cholesterol: 45, sodium: 550, potassium: 145, calcium: 25, iron: 1.5, magnesium: 18, phosphorus: 85, zinc: 0.8, vitaminA: 35, vitaminC: 3, vitaminD: 0.2, vitaminE: 0.6, vitaminK: 8, vitaminB6: 0.1, vitaminB12: 0.25, folate: 25, serving: '100g' },
+  'dumplings': { calories: 210, protein: 8, carbs: 25, fat: 9, fiber: 1.5, sugar: 1.5, saturatedFat: 2.5, transFat: 0.1, cholesterol: 35, sodium: 490, potassium: 140, calcium: 20, iron: 1.8, magnesium: 16, phosphorus: 80, zinc: 0.8, vitaminA: 25, vitaminC: 2, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 6, vitaminB6: 0.1, vitaminB12: 0.2, folate: 30, serving: '100g' },
+
+  // ===== MORE FAST FOOD & PREPARED =====
+  'fried chicken': { calories: 246, protein: 17, carbs: 10, fat: 15, fiber: 0.5, sugar: 0.5, saturatedFat: 3.5, transFat: 0.1, cholesterol: 75, sodium: 570, potassium: 195, calcium: 15, iron: 1.2, magnesium: 20, phosphorus: 150, zinc: 1.2, vitaminA: 15, vitaminC: 0, vitaminD: 0.1, vitaminE: 0.8, vitaminK: 4, vitaminB6: 0.25, vitaminB12: 0.22, folate: 12, serving: '100g' },
+  'chicken nuggets': { calories: 296, protein: 15, carbs: 18, fat: 18, fiber: 1, sugar: 1, saturatedFat: 3.5, transFat: 0.2, cholesterol: 45, sodium: 560, potassium: 180, calcium: 15, iron: 1.0, magnesium: 18, phosphorus: 155, zinc: 0.8, vitaminA: 8, vitaminC: 0.5, vitaminD: 0.1, vitaminE: 1.2, vitaminK: 8, vitaminB6: 0.18, vitaminB12: 0.15, folate: 15, serving: '100g' },
+  'chicken tenders': { calories: 275, protein: 18, carbs: 15, fat: 16, fiber: 0.8, sugar: 0.5, saturatedFat: 3, transFat: 0.1, cholesterol: 50, sodium: 620, potassium: 200, calcium: 15, iron: 1.0, magnesium: 22, phosphorus: 165, zinc: 0.9, vitaminA: 10, vitaminC: 0.5, vitaminD: 0.1, vitaminE: 1.0, vitaminK: 6, vitaminB6: 0.25, vitaminB12: 0.18, folate: 12, serving: '100g' },
+  'chicken sandwich': { calories: 245, protein: 16, carbs: 23, fat: 10, fiber: 1.5, sugar: 4, saturatedFat: 2.5, transFat: 0.1, cholesterol: 50, sodium: 680, potassium: 210, calcium: 60, iron: 2.0, magnesium: 25, phosphorus: 175, zinc: 1.2, vitaminA: 25, vitaminC: 2, vitaminD: 0.1, vitaminE: 0.8, vitaminK: 8, vitaminB6: 0.25, vitaminB12: 0.25, folate: 40, serving: '100g' },
+  'fish and chips': { calories: 265, protein: 13, carbs: 28, fat: 12, fiber: 2.5, sugar: 0.5, saturatedFat: 2, transFat: 0.1, cholesterol: 40, sodium: 480, potassium: 380, calcium: 25, iron: 1.0, magnesium: 30, phosphorus: 145, zinc: 0.6, vitaminA: 8, vitaminC: 6, vitaminD: 0.8, vitaminE: 1.2, vitaminK: 12, vitaminB6: 0.25, vitaminB12: 1.0, folate: 20, serving: '100g' },
+  'fish sandwich': { calories: 235, protein: 12, carbs: 25, fat: 10, fiber: 1.2, sugar: 4, saturatedFat: 2, transFat: 0.1, cholesterol: 35, sodium: 580, potassium: 200, calcium: 55, iron: 1.8, magnesium: 25, phosphorus: 135, zinc: 0.6, vitaminA: 20, vitaminC: 1, vitaminD: 0.6, vitaminE: 0.8, vitaminK: 8, vitaminB6: 0.15, vitaminB12: 0.8, folate: 35, serving: '100g' },
+  'onion rings': { calories: 411, protein: 5, carbs: 41, fat: 25, fiber: 2.5, sugar: 5, saturatedFat: 4.5, transFat: 0.3, cholesterol: 10, sodium: 680, potassium: 140, calcium: 45, iron: 1.5, magnesium: 15, phosphorus: 75, zinc: 0.4, vitaminA: 15, vitaminC: 2, vitaminD: 0.1, vitaminE: 2.5, vitaminK: 18, vitaminB6: 0.08, vitaminB12: 0.05, folate: 45, serving: '100g' },
+  'mozzarella sticks': { calories: 302, protein: 13, carbs: 25, fat: 17, fiber: 1.2, sugar: 2, saturatedFat: 6.5, transFat: 0.2, cholesterol: 30, sodium: 780, potassium: 90, calcium: 285, iron: 1.5, magnesium: 18, phosphorus: 195, zinc: 1.5, vitaminA: 85, vitaminC: 0.5, vitaminD: 0.2, vitaminE: 1.0, vitaminK: 5, vitaminB6: 0.05, vitaminB12: 0.5, folate: 35, serving: '100g' },
+  'wings': { calories: 290, protein: 27, carbs: 5, fat: 18, fiber: 0.2, sugar: 0.8, saturatedFat: 5, transFat: 0.1, cholesterol: 95, sodium: 850, potassium: 195, calcium: 18, iron: 1.2, magnesium: 20, phosphorus: 165, zinc: 2.2, vitaminA: 30, vitaminC: 0.5, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 3, vitaminB6: 0.35, vitaminB12: 0.35, folate: 8, serving: '100g' },
+  'buffalo wings': { calories: 290, protein: 27, carbs: 5, fat: 18, fiber: 0.2, sugar: 0.8, saturatedFat: 5, transFat: 0.1, cholesterol: 95, sodium: 1050, potassium: 195, calcium: 20, iron: 1.2, magnesium: 20, phosphorus: 165, zinc: 2.2, vitaminA: 55, vitaminC: 1, vitaminD: 0.1, vitaminE: 0.8, vitaminK: 5, vitaminB6: 0.35, vitaminB12: 0.35, folate: 8, serving: '100g' },
+  'bbq ribs': { calories: 292, protein: 22, carbs: 12, fat: 18, fiber: 0.5, sugar: 9, saturatedFat: 6.5, transFat: 0, cholesterol: 85, sodium: 580, potassium: 310, calcium: 35, iron: 1.5, magnesium: 22, phosphorus: 185, zinc: 4.5, vitaminA: 20, vitaminC: 1, vitaminD: 0.5, vitaminE: 0.3, vitaminK: 2, vitaminB6: 0.35, vitaminB12: 1.0, folate: 5, serving: '100g' },
+  'corn dog': { calories: 330, protein: 8.5, carbs: 32, fat: 19, fiber: 1.5, sugar: 6, saturatedFat: 5, transFat: 0.2, cholesterol: 45, sodium: 780, potassium: 135, calcium: 55, iron: 2.2, magnesium: 15, phosphorus: 115, zinc: 1.2, vitaminA: 20, vitaminC: 0.5, vitaminD: 0.2, vitaminE: 1.0, vitaminK: 5, vitaminB6: 0.1, vitaminB12: 0.5, folate: 55, serving: '100g' },
+  'hot dog': { calories: 290, protein: 11, carbs: 24, fat: 17, fiber: 1, sugar: 4, saturatedFat: 6, transFat: 0.3, cholesterol: 50, sodium: 870, potassium: 180, calcium: 60, iron: 2.5, magnesium: 18, phosphorus: 145, zinc: 2.0, vitaminA: 10, vitaminC: 0.5, vitaminD: 0.2, vitaminE: 0.5, vitaminK: 3, vitaminB6: 0.12, vitaminB12: 0.8, folate: 50, serving: '100g (with bun)' },
+  'sub sandwich': { calories: 235, protein: 12, carbs: 28, fat: 8, fiber: 2, sugar: 4, saturatedFat: 2.5, transFat: 0.1, cholesterol: 30, sodium: 750, potassium: 230, calcium: 75, iron: 2.2, magnesium: 25, phosphorus: 145, zinc: 1.5, vitaminA: 35, vitaminC: 5, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 15, vitaminB6: 0.15, vitaminB12: 0.5, folate: 50, serving: '100g' },
+  'grilled cheese': { calories: 312, protein: 12, carbs: 28, fat: 17, fiber: 1.5, sugar: 3.5, saturatedFat: 8.5, transFat: 0.4, cholesterol: 40, sodium: 670, potassium: 95, calcium: 280, iron: 2.2, magnesium: 22, phosphorus: 210, zinc: 1.5, vitaminA: 120, vitaminC: 0, vitaminD: 0.3, vitaminE: 0.5, vitaminK: 3.5, vitaminB6: 0.08, vitaminB12: 0.55, folate: 55, serving: '100g' },
+  'blt sandwich': { calories: 268, protein: 11, carbs: 22, fat: 15, fiber: 1.5, sugar: 3, saturatedFat: 4, transFat: 0.2, cholesterol: 25, sodium: 720, potassium: 240, calcium: 60, iron: 2.0, magnesium: 25, phosphorus: 130, zinc: 1.2, vitaminA: 55, vitaminC: 6, vitaminD: 0.1, vitaminE: 1.5, vitaminK: 18, vitaminB6: 0.15, vitaminB12: 0.35, folate: 45, serving: '100g' },
+  'club sandwich': { calories: 245, protein: 15, carbs: 20, fat: 12, fiber: 1.5, sugar: 3, saturatedFat: 3.5, transFat: 0.1, cholesterol: 45, sodium: 680, potassium: 250, calcium: 70, iron: 2.0, magnesium: 28, phosphorus: 175, zinc: 1.5, vitaminA: 45, vitaminC: 5, vitaminD: 0.2, vitaminE: 1.0, vitaminK: 15, vitaminB6: 0.2, vitaminB12: 0.45, folate: 42, serving: '100g' },
+
+  // ===== SOUPS =====
+  'chicken soup': { calories: 75, protein: 6, carbs: 7, fat: 2.5, fiber: 0.8, sugar: 1.5, saturatedFat: 0.7, transFat: 0, cholesterol: 20, sodium: 590, potassium: 160, calcium: 12, iron: 0.6, magnesium: 10, phosphorus: 65, zinc: 0.5, vitaminA: 85, vitaminC: 2, vitaminD: 0.1, vitaminE: 0.2, vitaminK: 3, vitaminB6: 0.08, vitaminB12: 0.12, folate: 10, serving: '100ml' },
+  'chicken noodle soup': { calories: 62, protein: 4, carbs: 7, fat: 2, fiber: 0.5, sugar: 1, saturatedFat: 0.5, transFat: 0, cholesterol: 15, sodium: 680, potassium: 70, calcium: 8, iron: 0.5, magnesium: 8, phosphorus: 45, zinc: 0.4, vitaminA: 65, vitaminC: 1, vitaminD: 0.05, vitaminE: 0.2, vitaminK: 2, vitaminB6: 0.05, vitaminB12: 0.08, folate: 10, serving: '100ml' },
+  'tomato soup': { calories: 74, protein: 2, carbs: 16, fat: 0.5, fiber: 1.5, sugar: 10, saturatedFat: 0.1, transFat: 0, cholesterol: 0, sodium: 480, potassium: 390, calcium: 15, iron: 1.0, magnesium: 15, phosphorus: 35, zinc: 0.3, vitaminA: 45, vitaminC: 15, vitaminD: 0, vitaminE: 1.5, vitaminK: 5, vitaminB6: 0.12, vitaminB12: 0, folate: 15, serving: '100ml' },
+  'vegetable soup': { calories: 55, protein: 2, carbs: 10, fat: 1, fiber: 2, sugar: 4, saturatedFat: 0.2, transFat: 0, cholesterol: 0, sodium: 520, potassium: 280, calcium: 25, iron: 0.8, magnesium: 12, phosphorus: 35, zinc: 0.3, vitaminA: 120, vitaminC: 8, vitaminD: 0, vitaminE: 0.5, vitaminK: 12, vitaminB6: 0.1, vitaminB12: 0, folate: 18, serving: '100ml' },
+  'minestrone': { calories: 66, protein: 2.5, carbs: 11, fat: 1.5, fiber: 2.5, sugar: 3, saturatedFat: 0.3, transFat: 0, cholesterol: 0, sodium: 550, potassium: 310, calcium: 30, iron: 1.0, magnesium: 15, phosphorus: 45, zinc: 0.4, vitaminA: 85, vitaminC: 8, vitaminD: 0, vitaminE: 0.6, vitaminK: 15, vitaminB6: 0.1, vitaminB12: 0, folate: 25, serving: '100ml' },
+  'clam chowder': { calories: 112, protein: 4, carbs: 12, fat: 5, fiber: 0.8, sugar: 2, saturatedFat: 2.5, transFat: 0, cholesterol: 15, sodium: 620, potassium: 220, calcium: 65, iron: 1.5, magnesium: 12, phosphorus: 85, zinc: 0.6, vitaminA: 55, vitaminC: 3, vitaminD: 0.2, vitaminE: 0.3, vitaminK: 2, vitaminB6: 0.1, vitaminB12: 3.0, folate: 12, serving: '100ml' },
+  'broccoli soup': { calories: 85, protein: 3, carbs: 8, fat: 5, fiber: 1.5, sugar: 2.5, saturatedFat: 2.5, transFat: 0, cholesterol: 12, sodium: 490, potassium: 185, calcium: 75, iron: 0.5, magnesium: 14, phosphorus: 65, zinc: 0.4, vitaminA: 85, vitaminC: 20, vitaminD: 0.1, vitaminE: 0.5, vitaminK: 45, vitaminB6: 0.08, vitaminB12: 0.2, folate: 30, serving: '100ml' },
+  'french onion soup': { calories: 68, protein: 2.5, carbs: 8, fat: 3, fiber: 0.8, sugar: 3, saturatedFat: 1.5, transFat: 0, cholesterol: 8, sodium: 750, potassium: 95, calcium: 45, iron: 0.4, magnesium: 8, phosphorus: 40, zinc: 0.3, vitaminA: 25, vitaminC: 2, vitaminD: 0.05, vitaminE: 0.2, vitaminK: 3, vitaminB6: 0.08, vitaminB12: 0.1, folate: 10, serving: '100ml' },
+  'chili': { calories: 148, protein: 11, carbs: 13, fat: 6, fiber: 4, sugar: 3, saturatedFat: 2.2, transFat: 0.1, cholesterol: 30, sodium: 580, potassium: 450, calcium: 45, iron: 2.5, magnesium: 40, phosphorus: 155, zinc: 2.5, vitaminA: 75, vitaminC: 8, vitaminD: 0.1, vitaminE: 0.8, vitaminK: 8, vitaminB6: 0.2, vitaminB12: 0.8, folate: 35, serving: '100g' },
+  'beef stew': { calories: 105, protein: 10, carbs: 8, fat: 4, fiber: 1.5, sugar: 2, saturatedFat: 1.5, transFat: 0, cholesterol: 30, sodium: 480, potassium: 320, calcium: 15, iron: 1.5, magnesium: 18, phosphorus: 105, zinc: 2.5, vitaminA: 95, vitaminC: 5, vitaminD: 0.1, vitaminE: 0.3, vitaminK: 6, vitaminB6: 0.15, vitaminB12: 0.9, folate: 12, serving: '100g' },
+  'chicken stew': { calories: 98, protein: 10, carbs: 7, fat: 3.5, fiber: 1.2, sugar: 2, saturatedFat: 1.0, transFat: 0, cholesterol: 35, sodium: 450, potassium: 280, calcium: 18, iron: 0.8, magnesium: 18, phosphorus: 100, zinc: 1.0, vitaminA: 110, vitaminC: 6, vitaminD: 0.1, vitaminE: 0.3, vitaminK: 8, vitaminB6: 0.2, vitaminB12: 0.2, folate: 14, serving: '100g' },
 };
 
 // Unit conversions to grams (generic defaults)
@@ -757,60 +879,95 @@ export async function parseNutrition(mealDescription) {
     };
   }
 
-  // Step 2: Call Edge Function for uncached items or full meal (with retry)
+  // Step 2: Try Edamam API for uncached items (primary source)
   try {
     const descriptionToSend = uncachedItems.length > 0
       ? uncachedItems.join(', ')
       : trimmed;
 
-    const { data, error } = await withRetry(async () => {
-      const response = await supabase.functions.invoke('parse-nutrition', {
-        body: { mealDescription: descriptionToSend },
-      });
+    const edamamResult = await edamamParseMeal(descriptionToSend);
 
-      // Throw on error to trigger retry
-      if (response.error) {
-        const err = new Error(response.error.message || 'Failed to parse nutrition');
-        err.status = response.error.status || 500;
-        throw err;
-      }
+    if (edamamResult.success) {
+      // Combine cached results with Edamam results
+      const allItems = [
+        ...cachedResults,
+        ...edamamResult.items,
+      ];
 
-      return response;
-    });
+      const totals = calculateTotals(allItems);
 
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to parse nutrition');
-    }
-
-    // Combine cached results with API results
-    const allItems = [
-      ...cachedResults,
-      ...(data.items || []).map(item => ({ ...item, source: 'usda' })),
-    ];
-
-    const totals = calculateTotals(allItems);
-
-    return {
-      success: true,
-      items: allItems,
-      totals,
-      notFound: data.notFound,
-      source: 'mixed',
-    };
-  } catch (err) {
-    // If API fails but we have cached results, return those
-    if (cachedResults.length > 0) {
-      console.warn('API failed, using cached results only:', err.message);
       return {
         success: true,
-        items: cachedResults,
-        totals: calculateTotals(cachedResults),
-        source: 'cache-fallback',
-        warning: 'Some items could not be looked up',
+        items: allItems,
+        totals,
+        notFound: edamamResult.notFound,
+        source: cachedResults.length > 0 ? 'mixed' : 'edamam',
+        dataSources: {
+          cache: cachedResults.length,
+          edamam: edamamResult.items.length,
+        },
       };
     }
 
-    throw err;
+    // Edamam returned no results, try edge function fallback
+    throw new Error(edamamResult.error || 'No foods found');
+  } catch (edamamError) {
+    console.warn('[Nutrition] Edamam failed, trying edge function:', edamamError.message);
+
+    // Step 3: Fallback to Edge Function (with retry)
+    try {
+      const descriptionToSend = uncachedItems.length > 0
+        ? uncachedItems.join(', ')
+        : trimmed;
+
+      const { data, error } = await withRetry(async () => {
+        const response = await supabase.functions.invoke('parse-nutrition', {
+          body: { mealDescription: descriptionToSend },
+        });
+
+        if (response.error) {
+          const err = new Error(response.error.message || 'Failed to parse nutrition');
+          err.status = response.error.status || 500;
+          throw err;
+        }
+
+        return response;
+      });
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to parse nutrition');
+      }
+
+      // Combine cached results with API results
+      const allItems = [
+        ...cachedResults,
+        ...(data.items || []).map(item => ({ ...item, source: 'usda' })),
+      ];
+
+      const totals = calculateTotals(allItems);
+
+      return {
+        success: true,
+        items: allItems,
+        totals,
+        notFound: data.notFound,
+        source: 'mixed',
+      };
+    } catch (err) {
+      // If all APIs fail but we have cached results, return those
+      if (cachedResults.length > 0) {
+        console.warn('All APIs failed, using cached results only:', err.message);
+        return {
+          success: true,
+          items: cachedResults,
+          totals: calculateTotals(cachedResults),
+          source: 'cache-fallback',
+          warning: 'Some items could not be looked up',
+        };
+      }
+
+      throw err;
+    }
   }
 }
 

@@ -70,8 +70,15 @@ const DEFAULT_POSITIONS = {
 
 const LAYER_ORDER = ['capes', 'legs', 'chests', 'shields', 'helmets', 'weapons'];
 
-// Local storage key for saved positions
-const STORAGE_KEY = 'lifeos-equipment-positions';
+// Local storage key for saved positions (per gender and skin tone)
+const getStorageKey = (skinTone) => `ascynt-equipment-positions-male-${skinTone}`;
+
+// Available skin tones for avatar
+const SKIN_TONES = [
+  { id: 'white', label: 'White', path: '/assets/avatar/base-evolution/hero_base_stage_10_swordsman.png' },
+  { id: 'brown', label: 'Brown', path: '/assets/avatar/diverse/hero_stage_10_brown.png' },
+  { id: 'black', label: 'Black', path: '/assets/avatar/diverse/hero_stage_10_black.png' },
+];
 
 // Base avatar for equipment positioning - Stage 10 Swordsman
 const BASE_AVATAR_PATH = '/assets/avatar/base-evolution/hero_base_stage_10_swordsman.png';
@@ -79,6 +86,7 @@ const BASE_AVATAR_PATH = '/assets/avatar/base-evolution/hero_base_stage_10_sword
 export default function EquipmentTest() {
   const canvasRef = useRef(null);
   const [baseAvatar, setBaseAvatar] = useState(null);
+  const [selectedSkinTone, setSelectedSkinTone] = useState('white');
   const [loadedEquipment, setLoadedEquipment] = useState({});
   const [selectedEquipment, setSelectedEquipment] = useState({});
   const [loadingStatus, setLoadingStatus] = useState('Loading...');
@@ -87,85 +95,123 @@ export default function EquipmentTest() {
 
   // Saved positions: { itemName: { x, y, scale } }
   // For shields, save both: shields/basic_left and shields/basic_right
-  const [savedPositions, setSavedPositions] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [savedPositions, setSavedPositions] = useState({});
+
+  // Track if cloud data has been loaded (to white positions)
+  const [cloudLoaded, setCloudLoaded] = useState(false);
 
   // Current working positions (for live adjustment)
   const [currentPositions, setCurrentPositions] = useState({});
 
   // ============================================
   // SUPABASE GLOBAL POSITIONS SYNC
-  // These positions apply to ALL users
+  // Cloud positions are stored as WHITE positions (the master copy)
+  // Other ethnicities fall back to white if they have no custom positions
   // ============================================
 
-  // Load global positions from Supabase on mount
+  // Load positions from Supabase for ALL skin tones on mount
   useEffect(() => {
     const loadFromCloud = async () => {
       try {
-        setSyncStatus('Loading global positions...');
+        setSyncStatus('Loading positions...');
 
+        // Load positions for all male skin tones
         const { data, error } = await supabase
           .from('equipment_default_positions')
-          .select('position_key, x, y, scale');
+          .select('position_key, x, y, scale')
+          .like('position_key', 'male_%');
 
         if (error) {
           console.error('[EquipmentTest] Failed to load from cloud:', error);
           setSyncStatus('Cloud load failed - using local');
+          setCloudLoaded(true);
           return;
         }
 
         if (data && data.length > 0) {
-          // Convert array to object format
-          const cloudPositions = {};
+          // Group positions by skin tone
+          const positionsBySkinTone = { white: {}, brown: {}, black: {} };
+
           data.forEach(row => {
-            cloudPositions[row.position_key] = {
-              x: parseFloat(row.x),
-              y: parseFloat(row.y),
-              scale: parseFloat(row.scale)
-            };
+            // Parse key format: "male_white_helmets/basic" -> skinTone: "white", key: "helmets/basic"
+            const match = row.position_key.match(/^male_(white|brown|black)_(.+)$/);
+            if (match) {
+              const [, skinTone, key] = match;
+              if (positionsBySkinTone[skinTone]) {
+                positionsBySkinTone[skinTone][key] = {
+                  x: parseFloat(row.x),
+                  y: parseFloat(row.y),
+                  scale: parseFloat(row.scale)
+                };
+              }
+            }
           });
 
-          setSavedPositions(cloudPositions);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudPositions));
-          setSyncStatus(`✓ Loaded ${Object.keys(cloudPositions).length} global positions`);
+          // Save each skin tone's positions to localStorage
+          Object.entries(positionsBySkinTone).forEach(([skinTone, positions]) => {
+            if (Object.keys(positions).length > 0) {
+              localStorage.setItem(getStorageKey(skinTone), JSON.stringify(positions));
+            }
+          });
+
+          const totalLoaded = Object.values(positionsBySkinTone).reduce((sum, p) => sum + Object.keys(p).length, 0);
+          setSyncStatus(`✓ Loaded ${totalLoaded} positions`);
           setLastSyncTime(new Date());
         } else {
-          // No cloud data - check if we have local data to upload
-          const localData = localStorage.getItem(STORAGE_KEY);
-          if (localData) {
-            const localPositions = JSON.parse(localData);
-            if (Object.keys(localPositions).length > 0) {
-              setSyncStatus('Local data found - click "Sync to Cloud" to upload as global defaults');
-            } else {
-              setSyncStatus('No saved positions yet');
-            }
-          } else {
-            setSyncStatus('No saved positions yet');
-          }
+          setSyncStatus('No saved positions yet');
         }
+        setCloudLoaded(true);
       } catch (err) {
         console.error('[EquipmentTest] Cloud sync error:', err);
         setSyncStatus('Sync error - using local');
+        setCloudLoaded(true);
       }
     };
 
     loadFromCloud();
   }, []);
 
-  // Save to Supabase global positions table
+  // Load positions when skin tone changes OR when cloud data finishes loading
+  // Each skin tone has COMPLETELY SEPARATE positions - no fallback!
+  useEffect(() => {
+    if (!cloudLoaded) {
+      console.log('[EquipmentTest] Waiting for cloud to load...');
+      return;
+    }
+
+    // CRITICAL: Clear unsaved edits when switching skin tones!
+    // This prevents edits from one skin tone bleeding into another
+    setCurrentPositions({});
+
+    try {
+      const storageKey = getStorageKey(selectedSkinTone);
+      const currentSaved = localStorage.getItem(storageKey);
+      const currentPositionsObj = currentSaved ? JSON.parse(currentSaved) : {};
+
+      console.log(`[EquipmentTest] Loading positions for ${selectedSkinTone}:`, {
+        storageKey,
+        hasData: !!currentSaved,
+        positionCount: Object.keys(currentPositionsObj).length
+      });
+
+      // Each skin tone uses ONLY its own positions - completely separate!
+      setSavedPositions(currentPositionsObj);
+
+      console.log(`[EquipmentTest] Loaded ${Object.keys(currentPositionsObj).length} positions for ${selectedSkinTone}`);
+    } catch (err) {
+      console.error('[EquipmentTest] Error loading positions:', err);
+      setSavedPositions({});
+    }
+  }, [selectedSkinTone, cloudLoaded]);
+
+  // Save to Supabase - each skin tone has separate positions with prefix
   const syncToCloud = useCallback(async (positions) => {
     try {
-      setSyncStatus('Saving global positions...');
+      setSyncStatus(`Saving ${selectedSkinTone} positions...`);
 
-      // Upsert each position to the global table
+      // Add skin tone prefix to position keys (e.g., "male_white_helmets/basic")
       const upsertData = Object.entries(positions).map(([key, pos]) => ({
-        position_key: key,
+        position_key: `male_${selectedSkinTone}_${key}`,
         x: pos.x,
         y: pos.y,
         scale: pos.scale,
@@ -184,7 +230,7 @@ export default function EquipmentTest() {
         return false;
       }
 
-      setSyncStatus(`✓ Saved ${Object.keys(positions).length} GLOBAL positions (applies to all users!)`);
+      setSyncStatus(`✓ Saved ${Object.keys(positions).length} positions for ${selectedSkinTone}`);
       setLastSyncTime(new Date());
       return true;
     } catch (err) {
@@ -192,7 +238,7 @@ export default function EquipmentTest() {
       setSyncStatus('⚠ Sync error - saved locally');
       return false;
     }
-  }, []);
+  }, [selectedSkinTone]);
 
   // For shields: which hand position are we currently editing?
   const [editingShieldHand, setEditingShieldHand] = useState('left');
@@ -224,13 +270,14 @@ export default function EquipmentTest() {
     return shieldHand;
   };
 
-  // Load base avatar (Stage 10 Swordsman)
+  // Load base avatar based on selected skin tone
   useEffect(() => {
+    const skinTone = SKIN_TONES.find(s => s.id === selectedSkinTone) || SKIN_TONES[0];
     const img = new Image();
     img.onload = () => setBaseAvatar(img);
     img.onerror = () => console.error('Failed to load base avatar');
-    img.src = BASE_AVATAR_PATH;
-  }, []);
+    img.src = skinTone.path;
+  }, [selectedSkinTone]);
 
   // Load all equipment sprites
   useEffect(() => {
@@ -538,7 +585,7 @@ export default function EquipmentTest() {
     const pos = getPosition(folder, item, folder === 'shields' ? editingShieldHand : null);
     const newSaved = { ...savedPositions, [key]: pos };
     setSavedPositions(newSaved);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSaved));
+    localStorage.setItem(getStorageKey(selectedSkinTone), JSON.stringify(newSaved));
 
     // Auto-sync to cloud
     await syncToCloud(newSaved);
@@ -550,7 +597,7 @@ export default function EquipmentTest() {
       allPositions[key] = pos;
     });
     setSavedPositions(allPositions);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allPositions));
+    localStorage.setItem(getStorageKey(selectedSkinTone), JSON.stringify(allPositions));
 
     // Auto-sync to cloud
     const success = await syncToCloud(allPositions);
@@ -586,7 +633,7 @@ export default function EquipmentTest() {
       try {
         const imported = JSON.parse(event.target.result);
         setSavedPositions(imported);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+        localStorage.setItem(getStorageKey(selectedSkinTone), JSON.stringify(imported));
 
         // Auto-sync imported positions to cloud
         const success = await syncToCloud(imported);
@@ -632,6 +679,47 @@ export default function EquipmentTest() {
               <h2 className="text-sm font-semibold text-white mb-2">
                 Base Avatar: Stage 10 Swordsman
               </h2>
+              {/* Skin Tone Selector */}
+              <div className="flex gap-1 mb-2">
+                {SKIN_TONES.map(tone => (
+                  <button
+                    key={tone.id}
+                    onClick={() => setSelectedSkinTone(tone.id)}
+                    className={`px-2 py-1 text-xs rounded ${
+                      selectedSkinTone === tone.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    {tone.label}
+                  </button>
+                ))}
+                {selectedSkinTone !== 'white' && (
+                  <button
+                    onClick={async () => {
+                      // COPY white positions to this skin tone (completely separate copy)
+                      const whitePositions = localStorage.getItem(getStorageKey('white'));
+                      if (whitePositions) {
+                        const positions = JSON.parse(whitePositions);
+                        // Save to this skin tone's localStorage
+                        localStorage.setItem(getStorageKey(selectedSkinTone), whitePositions);
+                        setSavedPositions(positions);
+                        setCurrentPositions({});
+                        // Sync to cloud with THIS skin tone's prefix
+                        await syncToCloud(positions);
+                        console.log(`[EquipmentTest] Copied white positions to ${selectedSkinTone}`);
+                        alert(`✓ Copied ${Object.keys(positions).length} positions from white to ${selectedSkinTone}`);
+                      } else {
+                        alert('No white positions to copy!');
+                      }
+                    }}
+                    className="px-2 py-1 text-xs rounded bg-amber-600 text-white hover:bg-amber-500"
+                    title="Copy white positions to this skin tone (as separate positions)"
+                  >
+                    Copy from White
+                  </button>
+                )}
+              </div>
               <canvas
                 ref={canvasRef}
                 width={256}

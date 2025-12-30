@@ -51,12 +51,19 @@ const NOVA_EXPRESSIONS = {
 
 /**
  * Calculate tooltip position based on target element and preferred position
+ * On mobile, ensures tooltip doesn't overlap the spotlight by positioning at screen edges
  */
 function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 320, height: 200 }) {
   const padding = 16;
   const arrowSize = 12;
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
+  const isMobile = viewportWidth <= 640;
+
+  // On mobile, use smaller tooltip dimensions
+  const actualTooltipSize = isMobile
+    ? { width: viewportWidth - 32, height: 160 }
+    : tooltipSize;
 
   let top, left;
   let actualPosition = position;
@@ -64,39 +71,87 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
   // Center position (no target element)
   if (position === 'center' || !targetRect) {
     // Ensure centered tooltip doesn't get cut off at top
-    const centeredTop = Math.max(padding, (viewportHeight - tooltipSize.height) / 2);
+    const centeredTop = Math.max(padding, (viewportHeight - actualTooltipSize.height) / 2);
     return {
       top: centeredTop,
-      left: Math.max(padding, (viewportWidth - tooltipSize.width) / 2),
+      left: Math.max(padding, (viewportWidth - actualTooltipSize.width) / 2),
       position: 'center',
     };
   }
 
-  // Calculate based on preferred position
+  // On mobile, use smart positioning to avoid blocking the spotlight
+  if (isMobile) {
+    // Calculate available space above and below the target
+    const spaceAbove = targetRect.top - padding;
+    const spaceBelow = viewportHeight - targetRect.bottom - padding;
+    const spotlightPadding = 8; // Additional padding around spotlight
+
+    // Target's center point
+    const targetCenterY = targetRect.top + targetRect.height / 2;
+    const screenCenterY = viewportHeight / 2;
+
+    // If target is in the upper half of screen, place tooltip at bottom
+    // If target is in the lower half, place tooltip at top
+    if (targetCenterY < screenCenterY) {
+      // Target is in upper half - place tooltip at bottom of screen
+      top = Math.max(
+        targetRect.bottom + spotlightPadding + arrowSize + padding,
+        viewportHeight - actualTooltipSize.height - padding - 60 // Leave room for nav
+      );
+      actualPosition = POSITIONS.BOTTOM;
+    } else {
+      // Target is in lower half - place tooltip at top of screen
+      top = padding;
+      actualPosition = POSITIONS.TOP;
+    }
+
+    // Check if tooltip would still overlap with target
+    const tooltipBottom = top + actualTooltipSize.height;
+    const tooltipTop = top;
+    const targetTopWithPadding = targetRect.top - spotlightPadding;
+    const targetBottomWithPadding = targetRect.bottom + spotlightPadding;
+
+    // If there's overlap, push to safe position
+    if (actualPosition === POSITIONS.BOTTOM && top < targetBottomWithPadding) {
+      top = targetBottomWithPadding + arrowSize + padding;
+    } else if (actualPosition === POSITIONS.TOP && tooltipBottom > targetTopWithPadding) {
+      top = Math.max(padding, targetTopWithPadding - actualTooltipSize.height - arrowSize - padding);
+      // If still overlapping, force to bottom
+      if (top + actualTooltipSize.height > targetTopWithPadding) {
+        top = targetBottomWithPadding + arrowSize + padding;
+        actualPosition = POSITIONS.BOTTOM;
+      }
+    }
+
+    // Mobile left position handled by CSS
+    return { top, left: padding, position: actualPosition, isMobile: true };
+  }
+
+  // Desktop positioning (unchanged)
   switch (position) {
     case POSITIONS.TOP:
-      top = targetRect.top - tooltipSize.height - arrowSize - padding;
-      left = targetRect.left + (targetRect.width - tooltipSize.width) / 2;
+      top = targetRect.top - actualTooltipSize.height - arrowSize - padding;
+      left = targetRect.left + (targetRect.width - actualTooltipSize.width) / 2;
       break;
     case POSITIONS.BOTTOM:
       top = targetRect.bottom + arrowSize + padding;
-      left = targetRect.left + (targetRect.width - tooltipSize.width) / 2;
+      left = targetRect.left + (targetRect.width - actualTooltipSize.width) / 2;
       break;
     case POSITIONS.LEFT:
-      top = targetRect.top + (targetRect.height - tooltipSize.height) / 2;
-      left = targetRect.left - tooltipSize.width - arrowSize - padding;
+      top = targetRect.top + (targetRect.height - actualTooltipSize.height) / 2;
+      left = targetRect.left - actualTooltipSize.width - arrowSize - padding;
       break;
     case POSITIONS.RIGHT:
-      top = targetRect.top + (targetRect.height - tooltipSize.height) / 2;
+      top = targetRect.top + (targetRect.height - actualTooltipSize.height) / 2;
       left = targetRect.right + arrowSize + padding;
       break;
     case POSITIONS.TOP_LEFT:
-      top = targetRect.top - tooltipSize.height - arrowSize - padding;
+      top = targetRect.top - actualTooltipSize.height - arrowSize - padding;
       left = targetRect.left;
       break;
     case POSITIONS.TOP_RIGHT:
-      top = targetRect.top - tooltipSize.height - arrowSize - padding;
-      left = targetRect.right - tooltipSize.width;
+      top = targetRect.top - actualTooltipSize.height - arrowSize - padding;
+      left = targetRect.right - actualTooltipSize.width;
       break;
     case POSITIONS.BOTTOM_LEFT:
       top = targetRect.bottom + arrowSize + padding;
@@ -104,18 +159,18 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
       break;
     case POSITIONS.BOTTOM_RIGHT:
       top = targetRect.bottom + arrowSize + padding;
-      left = targetRect.right - tooltipSize.width;
+      left = targetRect.right - actualTooltipSize.width;
       break;
     default:
       top = targetRect.bottom + arrowSize + padding;
-      left = targetRect.left + (targetRect.width - tooltipSize.width) / 2;
+      left = targetRect.left + (targetRect.width - actualTooltipSize.width) / 2;
       actualPosition = POSITIONS.BOTTOM;
   }
 
   // Constrain to viewport
   if (left < padding) left = padding;
-  if (left + tooltipSize.width > viewportWidth - padding) {
-    left = viewportWidth - tooltipSize.width - padding;
+  if (left + actualTooltipSize.width > viewportWidth - padding) {
+    left = viewportWidth - actualTooltipSize.width - padding;
   }
   if (top < padding) {
     // Flip to bottom if no room on top
@@ -126,13 +181,13 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
       top = padding;
     }
   }
-  if (top + tooltipSize.height > viewportHeight - padding) {
+  if (top + actualTooltipSize.height > viewportHeight - padding) {
     // Flip to top if no room on bottom
     if (position === POSITIONS.BOTTOM || position === POSITIONS.BOTTOM_LEFT || position === POSITIONS.BOTTOM_RIGHT) {
-      top = targetRect.top - tooltipSize.height - arrowSize - padding;
+      top = targetRect.top - actualTooltipSize.height - arrowSize - padding;
       actualPosition = POSITIONS.TOP;
     } else {
-      top = viewportHeight - tooltipSize.height - padding;
+      top = viewportHeight - actualTooltipSize.height - padding;
     }
   }
 

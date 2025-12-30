@@ -14,7 +14,7 @@ import { animate, stagger, createTimeline } from 'animejs';
 import { feedback } from '../../../../services/microInteractions';
 
 // SVG Logo component with path drawing animation
-const QuantaLogo = ({ onDrawComplete }) => {
+const AscyntLogo = ({ onDrawComplete }) => {
   const svgRef = useRef(null);
   const [hasDrawn, setHasDrawn] = useState(false);
 
@@ -300,13 +300,13 @@ export default function IntroSection({ isActive, progress, onComplete }) {
       {/* SVG Logo with path drawing */}
       <div className="intro-logo-container">
         {isActive && (
-          <QuantaLogo onDrawComplete={() => setLogoDrawn(true)} />
+          <AscyntLogo onDrawComplete={() => setLogoDrawn(true)} />
         )}
       </div>
 
       {/* Title */}
       <h1 ref={titleRef} className="intro-title">
-        Quanta
+        Ascynt
       </h1>
 
       {/* Subtitle */}

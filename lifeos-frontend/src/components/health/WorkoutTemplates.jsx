@@ -175,27 +175,7 @@ export default function WorkoutTemplates() {
         </div>
       )}
 
-      {/* Built-in Templates Section */}
-      <div className="templates-section">
-        <div className="section-header">
-          <Zap className="section-icon builtin" size={20} />
-          <h3 className="section-title">Quick Start</h3>
-          <span className="section-count">{builtInTemplatesFiltered.length}</span>
-        </div>
-        <div className="templates-grid">
-          {builtInTemplatesFiltered.map((template) => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              onStart={() => handleStartWorkout(template)}
-              onEdit={() => handleEdit(template)}
-              onDuplicate={() => handleDuplicate(template)}
-              getExerciseWeightInfo={getExerciseWeightInfo}
-              customExercises={customExercises}
-            />
-          ))}
-        </div>
-      </div>
+      {/* Built-in Quick Start templates removed - users create their own */}
 
       {/* Create/Edit Template Modal */}
       {showCreateModal && (

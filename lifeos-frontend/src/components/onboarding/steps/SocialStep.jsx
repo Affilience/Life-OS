@@ -205,7 +205,7 @@ export default function SocialStep({ onNext, onPrev, onSkip, canSkip, isTransiti
             className="text-center text-white/50 text-sm"
           >
             <MessageCircle className="w-5 h-5 inline-block mr-2 opacity-50" />
-            Friends who use LifeOS together are 3x more likely to achieve their goals!
+            Friends who use Ascynt together are 3x more likely to achieve their goals!
           </motion.div>
 
           {/* Navigation */}

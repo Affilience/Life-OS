@@ -539,6 +539,9 @@ export function generatePersonalityPrompt(context, userMessage = '') {
   lines.push('- NEVER use roleplay-style narration of your actions');
   lines.push('- NEVER use markdown formatting (no **, no *, no #, no bullet points with -)');
   lines.push('- NEVER describe what you\'re "doing" in third person');
+  lines.push('- NEVER start responses with flattery ("Great question!", "That\'s awesome!", "I love that!")');
+  lines.push('- NEVER end with opt-in questions ("Would you like me to...?", "Want me to explain more?")');
+  lines.push('- Ask at most ONE clarifying question per response - multiple questions overwhelm');
   lines.push('- Just speak naturally like a real person would in conversation');
   lines.push('');
 

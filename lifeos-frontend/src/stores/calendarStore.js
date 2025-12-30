@@ -348,7 +348,7 @@ export const useCalendarStore = create(
           endTime: blockData.endTime,     // '11:00'
           plannedDuration: blockData.plannedDuration || 60, // minutes
           actualDuration: null,
-          module: blockData.module || 'productivity', // links to Quanta modules
+          module: blockData.module || 'productivity', // links to Ascynt modules
           type: blockData.type || 'deep_work', // deep_work, shallow, meeting, break, etc.
           status: blockData.status || 'planned', // planned, in_progress, completed, cancelled
           priority: blockData.priority || 'medium', // critical, high, medium, low

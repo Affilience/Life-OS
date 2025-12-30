@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#12101a"/>
+      <stop offset="100%" style="stop-color:#0c0a10"/>
+    </linearGradient>
+    <linearGradient id="crystal" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="50%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="25" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bg)" rx="180"/>
+  <!-- Glow effect -->
+  <polygon points="512,150 700,480 630,480 630,874 394,874 394,480 324,480" fill="#8b5cf6" opacity="0.4" filter="url(#glow)"/>
+  <!-- Main arrow/crystal shape - ascending -->
+  <polygon points="512,180 670,450 610,450 610,850 414,850 414,450 354,450" fill="url(#crystal)"/>
+  <!-- Highlight -->
+  <polygon points="512,180 512,450 414,450 414,850 460,850 460,430 512,430" fill="white" opacity="0.2"/>
+</svg>

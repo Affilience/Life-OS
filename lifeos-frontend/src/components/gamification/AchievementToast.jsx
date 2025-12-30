@@ -285,7 +285,7 @@ export default function AchievementToast({ achievement, isVisible, onClose }) {
             animate={variants.animate}
             exit={variants.exit}
             transition={variants.transition}
-            className="fixed top-20 right-6 z-50 w-96 max-w-[90vw]"
+            className="fixed top-20 right-4 sm:right-6 z-50 w-80 sm:w-96 max-w-[calc(100vw-2rem)]"
           >
             <div
               className="bg-[#12101a] border-2 rounded-xl p-4 shadow-2xl overflow-hidden relative"

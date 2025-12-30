@@ -1,6 +1,6 @@
 /**
  * System Knowledge Service
- * Provides Nova with comprehensive knowledge about LifeOS
+ * Provides Nova with comprehensive knowledge about Ascynt
  *
  * This service loads the structured knowledge base and provides
  * context-aware information about modules, features, and navigation.
@@ -170,7 +170,7 @@ export function buildSystemContext(query = '') {
   const navigationAnswer = findNavigationAnswer(query);
 
   let context = `
-SYSTEM KNOWLEDGE - LifeOS Structure:
+SYSTEM KNOWLEDGE - Ascynt Structure:
 
 ${systemOverview.description}
 

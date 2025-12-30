@@ -133,7 +133,7 @@ export async function initializeNova() {
 async function loadKnowledgeDocuments() {
   const docs = [
     {
-      title: 'LifeOS Overview',
+      title: 'Ascynt Overview',
       type: 'system',
       ...systemOverview
     }

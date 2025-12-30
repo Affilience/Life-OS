@@ -114,31 +114,29 @@ const MODE_STYLES = {
 const getTabs = (mode, isVisible) => {
   const tabs = [];
 
-  // Avatar/Profile tab - always visible but with different labels
-  if (isVisible('showAvatar') || mode !== 'minimal') {
-    tabs.push({
-      id: 'avatar',
-      label: mode === 'cosmic' ? 'Avatar' : 'Profile',
-      icon: User,
-      color: 'from-purple-500 to-pink-500'
-    });
-  }
+  // Avatar tab
+  tabs.push({
+    id: 'avatar',
+    label: 'Avatar',
+    icon: User,
+    color: 'from-purple-500 to-pink-500'
+  });
 
-  // Pets tab - hidden in minimal mode
+  // Companions tab
   if (isVisible('showPets')) {
     tabs.push({
       id: 'pets',
-      label: mode === 'cosmic' ? 'Companions' : mode === 'professional' ? 'Boosters' : 'Bonuses',
+      label: 'Companions',
       icon: PawPrint,
       color: 'from-pink-500 to-rose-500'
     });
   }
 
-  // Equipment tab - hidden in minimal mode
+  // Equipment tab
   if (isVisible('showEquipment')) {
     tabs.push({
       id: 'equipment',
-      label: mode === 'cosmic' ? 'Equipment' : mode === 'professional' ? 'Boosters' : 'Bonuses',
+      label: 'Equipment',
       icon: Sword,
       color: 'from-orange-500 to-red-500'
     });
@@ -154,33 +152,21 @@ const getTabs = (mode, isVisible) => {
     });
   }
 
-  // Inventory tab - for consumables and cosmetics (shown in cosmic and professional modes)
-  if (mode !== 'minimal') {
-    tabs.push({
-      id: 'inventory',
-      label: 'Inventory',
-      icon: Package,
-      color: 'from-emerald-500 to-teal-500'
-    });
-  }
+  // Inventory tab - for consumables and cosmetics
+  tabs.push({
+    id: 'inventory',
+    label: 'Inventory',
+    icon: Package,
+    color: 'from-emerald-500 to-teal-500'
+  });
 
-  // Bazaar/Shop tab - hidden based on visibility
+  // Bazaar tab
   if (isVisible('showBazaar')) {
     tabs.push({
       id: 'bazaar',
-      label: mode === 'cosmic' ? 'Bazaar' : 'Shop',
+      label: 'Bazaar',
       icon: ShoppingBag,
-      color: mode === 'cosmic' ? 'from-yellow-500 to-orange-500' : mode === 'professional' ? 'from-blue-500 to-cyan-500' : 'from-gray-500 to-gray-600'
-    });
-  }
-
-  // Stats tab for minimal mode
-  if (mode === 'minimal') {
-    tabs.push({
-      id: 'stats',
-      label: 'Stats',
-      icon: BarChart2,
-      color: 'from-blue-500 to-cyan-500'
+      color: 'from-yellow-500 to-orange-500'
     });
   }
 
@@ -582,11 +568,9 @@ export default function Character() {
                   </button>
 
                   {/* Skill Point Allocator - Compact inline version */}
-                  {mode !== 'minimal' && (
-                    <div className="mt-3">
-                      <SkillPointAllocator compact />
-                    </div>
-                  )}
+                  <div className="mt-3">
+                    <SkillPointAllocator compact />
+                  </div>
                 </div>
               </div>
 
@@ -614,11 +598,11 @@ export default function Character() {
             </div>
 
             {/* Stat Synergies */}
-            {synergies.length > 0 && mode !== 'minimal' && (
+            {synergies.length > 0 && (
               <div className={`bg-gradient-to-br ${styles.synergyBg} border ${styles.synergyBorder} rounded-xl p-4`}>
                 <div className={`text-sm font-semibold ${styles.synergyText} mb-2 flex items-center gap-2`}>
                   <Sparkles className="w-4 h-4" />
-                  {mode === 'cosmic' ? 'Active Synergies' : 'Active Bonuses'}
+                  Active Synergies
                 </div>
                 <div className="space-y-2">
                   {synergies.slice(0, 2).map((synergy, idx) => (
@@ -635,8 +619,7 @@ export default function Character() {
             )}
 
             {/* Level Progression Benefits */}
-            {mode !== 'minimal' && (
-              <div className="bg-bg-1 border border-border rounded-2xl p-4 sm:p-5">
+            <div className="bg-bg-1 border border-border rounded-2xl p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-primary-400" />
@@ -665,8 +648,7 @@ export default function Character() {
                 <div className="mt-4">
                   <TitleProgressionCard level={currentLevel} />
                 </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
 

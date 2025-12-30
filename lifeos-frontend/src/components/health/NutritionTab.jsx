@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
   Clock,
   TrendingUp,
   Target,
-  Mic,
-  Star,
-  Copy,
   Calendar,
-  ChevronRight,
   Pill,
   BarChart3,
   Trash2,
@@ -16,8 +11,6 @@ import {
   Plus,
   Minus,
   ScanBarcode,
-  UtensilsCrossed,
-  BookOpen,
   Settings,
   GlassWater,
   CupSoda,
@@ -27,7 +20,6 @@ import NutritionCharts from './charts/NutritionCharts';
 import SmartMealLogger from './SmartMealLogger';
 import MacroGoalsModal from './MacroGoalsModal';
 import BarcodeScanner from './BarcodeScanner';
-import { WeeklyMealPlanner, RecipeLibrary } from './meal-planning';
 import { SupplementSchedule } from './supplements';
 import { useHealthStore } from '../../stores/healthStore';
 import { EmptyState } from '../ui';
@@ -35,13 +27,11 @@ import './NutritionTab.css';
 
 const SUB_TABS = [
   { id: 'tracking', name: 'Tracking', icon: Target },
-  { id: 'meal-plans', name: 'Meal Plans', icon: UtensilsCrossed },
   { id: 'supplements', name: 'Supplements', icon: Pill },
 ];
 
 export default function NutritionTab() {
   const [activeSubTab, setActiveSubTab] = useState('tracking');
-  const [mealPlanSubTab, setMealPlanSubTab] = useState('planner');
   const [showMacroGoals, setShowMacroGoals] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [scannedProduct, setScannedProduct] = useState(null);
@@ -572,35 +562,6 @@ export default function NutritionTab() {
         />
       )}
         </>
-      )}
-
-      {/* Meal Plans Tab Content */}
-      {activeSubTab === 'meal-plans' && (
-        <div className="meal-plans-content">
-          {/* Meal Plans Sub-tabs */}
-          <div className="meal-plans-sub-tabs">
-            <button
-              onClick={() => setMealPlanSubTab('planner')}
-              className={`meal-plans-sub-tab ${mealPlanSubTab === 'planner' ? 'active' : ''}`}
-            >
-              <Calendar className="w-4 h-4" />
-              Week Planner
-            </button>
-            <button
-              onClick={() => setMealPlanSubTab('recipes')}
-              className={`meal-plans-sub-tab ${mealPlanSubTab === 'recipes' ? 'active' : ''}`}
-            >
-              <BookOpen className="w-4 h-4" />
-              Recipes
-            </button>
-          </div>
-
-          {/* Meal Plans Sub-tab Content */}
-          <div className="meal-plans-sub-content">
-            {mealPlanSubTab === 'planner' && <WeeklyMealPlanner />}
-            {mealPlanSubTab === 'recipes' && <RecipeLibrary />}
-          </div>
-        </div>
       )}
 
       {/* Supplements Tab Content */}

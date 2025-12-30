@@ -26,7 +26,7 @@ const STORAGE_KEYS = [
   'quests-storage',
   'resolution-storage',
   'skill-points-storage',
-  // LifeOS prefixed stores
+  // Ascynt prefixed stores
   'lifeos-bad-habits',
   'lifeos-boss-battles',
   'lifeos-calendar',
@@ -51,7 +51,7 @@ const STORAGE_KEYS = [
 
 // IndexedDB databases that need to be cleared on user switch
 const INDEXED_DB_NAMES = [
-  'QuantaJournalDB', // Journal entries stored locally
+  'AscyntJournalDB', // Journal entries stored locally
 ];
 
 /**
@@ -127,8 +127,9 @@ function handleUserChange(newUserId) {
  * Initialize all required data for a new user
  * This ensures the user has all necessary records across all tables
  * Note: display_name and username are NOT set here - they are set during onboarding
+ * Exported for use by OAuth callback handler
  */
-async function initializeNewUser(userId, email) {
+export async function initializeNewUser(userId, email) {
   const now = new Date().toISOString();
 
   console.log('[Auth] Initializing new user:', { userId, email });
@@ -461,6 +462,41 @@ export function useSignIn() {
   };
 
   return { signIn, loading, error };
+}
+
+/**
+ * OAuth Sign In Hook - Sign in with Google, Apple, or GitHub
+ */
+export function useOAuthSignIn() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const signInWithProvider = async (provider) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Clear all localStorage for fresh start (in case switching users)
+      clearAllStorage();
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider, // 'google', 'apple', or 'github'
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (err) {
+      setError(err.message);
+      return { data: null, error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { signInWithProvider, loading, error };
 }
 
 export function useSignOut() {

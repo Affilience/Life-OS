@@ -7,7 +7,7 @@
  * Now integrated with perkStore for REAL perk effects!
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Lock, Unlock, Info, Zap, Star } from 'lucide-react';
 import { PERK_TREES } from '../../data/perkTrees';
@@ -84,6 +84,37 @@ export default function SkyrimPerkTree() {
     return new Set(unlockedPerksByTree[currentTreeKey] || []);
   }, [unlockedPerksByTree, currentTreeKey]);
 
+  // Touch/swipe handling
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      nextTree();
+    } else if (isRightSwipe) {
+      prevTree();
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   // Navigation
   const nextTree = () => {
     setCurrentTreeIndex((prev) => (prev + 1) % treeKeys.length);
@@ -146,8 +177,13 @@ export default function SkyrimPerkTree() {
         </AnimatePresence>
       </div>
 
-      {/* Constellation Canvas */}
-      <div className="relative z-10 flex items-center justify-center h-[420px] sm:h-[470px] md:h-[520px]">
+      {/* Constellation Canvas - with swipe support */}
+      <div
+        className="relative z-10 flex items-center justify-center h-[420px] sm:h-[470px] md:h-[520px] px-2 sm:px-12"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <AnimatePresence mode="wait">
           <motion.svg
             key={currentTreeKey}
@@ -354,19 +390,45 @@ export default function SkyrimPerkTree() {
         </AnimatePresence>
       </div>
 
-      {/* Navigation Arrows */}
+      {/* Navigation Arrows - hidden on mobile (use swipe instead) */}
       <button
         onClick={prevTree}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-sm transition-all hover:scale-110"
+        className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-sm transition-all hover:scale-110 items-center justify-center"
       >
-        <ChevronLeft className="w-6 h-6 text-white" />
+        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
       </button>
       <button
         onClick={nextTree}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-sm transition-all hover:scale-110"
+        className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-sm transition-all hover:scale-110 items-center justify-center"
       >
-        <ChevronRight className="w-6 h-6 text-white" />
+        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
       </button>
+
+      {/* Mobile swipe indicator */}
+      <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 text-white/40 text-xs">
+        <ChevronLeft className="w-4 h-4" />
+        <span>Swipe to navigate</span>
+        <ChevronRight className="w-4 h-4" />
+      </div>
+
+      {/* Tree indicator dots */}
+      <div className="absolute bottom-12 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        {treeKeys.map((key, index) => (
+          <button
+            key={key}
+            onClick={() => {
+              setCurrentTreeIndex(index);
+              setSelectedPerk(null);
+            }}
+            className={`w-2 h-2 rounded-full transition-all ${
+              index === currentTreeIndex
+                ? 'bg-white scale-125'
+                : 'bg-white/30 hover:bg-white/50'
+            }`}
+            style={index === currentTreeIndex ? { backgroundColor: currentTree.color } : {}}
+          />
+        ))}
+      </div>
 
 
       {/* Selected Perk Detail Panel */}

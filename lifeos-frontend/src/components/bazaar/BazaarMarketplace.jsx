@@ -28,6 +28,7 @@ import { usePetStore, PET_DATABASE, TIER_INFO } from '../../stores/petStore';
 import useElementalAbilityStore from '../../stores/elementalAbilityStore';
 import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
 import { getBazaarAbilities } from '../../data/elementalAbilities';
+import { ABILITY_TYPES } from '../../data/weaponAbilities';
 import unlockService from '../../services/unlockService';
 
 // ============================================
@@ -66,7 +67,7 @@ const getItemSprite = (item) => {
 // ============================================
 
 const EQUIPMENT_ITEMS = [
-  // Weapons
+  // Weapons - each weapon has a weaponType and ability that grants a special attack
   {
     id: 'sword_novice',
     name: 'Novice Blade',
@@ -79,6 +80,8 @@ const EQUIPMENT_ITEMS = [
     sprite: '/assets/bazaar/weapons/sword_novice.png',
     stats: { strength: 3 },
     levelRequired: 1,
+    weaponType: 'sword',
+    ability: 'power_slash',
   },
   {
     id: 'sword_iron',
@@ -92,6 +95,8 @@ const EQUIPMENT_ITEMS = [
     sprite: '/assets/bazaar/weapons/sword_iron.png',
     stats: { strength: 8, vitality: 2 },
     levelRequired: 5,
+    weaponType: 'sword',
+    ability: 'blade_dance',
   },
   {
     id: 'sword_crystal',
@@ -105,6 +110,8 @@ const EQUIPMENT_ITEMS = [
     sprite: '/assets/bazaar/weapons/sword_crystal.png',
     stats: { strength: 15, intelligence: 5 },
     levelRequired: 10,
+    weaponType: 'sword',
+    ability: 'shadow_strike',
   },
   {
     id: 'sword_void',
@@ -118,6 +125,8 @@ const EQUIPMENT_ITEMS = [
     sprite: '/assets/bazaar/weapons/sword_void.png',
     stats: { strength: 25, wisdom: 10, intelligence: 8 },
     levelRequired: 20,
+    weaponType: 'sword',
+    ability: 'assassinate',
   },
   {
     id: 'sword_celestial',
@@ -131,6 +140,8 @@ const EQUIPMENT_ITEMS = [
     sprite: '/assets/bazaar/weapons/sword_celestial.png',
     stats: { strength: 40, vitality: 15, wisdom: 15, intelligence: 15 },
     levelRequired: 30,
+    weaponType: 'sword',
+    ability: 'meteor',
   },
   // Armor
   {
@@ -602,6 +613,33 @@ function ItemCard({ item, owned, canAfford, onPurchase, level, mode }) {
             </span>
           </div>
         )}
+
+        {/* Weapon Ability Info (for weapons with abilities) */}
+        {item.slot === 'weapon' && item.ability && ABILITY_TYPES[item.ability] && (() => {
+          const ability = ABILITY_TYPES[item.ability];
+          return (
+            <div className="mb-3 p-2 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-3 h-3 text-orange-400" />
+                <span className="text-xs font-medium text-orange-300">{ability.name}</span>
+              </div>
+              <p className="text-xs text-white/50 mb-2 line-clamp-1">{ability.description}</p>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-xs bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5 text-red-400">
+                  {ability.damage}x DMG
+                </span>
+                <span className="text-xs bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5 text-blue-400">
+                  {(ability.cooldown / 1000).toFixed(0)}s CD
+                </span>
+                {ability.hits && (
+                  <span className="text-xs bg-purple-500/10 border border-purple-500/20 rounded px-1.5 py-0.5 text-purple-400">
+                    {ability.hits} hits
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Price & Purchase */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">

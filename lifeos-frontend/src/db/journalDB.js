@@ -3,7 +3,7 @@ import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
 
 // Initialize Dexie database
-export const db = new Dexie('QuantaJournalDB');
+export const db = new Dexie('AscyntJournalDB');
 
 // Define database schema
 db.version(1).stores({

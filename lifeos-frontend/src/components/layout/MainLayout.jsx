@@ -20,7 +20,7 @@ const FeatureTour = lazy(() => import('../tours/FeatureTour').catch(err => {
 }));
 
 /**
- * LifeOS MainLayout (AppShell)
+ * Ascynt MainLayout (AppShell)
  *
  * Mobile-first responsive layout:
  * - Desktop: Fixed sidebar (250px)

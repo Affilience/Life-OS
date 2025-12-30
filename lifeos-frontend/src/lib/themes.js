@@ -1,5 +1,5 @@
 /**
- * LifeOS Colour Themes
+ * Ascynt Colour Themes
  *
  * A comprehensive collection of 10 color themes for the app.
  * Each theme transforms the ENTIRE visual look - backgrounds, cards, buttons, everything.

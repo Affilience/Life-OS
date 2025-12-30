@@ -19,7 +19,7 @@ import { getCrossModuleContext } from '../crossModuleData';
 // ============================================================================
 
 /**
- * Complete explanation system for every metric in LifeOS
+ * Complete explanation system for every metric in Ascynt
  * Each function takes the value and full context, returns a human explanation
  */
 export const METRIC_EXPLAINERS = {
@@ -436,7 +436,7 @@ export const METRIC_EXPLAINERS = {
 
     return {
       summary: `Character Level ${value} (Tier ${ctx.character.tier})`,
-      meaning: 'Your RPG character progression in LifeOS',
+      meaning: 'Your RPG character progression in Ascynt',
       prestige: ctx.character.prestige > 0
         ? `Prestige ${ctx.character.prestige} (${ctx.character.xpMultiplier}x XP bonus)`
         : 'No prestige yet',
@@ -511,7 +511,7 @@ export function explainMetric(metricKey, value, additionalContext = {}) {
   // Fallback for unknown metrics
   return {
     summary: `${metricKey}: ${value}`,
-    meaning: 'Metric tracked in LifeOS',
+    meaning: 'Metric tracked in Ascynt',
     insight: 'Track this over time to see patterns.',
   };
 }

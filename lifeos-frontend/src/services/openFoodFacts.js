@@ -87,7 +87,7 @@ export async function lookupByBarcode(barcode) {
       `${BASE_URL}/api/v2/product/${cleanBarcode}?fields=product_name,generic_name,brands,code,nutriments,serving_size,serving_quantity,image_front_small_url,image_url,nutriscore_grade,nova_group,categories_tags,ingredients_text`,
       {
         headers: {
-          'User-Agent': 'LifeOS-NutritionTracker/1.0',
+          'User-Agent': 'Ascynt-NutritionTracker/1.0',
         },
       }
     );
@@ -125,7 +125,7 @@ export async function searchProducts(query, limit = 10) {
       `${BASE_URL}/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${limit}&fields=product_name,generic_name,brands,code,nutriments,serving_size,serving_quantity,image_front_small_url,nutriscore_grade`,
       {
         headers: {
-          'User-Agent': 'LifeOS-NutritionTracker/1.0',
+          'User-Agent': 'Ascynt-NutritionTracker/1.0',
         },
       }
     );

@@ -8,7 +8,7 @@ const AddSessionModal = ({ onClose }) => {
     duration: '',
     focusQuality: 7,
     output: '',
-    project: 'Quanta'
+    project: 'Ascynt'
   });
 
   const handleInputChange = (field, value) => {
@@ -75,7 +75,7 @@ const AddSessionModal = ({ onClose }) => {
               onChange={(e) => handleInputChange('project', e.target.value)}
               className="form-select"
             >
-              <option>Quanta</option>
+              <option>Ascynt</option>
               <option>Client Portfolio</option>
               <option>Learning</option>
               <option>Personal</option>

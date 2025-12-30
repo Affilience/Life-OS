@@ -58,7 +58,7 @@ const DEFAULT_STATE = {
   totalLevelsEarned: 0,
   totalXPEarned: 0,
   characterGender: 'male',
-  skinTone: 'default', // Skin tone options: default, light, medium, tan, dark, deep
+  skinTone: 'white', // Skin tone options: white, brown, black
   equipped: {
     helmet: null,
     chest: null,
@@ -195,7 +195,7 @@ export const useAvatarStore = create(
               totalLevelsEarned: data.total_levels_earned || 0,
               totalXPEarned: data.total_xp || 0,
               characterGender: data.character_gender || 'male',
-              skinTone: data.skin_tone || 'default',
+              skinTone: data.skin_tone && ['white', 'brown', 'black'].includes(data.skin_tone) ? data.skin_tone : 'white',
               equipped: data.equipped_items || DEFAULT_STATE.equipped,
               cosmetic: data.cosmetic_overrides || DEFAULT_STATE.cosmetic,
               dyes: data.dye_colors || DEFAULT_STATE.dyes,
@@ -337,6 +337,12 @@ export const useAvatarStore = create(
 
           // Recalculate stats
           get().recalculateStats();
+
+          // Check for new equipment unlocks at this level
+          // Use setTimeout to avoid blocking the XP animation
+          setTimeout(() => {
+            get().checkUnlocks();
+          }, 500);
 
           result = { leveledUp: true, newLevel, tierUp };
         } else {
@@ -1044,7 +1050,7 @@ export const useAvatarStore = create(
 
       // Set skin tone
       setSkinTone: async (tone) => {
-        const validTones = ['default', 'light', 'medium', 'tan', 'dark', 'deep'];
+        const validTones = ['white', 'brown', 'black'];
         if (validTones.includes(tone)) {
           set({ skinTone: tone });
           await get().syncToSupabase();

@@ -8,7 +8,7 @@
  * - Scrubbed animations tied to scroll position
  */
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -19,8 +19,8 @@ import { feedback } from '../../../services/microInteractions';
 
 // Section Components
 import ImmersiveIntro from './immersive/ImmersiveIntro';
-import ImmersiveModeSelect from './immersive/ImmersiveModeSelect';
 import ImmersiveHeroSelect from './immersive/ImmersiveHeroSelect';
+import ImmersiveSkinToneSelect from './immersive/ImmersiveSkinToneSelect';
 import ImmersiveAvatarCustomisation from './immersive/ImmersiveAvatarCustomisation';
 import ImmersiveGamification from './immersive/ImmersiveGamification';
 import ImmersiveIdentity from './immersive/ImmersiveIdentity';
@@ -38,35 +38,16 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Section configuration - base sections for all modes
-const BASE_SECTIONS = [
+// Section configuration - full cosmic experience (no mode selection needed)
+const SECTIONS = [
   { id: 'intro', component: ImmersiveIntro },
-  { id: 'mode', component: ImmersiveModeSelect, requiresInteraction: true },
-];
-
-// Cosmic mode sections (full gamification experience)
-const COSMIC_SECTIONS = [
   { id: 'hero', component: ImmersiveHeroSelect, requiresInteraction: true },
+  { id: 'skinTone', component: ImmersiveSkinToneSelect, requiresInteraction: true },
   { id: 'identity', component: ImmersiveIdentity, requiresInteraction: true },
   { id: 'gamification', component: ImmersiveGamification, requiresInteraction: true },
   { id: 'goals', component: ImmersiveGoals, requiresInteraction: true },
   { id: 'launch', component: ImmersiveLaunch },
 ];
-
-// Minimal mode sections (streamlined experience)
-const MINIMAL_SECTIONS = [
-  { id: 'identity', component: ImmersiveIdentity, requiresInteraction: true },
-  { id: 'goals', component: ImmersiveGoals, requiresInteraction: true },
-  { id: 'launch', component: ImmersiveLaunch },
-];
-
-// Get sections based on selected mode
-const getSections = (mode) => {
-  if (mode === 'minimal') {
-    return [...BASE_SECTIONS, ...MINIMAL_SECTIONS];
-  }
-  return [...BASE_SECTIONS, ...COSMIC_SECTIONS];
-};
 
 export default function ImmersiveOnboarding() {
   const containerRef = useRef(null);
@@ -83,8 +64,6 @@ export default function ImmersiveOnboarding() {
     profile,
     lifeGoals,
     setLifeGoals,
-    gamificationMode,
-    setGamificationMode,
     updateProfile,
   } = useNewOnboardingStore();
 
@@ -96,8 +75,8 @@ export default function ImmersiveOnboarding() {
   // Social store for saving username/display_name to database
   const { updateSocialProfile, updateUsername } = useSocialStore();
 
-  // Dynamic sections based on selected mode
-  const sections = useMemo(() => getSections(gamificationMode), [gamificationMode]);
+  // Static sections - always use cosmic mode
+  const sections = SECTIONS;
 
   // Derived values
   const username = profile?.username || profile?.displayName || '';
@@ -236,9 +215,8 @@ export default function ImmersiveOnboarding() {
   // Handle final launch - async to ensure Supabase sync completes before navigating
   const handleLaunch = useCallback(async () => {
     feedback.achievement();
-    const finalMode = gamificationMode || 'cosmic';
-    setGamificationMode(finalMode);
-    setMode(finalMode);
+    // Always set cosmic mode
+    setMode('cosmic');
 
     // CRITICAL: Await completion to ensure Supabase sync finishes
     // This prevents the race condition where localStorage is set but DB isn't synced
@@ -247,7 +225,7 @@ export default function ImmersiveOnboarding() {
     // Navigate to dashboard after successful completion
     console.log('[Onboarding] ✨ Launch complete! Navigating to dashboard...');
     navigate('/', { replace: true });
-  }, [completeOnboarding, setGamificationMode, setMode, gamificationMode, navigate]);
+  }, [completeOnboarding, setMode, navigate]);
 
   // Track current section for progress indicator
   const handleSectionEnter = useCallback((sectionId) => {
@@ -312,8 +290,6 @@ export default function ImmersiveOnboarding() {
               setUsername={setUsername}
               selectedGoals={selectedGoals}
               setSelectedGoals={setSelectedGoals}
-              gamificationMode={gamificationMode}
-              setGamificationMode={setGamificationMode}
               characterGender={characterGender}
               setCharacterGender={setCharacterGender}
               skinTone={skinTone}
@@ -490,13 +466,17 @@ export default function ImmersiveOnboarding() {
 
         @media (max-width: 768px) {
           .immersive-progress {
-            right: 0.35rem;
-            gap: 6px;
+            right: 0.25rem;
+            gap: 4px;
           }
 
           .progress-dot {
-            width: 4px;
-            height: 4px;
+            width: 3px;
+            height: 3px;
+          }
+
+          .dot-pulse {
+            display: none;
           }
 
           .immersive-skip {
@@ -509,21 +489,17 @@ export default function ImmersiveOnboarding() {
 
         @media (max-width: 480px) {
           .immersive-progress {
-            right: 0.25rem;
-            gap: 5px;
+            right: 0.15rem;
+            gap: 3px;
           }
 
           .progress-dot {
-            width: 3px;
-            height: 3px;
-          }
-
-          .dot-pulse {
-            display: none;
+            width: 2px;
+            height: 2px;
           }
 
           .progress-dot.active .dot-inner {
-            box-shadow: 0 0 3px rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 2px rgba(139, 92, 246, 0.4);
           }
 
           .immersive-skip {

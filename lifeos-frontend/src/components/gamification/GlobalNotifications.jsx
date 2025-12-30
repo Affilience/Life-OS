@@ -61,11 +61,9 @@ export default function GlobalNotifications() {
     }
   }, [brokenStreakNotification, dismissBrokenStreak]);
 
-  // In minimal mode, don't show any notifications
-  if (mode === 'minimal') {
-    return null;
-  }
+  // Note: Notifications now show one at a time via the master queue in notificationStore
 
+  
   // Determine if XP toast should show (based on both visibility settings and user preferences)
   const shouldShowXP = currentXP &&
     visibility.showParticleEffects &&

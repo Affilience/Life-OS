@@ -1,5 +1,5 @@
 /**
- * LifeOS Perk Trees
+ * Ascynt Perk Trees
  * Research-based progression system inspired by Skyrim, Path of Exile, and Habitica
  *
  * Structure:

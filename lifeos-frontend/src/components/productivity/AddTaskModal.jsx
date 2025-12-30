@@ -4,7 +4,7 @@ import Modal from '../shared/Modal';
 const AddTaskModal = ({ onClose }) => {
   const [formData, setFormData] = useState({
     title: '',
-    project: 'Quanta',
+    project: 'Ascynt',
     priority: 'medium',
     dueDate: '',
     tags: ''
@@ -44,7 +44,7 @@ const AddTaskModal = ({ onClose }) => {
               onChange={(e) => handleInputChange('project', e.target.value)}
               className="form-select"
             >
-              <option>Quanta</option>
+              <option>Ascynt</option>
               <option>Client Portfolio</option>
               <option>Learning</option>
               <option>Personal</option>

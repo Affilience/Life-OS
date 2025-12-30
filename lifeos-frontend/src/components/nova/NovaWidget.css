@@ -249,10 +249,20 @@
   }
 
   .nova-expanded {
-    /* On mobile, use full width but keep JS-controlled vertical positioning */
-    width: calc(100% - 32px) !important;
-    left: 16px !important;
-    right: 16px !important;
+    /* On mobile, constrain width but allow JS-controlled positioning for dragging */
+    width: calc(100vw - 32px);
+    max-width: 400px;
+    /* Don't override left/right so dragging works */
+  }
+
+  .nova-header {
+    /* Make drag handle more visible on mobile */
+    padding: 14px 16px;
+    touch-action: none; /* Prevent scroll while dragging */
+  }
+
+  .nova-chat {
+    max-height: 280px;
   }
 }
 

@@ -25,10 +25,51 @@ let globalPositionsCache = null;
 let globalPositionsLoading = false;
 let globalPositionsListeners = [];
 
+// LocalStorage key for positions cache (instant load on mobile)
+const POSITIONS_CACHE_KEY = 'lifeos-equipment-positions-cache';
+
+// Get cached positions from localStorage (synchronous - for instant load)
+function getCachedPositions() {
+  try {
+    const cached = localStorage.getItem(POSITIONS_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      // Check if cache is less than 24 hours old
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+        return parsed.positions || {};
+      }
+    }
+  } catch (err) {
+    console.warn('[AvatarRenderer] Failed to load cached positions:', err);
+  }
+  return null;
+}
+
+// Save positions to localStorage cache
+function setCachedPositions(positions) {
+  try {
+    localStorage.setItem(POSITIONS_CACHE_KEY, JSON.stringify({
+      positions,
+      timestamp: Date.now()
+    }));
+  } catch (err) {
+    console.warn('[AvatarRenderer] Failed to cache positions:', err);
+  }
+}
+
 // Load global positions from Supabase (cached)
 async function loadGlobalPositions() {
-  // Return cached if available
+  // Return memory cache if available
   if (globalPositionsCache !== null) {
+    return globalPositionsCache;
+  }
+
+  // Try localStorage cache first (instant on mobile)
+  const cachedPositions = getCachedPositions();
+  if (cachedPositions && Object.keys(cachedPositions).length > 0) {
+    globalPositionsCache = cachedPositions;
+    // Still fetch from Supabase in background to update cache
+    fetchAndCachePositions();
     return globalPositionsCache;
   }
 
@@ -48,7 +89,7 @@ async function loadGlobalPositions() {
 
     if (error) {
       console.error('[AvatarRenderer] Failed to load global positions:', error);
-      globalPositionsCache = {};
+      globalPositionsCache = cachedPositions || {};
     } else if (data && data.length > 0) {
       globalPositionsCache = {};
       data.forEach(row => {
@@ -58,12 +99,14 @@ async function loadGlobalPositions() {
           scale: parseFloat(row.scale)
         };
       });
+      // Cache to localStorage for instant mobile load
+      setCachedPositions(globalPositionsCache);
     } else {
       globalPositionsCache = {};
     }
   } catch (err) {
     console.error('[AvatarRenderer] Error loading global positions:', err);
-    globalPositionsCache = {};
+    globalPositionsCache = cachedPositions || {};
   }
 
   globalPositionsLoading = false;
@@ -73,6 +116,30 @@ async function loadGlobalPositions() {
   globalPositionsListeners = [];
 
   return globalPositionsCache;
+}
+
+// Background fetch to update cache without blocking
+async function fetchAndCachePositions() {
+  try {
+    const { data, error } = await supabase
+      .from('equipment_default_positions')
+      .select('position_key, x, y, scale');
+
+    if (!error && data && data.length > 0) {
+      const newPositions = {};
+      data.forEach(row => {
+        newPositions[row.position_key] = {
+          x: parseFloat(row.x),
+          y: parseFloat(row.y),
+          scale: parseFloat(row.scale)
+        };
+      });
+      globalPositionsCache = newPositions;
+      setCachedPositions(newPositions);
+    }
+  } catch (err) {
+    // Silent fail - we already have cached data
+  }
 }
 
 // Helper to load an image with caching
@@ -101,8 +168,18 @@ function getLocalPositions() {
   }
 }
 
-// Always use Stage 10 Swordsman as base avatar
-const BASE_AVATAR_PATH = '/assets/avatar/base-evolution/hero_base_stage_10_swordsman.png';
+// Get the correct base avatar path based on gender and skin tone
+function getBaseAvatarPath(gender, skinTone) {
+  const prefix = gender === 'female' ? 'heroine' : 'hero';
+
+  // For white skin tone, use the base-evolution sprites (original high-quality sprites)
+  if (skinTone === 'white' || !skinTone) {
+    return `/assets/avatar/base-evolution/${prefix}_base_stage_10_swordsman.png`;
+  }
+
+  // For brown/black skin tones, use the diverse avatar sprites
+  return `/assets/avatar/diverse/${prefix}_stage_10_${skinTone}.png`;
+}
 
 // Default positions for equipment slots (on 256x256 canvas)
 // Character's right hand ≈ x:60 (viewer's left), left hand ≈ x:90 (viewer's right)
@@ -141,9 +218,12 @@ export default function AvatarRenderer({
 }) {
   const canvasRef = useRef(null);
   const [currentFrame, setCurrentFrame] = useState(0);
-  const [globalPositions, setGlobalPositions] = useState({});
+  // Initialize with cached positions for instant mobile render
+  const [globalPositions, setGlobalPositions] = useState(() => {
+    return getCachedPositions() || {};
+  });
 
-  // Load global positions from Supabase on mount
+  // Load global positions from Supabase on mount (updates cache)
   useEffect(() => {
     loadGlobalPositions().then(positions => {
       setGlobalPositions(positions);
@@ -261,9 +341,26 @@ export default function AvatarRenderer({
     };
 
     // Get positions: Global (Supabase) > Local (localStorage) > Defaults
+    // Positions are stored with gender_skinTone_ prefix (e.g., "male_white_legs/iron_legguards")
     const localPositions = getLocalPositions();
     const savedPositions = { ...localPositions, ...globalPositions };
     const savedKeys = Object.keys(savedPositions);
+
+    // Helper to get position key with gender/skin tone prefix
+    const genderKey = characterGender === 'female' ? 'female' : 'male';
+    const skinToneKey = skinTone || 'white';
+    const getPositionKey = (baseKey) => `${genderKey}_${skinToneKey}_${baseKey}`;
+
+    // Also try white positions as fallback if no position exists for current skin tone
+    const getPositionWithFallback = (baseKey) => {
+      const primaryKey = getPositionKey(baseKey);
+      if (savedPositions[primaryKey]) {
+        return savedPositions[primaryKey];
+      }
+      // Fallback to white skin tone positions
+      const fallbackKey = `${genderKey}_white_${baseKey}`;
+      return savedPositions[fallbackKey] || null;
+    };
 
     // Helper to extract base name from ID (remove prefix like "weapon_", "shield_", etc.)
     const getBaseName = (id, prefix) => {
@@ -284,8 +381,8 @@ export default function AvatarRenderer({
       // Extract base name to match saved position keys
       const baseName = getBaseName(weaponId, 'weapon');
 
-      // Weapons are saved without hand suffix (e.g., "weapons/sword_iron")
-      const savedPos = savedPositions[`weapons/${baseName}`];
+      // Weapons are saved with gender/skin tone prefix (e.g., "male_white_weapons/sword_iron")
+      const savedPos = getPositionWithFallback(`weapons/${baseName}`);
       if (savedPos) {
         // x < 75 = right hand (viewer's left), x >= 75 = left hand (viewer's right)
         return savedPos.x < 75 ? 'right' : 'left';
@@ -365,10 +462,17 @@ export default function AvatarRenderer({
         }
         positionKey = `chests/${baseName}`;
       } else if (slot === 'legs') {
-        folder = 'legs';
+        // Use female legs folder for female characters (narrower stance)
+        folder = characterGender === 'female' ? 'legs_female' : 'legs';
         if (item.sprite?.path) {
-          spritePath = item.sprite.path;
-          baseName = extractFilename(spritePath);
+          // Override sprite path for female characters
+          if (characterGender === 'female') {
+            baseName = extractFilename(item.sprite.path);
+            spritePath = `/assets/equipment/legs_female/${baseName}.png`;
+          } else {
+            spritePath = item.sprite.path;
+            baseName = extractFilename(spritePath);
+          }
         } else {
           baseName = getBaseName(item.id, 'legs');
           spritePath = `/assets/equipment/${folder}/${baseName}.png`;
@@ -390,8 +494,8 @@ export default function AvatarRenderer({
         positionKey = `${slot}/${item.id}`;
         spritePath = `/assets/equipment/${folder}/${baseName}.png`;
       }
-      // Get saved position or default
-      const savedPos = savedPositions[positionKey];
+      // Get saved position with gender/skin tone prefix or default
+      const savedPos = getPositionWithFallback(positionKey);
       const defaultKey = slot === 'offHand'
         ? `shields_${shieldHand}`
         : slot === 'mainHand'
@@ -432,8 +536,8 @@ export default function AvatarRenderer({
       try {
         // Check if cancelled before starting
         if (isCancelled) return;
-        // Always use stage 10 swordsman as base avatar
-        const baseSpriteUrl = BASE_AVATAR_PATH;
+        // Use the correct base avatar based on gender and skin tone
+        const baseSpriteUrl = getBaseAvatarPath(characterGender, skinTone);
 
         // Load all images in parallel
         const loadPromises = [
@@ -530,7 +634,7 @@ export default function AvatarRenderer({
     return () => {
       isCancelled = true;
     };
-  }, [currentFrame, level, prestige, equippedItems, visualEquipment, size, animate, showAvatarEffects, showParticleEffects, globalPositions]);
+  }, [currentFrame, level, prestige, equippedItems, visualEquipment, size, animate, showAvatarEffects, showParticleEffects, globalPositions, characterGender, skinTone]);
 
   return (
     <div className={`avatar-renderer ${className}`}>

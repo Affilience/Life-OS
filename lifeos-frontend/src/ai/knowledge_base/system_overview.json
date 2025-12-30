@@ -1,6 +1,6 @@
 {
-  "name": "LifeOS",
-  "description": "LifeOS is an integrated personal operating system for tracking productivity, fitness, learning, finances, journaling, calendar, and skills. All modules feed into a central timeline and analytics dashboard that reveals patterns and optimizes life.",
+  "name": "Ascynt",
+  "description": "Ascynt is an integrated personal operating system for tracking productivity, fitness, learning, finances, journaling, calendar, and skills. All modules feed into a central timeline and analytics dashboard that reveals patterns and optimizes life.",
   "core_modules": [
     "Dashboard",
     "Productivity",

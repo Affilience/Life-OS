@@ -186,7 +186,7 @@ export async function buildQuickContext(query, userId) {
 
   // Get minimal system knowledge
   const systemContext = systemKnowledgeService?.getMinimalContext?.() ||
-    'You are Nova, the AI companion for LifeOS. Be helpful, friendly, and concise.';
+    'You are Nova, the AI companion for Ascynt. Be helpful, friendly, and concise.';
 
   const fullContext = `${systemContext}\n\nUSER STATUS:\n${contextText}`;
 

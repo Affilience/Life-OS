@@ -799,6 +799,11 @@ export default function ImmersiveGamification({
   const [hasCompleted, setHasCompleted] = useState(false);
   const [visitedCards, setVisitedCards] = useState(new Set([0]));
 
+  // Touch swipe state
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const minSwipeDistance = 50;
+
   // Store callbacks in refs
   const onCompleteRef = useRef(onComplete);
   const onLockScrollRef = useRef(onLockScroll);
@@ -834,6 +839,28 @@ export default function ImmersiveGamification({
   const prevCard = useCallback(() => {
     goToCard(currentIndex - 1);
   }, [currentIndex, goToCard]);
+
+  // Touch handlers for swipe
+  const onTouchStart = useCallback((e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      nextCard();
+    } else if (isRightSwipe) {
+      prevCard();
+    }
+  }, [touchStart, touchEnd, nextCard, prevCard]);
 
   // Auto-play entrance animation when section comes into view
   useEffect(() => {
@@ -1026,6 +1053,9 @@ export default function ImmersiveGamification({
           ref={carouselRef}
           className="carousel-container"
           style={{ opacity: 0, perspective: '1200px' }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           {/* Navigation Arrows */}
           <button
@@ -1136,7 +1166,9 @@ export default function ImmersiveGamification({
 
         {/* Navigation hint */}
         <p ref={hintRef} className="carousel-hint" style={{ opacity: 0 }}>
-          Tap arrows or cards to explore • {currentIndex + 1} of {DEMOS.length}
+          <span className="hint-desktop">Tap arrows or cards to explore</span>
+          <span className="hint-mobile">Swipe to explore</span>
+          {' '}• {currentIndex + 1} of {DEMOS.length}
         </p>
 
         {/* Continue Button */}
@@ -1337,6 +1369,14 @@ export default function ImmersiveGamification({
           margin-top: 1rem;
         }
 
+        .hint-mobile {
+          display: none;
+        }
+
+        .hint-desktop {
+          display: inline;
+        }
+
         .continue-btn {
           display: flex;
           align-items: center;
@@ -1385,6 +1425,7 @@ export default function ImmersiveGamification({
 
           .carousel-container {
             height: 340px;
+            touch-action: pan-y;
           }
 
           .carousel-card {
@@ -1393,6 +1434,9 @@ export default function ImmersiveGamification({
 
           .card-content {
             height: 240px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
           }
 
           .carousel-nav {
@@ -1409,13 +1453,30 @@ export default function ImmersiveGamification({
           }
 
           .carousel-dots {
-            margin-top: 1rem;
-            gap: 0.5rem;
+            margin-top: 0.75rem;
+            gap: 6px;
           }
 
           .carousel-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
+          }
+
+          .carousel-dot-active {
+            transform: scale(1.3);
+          }
+
+          .carousel-hint {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+          }
+
+          .hint-mobile {
+            display: inline;
+          }
+
+          .hint-desktop {
+            display: none;
           }
         }
 
@@ -1444,22 +1505,42 @@ export default function ImmersiveGamification({
           }
 
           .card-inner {
-            padding: 0.875rem;
-            border-radius: 16px;
+            padding: 0.75rem;
+            border-radius: 14px;
           }
 
-          .card-content {
-            height: 220px;
+          .card-header {
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            gap: 0.5rem;
+          }
+
+          .card-icon {
+            width: 36px;
+            height: 36px;
+            padding: 6px;
           }
 
           .card-title {
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+          }
+
+          .card-description {
+            font-size: 0.65rem;
+          }
+
+          .card-content {
+            height: 200px;
           }
 
           .carousel-nav {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
+          }
+
+          .carousel-nav svg {
+            width: 16px;
+            height: 16px;
           }
 
           .carousel-nav-prev {
@@ -1469,15 +1550,44 @@ export default function ImmersiveGamification({
           .carousel-nav-next {
             right: 0;
           }
+
+          .carousel-dots {
+            margin-top: 0.5rem;
+            gap: 4px;
+          }
+
+          .carousel-dot {
+            width: 4px;
+            height: 4px;
+          }
+
+          .carousel-dot-active {
+            transform: scale(1.2);
+          }
+
+          .carousel-hint {
+            font-size: 0.7rem;
+          }
+
+          .continue-btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+          }
         }
 
         @media (max-width: 360px) {
           .carousel-card {
-            width: 220px;
+            width: 210px;
           }
 
           .card-content {
-            height: 200px;
+            height: 180px;
+          }
+
+          .carousel-dot {
+            width: 3px;
+            height: 3px;
           }
         }
       `}</style>

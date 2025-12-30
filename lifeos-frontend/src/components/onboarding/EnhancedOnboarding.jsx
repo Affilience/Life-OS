@@ -437,7 +437,7 @@ function WelcomeStep({ novaState, onContinue, onSkip }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          Welcome to LifeOS
+          Welcome to Ascynt
         </motion.h1>
 
         <motion.div
@@ -836,7 +836,7 @@ function CompletionStep({ novaState, xpEarned, selectedGoals, goals, commitment,
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        Enter LifeOS
+        Enter Ascynt
         <ChevronRight size={20} />
       </motion.button>
     </motion.div>

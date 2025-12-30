@@ -3,7 +3,7 @@
  *
  * Aggregates data from all Zustand stores to provide Nova with
  * comprehensive, real-time context about the user's activities,
- * progress, and patterns across the entire LifeOS ecosystem.
+ * progress, and patterns across the entire Ascynt ecosystem.
  */
 
 import { useMemo } from 'react';

@@ -221,7 +221,7 @@ export async function analyzeActivityConsistency() {
       leastUsedModule: leastUsed[0],
       moduleRanking: sortedModules.map(([module, count]) => ({ module, count })),
       insight: avgConsistency >= 4
-        ? "You're using LifeOS holistically! Great cross-module consistency."
+        ? "You're using Ascynt holistically! Great cross-module consistency."
         : avgConsistency >= 2.5
           ? `You're active in ${Math.round(avgConsistency)} modules on average. Try engaging with ${leastUsed[0]} more.`
           : `You're mostly focused on ${mostUsed[0]}. Consider expanding to other life areas.`,

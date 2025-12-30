@@ -7,7 +7,7 @@
  * - Weekly: 7-day objectives, higher rewards
  * - Monthly Epic: Major achievements spanning the month
  * - Quest Chains: Multi-part story-driven quest lines
- * - Cross-Module: Quests that span multiple LifeOS modules
+ * - Cross-Module: Quests that span multiple Ascynt modules
  */
 
 import { create } from 'zustand';

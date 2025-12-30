@@ -58,7 +58,7 @@ export default function GamificationModeStep({ onNext, isTransitioning }) {
             Choose Your Experience
           </h1>
           <p className="text-white/60">
-            This shapes your entire LifeOS journey
+            This shapes your entire Ascynt journey
           </p>
         </motion.div>
       )}

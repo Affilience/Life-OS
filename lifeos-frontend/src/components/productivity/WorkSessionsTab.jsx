@@ -295,9 +295,8 @@ export default function WorkSessionsTab() {
             description="Track your deep work sessions, build focus streaks, and understand your productivity patterns."
             actionLabel="Start Your First Session"
             onAction={() => {
-              if (selectedProject && selectedType) {
-                startSession(selectedProject, selectedType);
-              }
+              // Start a session with current type (project is optional)
+              startSession(selectedProject || null, selectedType || 'deep-work');
             }}
             variant="violet"
             size="md"

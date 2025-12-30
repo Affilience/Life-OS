@@ -226,12 +226,14 @@ export default function NovaWidget() {
       // Different constraints for expanded vs minimized
       if (isExpanded) {
         // Dragging the expanded chatbox
-        const chatWidth = 400;
-        const chatHeight = 480;
+        const isMobile = window.innerWidth <= 768;
+        const chatWidth = isMobile ? Math.min(window.innerWidth - 32, 400) : 400;
+        const chatHeight = isMobile ? 380 : 480;
         const padding = 16;
+        const bottomNavHeight = isMobile ? 80 : 0;
 
         const constrainedX = Math.max(padding, Math.min(newX, window.innerWidth - chatWidth - padding));
-        const constrainedY = Math.max(padding, Math.min(newY, window.innerHeight - chatHeight - padding));
+        const constrainedY = Math.max(padding, Math.min(newY, window.innerHeight - chatHeight - padding - bottomNavHeight));
 
         setExpandedPosition({
           x: constrainedX,

@@ -39,7 +39,7 @@ const ACCOUNTABILITY = [
   { id: 'self', icon: '🪞', label: 'Self-Accountability', description: 'I hold myself accountable' },
   { id: 'partner', icon: '🤝', label: 'Accountability Partner', description: 'Share with someone' },
   { id: 'public', icon: '📢', label: 'Public Commitment', description: 'Share goals openly' },
-  { id: 'app', icon: '📱', label: 'App Tracking Only', description: 'Let LifeOS track it' }
+  { id: 'app', icon: '📱', label: 'App Tracking Only', description: 'Let Ascynt track it' }
 ];
 
 export default function ResolutionsSetup({ onComplete, onSkip }) {

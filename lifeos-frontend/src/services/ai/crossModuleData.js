@@ -1,7 +1,7 @@
 /**
  * Cross-Module Data Service
  *
- * Provides COMPLETE access to ALL user data across the entire LifeOS system.
+ * Provides COMPLETE access to ALL user data across the entire Ascynt system.
  * This service aggregates data from all Zustand stores for use by Nova AI.
  *
  * Nova should have visibility into EVERY data point the user has entered.

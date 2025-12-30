@@ -24,12 +24,20 @@ import AbilityAnimation from '../combat/AbilityAnimation';
 import CombatCanvas from '../combat/CombatCanvas';
 import { Confetti, Fireworks, ScreenFlash, Starburst } from '../ui/Celebration';
 
-// Custom hook for anime.js screen shake
+// Custom hook for anime.js screen shake (reduced on mobile)
 const useScreenShake = (containerRef) => {
   const shake = useCallback((intensity = 'normal') => {
     if (!containerRef.current) return;
 
-    const intensities = {
+    const isMobile = isMobileDevice();
+
+    // Reduced shake on mobile for performance
+    const intensities = isMobile ? {
+      light: { x: 2, y: 1, duration: 150 },
+      normal: { x: 4, y: 3, duration: 200 },
+      heavy: { x: 8, y: 5, duration: 250 },
+      crit: { x: 10, y: 6, duration: 300 },
+    } : {
       light: { x: 3, y: 2, duration: 200 },
       normal: { x: 8, y: 5, duration: 300 },
       heavy: { x: 15, y: 10, duration: 400 },
@@ -42,24 +50,28 @@ const useScreenShake = (containerRef) => {
       translateX: [0, -config.x, config.x, -config.x / 2, config.x / 2, 0],
       translateY: [0, config.y / 2, -config.y / 2, config.y / 3, -config.y / 3, 0],
       duration: config.duration,
-      easing: 'easeOutElastic(1, 0.5)',
+      easing: isMobile ? 'easeOutQuad' : 'easeOutElastic(1, 0.5)',
     });
   }, [containerRef]);
 
   return shake;
 };
 
-// Custom hook for anime.js particle burst
+// Check if device is mobile (for performance optimizations)
+const isMobileDevice = () => window.innerWidth < 768;
+
+// Custom hook for anime.js particle burst (reduced on mobile for performance)
 const useParticleBurst = (containerRef) => {
   const burst = useCallback((x, y, options = {}) => {
     if (!containerRef.current) return;
 
+    const isMobile = isMobileDevice();
     const {
-      count = 12,
+      count = isMobile ? 6 : 12, // Fewer particles on mobile
       colors = ['#ffaa00', '#ff6600', '#ff3300'],
-      spread = 150,
-      duration = 600,
-      size = 6,
+      spread = isMobile ? 80 : 150, // Smaller spread on mobile
+      duration = isMobile ? 400 : 600, // Shorter duration on mobile
+      size = isMobile ? 4 : 6,
     } = options;
 
     const container = containerRef.current;
@@ -78,7 +90,7 @@ const useParticleBurst = (containerRef) => {
         left: ${x}px;
         top: ${y}px;
         z-index: 100;
-        box-shadow: 0 0 ${size}px ${color};
+        will-change: transform, opacity;
       `;
       container.appendChild(particle);
       particles.push(particle);
@@ -91,9 +103,9 @@ const useParticleBurst = (containerRef) => {
       translateY: (el, i) => Math.sin(angle(i)) * (spread * (0.5 + Math.random() * 0.5)),
       scale: [1, 0],
       opacity: [1, 0],
-      duration: () => duration + Math.random() * 200,
+      duration: () => duration + Math.random() * 100,
       easing: 'easeOutExpo',
-      delay: stagger(20),
+      delay: stagger(isMobile ? 10 : 20),
       complete: () => {
         particles.forEach(p => p.remove());
       },
@@ -111,7 +123,9 @@ const AnimeProjectile = ({ startX, startY, endX, endY, color, trailColor, isMagi
   useEffect(() => {
     if (!projectileRef.current) return;
 
-    // Create trail particles
+    const isMobile = isMobileDevice();
+
+    // Create trail particles (less frequent on mobile for performance)
     const createTrail = () => {
       if (!trailContainerRef.current || !projectileRef.current) return;
 
@@ -119,29 +133,32 @@ const AnimeProjectile = ({ startX, startY, endX, endY, color, trailColor, isMagi
       const containerRect = trailContainerRef.current.getBoundingClientRect();
 
       const trail = document.createElement('div');
+      const trailSize = isMobile ? (isCrit ? 5 : 3) : (isCrit ? 8 : 5);
       trail.style.cssText = `
         position: absolute;
-        width: ${isCrit ? 8 : 5}px;
-        height: ${isCrit ? 8 : 5}px;
+        width: ${trailSize}px;
+        height: ${trailSize}px;
         background: ${trailColor || color};
         border-radius: 50%;
         pointer-events: none;
         left: ${rect.left - containerRect.left + rect.width / 2}px;
         top: ${rect.top - containerRect.top + rect.height / 2}px;
         opacity: 0.8;
+        will-change: transform, opacity;
       `;
       trailContainerRef.current.appendChild(trail);
 
       animate(trail, {
         scale: [1, 0],
         opacity: [0.8, 0],
-        duration: 300,
+        duration: isMobile ? 200 : 300,
         easing: 'easeOutQuad',
         complete: () => trail.remove(),
       });
     };
 
-    const trailInterval = setInterval(createTrail, 30);
+    // Reduce trail frequency on mobile (60ms vs 30ms)
+    const trailInterval = setInterval(createTrail, isMobile ? 60 : 30);
 
     // Animate projectile movement
     animate(projectileRef.current, {
@@ -232,18 +249,21 @@ const BossProjectile = ({ boss, startY, endY, onComplete, onHit }) => {
   const attackType = boss?.attackAnimation || 'fireball';
 
   const getProjectileStyle = () => {
+    const isMobile = isMobileDevice();
+
     switch (attackType) {
       case 'fireball':
         return (
           <>
             <div
-              className="projectile-core w-12 h-12 rounded-full"
+              className={`projectile-core ${isMobile ? 'w-8 h-8' : 'w-12 h-12'} rounded-full`}
               style={{
                 background: `radial-gradient(circle, #ffff00 0%, ${color} 50%, #000 100%)`,
-                boxShadow: `0 0 30px ${color}, 0 0 60px ${color}`,
+                boxShadow: isMobile ? `0 0 15px ${color}` : `0 0 30px ${color}, 0 0 60px ${color}`,
               }}
             />
-            {[...Array(6)].map((_, i) => (
+            {/* Reduce particles on mobile for performance */}
+            {!isMobile && [...Array(6)].map((_, i) => (
               <div
                 key={i}
                 className="absolute w-3 h-3 rounded-full animate-ping"
@@ -260,26 +280,27 @@ const BossProjectile = ({ boss, startY, endY, onComplete, onHit }) => {
       case 'breath':
         return (
           <div
-            className="projectile-core w-20 h-10 rounded-full"
+            className={`projectile-core ${isMobile ? 'w-14 h-8' : 'w-20 h-10'} rounded-full`}
             style={{
               background: `linear-gradient(180deg, ${color}00, ${color}, ${color}00)`,
-              boxShadow: `0 0 25px ${color}`,
+              boxShadow: isMobile ? `0 0 15px ${color}` : `0 0 25px ${color}`,
             }}
           />
         );
       case 'spell':
       case 'dark_pulse':
         return (
-          <div className="projectile-core relative w-10 h-10">
-            {[...Array(4)].map((_, i) => (
+          <div className={`projectile-core relative ${isMobile ? 'w-8 h-8' : 'w-10 h-10'}`}>
+            {/* Reduce orbiting particles on mobile */}
+            {[...Array(isMobile ? 2 : 4)].map((_, i) => (
               <div
                 key={i}
-                className="absolute w-4 h-4 rounded-full"
+                className={`absolute ${isMobile ? 'w-3 h-3' : 'w-4 h-4'} rounded-full`}
                 style={{
                   backgroundColor: color,
-                  boxShadow: `0 0 15px ${color}`,
-                  top: `${Math.sin(i * 90 * Math.PI / 180) * 12 + 16}px`,
-                  left: `${Math.cos(i * 90 * Math.PI / 180) * 12 + 16}px`,
+                  boxShadow: isMobile ? `0 0 8px ${color}` : `0 0 15px ${color}`,
+                  top: `${Math.sin(i * (isMobile ? 180 : 90) * Math.PI / 180) * (isMobile ? 8 : 12) + (isMobile ? 12 : 16)}px`,
+                  left: `${Math.cos(i * (isMobile ? 180 : 90) * Math.PI / 180) * (isMobile ? 8 : 12) + (isMobile ? 12 : 16)}px`,
                 }}
               />
             ))}
@@ -288,20 +309,20 @@ const BossProjectile = ({ boss, startY, endY, onComplete, onHit }) => {
       case 'tentacle':
         return (
           <div
-            className="projectile-core w-6 h-20 rounded-full"
+            className={`projectile-core ${isMobile ? 'w-4 h-14' : 'w-6 h-20'} rounded-full`}
             style={{
               background: `linear-gradient(180deg, ${color}, #1e1b4b)`,
-              boxShadow: `0 0 20px ${color}`,
+              boxShadow: isMobile ? `0 0 12px ${color}` : `0 0 20px ${color}`,
             }}
           />
         );
       default:
         return (
           <div
-            className="projectile-core w-10 h-10 rounded-full"
+            className={`projectile-core ${isMobile ? 'w-8 h-8' : 'w-10 h-10'} rounded-full`}
             style={{
               background: `radial-gradient(circle, #fff 0%, ${color} 50%, transparent 100%)`,
-              boxShadow: `0 0 25px ${color}`,
+              boxShadow: isMobile ? `0 0 15px ${color}` : `0 0 25px ${color}`,
             }}
           />
         );
@@ -629,8 +650,31 @@ const PlayerAttackProjectile = ({ weaponAttack, isCrit, onComplete }) => {
 const BossAttackProjectile = ({ boss, onComplete }) => {
   const color = boss?.attackColor || '#ff0000';
   const attackAnimation = boss?.attackAnimation || 'fireball';
+  const isMobile = isMobileDevice();
 
-  // IMPRESSIVE projectile styles for each boss attack type
+  // SIMPLIFIED projectile for mobile (fewer particles, simpler animations)
+  if (isMobile) {
+    return (
+      <motion.div
+        initial={{ scale: 0, y: -100 }}
+        animate={{ scale: 1, y: 100 }}
+        exit={{ scale: 0, opacity: 0 }}
+        transition={{ duration: 0.4, ease: 'easeIn' }}
+        onAnimationComplete={onComplete}
+        className="relative w-12 h-12"
+      >
+        <div
+          className="w-full h-full rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${color} 0%, ${color}88 50%, transparent 100%)`,
+            boxShadow: `0 0 20px ${color}`,
+          }}
+        />
+      </motion.div>
+    );
+  }
+
+  // IMPRESSIVE projectile styles for each boss attack type (desktop only)
   const getProjectileStyle = () => {
     switch (attackAnimation) {
       // Shadow Slime - Despair Glob: Pulsating dark mass with shadow tendrils
@@ -1296,6 +1340,707 @@ const BossAttackProjectile = ({ boss, onComplete }) => {
                   y: [0, 20],
                 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // ========================================
+      // ENDGAME BOSS ATTACKS (Level 50+)
+      // ========================================
+
+      // Void Titan - Reality Tear: Massive void rift tearing through dimensions
+      case 'voidblast':
+        return (
+          <motion.div className="relative w-44 h-44">
+            {/* Central black hole vortex */}
+            <motion.div
+              className="absolute inset-4 rounded-full"
+              style={{
+                background: `conic-gradient(from 0deg, #000 0%, ${color} 25%, #000 50%, #4c1d95 75%, #000 100%)`,
+                boxShadow: `0 0 80px ${color}, inset 0 0 60px #000`,
+              }}
+              animate={{
+                rotate: [0, -360],
+                scale: [1, 1.15, 1],
+              }}
+              transition={{ duration: 0.6, ease: 'linear' }}
+            />
+            {/* Inner event horizon */}
+            <motion.div
+              className="absolute inset-12 rounded-full"
+              style={{
+                background: `radial-gradient(circle, #000 0%, ${color}80 100%)`,
+                boxShadow: `inset 0 0 40px ${color}`,
+              }}
+              animate={{ scale: [0.8, 1.2, 0.9] }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Reality cracks radiating outward */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute origin-center"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  width: 3,
+                  height: 60 + Math.random() * 30,
+                  background: `linear-gradient(to bottom, ${color}, #7c3aed, transparent)`,
+                  transform: `rotate(${i * 30}deg)`,
+                  boxShadow: `0 0 15px ${color}`,
+                }}
+                animate={{
+                  scaleY: [0, 1.3, 1],
+                  opacity: [0, 1, 0.7],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.02 }}
+              />
+            ))}
+            {/* Sucked-in matter particles */}
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={`matter-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  width: 3 + Math.random() * 5,
+                  height: 3 + Math.random() * 5,
+                  backgroundColor: i % 3 === 0 ? '#a855f7' : i % 3 === 1 ? '#7c3aed' : '#fff',
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  x: ['0%', `${50 - parseFloat(`${Math.random() * 100}`)}%`],
+                  y: ['0%', `${50 - parseFloat(`${Math.random() * 100}`)}%`],
+                  scale: [1, 0],
+                  opacity: [1, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.02 }}
+              />
+            ))}
+            {/* Dimensional rift rings */}
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={`rift-${i}`}
+                className="absolute left-1/2 top-1/2 rounded-full border-2"
+                style={{
+                  width: 20 + i * 25,
+                  height: 20 + i * 25,
+                  borderColor: i % 2 === 0 ? color : '#7c3aed',
+                  transform: 'translate(-50%, -50%)',
+                  borderStyle: 'dashed',
+                }}
+                animate={{
+                  rotate: i % 2 === 0 ? [0, 180] : [180, 0],
+                  scale: [0.5, 1.2],
+                  opacity: [0.8, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Celestial Guardian - Judgment Ray: Blinding divine light beam
+      case 'divinestrike':
+        return (
+          <motion.div className="relative w-40 h-48">
+            {/* Heavenly halo */}
+            <motion.div
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-8 rounded-full"
+              style={{
+                background: `linear-gradient(90deg, transparent, ${color}, #fff, ${color}, transparent)`,
+                boxShadow: `0 0 40px ${color}, 0 0 80px #fff`,
+              }}
+              animate={{
+                scaleX: [0.5, 1.2, 1],
+                opacity: [0, 1, 0.9],
+              }}
+              transition={{ duration: 0.3 }}
+            />
+            {/* Main judgment beam */}
+            <motion.div
+              className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-full origin-top"
+              style={{
+                background: `linear-gradient(180deg, #fff 0%, ${color} 20%, #fbbf24 50%, ${color} 80%, transparent 100%)`,
+                boxShadow: `0 0 60px ${color}, 0 0 100px #fff`,
+              }}
+              animate={{
+                scaleY: [0, 1.1, 1],
+                opacity: [0.5, 1, 0.9],
+              }}
+              transition={{ duration: 0.35 }}
+            />
+            {/* Inner pure white core */}
+            <motion.div
+              className="absolute top-6 left-1/2 -translate-x-1/2 w-8 h-3/4 origin-top"
+              style={{
+                background: `linear-gradient(180deg, #fff 0%, #fef9c3 50%, transparent 100%)`,
+              }}
+              animate={{
+                scaleY: [0, 1],
+                opacity: [1, 0.8],
+              }}
+              transition={{ duration: 0.3, delay: 0.05 }}
+            />
+            {/* Divine symbols floating */}
+            {['✦', '✧', '⟡', '◇', '⬡', '✦'].map((symbol, i) => (
+              <motion.div
+                key={i}
+                className="absolute text-xl font-bold"
+                style={{
+                  color: '#fff',
+                  textShadow: `0 0 20px ${color}, 0 0 40px #fff`,
+                  left: '50%',
+                  top: '20%',
+                }}
+                animate={{
+                  x: Math.cos((i * 60) * Math.PI / 180) * 50 - 10,
+                  y: 20 + i * 25,
+                  opacity: [0, 1, 0],
+                  scale: [0.5, 1.5, 0.8],
+                  rotate: [0, 360],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.04 }}
+              >
+                {symbol}
+              </motion.div>
+            ))}
+            {/* Light rays emanating */}
+            {[...Array(16)].map((_, i) => (
+              <motion.div
+                key={`ray-${i}`}
+                className="absolute origin-top"
+                style={{
+                  left: '50%',
+                  top: 0,
+                  width: 2,
+                  height: 30 + Math.random() * 20,
+                  background: `linear-gradient(to bottom, #fff, ${color}, transparent)`,
+                  transform: `translateX(-50%) rotate(${i * 22.5 - 180}deg)`,
+                }}
+                animate={{
+                  scaleY: [0, 1.5, 1],
+                  opacity: [0, 1, 0.6],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.015 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Archangel - Divine Wrath: Wings of holy fire descending
+      case 'holyfire':
+        return (
+          <motion.div className="relative w-48 h-44">
+            {/* Central angelic figure silhouette */}
+            <motion.div
+              className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-20"
+              style={{
+                background: `radial-gradient(ellipse at center, #fff 0%, ${color} 60%, transparent 100%)`,
+                clipPath: 'polygon(50% 0%, 100% 30%, 80% 100%, 20% 100%, 0% 30%)',
+                boxShadow: `0 0 50px ${color}`,
+              }}
+              animate={{ scale: [0.8, 1.1, 1], opacity: [0.5, 1, 0.9] }}
+              transition={{ duration: 0.3 }}
+            />
+            {/* Left wing of holy fire */}
+            <motion.div
+              className="absolute top-4 right-1/2 w-20 h-16 origin-right"
+              style={{
+                background: `linear-gradient(135deg, transparent 0%, ${color} 30%, #fff 60%, ${color} 90%, transparent 100%)`,
+                clipPath: 'polygon(0% 50%, 30% 0%, 100% 20%, 100% 80%, 30% 100%)',
+                boxShadow: `0 0 30px ${color}`,
+              }}
+              animate={{
+                rotate: [-20, -5, -15],
+                scaleX: [0.5, 1.2, 1],
+              }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Right wing of holy fire */}
+            <motion.div
+              className="absolute top-4 left-1/2 w-20 h-16 origin-left"
+              style={{
+                background: `linear-gradient(-135deg, transparent 0%, ${color} 30%, #fff 60%, ${color} 90%, transparent 100%)`,
+                clipPath: 'polygon(100% 50%, 70% 0%, 0% 20%, 0% 80%, 70% 100%)',
+                boxShadow: `0 0 30px ${color}`,
+              }}
+              animate={{
+                rotate: [20, 5, 15],
+                scaleX: [0.5, 1.2, 1],
+              }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Descending holy fire rain */}
+            {[...Array(24)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: 3 + Math.random() * 4,
+                  height: 10 + Math.random() * 15,
+                  background: `linear-gradient(to bottom, #fff, ${color}, #f97316)`,
+                  left: `${10 + Math.random() * 80}%`,
+                  top: '20%',
+                  boxShadow: `0 0 10px ${color}`,
+                }}
+                animate={{
+                  y: [0, 100 + Math.random() * 50],
+                  opacity: [1, 0.8, 0],
+                  scaleY: [1, 1.5, 0.5],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.015 }}
+              />
+            ))}
+            {/* Expanding halo rings */}
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={`halo-${i}`}
+                className="absolute left-1/2 top-8 -translate-x-1/2 rounded-full border-4"
+                style={{
+                  width: 40,
+                  height: 15,
+                  borderColor: i === 0 ? '#fff' : color,
+                }}
+                animate={{
+                  scale: [1, 2.5 + i * 0.5],
+                  opacity: [1, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Solar Emperor - Corona Blast: Devastating solar eruption
+      case 'solarflare':
+        return (
+          <motion.div className="relative w-48 h-48">
+            {/* Central sun core */}
+            <motion.div
+              className="absolute inset-8 rounded-full"
+              style={{
+                background: `radial-gradient(circle at 40% 40%, #fff 0%, #fef08a 20%, #fbbf24 40%, ${color} 70%, #dc2626 100%)`,
+                boxShadow: `0 0 80px ${color}, 0 0 150px #fbbf24, 0 0 200px #dc262680`,
+              }}
+              animate={{
+                scale: [1, 1.3, 1.15],
+              }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Solar flare eruptions */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute origin-bottom"
+                style={{
+                  left: '50%',
+                  bottom: '50%',
+                  width: 8 + Math.random() * 6,
+                  height: 50 + Math.random() * 40,
+                  background: `linear-gradient(to top, ${color}, #fbbf24, #fff, transparent)`,
+                  borderRadius: '50%',
+                  transform: `rotate(${i * 45}deg)`,
+                  boxShadow: `0 0 20px ${color}`,
+                }}
+                animate={{
+                  scaleY: [0.3, 1.5, 1],
+                  opacity: [0.5, 1, 0.8],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.03 }}
+              />
+            ))}
+            {/* Corona mass ejection particles */}
+            {[...Array(30)].map((_, i) => (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  width: 3 + Math.random() * 6,
+                  height: 3 + Math.random() * 6,
+                  backgroundColor: ['#fff', '#fef08a', '#fbbf24', color, '#dc2626'][Math.floor(Math.random() * 5)],
+                  left: '50%',
+                  top: '50%',
+                  boxShadow: '0 0 8px currentColor',
+                }}
+                animate={{
+                  x: (Math.random() - 0.5) * 200,
+                  y: (Math.random() - 0.5) * 200,
+                  opacity: [1, 0.5, 0],
+                  scale: [1, 0.3],
+                }}
+                transition={{ duration: 0.6, delay: i * 0.01 }}
+              />
+            ))}
+            {/* Plasma arcs */}
+            {[...Array(4)].map((_, i) => (
+              <svg key={`arc-${i}`} className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                <motion.path
+                  d={`M 50 50 Q ${30 + i * 10} ${20 - i * 5} ${10 + i * 20} ${50 + i * 10}`}
+                  stroke={i % 2 === 0 ? color : '#fbbf24'}
+                  strokeWidth="3"
+                  fill="none"
+                  style={{ filter: `drop-shadow(0 0 10px ${color})` }}
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: [0, 1, 0.8] }}
+                  transition={{ duration: 0.5, delay: i * 0.08 }}
+                />
+              </svg>
+            ))}
+            {/* Heat distortion waves */}
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={`wave-${i}`}
+                className="absolute inset-0 rounded-full"
+                style={{
+                  border: `2px solid ${color}40`,
+                }}
+                animate={{
+                  scale: [1, 2 + i * 0.5],
+                  opacity: [0.6, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Frost Monarch - Eternal Winter: Cataclysmic blizzard assault
+      case 'blizzard':
+        return (
+          <motion.div className="relative w-48 h-44">
+            {/* Central ice storm vortex */}
+            <motion.div
+              className="absolute inset-6 rounded-full"
+              style={{
+                background: `conic-gradient(from 0deg, #fff 0%, ${color} 25%, #e0f2fe 50%, ${color} 75%, #fff 100%)`,
+                boxShadow: `0 0 60px ${color}, inset 0 0 40px #fff`,
+              }}
+              animate={{
+                rotate: [0, 360],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{ duration: 0.6, ease: 'linear' }}
+            />
+            {/* Ice shards radiating */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  width: 0,
+                  height: 0,
+                  borderLeft: '6px solid transparent',
+                  borderRight: '6px solid transparent',
+                  borderBottom: `${30 + Math.random() * 20}px solid #e0f2fe`,
+                  transform: `rotate(${i * 30}deg)`,
+                  filter: `drop-shadow(0 0 10px ${color})`,
+                }}
+                animate={{
+                  y: [-20, -60 - Math.random() * 30],
+                  opacity: [0, 1, 0.5],
+                  scale: [0.5, 1.3, 1],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.025 }}
+              />
+            ))}
+            {/* Massive snowflake overlay */}
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center text-6xl"
+              style={{
+                color: '#fff',
+                textShadow: `0 0 30px ${color}, 0 0 60px #fff`,
+              }}
+              animate={{
+                rotate: [0, 60],
+                scale: [0.5, 1.2, 1],
+                opacity: [0, 1, 0.8],
+              }}
+              transition={{ duration: 0.5 }}
+            >
+              ❄
+            </motion.div>
+            {/* Swirling snow particles */}
+            {[...Array(40)].map((_, i) => (
+              <motion.div
+                key={`snow-${i}`}
+                className="absolute rounded-full bg-white"
+                style={{
+                  width: 2 + Math.random() * 4,
+                  height: 2 + Math.random() * 4,
+                  left: '50%',
+                  top: '50%',
+                  boxShadow: '0 0 5px #fff',
+                }}
+                animate={{
+                  x: (Math.random() - 0.5) * 180,
+                  y: (Math.random() - 0.5) * 180,
+                  opacity: [1, 0.5, 0],
+                  rotate: [0, 360],
+                }}
+                transition={{ duration: 0.6, delay: i * 0.01 }}
+              />
+            ))}
+            {/* Freezing mist rings */}
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={`mist-${i}`}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  width: 50 + i * 25,
+                  height: 50 + i * 25,
+                  background: `radial-gradient(circle, transparent 60%, ${color}40 100%)`,
+                }}
+                animate={{
+                  scale: [0.8, 1.5],
+                  opacity: [0.7, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Storm Lord - Tempest Fury: Apocalyptic thunderstorm
+      case 'thunderstorm':
+        return (
+          <motion.div className="relative w-48 h-48">
+            {/* Storm cloud mass */}
+            <motion.div
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-16"
+              style={{
+                background: `radial-gradient(ellipse at 50% 100%, #374151 0%, #1f2937 50%, #0f172a 100%)`,
+                borderRadius: '100px 100px 20px 20px',
+                boxShadow: `0 0 40px ${color}, 0 10px 30px #00000080`,
+              }}
+              animate={{
+                scaleX: [0.8, 1.1, 1],
+              }}
+              transition={{ duration: 0.3 }}
+            />
+            {/* Multiple lightning bolts */}
+            {[...Array(5)].map((_, i) => (
+              <svg
+                key={i}
+                className="absolute"
+                style={{
+                  left: `${15 + i * 15}%`,
+                  top: '10%',
+                  width: 30,
+                  height: 140,
+                  filter: `drop-shadow(0 0 20px ${color}) drop-shadow(0 0 40px #fff)`,
+                }}
+                viewBox="0 0 30 140"
+              >
+                <motion.path
+                  d={`M15 0 L20 30 L25 25 L18 60 L28 55 L15 100 L20 95 L10 140 L12 90 L5 95 L15 50 L8 55 L15 20 L10 25 Z`}
+                  fill={i === 2 ? '#fff' : color}
+                  initial={{ opacity: 0, pathLength: 0 }}
+                  animate={{
+                    opacity: [0, 1, 1, 0],
+                    pathLength: [0, 1, 1, 1],
+                  }}
+                  transition={{ duration: 0.4, delay: i * 0.06 }}
+                />
+              </svg>
+            ))}
+            {/* Electric orbs */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={`orb-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  width: 8 + Math.random() * 8,
+                  height: 8 + Math.random() * 8,
+                  background: `radial-gradient(circle, #fff 0%, ${color} 100%)`,
+                  left: `${20 + Math.random() * 60}%`,
+                  top: `${30 + Math.random() * 50}%`,
+                  boxShadow: `0 0 20px ${color}, 0 0 40px #fff`,
+                }}
+                animate={{
+                  scale: [0, 1.5, 0],
+                  opacity: [0, 1, 0],
+                }}
+                transition={{ duration: 0.3, delay: 0.1 + i * 0.04 }}
+              />
+            ))}
+            {/* Thunder shockwaves */}
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={`shock-${i}`}
+                className="absolute left-1/2 bottom-0 -translate-x-1/2 rounded-full border-4"
+                style={{
+                  width: 60,
+                  height: 30,
+                  borderColor: color,
+                }}
+                animate={{
+                  scale: [0.5, 3],
+                  opacity: [1, 0],
+                }}
+                transition={{ duration: 0.5, delay: 0.15 + i * 0.1 }}
+              />
+            ))}
+            {/* Rain streaks */}
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={`rain-${i}`}
+                className="absolute w-0.5 h-6 bg-blue-300"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: '15%',
+                  opacity: 0.6,
+                }}
+                animate={{
+                  y: [0, 120],
+                  opacity: [0.6, 0],
+                }}
+                transition={{ duration: 0.4, delay: i * 0.015 }}
+              />
+            ))}
+          </motion.div>
+        );
+
+      // Elemental King - Elemental Convergence: All elements combined
+      case 'elementalfury':
+        return (
+          <motion.div className="relative w-52 h-52">
+            {/* Central elemental core */}
+            <motion.div
+              className="absolute inset-8 rounded-full"
+              style={{
+                background: `conic-gradient(from 0deg, #ef4444 0%, #f97316 15%, #fbbf24 25%, #22c55e 40%, #06b6d4 55%, #3b82f6 70%, #8b5cf6 85%, ${color} 100%)`,
+                boxShadow: `0 0 60px ${color}, 0 0 100px #8b5cf6, 0 0 140px #3b82f6`,
+              }}
+              animate={{
+                rotate: [0, 360],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{ duration: 0.6, ease: 'linear' }}
+            />
+            {/* Inner white-hot fusion core */}
+            <motion.div
+              className="absolute inset-16 rounded-full"
+              style={{
+                background: `radial-gradient(circle, #fff 0%, ${color}80 100%)`,
+                boxShadow: `0 0 40px #fff`,
+              }}
+              animate={{ scale: [0.8, 1.3, 1] }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Fire eruption (top) */}
+            <motion.div
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-20 origin-bottom"
+              style={{
+                background: `linear-gradient(to top, #f97316, #ef4444, #fbbf24, transparent)`,
+                clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+                boxShadow: '0 0 20px #ef4444',
+              }}
+              animate={{ scaleY: [0.5, 1.3, 1], opacity: [0.5, 1, 0.8] }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Ice spear (bottom) */}
+            <motion.div
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-20 origin-top"
+              style={{
+                background: `linear-gradient(to bottom, #06b6d4, #38bdf8, #e0f2fe, transparent)`,
+                clipPath: 'polygon(50% 100%, 0% 0%, 100% 0%)',
+                boxShadow: '0 0 20px #06b6d4',
+              }}
+              animate={{ scaleY: [0.5, 1.3, 1], opacity: [0.5, 1, 0.8] }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Lightning bolt (left) */}
+            <motion.div
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-20 h-10 origin-right"
+              style={{
+                background: `linear-gradient(to left, #8b5cf6, #a855f7, #fff, transparent)`,
+                clipPath: 'polygon(0% 50%, 100% 0%, 100% 100%)',
+                boxShadow: '0 0 20px #8b5cf6',
+              }}
+              animate={{ scaleX: [0.5, 1.3, 1], opacity: [0.5, 1, 0.8] }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Earth spike (right) */}
+            <motion.div
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-20 h-10 origin-left"
+              style={{
+                background: `linear-gradient(to right, #22c55e, #65a30d, #84cc16, transparent)`,
+                clipPath: 'polygon(100% 50%, 0% 0%, 0% 100%)',
+                boxShadow: '0 0 20px #22c55e',
+              }}
+              animate={{ scaleX: [0.5, 1.3, 1], opacity: [0.5, 1, 0.8] }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Orbiting elemental particles */}
+            {[
+              { color: '#ef4444', offset: 0 },
+              { color: '#22c55e', offset: 90 },
+              { color: '#3b82f6', offset: 180 },
+              { color: '#fbbf24', offset: 270 },
+            ].map((elem, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-6 h-6 rounded-full"
+                style={{
+                  background: `radial-gradient(circle, #fff 0%, ${elem.color} 100%)`,
+                  left: '50%',
+                  top: '50%',
+                  boxShadow: `0 0 20px ${elem.color}`,
+                }}
+                animate={{
+                  x: [
+                    Math.cos((elem.offset) * Math.PI / 180) * 70 - 12,
+                    Math.cos((elem.offset + 180) * Math.PI / 180) * 70 - 12,
+                  ],
+                  y: [
+                    Math.sin((elem.offset) * Math.PI / 180) * 70 - 12,
+                    Math.sin((elem.offset + 180) * Math.PI / 180) * 70 - 12,
+                  ],
+                }}
+                transition={{ duration: 0.5 }}
+              />
+            ))}
+            {/* Chaos energy wisps */}
+            {[...Array(16)].map((_, i) => (
+              <motion.div
+                key={`wisp-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  width: 4 + Math.random() * 6,
+                  height: 4 + Math.random() * 6,
+                  backgroundColor: ['#ef4444', '#22c55e', '#3b82f6', '#8b5cf6', '#fbbf24'][Math.floor(Math.random() * 5)],
+                  left: '50%',
+                  top: '50%',
+                  boxShadow: '0 0 10px currentColor',
+                }}
+                animate={{
+                  x: (Math.random() - 0.5) * 180,
+                  y: (Math.random() - 0.5) * 180,
+                  opacity: [1, 0],
+                  scale: [1, 0.3],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.02 }}
+              />
+            ))}
+            {/* Convergence shockwave */}
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={`shock-${i}`}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderColor: ['#ef4444', '#22c55e', '#3b82f6', '#fbbf24'][i],
+                }}
+                animate={{
+                  scale: [1, 3],
+                  opacity: [1, 0],
+                }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
               />
             ))}
           </motion.div>
@@ -2000,6 +2745,23 @@ export default function BossBattleArena({ bossId, onClose }) {
 
   const [damageNumbers, setDamageNumbers] = useState([]);
   const [attackEffects, setAttackEffects] = useState([]);
+
+  // Performance: Limit max concurrent effects
+  const MAX_DAMAGE_NUMBERS = 8;
+  const MAX_EFFECTS = 5;
+
+  // Helper to add damage number with limit (prevents lag from too many)
+  const addDamageNumber = useCallback((damageData) => {
+    setDamageNumbers(prev => {
+      const newNumbers = [...prev, damageData];
+      // Keep only the most recent MAX_DAMAGE_NUMBERS
+      if (newNumbers.length > MAX_DAMAGE_NUMBERS) {
+        return newNumbers.slice(-MAX_DAMAGE_NUMBERS);
+      }
+      return newNumbers;
+    });
+  }, []);
+
   const [battleResult, setBattleResult] = useState(null);
   const [isCountdown, setIsCountdown] = useState(true);
   const [countdown, setCountdown] = useState(3);
@@ -2657,8 +3419,15 @@ export default function BossBattleArena({ bossId, onClose }) {
       {/* Main battle area - Diagonal layout like CombatDemo */}
       {!isCountdown && (
         <div className="h-full w-full flex items-center justify-center relative overflow-hidden">
-          {/* Fixed aspect ratio battle arena */}
-          <div className="relative w-full max-w-4xl aspect-[1000/600]" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
+          {/* Fixed aspect ratio battle arena - more vertical on mobile */}
+          <div
+            className={`relative w-full ${
+              dimensions.width < 768
+                ? 'h-full max-h-full' // Mobile: use full height, no aspect ratio constraint
+                : 'max-w-4xl aspect-[1000/600]'
+            }`}
+            style={{ maxHeight: dimensions.width >= 768 ? 'calc(100vh - 2rem)' : undefined }}
+          >
             {/* Anime.js Player Projectiles */}
             {playerProjectiles.map(proj => (
               <AnimeProjectile
@@ -2699,10 +3468,10 @@ export default function BossBattleArena({ bossId, onClose }) {
             ))}
 
             {/* Boss section - Responsive positioning to match attack coordinates */}
-            {/* Mobile: center-top, Desktop: top-right */}
+            {/* Mobile: center-top with smaller size, Desktop: top-right */}
             <div className={`absolute z-0 ${
               dimensions.width < 768
-                ? 'left-1/2 -translate-x-1/2 top-4'  // Mobile: centered at top
+                ? 'left-1/2 -translate-x-1/2 top-2 scale-90 origin-top'  // Mobile: centered, smaller
                 : 'right-4 top-2'                     // Desktop: top-right diagonal
             }`}>
             {/* Boss name and difficulty */}
@@ -2757,7 +3526,7 @@ export default function BossBattleArena({ bossId, onClose }) {
                   <img
                     src={boss?.sprite}
                     alt={boss?.name}
-                    className={`w-40 h-40 sm:w-52 sm:h-52 object-contain ${
+                    className={`w-28 h-28 sm:w-40 sm:h-40 md:w-52 md:h-52 object-contain ${
                       isRageMode && !battleEnded
                         ? 'drop-shadow-[0_0_40px_rgba(255,0,0,0.6)]'
                         : 'drop-shadow-[0_0_30px_rgba(255,0,0,0.3)]'
@@ -2819,9 +3588,11 @@ export default function BossBattleArena({ bossId, onClose }) {
             </motion.div>
             </div>
 
-          {/* Battle Controls - Bottom center */}
+          {/* Battle Controls - Bottom center, higher on mobile to avoid overlap */}
           {isBattleActive && !battleResult && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-black/30 backdrop-blur-sm rounded-2xl p-3">
+            <div className={`absolute left-1/2 -translate-x-1/2 z-10 bg-black/30 backdrop-blur-sm rounded-2xl p-2 sm:p-3 ${
+              dimensions.width < 768 ? 'bottom-2' : 'bottom-4'
+            }`}>
               {/* Attack and Ability Buttons */}
               <div className="flex gap-3 justify-center">
                 {/* Attack Button */}
@@ -2830,7 +3601,7 @@ export default function BossBattleArena({ bossId, onClose }) {
                   disabled={!isAttackReady}
                   whileHover={isAttackReady ? { scale: 1.05 } : {}}
                   whileTap={isAttackReady ? { scale: 0.95 } : {}}
-                  className={`px-6 py-3 rounded-2xl font-bold text-base transition-all ${
+                  className={`px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base transition-all ${
                     isAttackReady
                       ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
                       : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
@@ -2855,7 +3626,7 @@ export default function BossBattleArena({ bossId, onClose }) {
                     disabled={!canUseAbility}
                     whileHover={canUseAbility ? { scale: 1.05 } : {}}
                     whileTap={canUseAbility ? { scale: 0.95 } : {}}
-                    className={`px-6 py-3 rounded-2xl font-bold text-base transition-all ${
+                    className={`px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base transition-all ${
                       canUseAbility
                         ? 'text-white shadow-lg cursor-pointer'
                         : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
@@ -2960,18 +3731,18 @@ export default function BossBattleArena({ bossId, onClose }) {
           )}
 
           {/* Player section - Responsive positioning to match attack coordinates */}
-          {/* Mobile: center-bottom, Desktop: bottom-left */}
-          <div className={`absolute z-0 flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm ${
+          {/* Mobile: middle-center (between boss and controls), Desktop: bottom-left */}
+          <div className={`absolute z-0 flex items-center gap-2 sm:gap-4 p-2 sm:p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm ${
             dimensions.width < 768
-              ? 'left-1/2 -translate-x-1/2 bottom-28'  // Mobile: centered at bottom (above controls)
+              ? 'left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 scale-90'  // Mobile: centered vertically
               : 'left-8 bottom-8'                       // Desktop: bottom-left diagonal
           }`}>
             {/* Player avatar */}
-            <div className="w-20 h-20 relative flex-shrink-0">
+            <div className="w-14 h-14 sm:w-20 sm:h-20 relative flex-shrink-0">
               <AvatarRenderer
                 equipped={equipped}
                 characterGender={characterGender}
-                size={80}
+                size={dimensions.width < 768 ? 56 : 80}
                 showEffects={false}
               />
 

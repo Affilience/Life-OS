@@ -54,7 +54,7 @@ const getQuickActions = (mode) => {
     { id: 'journal', label: 'Journal', icon: PenLine, color: colors.journal, path: '/journal' },
     { id: 'learn', label: 'Learn', icon: BookOpen, color: colors.learn, path: '/knowledge' },
     { id: 'schedule', label: 'Schedule', icon: Calendar, color: colors.schedule, path: '/calendar' },
-    { id: 'goal', label: terms.task + 's', icon: Target, color: colors.goal, path: '/quests' },
+    { id: 'goal', label: terms.quest + 's', icon: Target, color: colors.goal, path: '/quests' },
     { id: 'expense', label: 'Expense', icon: Wallet, color: colors.expense, path: '/financial' },
   ];
 };

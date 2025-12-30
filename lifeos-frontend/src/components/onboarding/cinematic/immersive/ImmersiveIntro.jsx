@@ -192,7 +192,7 @@ export default function ImmersiveIntro({
   }, []);
 
   // Title characters
-  const titleText = 'Quanta';
+  const titleText = 'Ascynt';
   const titleChars = titleText.split('');
 
   return (

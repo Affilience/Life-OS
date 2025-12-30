@@ -92,7 +92,7 @@ export default function More() {
 
         {/* App Info */}
         <div className="text-center text-sm text-slate-500 pt-8">
-          <p>LifeOS v1.0.0</p>
+          <p>Ascynt v1.0.0</p>
           <p className="mt-1">Personal Operating System</p>
         </div>
       </div>

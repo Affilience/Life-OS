@@ -9,7 +9,7 @@ import PageHeader from '../components/shared/PageHeader';
  * Features:
  * - Real-time chat with Claude AI
  * - Streaming responses for better UX
- * - System knowledge about LifeOS
+ * - System knowledge about Ascynt
  * - Message history
  */
 
@@ -17,7 +17,7 @@ export default function AICompanion() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: '👋 Hey! I\'m your LifeOS AI companion. I understand the entire system—all modules, features, and where everything is. I can help you navigate, answer questions about your data, and provide personalized life coaching. What would you like to know?',
+      content: '👋 Hey! I\'m your Ascynt AI companion. I understand the entire system—all modules, features, and where everything is. I can help you navigate, answer questions about your data, and provide personalized life coaching. What would you like to know?',
       timestamp: new Date()
     }
   ]);
@@ -53,11 +53,11 @@ export default function AICompanion() {
     setStreamingText('');
 
     try {
-      // Build system prompt with LifeOS knowledge
-      const systemPrompt = `You are an AI life coach integrated into LifeOS, a comprehensive personal operating system.
+      // Build system prompt with Ascynt knowledge
+      const systemPrompt = `You are an AI life coach integrated into Ascynt, a comprehensive personal operating system.
 
 SYSTEM KNOWLEDGE:
-LifeOS has 11 core modules:
+Ascynt has 11 core modules:
 1. Dashboard (/) - Central hub with momentum indicators, module health, active quests
 2. Modules (/modules) - Overview of all modules
 3. Character (/character) - Avatar customisation, equipment, skill trees
@@ -87,7 +87,7 @@ GAMIFICATION:
 - Skill trees for progression
 
 Your role:
-- Help users navigate LifeOS ("Where do I log workouts?" → "Go to /health or use the 'Log Workout' quick action on the Dashboard")
+- Help users navigate Ascynt ("Where do I log workouts?" → "Go to /health or use the 'Log Workout' quick action on the Dashboard")
 - Explain features and modules
 - Provide life coaching and motivation
 - Answer questions about the system
@@ -159,7 +159,7 @@ Be concise, friendly, and helpful. Use emojis sparingly. Always provide specific
       <div className="border-b border-[#2a2a2a] bg-[#12101a] px-6 py-4">
         <PageHeader
           title="AI Companion"
-          subtitle="Your personal LifeOS assistant"
+          subtitle="Your personal Ascynt assistant"
           icon={MessageCircle}
           module="knowledge"
           variant="elevated"

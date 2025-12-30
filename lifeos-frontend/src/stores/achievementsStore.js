@@ -1,7 +1,7 @@
 /**
  * Achievements Store
  * Manages badges, achievements, and unlockable rewards
- * Integrates with questsStore, dailyTasksStore, and other LifeOS modules
+ * Integrates with questsStore, dailyTasksStore, and other Ascynt modules
  */
 
 import { create } from 'zustand';
@@ -1409,7 +1409,7 @@ export const ACHIEVEMENT_TEMPLATES = [
   {
     id: 'first_month',
     title: 'One Month In',
-    description: 'Use LifeOS for 30 days',
+    description: 'Use Ascynt for 30 days',
     category: 'milestones',
     rarity: 'common',
     icon: '📅',
@@ -1420,7 +1420,7 @@ export const ACHIEVEMENT_TEMPLATES = [
   {
     id: 'three_months',
     title: 'Quarter Year',
-    description: 'Use LifeOS for 90 days',
+    description: 'Use Ascynt for 90 days',
     category: 'milestones',
     rarity: 'uncommon',
     icon: '📅',
@@ -1431,7 +1431,7 @@ export const ACHIEVEMENT_TEMPLATES = [
   {
     id: 'six_months',
     title: 'Half Year Member',
-    description: 'Use LifeOS for 180 days',
+    description: 'Use Ascynt for 180 days',
     category: 'milestones',
     rarity: 'rare',
     icon: '🗓️',
@@ -1442,7 +1442,7 @@ export const ACHIEVEMENT_TEMPLATES = [
   {
     id: 'first_year',
     title: 'Annual Member',
-    description: 'Use LifeOS for 365 days',
+    description: 'Use Ascynt for 365 days',
     category: 'milestones',
     rarity: 'epic',
     icon: '🏆',
@@ -1530,6 +1530,76 @@ export const ACHIEVEMENT_TEMPLATES = [
     requirement: { type: 'all_modules_week', count: 1 },
     xpReward: 1500,
     creditsReward: 750,
+  },
+
+  // ========================================
+  // Equipment Unlock Achievements
+  // ========================================
+  {
+    id: 'dragon_legs',
+    title: 'Iron Legs',
+    description: 'Complete 100 leg-focused workouts',
+    category: 'health',
+    rarity: 'epic',
+    icon: '🦵',
+    requirement: { type: 'leg_workouts', count: 100 },
+    xpReward: 2500,
+    creditsReward: 1250,
+  },
+  {
+    id: 'fitness_elite',
+    title: 'Fitness Elite',
+    description: 'Complete 200 workouts and maintain a 30-day streak',
+    category: 'health',
+    rarity: 'legendary',
+    icon: '💎',
+    requirement: { type: 'fitness_elite', count: 1 },
+    xpReward: 5000,
+    creditsReward: 2500,
+  },
+  {
+    id: 'celestial_warrior',
+    title: 'Celestial Warrior',
+    description: 'Win 100 PvP battles and reach Platinum rank',
+    category: 'special',
+    rarity: 'legendary',
+    icon: '⚔️',
+    requirement: { type: 'pvp_celestial', count: 1 },
+    xpReward: 5000,
+    creditsReward: 2500,
+  },
+  {
+    id: 'cosmic_traveler',
+    title: 'Cosmic Traveler',
+    description: 'Reach Level 50 and unlock all skill trees',
+    category: 'milestones',
+    rarity: 'legendary',
+    icon: '🌌',
+    requirement: { type: 'cosmic_traveler', count: 1 },
+    xpReward: 5000,
+    creditsReward: 2500,
+  },
+  {
+    id: 'infernal_dedication',
+    title: 'Infernal Dedication',
+    description: 'Complete all daily tasks for 90 consecutive days',
+    category: 'streaks',
+    rarity: 'legendary',
+    icon: '🔥',
+    requirement: { type: 'daily_perfect_streak', count: 90 },
+    xpReward: 5000,
+    creditsReward: 2500,
+  },
+  {
+    id: 'celestial_guardian',
+    title: 'Celestial Guardian',
+    description: 'Help 50 community members through challenges or support',
+    category: 'special',
+    rarity: 'epic',
+    icon: '👼',
+    requirement: { type: 'community_help', count: 50 },
+    xpReward: 3000,
+    creditsReward: 1500,
   },
 ];
 

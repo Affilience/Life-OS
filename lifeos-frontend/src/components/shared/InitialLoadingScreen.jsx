@@ -71,7 +71,7 @@ const InitialLoadingScreen = ({ message = 'Preparing your journey' }) => {
 
       {/* Bottom branding */}
       <div className="loading-branding">
-        <span className="loading-brand-text">LifeOS</span>
+        <span className="loading-brand-text">Ascynt</span>
       </div>
     </div>
   );

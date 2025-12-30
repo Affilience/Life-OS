@@ -1,5 +1,5 @@
 /**
- * Regenerate chest armor pieces - cuts off at shoulders, no neck
+ * Regenerate Chest Armor - Flat 2D Front-Facing
  */
 
 import fs from 'fs';
@@ -12,70 +12,53 @@ const __dirname = path.dirname(__filename);
 const API_KEY = process.env.PIXELLAB_API_KEY || 'a611b2e1-f82b-41b4-b50a-4babde321f7d';
 const API_URL = 'https://api.pixellab.ai/v1/generate-image-pixflux';
 
+const BASE_DIR = path.join(__dirname, '../public/assets/equipment/chests');
+
+const NEGATIVE = '3D, perspective, angled, tilted, side view, turned, rotated, depth, arms, sleeves, mannequin, body, shoulders';
+
 const ITEMS = [
   {
-    filename: 'reinforced_breastplate',
-    description: `pixel art breastplate, steel chest armor piece, front view, ONLY shows chest and shoulder area, completely flat at top edge with NO neck hole NO collar NO neck opening, armor stops at shoulder line, flat 2D sprite overlay, single black outline, RPG equipment icon style, isolated armor piece floating`,
+    file: 'stormforged_breastplate.png',
+    name: 'Stormforged Breastplate',
+    prompt: 'pixel art FLAT chest armor icon, 2D FRONT VIEW ONLY like inventory icon, sleeveless steel breastplate with blue lightning crackling patterns, NO BODY NO ARMS just the armor piece itself lying flat, RPG game item sprite style, 64x64, transparent background',
   },
   {
-    filename: 'armor_plate',
-    description: `pixel art plate armor chestpiece, polished metal breastplate, front view, ONLY chest and shoulders visible, flat straight edge at top NO neck NO collar NO opening at top, armor ends at shoulder level, flat 2D game sprite, single black outline, medieval knight equipment, isolated floating armor piece`,
-  },
-  {
-    filename: 'cloth_tunic',
-    description: `pixel art brown cloth tunic, simple fabric shirt, front view, ONLY torso visible, flat edge at top at shoulder level NO neckline NO collar NO v-neck, shirt ends at shoulders, flat 2D game sprite overlay, single black outline, RPG starter equipment, isolated floating clothing piece`,
+    file: 'abyssal_cuirass.png',
+    name: 'Abyssal Cuirass',
+    prompt: 'pixel art FLAT chest armor icon, 2D FRONT VIEW ONLY like inventory icon, sleeveless dark teal breastplate with bioluminescent aqua glow patterns, NO BODY NO ARMS just the armor piece itself lying flat, RPG game item sprite style, 64x64, transparent background',
   },
 ];
 
-async function generate(item) {
-  console.log(`Regenerating ${item.filename}...`);
-
-  const negativeDescription = `neck, neckline, collar, v-neck, neck hole, neck opening, 3D, depth, hollow, dark hole, head, face, arms, legs, full body, person, background, realistic`;
-
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
-      },
-      body: JSON.stringify({
-        description: item.description,
-        negative_description: negativeDescription,
-        image_size: { width: 64, height: 64 },
-        text_guidance_scale: 10,
-        no_background: true,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API Error for ${item.filename}:`, response.status, errorText);
-      return false;
-    }
-
-    const data = await response.json();
-
-    if (data.image && data.image.base64) {
-      const outputPath = path.join(__dirname, `../public/assets/equipment/chests/${item.filename}.png`);
-      const base64Data = data.image.base64.replace(/^data:image\/png;base64,/, '');
-      const imageBuffer = Buffer.from(base64Data, 'base64');
-      fs.writeFileSync(outputPath, imageBuffer);
-      console.log(`✅ Saved ${item.filename} - Cost: $${data.usage?.usd?.toFixed(4) || 'N/A'}`);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error(`Failed ${item.filename}:`, error.message);
-    return false;
-  }
+async function generate(prompt) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      description: prompt,
+      negative_description: NEGATIVE,
+      image_size: { width: 64, height: 64 },
+      text_guidance_scale: 9,
+      no_background: true,
+    }),
+  });
+  if (!res.ok) throw new Error('API ' + res.status);
+  const data = await res.json();
+  return data.image.base64.replace(/^data:image\/png;base64,/, '');
 }
 
 async function main() {
+  console.log('🛡️ CHEST ARMOR - Flat 2D Front-Facing\n');
+  
   for (const item of ITEMS) {
-    await generate(item);
-    // Wait between requests to avoid rate limiting
-    await new Promise(r => setTimeout(r, 4000));
+    process.stdout.write(item.name + '... ');
+    try {
+      const img = await generate(item.prompt);
+      fs.writeFileSync(path.join(BASE_DIR, item.file), Buffer.from(img, 'base64'));
+      console.log('✅');
+      await new Promise(r => setTimeout(r, 3000));
+    } catch (e) {
+      console.log('❌ ' + e.message);
+    }
   }
   console.log('\nDone!');
 }

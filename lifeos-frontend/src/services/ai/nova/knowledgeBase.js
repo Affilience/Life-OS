@@ -1,7 +1,7 @@
 /**
  * Nova Knowledge Base
  *
- * Comprehensive system knowledge that Nova uses to understand LifeOS.
+ * Comprehensive system knowledge that Nova uses to understand Ascynt.
  * This enables Nova to answer questions about features, mechanics,
  * unlocks, troubleshooting, and navigation with accuracy.
  */
@@ -157,7 +157,7 @@ export const GAMEPLAY_MECHANICS = {
     name: 'Streak System',
     description: 'Consecutive days of activity. Breaking a streak resets it to 0.',
     types: {
-      global: 'Any activity on LifeOS counts',
+      global: 'Any activity on Ascynt counts',
       module: 'Specific to each module (fitness, journal, etc.)',
       custom: 'User-defined habits to track',
     },

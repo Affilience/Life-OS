@@ -1184,7 +1184,7 @@ export default function Settings() {
 
         {/* Version Info */}
         <div className="text-center text-sm text-text-muted pt-4">
-          <p>LifeOS v1.0.0 Beta</p>
+          <p>Ascynt v1.0.0 Beta</p>
         </div>
       </div>
     </div>

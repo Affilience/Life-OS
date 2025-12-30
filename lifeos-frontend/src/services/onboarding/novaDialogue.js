@@ -159,7 +159,7 @@ export const DIALOGUE = {
   },
 
   dashboardReveal: {
-    intro: "Welcome to YOUR LifeOS!",
+    intro: "Welcome to YOUR Ascynt!",
     explanation: "This is your dashboard - everything in one place. I've personalized it based on what matters to you.",
     closing: "I'll be right here whenever you need me. Just tap my icon anytime!",
     celebration: "Look at you! You're all set up and ready to take on the world! 🎉"

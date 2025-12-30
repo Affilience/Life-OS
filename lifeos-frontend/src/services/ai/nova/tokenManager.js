@@ -15,7 +15,7 @@ const TOKENS_PER_CHAR = 0.25; // ~4 chars per token average
 const CONTEXT_BUDGET = {
   TOTAL_MAX: 8000, // Stay well under model limits for speed
   SYSTEM_PROMPT: 1500, // Nova's personality + guidelines
-  SYSTEM_KNOWLEDGE: 1500, // LifeOS documentation
+  SYSTEM_KNOWLEDGE: 1500, // Ascynt documentation
   USER_DATA: 1500, // Current state from stores
   MEMORIES: 1000, // Learned facts + patterns
   CORRELATIONS: 500, // Cross-module insights

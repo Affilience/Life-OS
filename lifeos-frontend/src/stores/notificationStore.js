@@ -2,6 +2,11 @@
  * Notification Store
  * Manages notifications for achievements, XP gains, level ups, and other feedback
  * Provides a centralized queue for all gamification notifications
+ *
+ * QUEUE SYSTEM:
+ * - All notifications go into a master queue
+ * - Only one notification shows at a time
+ * - Priority: levelUp > achievement > streak > xp > brokenStreak
  */
 
 import { create } from 'zustand';
@@ -9,6 +14,15 @@ import { create } from 'zustand';
 // Track shown achievement IDs to prevent duplicates
 const shownAchievementIds = new Set();
 const recentXPGains = []; // Track recent XP gains to merge quick successive gains
+
+// Notification priority (higher = more important, shows first)
+const NOTIFICATION_PRIORITY = {
+  levelUp: 100,
+  achievement: 80,
+  streak: 60,
+  xp: 40,
+  brokenStreak: 20,
+};
 
 // Helper to add to notification history (imported dynamically to avoid circular deps)
 let addToHistory = null;
@@ -21,6 +35,12 @@ const getHistoryStore = async () => {
 };
 
 export const useNotificationStore = create((set, get) => ({
+  // Master queue for all notifications (sorted by priority)
+  masterQueue: [],
+
+  // Currently showing notification type (only one at a time)
+  activeNotificationType: null,
+
   // Achievement notifications queue
   achievementQueue: [],
   currentAchievement: null,
@@ -51,10 +71,6 @@ export const useNotificationStore = create((set, get) => ({
       notificationId: `${achievement.id}-${Date.now()}`,
     };
 
-    set(state => ({
-      achievementQueue: [...state.achievementQueue, notificationData],
-    }));
-
     // Add to persistent history
     try {
       const addFn = await getHistoryStore();
@@ -75,30 +91,19 @@ export const useNotificationStore = create((set, get) => ({
       console.warn('[NotificationStore] Could not add to history:', err);
     }
 
-    // If nothing is currently showing, show this one
-    if (!get().currentAchievement) {
-      get().showNextAchievement();
-    }
+    // Add to master queue (will show when it's this notification's turn)
+    get()._addToMasterQueue('achievement', notificationData);
   },
 
-  // Show next achievement in queue
+  // Show next achievement in queue (legacy - now handled by master queue)
   showNextAchievement: () => {
-    const { achievementQueue } = get();
-    if (achievementQueue.length > 0) {
-      const [next, ...rest] = achievementQueue;
-      set({ currentAchievement: next, achievementQueue: rest });
-    } else {
-      set({ currentAchievement: null });
-    }
+    // No longer used - master queue handles this
   },
 
   // Dismiss current achievement notification
   dismissAchievement: () => {
     set({ currentAchievement: null });
-    // Small delay before showing next to allow animation
-    setTimeout(() => {
-      get().showNextAchievement();
-    }, 300);
+    get()._onNotificationDismissed();
   },
 
   // ==========================================
@@ -146,34 +151,19 @@ export const useNotificationStore = create((set, get) => ({
       recentXPGains.shift();
     }
 
-    set(state => ({
-      xpQueue: [...state.xpQueue, notification],
-    }));
-
-    // If nothing is currently showing, show this one
-    if (!get().currentXP) {
-      get().showNextXP();
-    }
+    // Add to master queue
+    get()._addToMasterQueue('xp', notification);
   },
 
-  // Show next XP notification in queue
+  // Show next XP notification in queue (legacy - now handled by master queue)
   showNextXP: () => {
-    const { xpQueue } = get();
-    if (xpQueue.length > 0) {
-      const [next, ...rest] = xpQueue;
-      set({ currentXP: next, xpQueue: rest });
-    } else {
-      set({ currentXP: null });
-    }
+    // No longer used - master queue handles this
   },
 
   // Dismiss current XP notification
   dismissXP: () => {
     set({ currentXP: null });
-    // Small delay before showing next
-    setTimeout(() => {
-      get().showNextXP();
-    }, 100);
+    get()._onNotificationDismissed();
   },
 
   // ==========================================
@@ -191,12 +181,10 @@ export const useNotificationStore = create((set, get) => ({
       tierUp: false,
     };
 
-    set({
-      levelUpNotification: {
-        ...levelData,
-        timestamp,
-      }
-    });
+    const notificationData = {
+      ...levelData,
+      timestamp,
+    };
 
     // Add to persistent history
     try {
@@ -213,11 +201,15 @@ export const useNotificationStore = create((set, get) => ({
     } catch (err) {
       console.warn('[NotificationStore] Could not add level up to history:', err);
     }
+
+    // Add to master queue (high priority - shows first)
+    get()._addToMasterQueue('levelUp', notificationData);
   },
 
   // Dismiss level up notification
   dismissLevelUp: () => {
     set({ levelUpNotification: null });
+    get()._onNotificationDismissed();
   },
 
   // ==========================================
@@ -238,8 +230,6 @@ export const useNotificationStore = create((set, get) => ({
       timestamp,
     };
 
-    set({ streakCelebration: streakData });
-
     // Add to persistent history
     try {
       const addFn = await getHistoryStore();
@@ -256,11 +246,15 @@ export const useNotificationStore = create((set, get) => ({
     } catch (err) {
       console.warn('[NotificationStore] Could not add streak to history:', err);
     }
+
+    // Add to master queue
+    get()._addToMasterQueue('streak', streakData);
   },
 
   // Dismiss streak celebration
   dismissStreakCelebration: () => {
     set({ streakCelebration: null });
+    get()._onNotificationDismissed();
   },
 
   // ==========================================
@@ -291,12 +285,76 @@ export const useNotificationStore = create((set, get) => ({
           timestamp,
         };
 
-    set({ brokenStreakNotification: notification });
+    // Add to master queue (lowest priority)
+    get()._addToMasterQueue('brokenStreak', notification);
   },
 
   // Dismiss broken streak notification
   dismissBrokenStreak: () => {
     set({ brokenStreakNotification: null });
+    get()._onNotificationDismissed();
+  },
+
+  // ==========================================
+  // MASTER QUEUE MANAGEMENT
+  // ==========================================
+
+  // Add notification to master queue with priority
+  _addToMasterQueue: (type, data) => {
+    const priority = NOTIFICATION_PRIORITY[type] || 0;
+    const item = { type, data, priority, timestamp: Date.now() };
+
+    set(state => {
+      const newQueue = [...state.masterQueue, item]
+        .sort((a, b) => b.priority - a.priority || a.timestamp - b.timestamp);
+      return { masterQueue: newQueue };
+    });
+
+    // If nothing is currently showing, process the queue
+    if (!get().activeNotificationType) {
+      get()._processNextInQueue();
+    }
+  },
+
+  // Process the next notification in the master queue
+  _processNextInQueue: () => {
+    const { masterQueue, activeNotificationType } = get();
+
+    // Don't process if something is already showing
+    if (activeNotificationType) return;
+
+    if (masterQueue.length === 0) return;
+
+    const [next, ...rest] = masterQueue;
+    set({ masterQueue: rest, activeNotificationType: next.type });
+
+    // Show the notification based on type
+    switch (next.type) {
+      case 'levelUp':
+        set({ levelUpNotification: next.data });
+        break;
+      case 'achievement':
+        set({ currentAchievement: next.data });
+        break;
+      case 'streak':
+        set({ streakCelebration: next.data });
+        break;
+      case 'xp':
+        set({ currentXP: next.data });
+        break;
+      case 'brokenStreak':
+        set({ brokenStreakNotification: next.data });
+        break;
+    }
+  },
+
+  // Called when a notification is dismissed - process next in queue
+  _onNotificationDismissed: () => {
+    set({ activeNotificationType: null });
+    // Small delay before showing next to allow exit animation
+    setTimeout(() => {
+      get()._processNextInQueue();
+    }, 300);
   },
 
   // ==========================================
@@ -306,6 +364,8 @@ export const useNotificationStore = create((set, get) => ({
   // Clear all notifications
   clearAll: () => {
     set({
+      masterQueue: [],
+      activeNotificationType: null,
       achievementQueue: [],
       currentAchievement: null,
       xpQueue: [],
