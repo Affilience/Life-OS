@@ -73,6 +73,12 @@ const WidgetWrapper = forwardRef(function WidgetWrapper({
               setIsDragging(true);
             }}
             onMouseUp={() => setIsDragging(false)}
+            onTouchStart={(e) => {
+              // Only set dragging if we're not touching a button
+              if (e.target.closest('button')) return;
+              setIsDragging(true);
+            }}
+            onTouchEnd={() => setIsDragging(false)}
           >
             {/* Left side - drag indicator */}
             <div className="flex items-center gap-2">

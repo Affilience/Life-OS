@@ -733,7 +733,27 @@ export default function FeatureTour() {
           rect.right <= window.innerWidth;
 
         if (!isInViewport) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // First, check if element is inside a horizontally scrollable container
+          let scrollableParent = element.parentElement;
+          while (scrollableParent) {
+            const style = window.getComputedStyle(scrollableParent);
+            if (style.overflowX === 'auto' || style.overflowX === 'scroll') {
+              // Scroll the element into view within its scrollable parent
+              const parentRect = scrollableParent.getBoundingClientRect();
+              const elementRect = element.getBoundingClientRect();
+
+              if (elementRect.left < parentRect.left || elementRect.right > parentRect.right) {
+                // Element is horizontally off-screen in its container
+                element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+              }
+              break;
+            }
+            scrollableParent = scrollableParent.parentElement;
+          }
+
+          // Also scroll main page if needed
+          element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+
           // Recalculate after scroll
           setTimeout(() => {
             const newRect = element.getBoundingClientRect();

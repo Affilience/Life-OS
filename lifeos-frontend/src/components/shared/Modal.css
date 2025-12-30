@@ -118,6 +118,16 @@
 
 .modal-body {
   padding: var(--space-6);
+  overflow-y: auto;
+  max-height: calc(90vh - 80px);
+}
+
+@media (max-width: 639px) {
+  .modal-body {
+    max-height: calc(85vh - 60px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Animation states */

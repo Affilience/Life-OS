@@ -190,12 +190,13 @@
 
 @media (max-width: 480px) {
   .simple-journal-container {
-    padding: 20px 12px;
+    padding: 20px 8px;
     padding-bottom: 140px;
   }
 
   .journal-book-view {
-    max-width: 100%;
+    max-width: calc(100vw - 16px);
+    width: calc(100vw - 16px);
     height: 500px;
   }
 

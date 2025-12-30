@@ -719,9 +719,9 @@ export default function ImmersiveGoals({
         @media (max-width: 640px) {
           .goals-content {
             padding: 1rem;
-            padding-top: 2rem;
-            justify-content: flex-start;
-            padding-bottom: 4rem;
+            padding-top: 4rem;
+            justify-content: center;
+            padding-bottom: 6rem;
           }
 
           .goals-title {
@@ -731,12 +731,12 @@ export default function ImmersiveGoals({
 
           .goals-subtitle {
             font-size: 0.85rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
           }
 
           .goals-orbs-container {
-            width: min(300px, 80vw);
-            height: min(300px, 80vw);
+            width: min(280px, 75vw);
+            height: min(280px, 75vw);
             margin: 0 auto;
           }
 
@@ -768,7 +768,7 @@ export default function ImmersiveGoals({
           }
 
           .goals-instruction {
-            margin-top: 1rem;
+            margin-top: 2rem;
           }
 
           .progress-star {
@@ -783,7 +783,8 @@ export default function ImmersiveGoals({
         @media (max-width: 380px) {
           .goals-content {
             padding: 0.75rem;
-            padding-top: 1.5rem;
+            padding-top: 3.5rem;
+            padding-bottom: 5rem;
           }
 
           .goals-title {
@@ -792,11 +793,12 @@ export default function ImmersiveGoals({
 
           .goals-subtitle {
             font-size: 0.8rem;
+            margin-bottom: 1rem;
           }
 
           .goals-orbs-container {
-            width: min(260px, 75vw);
-            height: min(260px, 75vw);
+            width: min(240px, 70vw);
+            height: min(240px, 70vw);
           }
 
           .orb-core {
@@ -824,6 +826,10 @@ export default function ImmersiveGoals({
           .goal-orb {
             margin-left: -22.5px;
             margin-top: -22.5px;
+          }
+
+          .goals-instruction {
+            margin-top: 1.5rem;
           }
 
           .progress-star {

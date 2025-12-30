@@ -14,14 +14,14 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Character options
+// Character options - using stage 10 (swordsman) as base for mature look
 const CHARACTERS = [
   {
     id: 'male',
     name: 'Hero',
     tagline: 'Champion of Light',
     description: 'A brave warrior destined for greatness.',
-    sprite: '/assets/avatar/base-evolution/hero_base_stage_1_dreamer.png',
+    sprite: '/assets/avatar/base-evolution/hero_base_stage_10_swordsman.png',
     previewSprite: '/assets/avatar/base-evolution/hero_base_stage_20_veteran.png',
     gradient: 'from-blue-500 via-cyan-500 to-teal-500',
     glowColor: 'rgba(59, 130, 246, 0.4)',
@@ -32,7 +32,7 @@ const CHARACTERS = [
     name: 'Heroine',
     tagline: 'Guardian of Dawn',
     description: 'A fierce protector of the realm.',
-    sprite: '/assets/avatar/base-evolution/heroine_base_stage_1_dreamer.png',
+    sprite: '/assets/avatar/base-evolution/heroine_base_stage_10_swordsman.png',
     previewSprite: '/assets/avatar/base-evolution/heroine_base_stage_20_veteran.png',
     gradient: 'from-pink-500 via-purple-500 to-violet-500',
     glowColor: 'rgba(236, 72, 153, 0.4)',

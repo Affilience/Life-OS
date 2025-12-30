@@ -32,6 +32,7 @@ import { sounds } from '../../services/microInteractions';
 import AbilityAnimation from '../combat/AbilityAnimation';
 import CombatCanvas from '../combat/CombatCanvas';
 import AvatarRenderer from '../avatar/AvatarRenderer';
+import AbilityIcon from '../ui/AbilityIcon';
 
 // Damage number floating animation
 const DamageNumber = ({ damage, x, y, isCrit, isPlayer }) => (
@@ -1288,7 +1289,7 @@ export default function PvPArena({ onClose }) {
                         />
                       )}
                       <div className="flex flex-col items-center gap-1">
-                        <span className="text-xl">{ability.icon}</span>
+                        <AbilityIcon ability={ability} size="md" />
                         <span className={`text-xs font-bold ${isReady ? 'text-white' : 'text-gray-400'}`}>
                           {ability.name.split(' ')[0]}
                         </span>

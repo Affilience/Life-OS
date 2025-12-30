@@ -22,6 +22,7 @@ import { playBossAttack } from '../../services/combatSounds';
 import AvatarRenderer from '../avatar/AvatarRenderer';
 import AbilityAnimation from '../combat/AbilityAnimation';
 import CombatCanvas from '../combat/CombatCanvas';
+import AbilityIcon from '../ui/AbilityIcon';
 import { Confetti, Fireworks, ScreenFlash, Starburst } from '../ui/Celebration';
 
 // Custom hook for anime.js screen shake (reduced on mobile)
@@ -3690,7 +3691,7 @@ export default function BossBattleArena({ bossId, onClose }) {
                           />
                         )}
                         <div className="flex flex-col items-center gap-1">
-                          <span className="text-xl">{ability.icon}</span>
+                          <AbilityIcon ability={ability} size="md" />
                           <span className={`text-xs font-bold ${isReady ? 'text-white' : 'text-gray-400'}`}>
                             {ability.name.split(' ')[0]}
                           </span>
@@ -3731,12 +3732,13 @@ export default function BossBattleArena({ bossId, onClose }) {
           )}
 
           {/* Player section - Responsive positioning to match attack coordinates */}
-          {/* Mobile: middle-center (between boss and controls), Desktop: bottom-left */}
+          {/* Mobile: 65% down to match attack target (playerY: 0.72), Desktop: bottom-left */}
           <div className={`absolute z-0 flex items-center gap-2 sm:gap-4 p-2 sm:p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm ${
             dimensions.width < 768
-              ? 'left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 scale-90'  // Mobile: centered vertically
+              ? 'left-1/2 -translate-x-1/2 scale-90'  // Mobile: horizontally centered
               : 'left-8 bottom-8'                       // Desktop: bottom-left diagonal
-          }`}>
+          }`}
+          style={dimensions.width < 768 ? { top: '65%', transform: 'translateX(-50%) translateY(-50%)' } : {}}>
             {/* Player avatar */}
             <div className="w-14 h-14 sm:w-20 sm:h-20 relative flex-shrink-0">
               <AvatarRenderer

@@ -220,6 +220,7 @@ export async function initializeNewUser(userId, email) {
 /**
  * Safe wrapper for getSession that won't hang indefinitely
  * Uses Promise.race with a timeout to guarantee resolution
+ * On timeout, attempts to restore session from localStorage
  */
 async function safeGetSession(timeoutMs = 5000) {
   try {
@@ -232,6 +233,42 @@ async function safeGetSession(timeoutMs = 5000) {
         }, timeoutMs)
       ),
     ]);
+
+    // If we got a session, return it
+    if (result.data?.session) {
+      return result;
+    }
+
+    // If timed out, check if we have a stored session and try to restore it
+    if (result.timedOut) {
+      const storedAuth = localStorage.getItem('lifeos-auth');
+      if (storedAuth) {
+        try {
+          const parsed = JSON.parse(storedAuth);
+          if (parsed?.access_token && parsed?.refresh_token) {
+            console.log('[Auth] Timeout but found stored session, attempting restore...');
+            // Try to set the session from stored tokens
+            const { data: restored, error } = await Promise.race([
+              supabase.auth.setSession({
+                access_token: parsed.access_token,
+                refresh_token: parsed.refresh_token,
+              }),
+              new Promise((resolve) =>
+                setTimeout(() => resolve({ data: null, error: 'restore_timeout' }), 3000)
+              ),
+            ]);
+
+            if (restored?.session && !error) {
+              console.log('[Auth] Session restored successfully from stored tokens');
+              return { data: { session: restored.session }, error: null, timedOut: false };
+            }
+          }
+        } catch (e) {
+          console.warn('[Auth] Could not parse stored session:', e);
+        }
+      }
+    }
+
     return result;
   } catch (error) {
     console.error('[Auth] getSession error:', error);
@@ -285,7 +322,7 @@ export function AuthProvider({ children }) {
       }
 
       const newUser = session?.user ?? null;
-      console.log('[Auth] Session check complete:', newUser ? `User found: ${newUser.id}` : 'No user');
+      console.log('[Auth] Session check complete:', newUser ? `User found: ${newUser.id}` : 'No user', timedOut ? '(timed out)' : '');
 
       // Check for user change on initial load
       if (newUser && !isReloading.current) {
@@ -294,14 +331,19 @@ export function AuthProvider({ children }) {
           isReloading.current = true;
           return;
         }
-      } else if (!newUser) {
-        // No authenticated user - clear ALL localStorage to prevent stale state
-        // This handles the case where auth users were deleted from DB
+      } else if (!newUser && !timedOut) {
+        // No authenticated user AND we got a definitive response (not timeout)
+        // Only clear storage when we're CERTAIN user is logged out
+        // Don't clear on timeout - Safari/iOS often times out on resume
         const hadPreviousUser = localStorage.getItem(CURRENT_USER_KEY);
         if (hadPreviousUser) {
           console.log('[Auth] No session but had previous user - clearing all stale data');
           clearAllStorage();
         }
+      } else if (!newUser && timedOut) {
+        // Session check timed out - don't clear storage, let user retry
+        // This prevents Safari/iOS from logging users out on resume
+        console.log('[Auth] Session check timed out - keeping existing storage, user may still be authenticated');
       }
 
       setSession(session);

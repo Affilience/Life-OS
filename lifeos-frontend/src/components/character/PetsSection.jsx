@@ -524,7 +524,7 @@ function FilterButton({ active, onClick, label, color }) {
   return (
     <button
       onClick={onClick}
-      className="px-5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all min-w-[80px]"
+      className="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all flex-shrink-0"
       style={{
         background: active ? (color ? `${color}20` : 'rgba(139, 92, 246, 0.2)') : 'rgba(39, 39, 42, 0.4)',
         border: active
@@ -691,12 +691,12 @@ function PetDetailModal({ pet, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center p-4 pt-16 sm:p-4"
       style={{ background: 'rgba(0, 0, 0, 0.9)', backdropFilter: 'blur(12px)' }}
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-2xl max-h-[80vh] sm:max-h-[90vh] mb-safe rounded-t-2xl sm:rounded-xl overflow-hidden flex flex-col"
+        className="w-full sm:max-w-2xl max-h-[75vh] sm:max-h-[90vh] rounded-2xl sm:rounded-xl overflow-hidden flex flex-col"
         style={{
           background: 'rgba(24, 24, 27, 0.98)',
           border: `2px solid ${tierColor}`,

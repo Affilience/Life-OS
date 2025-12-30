@@ -11,11 +11,13 @@
  * Adapted from website's Gamification.tsx for onboarding flow.
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { feedback } from '../../../../services/microInteractions';
+import { getAbilityById, ELEMENT_COLORS } from '../../../../data/elementalAbilities';
+import AbilityIcon from '../../../ui/AbilityIcon';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -605,12 +607,20 @@ function AbilitiesDemo({ isActive }) {
   const [cooldowns, setCooldowns] = useState({});
   const [damageNumber, setDamageNumber] = useState(null);
 
-  const ABILITIES = [
-    { id: 'fireball', name: 'Fireball', icon: '🔥', element: 'fire', color: '#ff6600', damage: 45, cooldown: 6 },
-    { id: 'ice_spike', name: 'Ice Spike', icon: '🧊', element: 'ice', color: '#00d4ff', damage: 40, cooldown: 5 },
-    { id: 'lightning', name: 'Lightning', icon: '⚡', element: 'lightning', color: '#ffcc00', damage: 55, cooldown: 8 },
-    { id: 'dark_bolt', name: 'Shadow Bolt', icon: '🌑', element: 'dark', color: '#9933ff', damage: 50, cooldown: 7 },
-  ];
+  // Use actual abilities from the database with useMemo to avoid recreating on each render
+  const ABILITIES = useMemo(() => {
+    const abilityIds = ['fireball', 'ice_spike', 'lightning_strike', 'shadow_burst'];
+    return abilityIds.map(id => {
+      const ability = getAbilityById(id);
+      if (!ability) return null;
+      return {
+        ...ability,
+        color: ELEMENT_COLORS[ability.element] || '#8888ff',
+        damage: Math.round(ability.damage * 30), // Display damage as visible number
+        cooldown: ability.cooldown / 1000, // Convert to seconds
+      };
+    }).filter(Boolean);
+  }, []);
 
   // Cooldown timer effect
   useEffect(() => {
@@ -727,7 +737,7 @@ function AbilitiesDemo({ isActive }) {
               )}
 
               <div className="flex items-center gap-2 relative z-10">
-                <span className="text-xl">{ability.icon}</span>
+                <AbilityIcon ability={ability} size="md" />
                 <div className="flex-1 text-left">
                   <p className={`text-xs font-bold ${onCooldown ? 'text-white/40' : 'text-white'}`}>
                     {ability.name}
@@ -1291,6 +1301,7 @@ export default function ImmersiveGamification({
 
         .card-content {
           height: 300px;
+          overflow: visible;
         }
 
         /* Navigation Arrows */
@@ -1434,9 +1445,7 @@ export default function ImmersiveGamification({
 
           .card-content {
             height: 240px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
+            overflow: visible;
           }
 
           .carousel-nav {
@@ -1531,6 +1540,7 @@ export default function ImmersiveGamification({
 
           .card-content {
             height: 200px;
+            overflow: visible;
           }
 
           .carousel-nav {

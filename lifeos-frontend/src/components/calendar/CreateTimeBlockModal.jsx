@@ -120,7 +120,7 @@ export default function CreateTimeBlockModal({ initialData, editBlock, onClose }
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="bg-[#12101a] border border-purple-500/30 rounded-t-xl sm:rounded-xl shadow-2xl w-full max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+      <div className="bg-[#12101a] border border-purple-500/30 rounded-t-xl sm:rounded-xl shadow-2xl w-full max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto pb-safe">
         {/* Header */}
         <div
           className="border-b border-purple-500/30 p-6"

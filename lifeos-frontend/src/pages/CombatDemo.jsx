@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CombatCanvas from '../components/combat/CombatCanvas';
 import AvatarRenderer from '../components/avatar/AvatarRenderer';
+import AbilityIcon, { AbilityIconInline } from '../components/ui/AbilityIcon';
 import { useAvatarStore } from '../stores/avatarStore';
 import { playBossAttack, bossAttackSounds, weaponAttackSounds } from '../services/combatSounds';
 import { BOSS_DATABASE as REAL_BOSS_DATABASE } from '../data/bossDatabase';
@@ -1024,7 +1025,7 @@ export default function CombatDemo() {
                   onClick={() => playAbility(ability.id)}
                   className={`px-3 py-2 bg-gradient-to-r ${currentCategory.color} ${currentCategory.hoverColor} ${currentCategory.textColor} rounded-lg transition text-sm font-medium flex items-center gap-1.5`}
                 >
-                  <span>{ability.icon}</span>
+                  <AbilityIconInline ability={ability} />
                   <span>{ability.name}</span>
                 </button>
               ))}
@@ -1415,10 +1416,10 @@ export default function CombatDemo() {
                   <button
                     key={ability.id}
                     onClick={() => playAbility(ability.id)}
-                    className={`px-2 py-1 bg-gradient-to-r ${cat.color} ${cat.hoverColor} ${cat.textColor} rounded text-xs transition`}
+                    className={`px-2 py-1 bg-gradient-to-r ${cat.color} ${cat.hoverColor} ${cat.textColor} rounded text-xs transition flex items-center justify-center`}
                     title={ability.name}
                   >
-                    {ability.icon}
+                    <AbilityIconInline ability={ability} />
                   </button>
                 ))}
               </div>

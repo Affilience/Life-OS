@@ -39,6 +39,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'fireball',
         name: 'Fireball',
         icon: '🔥',
+        iconPath: '/assets/abilities/fireball.png',
         element: 'fire',
         damage: 1.5, // Default starter ability - low damage
         cooldown: 6000,
@@ -49,6 +50,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'meteor',
         name: 'Meteor',
         icon: '☄️',
+        iconPath: '/assets/abilities/meteor.png',
         element: 'fire',
         damage: 4.5, // Perk unlock (mind tree) - high damage
         cooldown: 18000,
@@ -59,6 +61,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'inferno',
         name: 'Inferno',
         icon: '🌋',
+        iconPath: '/assets/abilities/inferno.png',
         element: 'fire',
         damage: 3.5, // Bazaar purchase - medium-high damage
         cooldown: 12000,
@@ -69,6 +72,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'flame_burst',
         name: 'Flame Burst',
         icon: '💥',
+        iconPath: '/assets/abilities/flame_burst.png',
         element: 'fire',
         damage: 2.8, // Achievement unlock - medium damage
         cooldown: 8000,
@@ -79,6 +83,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'blazing_combo',
         name: 'Blazing Combo',
         icon: '🔥',
+        iconPath: '/assets/abilities/blazing_combo.png',
         element: 'fire',
         damage: 3.8, // Achievement unlock (hard) - medium-high damage
         cooldown: 14000,
@@ -98,6 +103,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'ice_spike',
         name: 'Ice Spike',
         icon: '🧊',
+        iconPath: '/assets/abilities/ice_spike.png',
         element: 'ice',
         damage: 2.0, // Early achievement - low-medium damage
         cooldown: 6000,
@@ -108,6 +114,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'blizzard',
         name: 'Blizzard',
         icon: '❄️',
+        iconPath: '/assets/abilities/blizzard.png',
         element: 'ice',
         damage: 4.0, // Bazaar purchase - medium-high damage
         cooldown: 15000,
@@ -118,6 +125,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'frost_nova',
         name: 'Frost Nova',
         icon: '💠',
+        iconPath: '/assets/abilities/frost_nova.png',
         element: 'ice',
         damage: 3.0, // Perk unlock (mind tree) - medium damage
         cooldown: 10000,
@@ -128,6 +136,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'ice_beam',
         name: 'Ice Beam',
         icon: '🌊',
+        iconPath: '/assets/abilities/ice_beam.png',
         element: 'ice',
         damage: 3.2, // Achievement unlock - medium damage
         cooldown: 12000,
@@ -147,6 +156,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'lightning_strike',
         name: 'Lightning Strike',
         icon: '⚡',
+        iconPath: '/assets/abilities/lightning_strike.png',
         element: 'lightning',
         damage: 2.0, // Early achievement - low-medium damage
         cooldown: 5000,
@@ -157,6 +167,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'chain_lightning',
         name: 'Chain Lightning',
         icon: '⛓️',
+        iconPath: '/assets/abilities/chain_lightning.png',
         element: 'lightning',
         damage: 3.0, // Perk unlock (mind tree) - medium damage
         cooldown: 8000,
@@ -167,6 +178,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'thunder_storm',
         name: 'Thunder Storm',
         icon: '🌩️',
+        iconPath: '/assets/abilities/thunder_storm.png',
         element: 'lightning',
         damage: 4.2, // Bazaar purchase - medium-high damage
         cooldown: 16000,
@@ -177,6 +189,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'static_shock',
         name: 'Static Shock',
         icon: '💫',
+        iconPath: '/assets/abilities/static_shock.png',
         element: 'lightning',
         damage: 2.2, // Achievement unlock - low-medium damage
         cooldown: 4000,
@@ -196,6 +209,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'shadow_burst',
         name: 'Shadow Burst',
         icon: '🌑',
+        iconPath: '/assets/abilities/shadow_burst.png',
         element: 'dark',
         damage: 2.2, // Early achievement - low-medium damage
         cooldown: 7000,
@@ -206,6 +220,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'black_hole',
         name: 'Black Hole',
         icon: '🕳️',
+        iconPath: '/assets/abilities/black_hole.png',
         element: 'dark',
         damage: 5.5, // Boss drop (Void Titan) - very high damage
         cooldown: 20000,
@@ -216,6 +231,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'soul_drain',
         name: 'Soul Drain',
         icon: '👻',
+        iconPath: '/assets/abilities/soul_drain.png',
         element: 'dark',
         damage: 2.5, // Perk unlock (mind tree) - medium damage (has heal)
         cooldown: 10000,
@@ -227,6 +243,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'void_rift',
         name: 'Void Rift',
         icon: '🌀',
+        iconPath: '/assets/abilities/void_rift.png',
         element: 'dark',
         damage: 3.8, // Bazaar purchase (epic) - medium-high damage
         cooldown: 12000,
@@ -237,6 +254,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'dark_tendrils',
         name: 'Dark Tendrils',
         icon: '🦑',
+        iconPath: '/assets/abilities/dark_tendrils.png',
         element: 'dark',
         damage: 3.2, // Achievement unlock - medium damage
         cooldown: 9000,
@@ -256,6 +274,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'holy_light',
         name: 'Holy Light',
         icon: '✨',
+        iconPath: '/assets/abilities/holy_light.png',
         element: 'holy',
         damage: 2.0, // Early achievement - low-medium damage
         cooldown: 6000,
@@ -266,6 +285,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'divine_judgment',
         name: 'Divine Judgment',
         icon: '👼',
+        iconPath: '/assets/abilities/divine_judgment.png',
         element: 'holy',
         damage: 5.5, // Boss drop (Celestial Guardian) - very high damage
         cooldown: 18000,
@@ -276,6 +296,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'smite',
         name: 'Smite',
         icon: '✝️',
+        iconPath: '/assets/abilities/smite.png',
         element: 'holy',
         damage: 3.5, // Bazaar purchase (epic) - medium-high damage
         cooldown: 8000,
@@ -286,6 +307,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'radiant_burst',
         name: 'Radiant Burst',
         icon: '☀️',
+        iconPath: '/assets/abilities/radiant_burst.png',
         element: 'holy',
         damage: 3.0, // Achievement unlock - medium damage
         cooldown: 12000,
@@ -297,6 +319,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'consecrate',
         name: 'Consecrate',
         icon: '⭕',
+        iconPath: '/assets/abilities/consecrate.png',
         element: 'holy',
         damage: 3.2, // Achievement unlock - medium damage
         cooldown: 10000,
@@ -307,6 +330,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'angels_wrath',
         name: "Angel's Wrath",
         icon: '🪽',
+        iconPath: '/assets/abilities/angels_wrath.png',
         element: 'holy',
         damage: 6.0, // Boss drop (Archangel) - highest holy damage
         cooldown: 22000,
@@ -326,6 +350,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'earthquake',
         name: 'Earthquake',
         icon: '🌍',
+        iconPath: '/assets/abilities/earthquake.png',
         element: 'earth',
         damage: 3.8, // Achievement unlock (level 25) - medium-high damage
         cooldown: 14000,
@@ -336,6 +361,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'rock_throw',
         name: 'Rock Throw',
         icon: '🪨',
+        iconPath: '/assets/abilities/rock_throw.png',
         element: 'earth',
         damage: 2.0, // Early achievement - low-medium damage
         cooldown: 5000,
@@ -346,6 +372,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'stone_spike',
         name: 'Stone Spike',
         icon: '⛰️',
+        iconPath: '/assets/abilities/stone_spike.png',
         element: 'earth',
         damage: 2.8, // Achievement unlock - medium damage
         cooldown: 8000,
@@ -356,6 +383,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'landslide',
         name: 'Landslide',
         icon: '🏔️',
+        iconPath: '/assets/abilities/landslide.png',
         element: 'earth',
         damage: 4.5, // Achievement unlock (level 50) - high damage
         cooldown: 16000,
@@ -375,6 +403,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'wind_slash',
         name: 'Wind Slash',
         icon: '💨',
+        iconPath: '/assets/abilities/wind_slash.png',
         element: 'wind',
         damage: 2.0, // Early achievement - low-medium damage
         cooldown: 5000,
@@ -385,6 +414,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'tornado',
         name: 'Tornado',
         icon: '🌪️',
+        iconPath: '/assets/abilities/tornado.png',
         element: 'wind',
         damage: 4.0, // Bazaar purchase - medium-high damage
         cooldown: 14000,
@@ -395,6 +425,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'gale_force',
         name: 'Gale Force',
         icon: '🌬️',
+        iconPath: '/assets/abilities/gale_force.png',
         element: 'wind',
         damage: 2.8, // Achievement unlock - medium damage
         cooldown: 8000,
@@ -405,6 +436,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'air_cutter',
         name: 'Air Cutter',
         icon: '✂️',
+        iconPath: '/assets/abilities/air_cutter.png',
         element: 'wind',
         damage: 2.5, // Achievement unlock - low-medium damage
         cooldown: 6000,
@@ -424,6 +456,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'water_blast',
         name: 'Water Blast',
         icon: '💧',
+        iconPath: '/assets/abilities/water_blast.png',
         element: 'water',
         damage: 2.0, // Early achievement - low-medium damage
         cooldown: 6000,
@@ -434,6 +467,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'tidal_wave',
         name: 'Tidal Wave',
         icon: '🌊',
+        iconPath: '/assets/abilities/tidal_wave.png',
         element: 'water',
         damage: 4.2, // Bazaar purchase - medium-high damage
         cooldown: 16000,
@@ -444,6 +478,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'hydro_pump',
         name: 'Hydro Pump',
         icon: '🚿',
+        iconPath: '/assets/abilities/hydro_pump.png',
         element: 'water',
         damage: 3.2, // Achievement unlock - medium damage
         cooldown: 10000,
@@ -454,6 +489,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'bubble_storm',
         name: 'Bubble Storm',
         icon: '🫧',
+        iconPath: '/assets/abilities/bubble_storm.png',
         element: 'water',
         damage: 2.8, // Achievement unlock - medium damage
         cooldown: 8000,
@@ -473,6 +509,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'poison_cloud',
         name: 'Poison Cloud',
         icon: '☠️',
+        iconPath: '/assets/abilities/poison_cloud.png',
         element: 'poison',
         damage: 3.5, // Bazaar purchase - medium-high damage
         cooldown: 10000,
@@ -483,6 +520,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'toxic_spit',
         name: 'Toxic Spit',
         icon: '🤮',
+        iconPath: '/assets/abilities/toxic_spit.png',
         element: 'poison',
         damage: 2.0, // Early achievement - low-medium damage
         cooldown: 6000,
@@ -493,6 +531,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'venom_spray',
         name: 'Venom Spray',
         icon: '🐍',
+        iconPath: '/assets/abilities/venom_spray.png',
         element: 'poison',
         damage: 3.0, // Achievement unlock - medium damage
         cooldown: 9000,
@@ -503,6 +542,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'plague',
         name: 'Plague',
         icon: '🦠',
+        iconPath: '/assets/abilities/plague.png',
         element: 'poison',
         damage: 3.8, // Achievement unlock (triple threat) - medium-high damage
         cooldown: 14000,
@@ -522,6 +562,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'arcane_blast',
         name: 'Arcane Blast',
         icon: '🔮',
+        iconPath: '/assets/abilities/arcane_blast.png',
         element: 'arcane',
         damage: 2.5, // Perk unlock (mind tree) - medium damage
         cooldown: 6000,
@@ -532,6 +573,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'magic_missile',
         name: 'Magic Missile',
         icon: '✴️',
+        iconPath: '/assets/abilities/magic_missile.png',
         element: 'arcane',
         damage: 1.5, // Default starter ability - low damage
         cooldown: 4000,
@@ -542,6 +584,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'arcane_beam',
         name: 'Arcane Beam',
         icon: '📡',
+        iconPath: '/assets/abilities/arcane_beam.png',
         element: 'arcane',
         damage: 3.2, // Perk unlock (mind tree) - medium damage
         cooldown: 12000,
@@ -552,6 +595,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'mystic_explosion',
         name: 'Mystic Explosion',
         icon: '💜',
+        iconPath: '/assets/abilities/mystic_explosion.png',
         element: 'arcane',
         damage: 4.5, // Perk unlock (mind tree tier 3) - high damage
         cooldown: 16000,
@@ -572,6 +616,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'curse',
         name: 'Curse',
         icon: '🔮',
+        iconPath: '/assets/abilities/curse.png',
         element: 'support',
         damage: 1.5,
         cooldown: 14000,
@@ -593,6 +638,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'supernova',
         name: 'Supernova',
         icon: '🌟',
+        iconPath: '/assets/abilities/supernova.png',
         element: 'ultimate',
         damage: 7.0, // Boss drop (Solar Emperor) - ultra rare, highest damage
         cooldown: 30000,
@@ -603,6 +649,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'absolute_zero',
         name: 'Absolute Zero',
         icon: '🥶',
+        iconPath: '/assets/abilities/absolute_zero.png',
         element: 'ultimate',
         damage: 6.5, // Boss drop (Frost Monarch) - ultra rare
         cooldown: 28000,
@@ -613,6 +660,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'divine_storm',
         name: 'Divine Storm',
         icon: '⚡',
+        iconPath: '/assets/abilities/divine_storm.png',
         element: 'ultimate',
         damage: 7.0, // Boss drop (Storm Lord) - ultra rare
         cooldown: 30000,
@@ -623,6 +671,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'void_collapse',
         name: 'Void Collapse',
         icon: '🕳️',
+        iconPath: '/assets/abilities/void_collapse.png',
         element: 'ultimate',
         damage: 7.5, // Boss drop (Void Titan) - legendary, extremely rare
         cooldown: 35000,
@@ -633,6 +682,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'elemental_fury',
         name: 'Elemental Fury',
         icon: '🌈',
+        iconPath: '/assets/abilities/elemental_fury.png',
         element: 'ultimate',
         damage: 8.0, // Boss drop (Elemental King) - legendary, rarest ability
         cooldown: 40000,
@@ -655,6 +705,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'power_slash',
         name: 'Power Slash',
         icon: '⚔️',
+        iconPath: '/assets/abilities/power_slash.png',
         element: 'physical',
         damage: 2.2, // Perk tier 1 - low-medium
         cooldown: 5000,
@@ -665,6 +716,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'cleaving_blow',
         name: 'Cleaving Blow',
         icon: '🪓',
+        iconPath: '/assets/abilities/cleaving_blow.png',
         element: 'physical',
         damage: 2.5, // Perk tier 1 - medium
         cooldown: 7000,
@@ -675,6 +727,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'blade_dance',
         name: 'Blade Dance',
         icon: '💃',
+        iconPath: '/assets/abilities/blade_dance.png',
         element: 'physical',
         damage: 3.2, // Perk tier 2 - medium
         cooldown: 10000,
@@ -685,6 +738,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'earthshatter',
         name: 'Earthshatter',
         icon: '💥',
+        iconPath: '/assets/abilities/earthshatter.png',
         element: 'physical',
         damage: 3.8, // Perk tier 2 - medium-high
         cooldown: 14000,
@@ -695,6 +749,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'thunderous_blow',
         name: 'Thunderous Blow',
         icon: '🔨',
+        iconPath: '/assets/abilities/thunderous_blow.png',
         element: 'physical',
         damage: 4.5, // Perk tier 3 - high
         cooldown: 16000,
@@ -705,6 +760,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'berserker_rage',
         name: 'Berserker Rage',
         icon: '😤',
+        iconPath: '/assets/abilities/berserker_rage.png',
         element: 'physical',
         damage: 5.2, // Perk tier 3 - high
         cooldown: 20000,
@@ -715,6 +771,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'shadow_strike',
         name: 'Shadow Strike',
         icon: '🗡️',
+        iconPath: '/assets/abilities/shadow_strike.png',
         element: 'physical',
         damage: 4.8, // Perk tier 3 - high
         cooldown: 18000,
@@ -725,6 +782,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'assassinate',
         name: 'Assassinate',
         icon: '☠️',
+        iconPath: '/assets/abilities/assassinate.png',
         element: 'physical',
         damage: 6.0, // Perk tier 4 - very high
         cooldown: 25000,
@@ -745,6 +803,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'inner_light',
         name: 'Inner Light',
         icon: '💫',
+        iconPath: '/assets/abilities/inner_light.png',
         element: 'spirit',
         damage: 2.0, // Perk tier 1 - low-medium (has heal)
         cooldown: 5000,
@@ -756,6 +815,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'serenity_wave',
         name: 'Serenity Wave',
         icon: '🌊',
+        iconPath: '/assets/abilities/serenity_wave.png',
         element: 'spirit',
         damage: 2.3, // Perk tier 1 - medium
         cooldown: 8000,
@@ -766,6 +826,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'meditation_burst',
         name: 'Meditation Burst',
         icon: '🧘',
+        iconPath: '/assets/abilities/meditation_burst.png',
         element: 'spirit',
         damage: 3.0, // Perk tier 2 - medium
         cooldown: 10000,
@@ -776,6 +837,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'zen_strike',
         name: 'Zen Strike',
         icon: '☯️',
+        iconPath: '/assets/abilities/zen_strike.png',
         element: 'spirit',
         damage: 3.5, // Perk tier 2 - medium-high
         cooldown: 12000,
@@ -786,6 +848,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'enlightened_blast',
         name: 'Enlightened Blast',
         icon: '🌟',
+        iconPath: '/assets/abilities/enlightened_blast.png',
         element: 'spirit',
         damage: 4.5, // Perk tier 3 - high
         cooldown: 16000,
@@ -796,6 +859,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'transcendence',
         name: 'Transcendence',
         icon: '👼',
+        iconPath: '/assets/abilities/transcendence.png',
         element: 'spirit',
         damage: 5.8, // Perk tier 4 - very high (has heal)
         cooldown: 24000,
@@ -817,6 +881,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'golden_strike',
         name: 'Golden Strike',
         icon: '💰',
+        iconPath: '/assets/abilities/golden_strike.png',
         element: 'fortune',
         damage: 2.2, // Perk tier 1 - medium (has gold bonus)
         cooldown: 5000,
@@ -828,6 +893,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'coin_barrage',
         name: 'Coin Barrage',
         icon: '🪙',
+        iconPath: '/assets/abilities/coin_barrage.png',
         element: 'fortune',
         damage: 2.5, // Perk tier 1 - medium (has gold bonus)
         cooldown: 8000,
@@ -839,6 +905,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'wealth_explosion',
         name: 'Wealth Explosion',
         icon: '💎',
+        iconPath: '/assets/abilities/wealth_explosion.png',
         element: 'fortune',
         damage: 3.5, // Perk tier 2 - medium-high (has gold bonus)
         cooldown: 12000,
@@ -850,6 +917,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'lucky_strike',
         name: 'Lucky Strike',
         icon: '🍀',
+        iconPath: '/assets/abilities/lucky_strike.png',
         element: 'fortune',
         damage: 3.0, // Perk tier 2 - medium (has crit bonus)
         cooldown: 10000,
@@ -861,6 +929,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'treasure_blast',
         name: 'Treasure Blast',
         icon: '👑',
+        iconPath: '/assets/abilities/treasure_blast.png',
         element: 'fortune',
         damage: 4.5, // Perk tier 3 - high (has gold bonus)
         cooldown: 16000,
@@ -872,6 +941,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'midas_touch',
         name: 'Midas Touch',
         icon: '✨',
+        iconPath: '/assets/abilities/midas_touch.png',
         element: 'fortune',
         damage: 5.5, // Perk tier 4 - very high (has gold bonus)
         cooldown: 22000,
@@ -893,6 +963,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'charm_strike',
         name: 'Charm Strike',
         icon: '💕',
+        iconPath: '/assets/abilities/charm_strike.png',
         element: 'charm',
         damage: 2.0, // Perk tier 1 - low-medium
         cooldown: 5000,
@@ -903,6 +974,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'inspiring_words',
         name: 'Inspiring Words',
         icon: '📢',
+        iconPath: '/assets/abilities/inspiring_words.png',
         element: 'charm',
         damage: 2.3, // Perk tier 1 - medium
         cooldown: 8000,
@@ -913,6 +985,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'rally_cry',
         name: 'Rally Cry',
         icon: '📣',
+        iconPath: '/assets/abilities/rally_cry.png',
         element: 'charm',
         damage: 3.0, // Perk tier 2 - medium (has damage boost)
         cooldown: 10000,
@@ -925,6 +998,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'social_butterfly',
         name: 'Social Butterfly',
         icon: '🦋',
+        iconPath: '/assets/abilities/social_butterfly.png',
         element: 'charm',
         damage: 3.5, // Perk tier 2 - medium-high
         cooldown: 12000,
@@ -935,6 +1009,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'influence_blast',
         name: 'Influence Blast',
         icon: '🌐',
+        iconPath: '/assets/abilities/influence_blast.png',
         element: 'charm',
         damage: 4.5, // Perk tier 3 - high
         cooldown: 16000,
@@ -945,6 +1020,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'viral_strike',
         name: 'Viral Strike',
         icon: '📱',
+        iconPath: '/assets/abilities/viral_strike.png',
         element: 'charm',
         damage: 5.5, // Perk tier 4 - very high
         cooldown: 20000,
@@ -965,6 +1041,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'gadget_throw',
         name: 'Gadget Throw',
         icon: '🔧',
+        iconPath: '/assets/abilities/gadget_throw.png',
         element: 'tech',
         damage: 2.2, // Perk tier 1 - low-medium
         cooldown: 5000,
@@ -975,6 +1052,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'gear_grind',
         name: 'Gear Grind',
         icon: '⚙️',
+        iconPath: '/assets/abilities/gear_grind.png',
         element: 'tech',
         damage: 2.5, // Perk tier 1 - medium
         cooldown: 7000,
@@ -985,6 +1063,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'bomb_toss',
         name: 'Bomb Toss',
         icon: '💣',
+        iconPath: '/assets/abilities/bomb_toss.png',
         element: 'tech',
         damage: 3.5, // Perk tier 2 - medium-high
         cooldown: 10000,
@@ -995,6 +1074,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'turret_blast',
         name: 'Turret Blast',
         icon: '🔫',
+        iconPath: '/assets/abilities/turret_blast.png',
         element: 'tech',
         damage: 3.2, // Perk tier 2 - medium
         cooldown: 12000,
@@ -1005,6 +1085,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'mech_strike',
         name: 'Mech Strike',
         icon: '🤖',
+        iconPath: '/assets/abilities/mech_strike.png',
         element: 'tech',
         damage: 4.5, // Perk tier 3 - high
         cooldown: 16000,
@@ -1015,6 +1096,7 @@ export const ELEMENTAL_ABILITIES = {
         id: 'invention_overload',
         name: 'Invention Overload',
         icon: '⚡',
+        iconPath: '/assets/abilities/invention_overload.png',
         element: 'tech',
         damage: 5.8, // Perk tier 4 - very high
         cooldown: 22000,

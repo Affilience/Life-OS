@@ -835,6 +835,7 @@
     padding: 0.625rem 0.75rem;
     gap: 0.5rem;
     min-width: 0;
+    overflow: hidden;
   }
 
   .stat-icon-wrapper {
@@ -851,6 +852,7 @@
   .stat-info {
     min-width: 0;
     overflow: hidden;
+    flex: 1;
   }
 
   .stat-value {
@@ -859,10 +861,12 @@
   }
 
   .stat-label {
-    font-size: 0.625rem;
+    font-size: 0.5625rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
   }
 
   .cr-cover {

@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { WEAPON_ATTACKS } from '../../data/weaponAttacks';
 import { getAbilityById, ELEMENTAL_ABILITIES } from '../../data/elementalAbilities';
+import AbilityIcon from '../ui/AbilityIcon';
 
 // Slot definitions for paper doll layout
 const PAPERDOLL_SLOTS = {
@@ -404,14 +405,14 @@ export default function EquipmentShowcase() {
                 <div className="text-center">
                   {ability ? (
                     <div
-                      className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-1 rounded-lg flex items-center justify-center text-xl sm:text-2xl"
+                      className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-1 rounded-lg flex items-center justify-center"
                       style={{
                         background: `linear-gradient(135deg, ${ability.elementColor}40, ${ability.elementColor}20)`,
                         boxShadow: `0 2px 8px ${ability.elementColor}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
                         border: `1px solid ${ability.elementColor}60`,
                       }}
                     >
-                      {ability.icon}
+                      <AbilityIcon ability={ability} size="lg" />
                     </div>
                   ) : (
                     <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-1 rounded-lg flex items-center justify-center bg-white/5 border border-dashed border-white/20">
@@ -552,14 +553,14 @@ export default function EquipmentShowcase() {
                     >
                       <div className="text-center">
                         <div
-                          className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center text-xl"
+                          className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
                           style={{
                             background: `linear-gradient(135deg, ${ability.elementColor}50, ${ability.elementColor}25)`,
                             boxShadow: `0 2px 8px ${ability.elementColor}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
                             border: `1px solid ${ability.elementColor}70`,
                           }}
                         >
-                          {ability.icon}
+                          <AbilityIcon ability={ability} size="lg" />
                         </div>
                         <div className="text-xs font-bold truncate" style={{ color: ability.elementColor }}>
                           {ability.name}

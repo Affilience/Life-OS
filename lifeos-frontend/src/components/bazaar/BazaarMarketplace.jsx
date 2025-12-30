@@ -57,6 +57,8 @@ const getSpritePath = (category, id) => {
 // Helper to get sprite from item (handles object { path: '...' } or string formats)
 const getItemSprite = (item) => {
   if (!item) return null;
+  // For abilities, use iconPath
+  if (item.iconPath) return item.iconPath;
   if (item.sprite?.path) return item.sprite.path;
   if (typeof item.sprite === 'string') return item.sprite;
   return null;
@@ -986,6 +988,7 @@ export default function BazaarMarketplace() {
         rarity: ability.rarity,
         price: ability.price,
         icon: ability.icon,
+        iconPath: ability.iconPath,
         element: ability.element,
         damage: ability.damage,
         cooldown: ability.cooldown,

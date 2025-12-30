@@ -5,13 +5,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAbilityById, ELEMENT_COLORS } from '../../../../../data/elementalAbilities';
+import AbilityIcon from '../../../../ui/AbilityIcon';
 
-const ABILITIES = [
-  { id: 'fireball', name: 'Fireball', icon: '🔥', element: 'fire', color: '#ff6600', damage: 45, cooldown: 6 },
-  { id: 'ice_spike', name: 'Ice Spike', icon: '🧊', element: 'ice', color: '#00d4ff', damage: 40, cooldown: 5 },
-  { id: 'lightning', name: 'Lightning', icon: '⚡', element: 'lightning', color: '#ffcc00', damage: 55, cooldown: 8 },
-  { id: 'dark_bolt', name: 'Shadow Bolt', icon: '🌑', element: 'dark', color: '#9933ff', damage: 50, cooldown: 7 },
-];
+// Use actual abilities from the database
+const DEMO_ABILITY_IDS = ['fireball', 'ice_spike', 'lightning_strike', 'shadow_burst'];
+const ABILITIES = DEMO_ABILITY_IDS.map(id => {
+  const ability = getAbilityById(id);
+  if (!ability) return null;
+  return {
+    ...ability,
+    color: ELEMENT_COLORS[ability.element] || '#8888ff',
+    damage: Math.round(ability.damage * 30), // Display damage as visible number
+  };
+}).filter(Boolean);
 
 export default function AbilitiesDemo({ isActive, onInteract }) {
   const [selectedAbility, setSelectedAbility] = useState(null);
@@ -128,7 +135,9 @@ export default function AbilitiesDemo({ isActive, onInteract }) {
               )}
 
               <div className="ability-content">
-                <span className="ability-icon">{ability.icon}</span>
+                <span className="ability-icon">
+                  <AbilityIcon ability={ability} size="md" />
+                </span>
                 <div className="ability-info">
                   <p className="ability-name">{ability.name}</p>
                   <p className="ability-stat">

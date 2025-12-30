@@ -193,7 +193,7 @@ export default function DashboardNew() {
             <button
               onClick={toggleEditMode}
               data-tour="edit-dashboard-btn"
-              className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 min-h-[36px] ${
+              className={`flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 min-h-[36px] min-w-[36px] ${
                 isEditMode
                   ? 'bg-primary-500 text-text-primary shadow-lg shadow-primary hover:bg-primary-600 hover:-translate-y-0.5 active:translate-y-0'
                   : 'bg-bg-2 text-text-secondary hover:bg-bg-hover hover:text-text-primary hover:-translate-y-0.5 active:translate-y-0'

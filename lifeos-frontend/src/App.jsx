@@ -189,15 +189,40 @@ const AvatarEthnicities = lazy(() => import('./pages/AvatarEthnicities'));
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
+  // Check if there's a stored auth token - if so, trust it
+  // The Supabase client will use this token for API requests automatically
+  const hasStoredAuth = useMemo(() => {
+    const storedAuth = localStorage.getItem('lifeos-auth');
+    if (storedAuth) {
+      try {
+        const parsed = JSON.parse(storedAuth);
+        // Check if token exists and isn't expired (with 5 min buffer)
+        if (parsed?.access_token && parsed?.expires_at) {
+          const expiresAt = parsed.expires_at * 1000; // Convert to ms
+          const now = Date.now();
+          const fiveMinutes = 5 * 60 * 1000;
+          return expiresAt > (now - fiveMinutes); // Valid if not expired (with buffer)
+        }
+        return !!parsed?.access_token;
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  }, []);
+
   if (loading) {
     return <LoadingScreen />;
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
+  // If we have a user OR a valid stored token, show the content
+  // The stored token allows the app to work even if getSession() timed out
+  if (user || hasStoredAuth) {
+    return children;
   }
 
-  return children;
+  // No user and no stored auth - redirect to login
+  return <Navigate to="/auth" replace />;
 }
 
 // Inner app content that uses useAuth (must be inside AuthProvider)

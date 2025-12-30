@@ -176,10 +176,17 @@
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: none;
+  -webkit-touch-callout: none;
 }
 
 .drag-handle:active {
   cursor: grabbing;
+}
+
+/* Ensure touch events work properly on mobile */
+.dashboard-edit-mode .drag-handle {
+  touch-action: none;
 }
 
 /* Ensure buttons inside drag handle are clickable */
@@ -277,6 +284,22 @@
   /* Prevent accidental scrolling during drag */
   .react-draggable-dragging {
     touch-action: none;
+  }
+
+  /* Critical: Prevent scroll interference on touch during edit mode */
+  .dashboard-edit-mode .react-grid-layout {
+    touch-action: none;
+  }
+
+  .dashboard-edit-mode .react-grid-item {
+    touch-action: none;
+  }
+
+  /* Ensure drag handle is properly touchable */
+  .dashboard-edit-mode .drag-handle {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
   }
 }
 

@@ -1,8 +1,8 @@
 /**
- * ImmersiveSkinToneSelect - Choose Your Skin Tone
+ * ImmersiveSkinToneSelect - Choose Your Avatar Style
  *
- * Skin tone selection with animated avatar preview.
- * Options: White, Brown, Black
+ * Simple swipeable avatar selector - no mention of ethnicity.
+ * Just 3 avatar variants to swipe through and choose.
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -14,29 +14,11 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Skin tone options
-const SKIN_TONES = [
-  {
-    id: 'white',
-    name: 'Light',
-    color: '#f5d0c5',
-    gradient: 'from-amber-200 via-orange-100 to-rose-100',
-    glowColor: 'rgba(245, 208, 197, 0.4)',
-  },
-  {
-    id: 'brown',
-    name: 'Medium',
-    color: '#c68642',
-    gradient: 'from-amber-400 via-orange-400 to-amber-500',
-    glowColor: 'rgba(198, 134, 66, 0.4)',
-  },
-  {
-    id: 'black',
-    name: 'Dark',
-    color: '#8d5524',
-    gradient: 'from-amber-700 via-orange-700 to-amber-800',
-    glowColor: 'rgba(141, 85, 36, 0.4)',
-  },
+// Avatar style variants (internal IDs only, not shown to user)
+const AVATAR_VARIANTS = [
+  { id: 'white', glowColor: 'rgba(139, 92, 246, 0.4)' },
+  { id: 'brown', glowColor: 'rgba(236, 72, 153, 0.4)' },
+  { id: 'black', glowColor: 'rgba(59, 130, 246, 0.4)' },
 ];
 
 export default function ImmersiveSkinToneSelect({
@@ -51,13 +33,18 @@ export default function ImmersiveSkinToneSelect({
   const sectionRef = useRef(null);
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
-  const cardsContainerRef = useRef(null);
-  const cardRefs = useRef([]);
+  const carouselRef = useRef(null);
   const promptRef = useRef(null);
-  const previewRef = useRef(null);
   const [hasSelected, setHasSelected] = useState(false);
-  const [selectedTone, setSelectedTone] = useState(skinTone || 'white');
+  const [currentIndex, setCurrentIndex] = useState(
+    skinTone ? AVATAR_VARIANTS.findIndex(v => v.id === skinTone) : 0
+  );
   const [isInView, setIsInView] = useState(false);
+
+  // Touch/swipe state
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const minSwipeDistance = 50;
 
   // Store callbacks in refs
   const onCompleteRef = useRef(onComplete);
@@ -69,19 +56,59 @@ export default function ImmersiveSkinToneSelect({
     onSectionEnterRef.current = onSectionEnter;
   }, [onComplete, onLockScroll, onSectionEnter]);
 
-  // Get avatar path based on gender and skin tone
-  const getAvatarPath = (tone) => {
+  // Get avatar path based on gender and variant
+  const getAvatarPath = (variantId) => {
     const gender = characterGender || 'male';
-    if (tone === 'white') {
-      // Original avatars
-      return gender === 'female'
-        ? '/assets/avatar/base-evolution/heroine_base_stage_10_swordsman.png'
-        : '/assets/avatar/base-evolution/hero_base_stage_10_swordsman.png';
-    }
-    // Diverse avatars
     const prefix = gender === 'female' ? 'heroine' : 'hero';
-    return `/assets/avatar/diverse/${prefix}_stage_10_${tone}.png`;
+
+    if (variantId === 'white') {
+      // Use the diverse folder white variants for consistency
+      return `/assets/avatar/diverse/${prefix}_stage_10_white.png`;
+    }
+    return `/assets/avatar/diverse/${prefix}_stage_10_${variantId}.png`;
   };
+
+  // Current variant
+  const currentVariant = AVATAR_VARIANTS[currentIndex];
+
+  // Navigation
+  const goToVariant = useCallback((index) => {
+    const newIndex = Math.max(0, Math.min(AVATAR_VARIANTS.length - 1, index));
+    setCurrentIndex(newIndex);
+    feedback.buttonPress();
+  }, []);
+
+  const nextVariant = useCallback(() => {
+    if (currentIndex < AVATAR_VARIANTS.length - 1) {
+      goToVariant(currentIndex + 1);
+    }
+  }, [currentIndex, goToVariant]);
+
+  const prevVariant = useCallback(() => {
+    if (currentIndex > 0) {
+      goToVariant(currentIndex - 1);
+    }
+  }, [currentIndex, goToVariant]);
+
+  // Touch handlers for swipe
+  const onTouchStart = useCallback((e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (distance > minSwipeDistance) {
+      nextVariant();
+    } else if (distance < -minSwipeDistance) {
+      prevVariant();
+    }
+  }, [touchStart, touchEnd, nextVariant, prevVariant]);
 
   // Auto-play entrance animation when section comes into view
   useEffect(() => {
@@ -115,30 +142,19 @@ export default function ImmersiveSkinToneSelect({
               );
             }
 
-            // Preview avatar
-            if (previewRef.current) {
-              entranceTl.fromTo(previewRef.current,
+            if (carouselRef.current) {
+              entranceTl.fromTo(carouselRef.current,
                 { opacity: 0, scale: 0.8 },
-                { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.2)' },
+                { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.2)' },
                 0.3
               );
             }
 
-            // Cards animate in from bottom
-            cardRefs.current.forEach((card, i) => {
-              if (!card) return;
-              entranceTl.fromTo(card,
-                { opacity: 0, y: 50, scale: 0.9 },
-                { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.2)' },
-                0.4 + (i * 0.1)
-              );
-            });
-
             if (promptRef.current) {
               entranceTl.fromTo(promptRef.current,
                 { opacity: 0, y: 20 },
-                { opacity: 0.6, y: 0, duration: 0.4, ease: 'power2.out' },
-                0.7
+                { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+                0.5
               );
             }
           }
@@ -152,31 +168,17 @@ export default function ImmersiveSkinToneSelect({
     return () => observer.disconnect();
   }, [isInView]);
 
-  // Handle skin tone selection
-  const handleToneSelect = useCallback((toneId) => {
-    setSelectedTone(toneId);
-    setSkinTone(toneId);
+  // Handle avatar selection (confirm current choice)
+  const handleSelect = useCallback(() => {
+    const selectedVariant = AVATAR_VARIANTS[currentIndex];
+    setSkinTone(selectedVariant.id);
     setHasSelected(true);
     feedback.taskComplete();
 
-    // Animate selected card
-    const selectedIndex = SKIN_TONES.findIndex(t => t.id === toneId);
-    const selectedCard = cardRefs.current[selectedIndex];
-
-    if (selectedCard) {
-      gsap.to(selectedCard, {
-        scale: 1.1,
-        duration: 0.3,
-        ease: 'back.out(1.7)',
-        yoyo: true,
-        repeat: 1,
-      });
-    }
-
-    // Animate avatar preview
-    if (previewRef.current) {
-      gsap.to(previewRef.current, {
-        scale: 1.1,
+    // Animate selection
+    if (carouselRef.current) {
+      gsap.to(carouselRef.current, {
+        scale: 1.05,
         duration: 0.2,
         ease: 'power2.out',
         yoyo: true,
@@ -189,80 +191,96 @@ export default function ImmersiveSkinToneSelect({
       onLockScrollRef.current?.(false);
       setTimeout(() => onCompleteRef.current?.(), 400);
     }, 600);
-  }, [setSkinTone]);
+  }, [currentIndex, setSkinTone]);
 
   return (
     <section
       ref={sectionRef}
       className="immersive-section relative min-h-screen overflow-hidden"
     >
-      <div className="skin-tone-content">
+      <div className="avatar-select-content">
         {/* Title */}
-        <h2 ref={titleRef} className="skin-tone-title" style={{ opacity: 0 }}>
-          Choose Your <span className="gradient-text">Appearance</span>
+        <h2 ref={titleRef} className="avatar-select-title" style={{ opacity: 0 }}>
+          Choose Your <span className="gradient-text">Avatar</span>
         </h2>
 
         {/* Subtitle */}
-        <p ref={subtitleRef} className="skin-tone-subtitle" style={{ opacity: 0 }}>
-          Select a skin tone for your avatar
+        <p ref={subtitleRef} className="avatar-select-subtitle" style={{ opacity: 0 }}>
+          Swipe to browse, tap to select
         </p>
 
-        {/* Avatar Preview */}
-        <div ref={previewRef} className="avatar-preview" style={{ opacity: 0 }}>
-          <img
-            src={getAvatarPath(selectedTone)}
-            alt="Avatar preview"
-            className="preview-sprite"
-            style={{ imageRendering: 'pixelated' }}
-          />
-          <div className="preview-glow" style={{
-            background: `radial-gradient(circle, ${SKIN_TONES.find(t => t.id === selectedTone)?.glowColor || 'rgba(139, 92, 246, 0.3)'} 0%, transparent 70%)`
-          }} />
-        </div>
+        {/* Avatar Carousel */}
+        <div
+          ref={carouselRef}
+          className="avatar-carousel"
+          style={{ opacity: 0 }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          {/* Navigation Arrows */}
+          <button
+            className="carousel-arrow carousel-arrow-left"
+            onClick={prevVariant}
+            disabled={currentIndex === 0}
+            aria-label="Previous"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
 
-        {/* Skin Tone Cards */}
-        <div ref={cardsContainerRef} className="tone-cards">
-          {SKIN_TONES.map((tone, index) => (
-            <button
-              key={tone.id}
-              ref={el => cardRefs.current[index] = el}
-              className={`tone-card ${selectedTone === tone.id ? 'selected' : ''}`}
-              onClick={() => handleToneSelect(tone.id)}
-              style={{
-                opacity: 0,
-                '--tone-color': tone.color,
-                '--tone-glow': tone.glowColor,
-              }}
-            >
-              {/* Color swatch */}
-              <div
-                className="tone-swatch"
-                style={{ background: tone.color }}
+          <button
+            className="carousel-arrow carousel-arrow-right"
+            onClick={nextVariant}
+            disabled={currentIndex === AVATAR_VARIANTS.length - 1}
+            aria-label="Next"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+
+          {/* Avatar Display */}
+          <div className="avatar-display">
+            <div className="avatar-glow" style={{
+              background: `radial-gradient(circle, ${currentVariant.glowColor} 0%, transparent 70%)`
+            }} />
+            <img
+              src={getAvatarPath(currentVariant.id)}
+              alt="Avatar"
+              className="avatar-sprite"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          </div>
+
+          {/* Dot Indicators */}
+          <div className="carousel-dots">
+            {AVATAR_VARIANTS.map((_, index) => (
+              <button
+                key={index}
+                className={`carousel-dot ${index === currentIndex ? 'active' : ''}`}
+                onClick={() => goToVariant(index)}
+                aria-label={`Avatar ${index + 1}`}
               />
-
-              {/* Selection indicator */}
-              {selectedTone === tone.id && (
-                <div className="selected-badge">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              )}
-
-              {/* Tone name */}
-              <span className="tone-name">{tone.name}</span>
-            </button>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Selection prompt */}
-        <p ref={promptRef} className="selection-prompt" style={{ opacity: 0 }}>
-          {hasSelected ? 'Looking great!' : 'Tap to select'}
-        </p>
+        {/* Select Button */}
+        <button
+          ref={promptRef}
+          className="select-button"
+          onClick={handleSelect}
+          style={{ opacity: 0 }}
+          disabled={hasSelected}
+        >
+          {hasSelected ? '✓ Selected!' : 'Choose This Avatar'}
+        </button>
       </div>
 
       <style>{`
-        .skin-tone-content {
+        .avatar-select-content {
           position: relative;
           width: 100%;
           height: 100vh;
@@ -271,11 +289,11 @@ export default function ImmersiveSkinToneSelect({
           align-items: center;
           justify-content: center;
           padding: 2rem;
-          max-width: 800px;
+          max-width: 500px;
           margin: 0 auto;
         }
 
-        .skin-tone-title {
+        .avatar-select-title {
           font-size: clamp(1.75rem, 5vw, 2.5rem);
           font-weight: 700;
           color: white;
@@ -284,38 +302,77 @@ export default function ImmersiveSkinToneSelect({
         }
 
         .gradient-text {
-          background: linear-gradient(135deg, #f5d0c5 0%, #c68642 50%, #8d5524 100%);
+          background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #3b82f6 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
 
-        .skin-tone-subtitle {
+        .avatar-select-subtitle {
           font-size: 1rem;
           color: rgba(255, 255, 255, 0.5);
           text-align: center;
           margin-bottom: 2rem;
         }
 
-        .avatar-preview {
+        .avatar-carousel {
           position: relative;
-          width: 160px;
-          height: 160px;
-          margin-bottom: 2rem;
-        }
-
-        .preview-sprite {
-          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.5rem;
           width: 100%;
-          height: 100%;
-          object-fit: contain;
-          z-index: 2;
-          transition: transform 0.3s ease;
+          touch-action: pan-y;
         }
 
-        .preview-glow {
+        .carousel-arrow {
           position: absolute;
-          inset: -30px;
+          top: 50%;
+          transform: translateY(-80%);
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          z-index: 10;
+        }
+
+        .carousel-arrow:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.2);
+          transform: translateY(-80%) scale(1.1);
+        }
+
+        .carousel-arrow:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+
+        .carousel-arrow-left {
+          left: 0;
+        }
+
+        .carousel-arrow-right {
+          right: 0;
+        }
+
+        .avatar-display {
+          position: relative;
+          width: 200px;
+          height: 200px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .avatar-glow {
+          position: absolute;
+          inset: -40px;
           border-radius: 50%;
           z-index: 1;
           transition: all 0.3s ease;
@@ -327,119 +384,123 @@ export default function ImmersiveSkinToneSelect({
           50% { opacity: 0.8; transform: scale(1.05); }
         }
 
-        .tone-cards {
-          display: flex;
-          gap: 1.5rem;
-          justify-content: center;
-          align-items: center;
-          flex-wrap: wrap;
+        .avatar-sprite {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          z-index: 2;
+          transition: transform 0.3s ease;
         }
 
-        .tone-card {
-          position: relative;
+        .carousel-dots {
           display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 1.25rem;
-          background: rgba(255, 255, 255, 0.03);
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          border-radius: 16px;
+          gap: 12px;
+          justify-content: center;
+        }
+
+        .carousel-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.3);
+          border: none;
+          padding: 0;
           cursor: pointer;
           transition: all 0.3s ease;
         }
 
-        .tone-card:hover:not(.selected) {
-          border-color: rgba(255, 255, 255, 0.25);
-          transform: translateY(-4px);
+        .carousel-dot:hover {
+          background: rgba(255, 255, 255, 0.5);
         }
 
-        .tone-card.selected {
-          border-width: 3px;
-          border-color: var(--tone-color);
-          background: rgba(255, 255, 255, 0.05);
-          box-shadow: 0 0 30px var(--tone-glow);
+        .carousel-dot.active {
+          background: linear-gradient(135deg, #8b5cf6, #ec4899);
+          transform: scale(1.3);
+          box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
         }
 
-        .tone-swatch {
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          border: 3px solid rgba(255, 255, 255, 0.2);
-          transition: all 0.3s ease;
-        }
-
-        .tone-card:hover .tone-swatch,
-        .tone-card.selected .tone-swatch {
-          border-color: rgba(255, 255, 255, 0.5);
-          transform: scale(1.05);
-        }
-
-        .selected-badge {
-          position: absolute;
-          top: -8px;
-          right: -8px;
-          width: 28px;
-          height: 28px;
-          background: linear-gradient(135deg, #10b981, #059669);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 10;
-          animation: badgePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-        }
-
-        @keyframes badgePop {
-          from { transform: scale(0); }
-          to { transform: scale(1); }
-        }
-
-        .tone-name {
-          font-size: 0.9rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.8);
-        }
-
-        .selection-prompt {
-          position: relative;
+        .select-button {
           margin-top: 2rem;
-          font-size: 0.9rem;
-          color: rgba(255, 255, 255, 0.4);
-          text-align: center;
+          padding: 1rem 2.5rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+          background: linear-gradient(135deg, #8b5cf6, #a855f7);
+          border: none;
+          border-radius: 14px;
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .select-button:hover:not(:disabled) {
+          transform: translateY(-3px);
+          box-shadow: 0 15px 30px rgba(139, 92, 246, 0.4);
+        }
+
+        .select-button:disabled {
+          background: linear-gradient(135deg, #10b981, #059669);
+          cursor: default;
         }
 
         @media (max-width: 640px) {
-          .skin-tone-content {
+          .avatar-select-content {
             padding: 1.5rem;
           }
 
-          .skin-tone-title {
+          .avatar-select-title {
             font-size: clamp(1.5rem, 6vw, 2rem);
           }
 
-          .avatar-preview {
-            width: 120px;
-            height: 120px;
+          .avatar-select-subtitle {
+            font-size: 0.9rem;
             margin-bottom: 1.5rem;
           }
 
-          .tone-cards {
-            gap: 1rem;
+          .avatar-display {
+            width: 160px;
+            height: 160px;
           }
 
-          .tone-card {
-            padding: 1rem;
+          .avatar-glow {
+            inset: -30px;
           }
 
-          .tone-swatch {
-            width: 50px;
-            height: 50px;
+          .carousel-arrow {
+            width: 36px;
+            height: 36px;
           }
 
-          .tone-name {
-            font-size: 0.8rem;
+          .carousel-arrow svg {
+            width: 20px;
+            height: 20px;
+          }
+
+          .carousel-dots {
+            gap: 10px;
+          }
+
+          .carousel-dot {
+            width: 8px;
+            height: 8px;
+          }
+
+          .select-button {
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+            margin-top: 1.5rem;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .avatar-display {
+            width: 140px;
+            height: 140px;
+          }
+
+          .carousel-arrow {
+            width: 32px;
+            height: 32px;
           }
         }
       `}</style>
