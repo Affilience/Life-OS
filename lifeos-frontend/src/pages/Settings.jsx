@@ -5,7 +5,6 @@ import {
   Lock,
   ChevronRight,
   Shield,
-  Gamepad2,
   Check,
   Eye,
   EyeOff,
@@ -14,13 +13,8 @@ import {
   Save,
   Volume2,
   VolumeX,
-  Mail,
   Clock,
-  AtSign,
-  X,
   Sparkles,
-  BarChart2,
-  Settings as SettingsIcon,
   GraduationCap,
   Play,
   RotateCcw,
@@ -31,11 +25,7 @@ import {
   Zap,
 } from 'lucide-react';
 import PageHeader from '../components/shared/PageHeader';
-import {
-  useGamificationModeStore,
-  GAMIFICATION_MODES,
-  VISIBILITY,
-} from '../stores/gamificationModeStore';
+import { useGamificationModeStore } from '../stores/gamificationModeStore';
 import useSettingsStore, { initializeSettingsStore } from '../stores/settingsStore';
 import useOnboardingStore from '../stores/onboardingStore';
 import { useNewOnboardingStore } from '../stores/newOnboardingStore';
@@ -54,13 +44,6 @@ import { useSignOut } from '../hooks/useAuth';
 import { LogOut, ChevronDown } from 'lucide-react';
 
 const SETTINGS_SECTIONS = [
-  {
-    id: 'gamification',
-    title: 'Gamification Mode',
-    icon: Gamepad2,
-    color: 'from-violet-500 to-purple-500',
-    description: 'Choose your experience style',
-  },
   {
     id: 'account',
     title: 'Account & Profile',
@@ -108,93 +91,6 @@ const DANGER_ZONE = [
     action: 'reset-onboarding'
   },
 ];
-
-// Mode icons mapping
-const MODE_ICONS = {
-  cosmic: Sparkles,
-  minimal: BarChart2,
-};
-
-// Visibility setting labels
-const VISIBILITY_LABELS = {
-  showAvatar: { label: 'Avatar Display', description: 'Show character avatar' },
-  showAvatarEffects: { label: 'Avatar Effects', description: 'Particle effects and animations' },
-  showPets: { label: 'Companions', description: 'Show pet companions' },
-  showEquipment: { label: 'Equipment', description: 'Show equipment system' },
-  showSkillTree: { label: 'Skill Tree', description: 'Show skill constellation' },
-  showXPBar: { label: 'Progress Bar', description: 'Show XP/progress bar' },
-  showLevel: { label: 'Level Display', description: 'Show current level' },
-  showStreaks: { label: 'Streak Tracking', description: 'Show streak counters' },
-  showStreakFlame: { label: 'Streak Flame', description: 'Animated flame icon' },
-  showAchievementPopups: { label: 'Achievement Popups', description: 'Toast notifications' },
-  showLevelUpAnimation: { label: 'Level Up Animation', description: 'Celebration effects' },
-};
-
-// Gamification Mode Selector Component
-function GamificationModeSelector() {
-  const {
-    mode,
-    setMode,
-    getVisibilitySettings,
-    toggleVisibility,
-    resetVisibility,
-  } = useGamificationModeStore();
-
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const visibilitySettings = getVisibilitySettings();
-
-  return (
-    <div className="space-y-6">
-      {/* Mode Selection Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Object.entries(GAMIFICATION_MODES).map(([modeId, modeData]) => {
-          const Icon = MODE_ICONS[modeId];
-          const isActive = mode === modeId;
-
-          return (
-            <button
-              key={modeId}
-              onClick={() => setMode(modeId)}
-              className={`
-                relative p-5 rounded-xl text-left transition-all
-                ${isActive
-                  ? 'bg-gradient-to-br from-primary-500/20 to-secondary/20 border-primary-500/50'
-                  : 'bg-bg-1/50 border-border hover:border-border-hover'
-                }
-                border-2
-              `}
-            >
-              {isActive && (
-                <div className="absolute top-3 right-3">
-                  <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center">
-                    <Check className="w-4 h-4 text-text-primary" />
-                  </div>
-                </div>
-              )}
-
-              <div
-                className={`
-                  w-12 h-12 rounded-xl flex items-center justify-center mb-4
-                  ${isActive ? 'bg-primary-500' : 'bg-bg-hover'}
-                `}
-              >
-                <Icon className={`w-6 h-6 ${isActive ? 'text-text-primary' : 'text-text-muted'}`} />
-              </div>
-
-              <h3 className={`text-lg font-bold mb-1 ${isActive ? 'text-text-primary' : 'text-text-secondary'}`}>
-                {modeData.name}
-              </h3>
-              <p className="text-sm text-text-muted leading-relaxed">
-                {modeData.description}
-              </p>
-            </button>
-          );
-        })}
-      </div>
-
-    </div>
-  );
-}
 
 // Reusable Toggle Component
 function SettingToggle({ enabled, onToggle, disabled = false }) {
@@ -1042,8 +938,6 @@ export default function Settings() {
   // Render the appropriate settings panel based on section ID
   const renderSettingsPanel = (sectionId) => {
     switch (sectionId) {
-      case 'gamification':
-        return <GamificationModeSelector />;
       case 'account':
         return <AccountSettingsPanel />;
       case 'notifications':
@@ -1111,13 +1005,7 @@ export default function Settings() {
               {/* Section Content */}
               {isExpanded && (
                 <div className="border-t border-border">
-                  {section.id === 'gamification' ? (
-                    <div className="p-5">
-                      <GamificationModeSelector />
-                    </div>
-                  ) : (
-                    renderSettingsPanel(section.id)
-                  )}
+                  {renderSettingsPanel(section.id)}
                 </div>
               )}
             </div>
