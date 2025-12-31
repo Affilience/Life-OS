@@ -832,11 +832,11 @@ export default function Social() {
                         <div className="relative w-14 h-14 flex-shrink-0">
                           {/* Leaderboard avatar with equipment */}
                           <div className="absolute inset-0 flex items-center justify-center">
-                            {entry.profile?.equipped_items ? (
+                            {entry.profile?.character_gender ? (
                               <AvatarRenderer
                                 size={48}
                                 animate={false}
-                                externalEquipped={entry.profile.equipped_items}
+                                externalEquipped={entry.profile.equipped_items || {}}
                                 externalCharacterGender={entry.profile.character_gender}
                                 externalLevel={entry.profile.current_level || 1}
                                 externalDyeColors={entry.profile.dye_colors}
@@ -1157,11 +1157,11 @@ export default function Social() {
                                 <div className="relative w-14 h-14">
                                   {/* Main avatar */}
                                   <div className="absolute inset-0 flex items-center justify-center">
-                                    {friend.equipped_items ? (
+                                    {friend.character_gender ? (
                                       <AvatarRenderer
                                         size={48}
                                         animate={false}
-                                        externalEquipped={friend.equipped_items}
+                                        externalEquipped={friend.equipped_items || {}}
                                         externalCharacterGender={friend.character_gender}
                                         externalLevel={friend.current_level || 1}
                                         externalDyeColors={friend.dye_colors}
