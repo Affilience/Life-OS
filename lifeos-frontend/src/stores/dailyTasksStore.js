@@ -772,16 +772,19 @@ const useDailyTasksStore = create(
         let streak = 0;
         let currentDate = new Date();
         currentDate.setDate(currentDate.getDate() - 1); // Start from yesterday
+        let daysChecked = 0;
+        const maxDaysToCheck = 365; // Safety limit
 
-        while (true) {
+        while (daysChecked < maxDaysToCheck) {
+          daysChecked++;
           const dateStr = getDateString(currentDate);
           const tasks = tasksByDate[dateStr] || [];
 
           // If no tasks planned, don't break streak but don't count
           if (tasks.length === 0) {
             currentDate.setDate(currentDate.getDate() - 1);
-            // Only check up to 30 days back
-            if (streak === 0 && currentDate < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) {
+            // Only check up to 30 days back if no streak found yet
+            if (streak === 0 && daysChecked > 30) {
               break;
             }
             continue;
