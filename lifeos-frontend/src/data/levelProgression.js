@@ -298,8 +298,8 @@ export const BASE_EQUIPMENT_SET_SLOTS = 1;
 export const BASE_INVENTORY_SLOTS = 10;
 
 // Slot increases
-export const PET_SLOT_LEVELS = [50, 100, 150, 200, 300, 500]; // +1 at each
-export const EQUIPMENT_SET_LEVELS = [50, 100, 200, 500]; // +1 at each
+export const PET_SLOT_LEVELS = [5, 10, 25, 50, 75, 100]; // +1 at each (6 total slots max)
+export const EQUIPMENT_SET_LEVELS = [10, 25, 50, 100]; // +1 at each
 export const INVENTORY_SLOT_INTERVAL = 10; // +1 every 10 levels
 
 /**
