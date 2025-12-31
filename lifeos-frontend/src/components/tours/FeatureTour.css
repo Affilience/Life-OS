@@ -298,7 +298,7 @@
   height: 6px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.15);
-  transition: all 0.3s ease;
+  transition: all 0.25s ease-out;
 }
 
 .tour-progress-dot.active {
@@ -306,6 +306,7 @@
 }
 
 .tour-progress-dot.current {
+  transform: scale(1.3);
   box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
 }
 
@@ -569,6 +570,33 @@
     max-height: calc(100vh - 120px);
     display: flex;
     flex-direction: column;
+    /* Disable expensive backdrop-filter on mobile for performance */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    /* Use solid background instead */
+    background: rgba(18, 16, 28, 0.98);
+    /* Smoother transitions on mobile */
+    transition: top 0.2s ease-out, left 0.2s ease-out, opacity 0.15s ease-out;
+  }
+
+  /* Disable Nova continuous animations on mobile */
+  .nova-bounce img,
+  .nova-gentle img,
+  .nova-glow img,
+  .nova-nod img,
+  .nova-think img {
+    animation: none !important;
+  }
+
+  /* Simpler spotlight pulse on mobile */
+  .tour-spotlight-border {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 0 20px rgba(139, 92, 246, 0.25);
+  }
+
+  /* Simpler hint animation */
+  .hint-icon {
+    animation: none;
   }
 
   /* Centered tooltips - welcome screens */

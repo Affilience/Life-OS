@@ -29,6 +29,7 @@ export default function JoinLeaderboardModal({ isOpen, onClose }) {
     checkUsernameAvailable,
     syncToLeaderboards,
     fetchSocialProfile,
+    fetchLeaderboards,
   } = useSocialStore();
 
   const { level, totalXP, globalStreak } = useGamificationStore();
@@ -113,6 +114,12 @@ export default function JoinLeaderboardModal({ isOpen, onClose }) {
 
     // Sync current stats to leaderboards
     await syncToLeaderboards(totalXP, 0, currentStreak);
+
+    // Refresh social profile to update UI state
+    await fetchSocialProfile();
+
+    // Refresh leaderboards to show the user in the list
+    await fetchLeaderboards();
 
     setIsJoining(false);
     onClose();

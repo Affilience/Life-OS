@@ -396,6 +396,9 @@ function TourTooltip({ step, stepIndex, totalSteps, position, onNext, onPrev, on
   const isLastStep = stepIndex === totalSteps - 1;
   const isFirstStep = stepIndex === 0;
 
+  // Detect mobile for simpler animations
+  const isMobile = window.innerWidth <= 640;
+
   return (
     <motion.div
       className={`tour-tooltip tour-tooltip-${position.position || 'bottom'}`}
@@ -403,147 +406,81 @@ function TourTooltip({ step, stepIndex, totalSteps, position, onNext, onPrev, on
       initial={{ opacity: 0, y: 15, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      key={stepIndex} // Re-animate on step change
+      // Use simpler easing on mobile for smoother performance
+      transition={isMobile
+        ? { duration: 0.2, ease: 'easeOut' }
+        : { type: 'spring', stiffness: 400, damping: 30 }
+      }
+      // Use layout for smooth position transitions instead of full remount
+      layout={isMobile ? false : true}
+      layoutId="tour-tooltip"
     >
       {/* Nova Avatar */}
       <div className="tour-tooltip-nova">
-        <motion.div
-          className={`nova-container nova-${expression.animation}`}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, type: 'spring' }}
-        >
-          <motion.img
+        <div className={`nova-container nova-${expression.animation}`}>
+          <img
             src={novaSprite}
             alt="Nova"
             className="pixelated"
-            animate={
-              expression.animation === 'bounce'
-                ? { y: [0, -6, 0] }
-                : expression.animation === 'glow'
-                  ? { filter: ['drop-shadow(0 0 12px rgba(139, 92, 246, 0.4))', 'drop-shadow(0 0 20px rgba(139, 92, 246, 0.8))', 'drop-shadow(0 0 12px rgba(139, 92, 246, 0.4))'] }
-                  : {}
-            }
-            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           />
-          <motion.span
-            className="nova-expression"
-            initial={{ scale: 0, rotate: -45 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 500 }}
-          >
+          <span className="nova-expression">
             {expression.emoji}
-          </motion.span>
-        </motion.div>
+          </span>
+        </div>
       </div>
 
-      {/* Content */}
+      {/* Content - use CSS transitions for smoother mobile performance */}
       <div className="tour-tooltip-content">
         <div className="tour-tooltip-header">
-          <motion.h4
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            {step.title}
-          </motion.h4>
-          <motion.button
+          <h4>{step.title}</h4>
+          <button
             className="tour-close-btn"
             onClick={onSkip}
             title="Close tour"
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
           >
             <X size={16} />
-          </motion.button>
+          </button>
         </div>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          {step.content}
-        </motion.p>
+        <p>{step.content}</p>
 
         {/* Action hint */}
         {step.action && (
-          <motion.div
-            className="tour-action-hint"
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <motion.span
-              className="hint-icon"
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 0.8, repeat: Infinity }}
-            >
-              👆
-            </motion.span>
+          <div className="tour-action-hint">
+            <span className="hint-icon">👆</span>
             Try clicking on the highlighted area!
-          </motion.div>
+          </div>
         )}
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - simplified for mobile performance */}
       <div className="tour-tooltip-footer">
         <div className="tour-progress">
           <span>{stepIndex + 1} / {totalSteps}</span>
-          {/* Step dots instead of bar for cleaner look */}
+          {/* Step dots - use CSS transitions */}
           <div className="tour-progress-dots">
             {[...Array(totalSteps)].map((_, i) => (
-              <motion.div
+              <div
                 key={i}
                 className={`tour-progress-dot ${i <= stepIndex ? 'active' : ''} ${i === stepIndex ? 'current' : ''}`}
-                initial={false}
-                animate={{
-                  scale: i === stepIndex ? 1.3 : 1,
-                  backgroundColor: i <= stepIndex ? '#8b5cf6' : 'rgba(255,255,255,0.15)',
-                }}
-                transition={{ type: 'spring', stiffness: 500 }}
               />
             ))}
           </div>
         </div>
         <div className="tour-nav-buttons">
           {!isFirstStep && (
-            <motion.button
-              className="tour-nav-btn"
-              onClick={onPrev}
-              whileHover={{ scale: 1.05, x: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <button className="tour-nav-btn" onClick={onPrev}>
               <ChevronLeft size={18} />
-            </motion.button>
+            </button>
           )}
           {isLastStep ? (
-            <motion.button
-              className="tour-btn tour-btn-primary tour-btn-complete"
-              onClick={onComplete}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              animate={{
-                boxShadow: [
-                  '0 4px 16px rgba(139, 92, 246, 0.35)',
-                  '0 4px 24px rgba(139, 92, 246, 0.5)',
-                  '0 4px 16px rgba(139, 92, 246, 0.35)',
-                ],
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            <button className="tour-btn tour-btn-primary tour-btn-complete" onClick={onComplete}>
               <Sparkles size={16} />
               Complete
-            </motion.button>
+            </button>
           ) : (
-            <motion.button
-              className="tour-nav-btn tour-nav-next"
-              onClick={onNext}
-              whileHover={{ scale: 1.05, x: 2 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <button className="tour-nav-btn tour-nav-next" onClick={onNext}>
               <ChevronRight size={18} />
-            </motion.button>
+            </button>
           )}
         </div>
       </div>

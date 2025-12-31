@@ -54,6 +54,10 @@ import BattleView from '../components/pvp/BattleView';
 import LoadoutManager from '../components/pvp/LoadoutManager';
 import PvPArena from '../components/pvp/PvPArena';
 import { getRankInfo } from '../utils/pvpCalculations';
+import { calculateLevelFromTotalXP } from '../data/avatarEvolution';
+import { feedback } from '../services/microInteractions';
+import AvatarRenderer from '../components/avatar/AvatarRenderer';
+import { PET_DATABASE } from '../stores/petStore';
 
 export default function Social() {
   const [activeTab, setActiveTab] = useState('feed');
@@ -69,6 +73,7 @@ export default function Social() {
   const [pvpSubTab, setPvpSubTab] = useState('arena'); // arena, battles, loadout, history
   const [showArena, setShowArena] = useState(false);
   const [userToBlock, setUserToBlock] = useState(null); // For block confirmation
+  const [arenaInviteToast, setArenaInviteToast] = useState(null); // For arena invite feedback
 
   // Connect to gamification store for user's own stats
   const { level, totalXP, globalStreak, userId } = useGamificationStore();
@@ -824,11 +829,35 @@ export default function Social() {
                             <span className="text-white/60 font-semibold">#{rank}</span>
                           )}
                         </div>
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
-                          {entry.profile?.avatar_url ? (
-                            <img src={entry.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span>{entry.profile?.display_name?.[0] || '?'}</span>
+                        <div className="relative w-14 h-14 flex-shrink-0">
+                          {/* Leaderboard avatar with equipment */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            {entry.profile?.equipped_items ? (
+                              <AvatarRenderer
+                                size={48}
+                                animate={false}
+                                externalEquipped={entry.profile.equipped_items}
+                                externalCharacterGender={entry.profile.character_gender}
+                                externalLevel={entry.profile.current_level || 1}
+                                externalDyeColors={entry.profile.dye_colors}
+                                externalSkinTone={entry.profile.skin_tone}
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center text-2xl">
+                                <span>{entry.profile?.display_name?.[0] || '?'}</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Pet companion (show first active pet) */}
+                          {entry.profile?.active_pets?.[0] && PET_DATABASE[entry.profile.active_pets[0]] && (
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6">
+                              <img
+                                src={PET_DATABASE[entry.profile.active_pets[0]].sprite}
+                                alt=""
+                                className="w-full h-full object-contain drop-shadow-lg"
+                                style={{ imageRendering: 'pixelated' }}
+                              />
+                            </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -837,7 +866,7 @@ export default function Social() {
                             {isCurrentUser && <span className="text-xs bg-purple-500 text-white px-2 py-0.5 rounded">You</span>}
                           </div>
                           <div className="text-sm text-white/60">
-                            Level {entry.profile?.current_level || 1}
+                            Level {calculateLevelFromTotalXP(entry.profile?.total_xp || entry.score || 0).level}
                             {entry.profile?.title && ` · ${entry.profile.title}`}
                           </div>
                         </div>
@@ -1123,16 +1152,41 @@ export default function Social() {
                         <div key={friend.friendshipId} className="bg-[#1a1724] border border-white/10 rounded-xl p-4 hover:border-blue-500/30 transition-all">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="relative">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center overflow-hidden">
-                                  {friend.avatar_url ? (
-                                    <img src={friend.avatar_url} alt="" className="w-full h-full object-cover" />
-                                  ) : (
-                                    <span>{friend.display_name?.[0] || '?'}</span>
+                              <div className="relative flex-shrink-0">
+                                {/* Avatar with pets */}
+                                <div className="relative w-14 h-14">
+                                  {/* Main avatar */}
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    {friend.equipped_items ? (
+                                      <AvatarRenderer
+                                        size={48}
+                                        animate={false}
+                                        externalEquipped={friend.equipped_items}
+                                        externalCharacterGender={friend.character_gender}
+                                        externalLevel={friend.current_level || 1}
+                                        externalDyeColors={friend.dye_colors}
+                                        externalSkinTone={friend.skin_tone}
+                                      />
+                                    ) : (
+                                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                        <span className="text-lg">{friend.display_name?.[0] || '?'}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Pet companion (show first active pet) */}
+                                  {friend.active_pets?.[0] && PET_DATABASE[friend.active_pets[0]] && (
+                                    <div className="absolute -bottom-1 -right-1 w-6 h-6">
+                                      <img
+                                        src={PET_DATABASE[friend.active_pets[0]].sprite}
+                                        alt=""
+                                        className="w-full h-full object-contain drop-shadow-lg"
+                                        style={{ imageRendering: 'pixelated' }}
+                                      />
+                                    </div>
                                   )}
                                 </div>
                                 {isOnline && (
-                                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1724]" />
+                                  <div className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1724]" />
                                 )}
                               </div>
                               <div>
@@ -1147,7 +1201,7 @@ export default function Social() {
                                   {isOnline && <span className="text-xs text-green-400">Online</span>}
                                 </p>
                                 <p className="text-sm text-white/50">
-                                  Level {friend.current_level || 1} · {(friend.total_xp || 0).toLocaleString()} XP
+                                  Level {calculateLevelFromTotalXP(friend.total_xp || 0).level} · {(friend.total_xp || 0).toLocaleString()} XP
                                 </p>
                               </div>
                             </div>
@@ -1156,9 +1210,13 @@ export default function Social() {
                                 onClick={async () => {
                                   try {
                                     await usePvpArenaStore.getState().sendArenaInvite(friend.user_id);
-                                    // Could show a toast here
+                                    feedback.buttonPress();
+                                    setArenaInviteToast({ type: 'success', name: friend.display_name || 'Friend' });
+                                    setTimeout(() => setArenaInviteToast(null), 3000);
                                   } catch (err) {
                                     console.error('Failed to send arena invite:', err);
+                                    setArenaInviteToast({ type: 'error', message: err.message || 'Failed to send invite' });
+                                    setTimeout(() => setArenaInviteToast(null), 3000);
                                   }
                                 }}
                                 className="p-2 text-white/40 hover:text-orange-400 transition-colors"
@@ -1376,6 +1434,24 @@ export default function Social() {
                 Block
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Arena Invite Toast */}
+      {arenaInviteToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
+          <div className={`px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 ${
+            arenaInviteToast.type === 'success'
+              ? 'bg-gradient-to-r from-orange-500/90 to-amber-500/90 border border-orange-400/30'
+              : 'bg-gradient-to-r from-red-500/90 to-red-600/90 border border-red-400/30'
+          }`}>
+            <Swords className="w-5 h-5 text-white" />
+            <span className="text-white font-medium">
+              {arenaInviteToast.type === 'success'
+                ? `Battle invite sent to ${arenaInviteToast.name}!`
+                : arenaInviteToast.message}
+            </span>
           </div>
         </div>
       )}
