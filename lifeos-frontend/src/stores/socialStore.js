@@ -397,10 +397,15 @@ export const useSocialStore = create(
 
       fetchFriends: async (passedUserId = null) => {
         const userId = passedUserId || get().currentUserId || await getCurrentUserId();
-        if (!userId) return;
+        if (!userId) {
+          console.log('[SocialStore] fetchFriends - no userId, skipping');
+          return;
+        }
+
+        console.log('[SocialStore] fetchFriends - fetching for userId:', userId);
 
         // Get accepted friendships - include preferences for privacy checks
-        const { data: friendships } = await supabase
+        const { data: friendships, error } = await supabase
           .from('friendships')
           .select(`
             id,
@@ -413,6 +418,13 @@ export const useSocialStore = create(
           .eq('status', 'accepted')
           .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
 
+        if (error) {
+          console.error('[SocialStore] fetchFriends error:', error);
+          return;
+        }
+
+        console.log('[SocialStore] fetchFriends - found', friendships?.length || 0, 'friendships');
+
         if (friendships) {
           const friends = friendships.map(f => {
             const friendProfile = f.requester_id === userId ? f.addressee : f.requester;
@@ -422,7 +434,9 @@ export const useSocialStore = create(
               user_id: friendProfile?.id, // Ensure user_id is set for filtering
               acceptedAt: f.accepted_at,
             };
-          });
+          }).filter(f => f.user_id); // Filter out any friends with null profiles
+
+          console.log('[SocialStore] fetchFriends - setting', friends.length, 'friends');
           set({ friends });
         }
       },
@@ -1194,12 +1208,12 @@ export const useSocialStore = create(
             });
           }
 
-          // Enrich leaderboard entries with profile data, filtering out hidden users
+          // Enrich leaderboard entries with profile data, filtering out hidden users AND unknown users
           const enrichEntries = (entries) => entries
-            .filter(e => !hiddenUserIds.has(e.userId))
+            .filter(e => !hiddenUserIds.has(e.userId) && profileMap[e.userId]) // Skip users not in DB
             .map(e => ({
               ...e,
-              profile: profileMap[e.userId] || { display_name: 'Unknown', avatar_url: null },
+              profile: profileMap[e.userId],
             }));
 
           set({
