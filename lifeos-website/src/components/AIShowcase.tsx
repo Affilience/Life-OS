@@ -22,32 +22,33 @@ const DATA_SOURCES = [
 ];
 
 // AI-generated insights that appear - 4 cards, 2 on each side
+// These match what the correlationEngine.js actually detects
 const AI_INSIGHTS = [
   {
-    title: 'Pattern Detected',
-    content: 'Productivity peaks Tuesday mornings after gym sessions.',
+    title: 'Pattern Spotted',
+    content: 'Productivity peaks on Tuesdays (87%) and dips on Fridays (54%).',
     icon: '🔍',
     side: 'left',
     yPos: -60,
   },
   {
-    title: 'Correlation Found',
-    content: 'Sleep improves 23% when you journal before bed.',
+    title: 'Hidden Connection',
+    content: 'Your workouts are improving your sleep. Keep the 3x/week routine.',
     icon: '🔗',
     side: 'left',
     yPos: 80,
   },
   {
-    title: 'Recommendation',
-    content: 'Block 9-11am for deep work - 2.3x more productive.',
-    icon: '💡',
+    title: 'Momentum Building',
+    content: '7-day streak active. This consistency is spilling into other areas.',
+    icon: '🔥',
     side: 'right',
     yPos: -60,
   },
   {
-    title: 'Energy Insight',
-    content: 'Your focus drops 40% after skipping breakfast.',
-    icon: '⚡',
+    title: 'Worth Noting',
+    content: 'Budget stress may be affecting focus. Review spending this week.',
+    icon: '💡',
     side: 'right',
     yPos: 80,
   },
@@ -407,16 +408,15 @@ export function AIShowcase() {
             className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
             style={{ opacity: 0 }}
           >
-            <span className="text-white">Meet </span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-cyan-400 to-purple-400">Nova</span>
-            <span className="text-white">, Your AI Companion</span>
+            <span className="text-white"> Sees What You Miss</span>
           </h2>
           <p
             ref={subtitleRef}
             className="text-lg text-white/50 max-w-2xl mx-auto"
             style={{ opacity: 0 }}
           >
-            Nova analyzes patterns across all your data to surface insights you'd never find on your own
+            Your AI companion connects the dots across all 8 modules. "You're 40% more productive after morning workouts" — insights like this, automatically.
           </p>
         </div>
 

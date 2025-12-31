@@ -38,12 +38,12 @@ const PRICING_TIERS = [
     name: 'Explorer',
     price: 0,
     period: 'forever',
-    description: 'Start your journey',
+    description: 'See what you\'ve been missing',
     color: '#8b5cf6',
     features: [
-      'Core habit tracking',
+      'All 8 life modules',
       'Basic journaling',
-      'XP & leveling system',
+      'XP & levelling system',
       'Single avatar style',
       '7-day streak tracking',
     ],
@@ -55,11 +55,11 @@ const PRICING_TIERS = [
     name: 'Adventurer',
     price: 9,
     period: 'month',
-    description: 'Unlock your potential',
+    description: 'The full system, unleashed',
     color: '#06b6d4',
     features: [
       'Everything in Explorer',
-      'All 8 life modules',
+      'Nova AI companion',
       'Equipment & pets system',
       'Skill constellation',
       'Advanced analytics',
@@ -74,7 +74,7 @@ const PRICING_TIERS = [
     name: 'Legend',
     price: 149,
     period: 'once',
-    description: 'Eternal access',
+    description: 'One payment. Forever yours.',
     color: '#f59e0b',
     features: [
       'Everything in Adventurer',
@@ -381,9 +381,9 @@ export function Pricing() {
             className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
             style={{ opacity: 0 }}
           >
-            Choose Your{' '}
+            Simple{' '}
             <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-amber-400 bg-clip-text text-transparent">
-              Path
+              Pricing
             </span>
           </h2>
           <p
@@ -391,7 +391,7 @@ export function Pricing() {
             className="text-white/50 text-lg max-w-xl mx-auto"
             style={{ opacity: 0 }}
           >
-            Start free, upgrade when you're ready to unlock your full potential
+            Free forever. Pay only when you want the full experience.
           </p>
         </div>
 
@@ -441,7 +441,7 @@ export function Pricing() {
               {/* Price */}
               <div className="text-center mb-6">
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-white/50 text-xl">$</span>
+                  <span className="text-white/50 text-xl">£</span>
                   <span
                     className="text-5xl font-bold"
                     style={{ color: tier.color }}

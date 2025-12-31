@@ -24,12 +24,12 @@ if (typeof window !== 'undefined') {
 
 // Demo configurations with pixel art icons
 const DEMOS = [
-  { id: 'xp', title: 'Experience Points', color: '#fbbf24', icon: '/assets/icons/xp_boost.png', description: 'Earn XP for every action' },
-  { id: 'equipment', title: 'Equipment & Pets', color: '#a855f7', icon: '/assets/equipment/weapons/dragon_blade.png', description: 'Collect gear & companions' },
-  { id: 'stats', title: 'Stats & Skills', color: '#ef4444', icon: '/assets/icons/module_skills.png', description: 'Allocate skill points' },
-  { id: 'skills', title: 'Skill Constellation', color: '#3b82f6', icon: '/assets/icons/module_skills.png', description: 'Unlock abilities' },
-  { id: 'abilities', title: 'Combat Abilities', color: '#ff6600', icon: '/assets/icons/module_skills.png', description: 'Elemental battle powers' },
-  { id: 'bazaar', title: 'Cosmic Bazaar', color: '#10b981', icon: '/assets/bazaar/sword_novice.png', description: 'Spend your rewards' },
+  { id: 'xp', title: 'Experience Points', color: '#fbbf24', icon: '/assets/icons/xp_boost.png', description: 'Every task = XP gained' },
+  { id: 'equipment', title: 'Equipment & Pets', color: '#a855f7', icon: '/assets/equipment/weapons/dragon_blade.png', description: 'Gear up your avatar' },
+  { id: 'stats', title: 'Stats & Skills', color: '#ef4444', icon: '/assets/icons/module_skills.png', description: 'Build your character' },
+  { id: 'skills', title: 'Skill Constellation', color: '#3b82f6', icon: '/assets/icons/module_skills.png', description: 'Skyrim-style perk trees' },
+  { id: 'abilities', title: 'Combat Abilities', color: '#ff6600', icon: '/assets/icons/module_skills.png', description: 'Battle bosses & friends' },
+  { id: 'bazaar', title: 'Cosmic Bazaar', color: '#10b981', icon: '/assets/bazaar/sword_novice.png', description: 'Spend earned rewards' },
 ];
 
 const ANGLE_PER_CARD = 360 / DEMOS.length;
@@ -1085,14 +1085,14 @@ export function Gamification() {
             className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
             style={{ opacity: 0 }}
           >
-            Level Up Your Life
+            The Dopamine Loop That Works <em className="not-italic text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">For</em> You
           </h2>
           <p
             ref={subtitleRef}
             className="text-white/60 text-lg max-w-xl mx-auto"
             style={{ opacity: 0 }}
           >
-            Play with these features — they're waiting for you
+            XP, loot, boss battles, pets — the same hooks that make games addictive, now powering your real-life growth.
           </p>
         </div>
 

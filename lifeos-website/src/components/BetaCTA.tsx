@@ -197,11 +197,11 @@ export function BetaCTA() {
           className="text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-4 max-w-3xl"
           style={{ opacity: 0 }}
         >
-          <span className="text-white">Your </span>
-          <span className="bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">Epic </span>
-          <span className="text-white">Journey </span>
-          <span className="text-white">Starts </span>
-          <span className="bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">Now</span>
+          <span className="text-white">Stop </span>
+          <span className="bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">Planning</span>
+          <span className="text-white">. Start </span>
+          <span className="bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">Playing</span>
+          <span className="text-white">.</span>
         </h2>
 
         {/* Subtitle */}
@@ -210,7 +210,7 @@ export function BetaCTA() {
           className="text-base md:text-lg text-white/50 text-center max-w-lg mb-8"
           style={{ opacity: 0 }}
         >
-          Be among the first to transform your life with the most immersive personal development platform ever created.
+          Join the beta and help shape the future of personal development. Early adopters get lifetime founding member status.
         </p>
 
         {/* CTA Button */}
