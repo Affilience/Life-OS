@@ -353,6 +353,50 @@ export const ABILITY_TYPES = {
       spiralEffect: true,
     },
   },
+
+  void_slash: {
+    id: 'void_slash',
+    name: 'Void Slash',
+    description: 'A devastating slash that tears through the fabric of reality',
+    weaponType: 'sword',
+    damage: 4.5,
+    cooldown: 14000,
+    duration: 700,
+    animation: 'slash_arc',
+    color: '#9933ff',
+    trailColor: '#6600cc',
+    sound: 'voidSlash',
+    particleCount: 20,
+    screenShake: 'heavy',
+    effects: {
+      arc: 200,
+      width: 140,
+      trailEffect: true,
+      voidRipple: true,
+    },
+  },
+
+  dragon_breath: {
+    id: 'dragon_breath',
+    name: 'Dragon Breath',
+    description: 'Unleash a torrent of draconic fire upon your enemies',
+    weaponType: 'sword',
+    damage: 4.0,
+    cooldown: 16000,
+    duration: 1000,
+    animation: 'cone_blast',
+    color: '#ff4400',
+    trailColor: '#ff8800',
+    sound: 'dragonBreath',
+    particleCount: 35,
+    screenShake: 'heavy',
+    isMagic: true,
+    effects: {
+      coneAngle: 60,
+      range: 200,
+      fireTrail: true,
+    },
+  },
 };
 
 // Animation configurations for each ability type

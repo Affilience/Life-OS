@@ -172,8 +172,8 @@ function getLocalPositions() {
 function getBaseAvatarPath(gender, skinTone) {
   const prefix = gender === 'female' ? 'heroine' : 'hero';
 
-  // For white skin tone, use the base-evolution sprites (original high-quality sprites)
-  if (skinTone === 'white' || !skinTone) {
+  // For white/default skin tone, use the base-evolution sprites (original high-quality sprites)
+  if (skinTone === 'white' || skinTone === 'default' || !skinTone) {
     return `/assets/avatar/base-evolution/${prefix}_base_stage_10_swordsman.png`;
   }
 
