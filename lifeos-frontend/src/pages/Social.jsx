@@ -57,7 +57,6 @@ import { getRankInfo } from '../utils/pvpCalculations';
 import { calculateLevelFromTotalXP } from '../data/avatarEvolution';
 import { feedback } from '../services/microInteractions';
 import AvatarRenderer from '../components/avatar/AvatarRenderer';
-import { PET_DATABASE } from '../stores/petStore';
 
 export default function Social() {
   const [activeTab, setActiveTab] = useState('feed');
@@ -848,17 +847,6 @@ export default function Social() {
                               </div>
                             )}
                           </div>
-                          {/* Pet companion (show first active pet) */}
-                          {entry.profile?.active_pets?.[0] && PET_DATABASE[entry.profile.active_pets[0]] && (
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6">
-                              <img
-                                src={PET_DATABASE[entry.profile.active_pets[0]].sprite}
-                                alt=""
-                                className="w-full h-full object-contain drop-shadow-lg"
-                                style={{ imageRendering: 'pixelated' }}
-                              />
-                            </div>
-                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-white flex items-center gap-2">
@@ -1173,17 +1161,6 @@ export default function Social() {
                                       </div>
                                     )}
                                   </div>
-                                  {/* Pet companion (show first active pet) */}
-                                  {friend.active_pets?.[0] && PET_DATABASE[friend.active_pets[0]] && (
-                                    <div className="absolute -bottom-1 -right-1 w-6 h-6">
-                                      <img
-                                        src={PET_DATABASE[friend.active_pets[0]].sprite}
-                                        alt=""
-                                        className="w-full h-full object-contain drop-shadow-lg"
-                                        style={{ imageRendering: 'pixelated' }}
-                                      />
-                                    </div>
-                                  )}
                                 </div>
                                 {isOnline && (
                                   <div className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1724]" />

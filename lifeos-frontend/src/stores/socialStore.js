@@ -412,8 +412,8 @@ export const useSocialStore = create(
             requester_id,
             addressee_id,
             accepted_at,
-            requester:user_profiles!friendships_requester_id_fkey(id, display_name, avatar_url, current_level, total_xp, active_cosmetics, preferences, character_gender, equipped_items, dye_colors, skin_tone, active_pets),
-            addressee:user_profiles!friendships_addressee_id_fkey(id, display_name, avatar_url, current_level, total_xp, active_cosmetics, preferences, character_gender, equipped_items, dye_colors, skin_tone, active_pets)
+            requester:user_profiles!friendships_requester_id_fkey(id, display_name, avatar_url, current_level, total_xp, active_cosmetics, preferences, character_gender, equipped_items, dye_colors, skin_tone),
+            addressee:user_profiles!friendships_addressee_id_fkey(id, display_name, avatar_url, current_level, total_xp, active_cosmetics, preferences, character_gender, equipped_items, dye_colors, skin_tone)
           `)
           .eq('status', 'accepted')
           .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
@@ -1194,7 +1194,7 @@ export const useSocialStore = create(
           if (userIds.length > 0) {
             const { data: profiles } = await supabase
               .from('user_profiles')
-              .select('id, display_name, avatar_url, current_level, show_on_leaderboards, character_gender, equipped_items, dye_colors, skin_tone, active_pets')
+              .select('id, display_name, avatar_url, current_level, show_on_leaderboards, character_gender, equipped_items, dye_colors, skin_tone')
               .in('id', userIds);
 
             profiles?.forEach(p => {
@@ -1260,7 +1260,7 @@ export const useSocialStore = create(
         // Fallback: fetch from PostgreSQL
         const { data } = await supabase
           .from('user_profiles')
-          .select('id, display_name, avatar_url, current_level, total_xp, show_on_leaderboards, character_gender, equipped_items, dye_colors, skin_tone, active_pets')
+          .select('id, display_name, avatar_url, current_level, total_xp, show_on_leaderboards, character_gender, equipped_items, dye_colors, skin_tone')
           .order('total_xp', { ascending: false })
           .limit(200); // Fetch more to account for filtered users
 
