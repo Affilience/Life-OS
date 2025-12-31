@@ -92,9 +92,35 @@ export default function NovaWidget() {
 
   const widgetRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Track if we've started a new conversation (to prevent re-loading old messages)
   const [isNewConversation, setIsNewConversation] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // Detect mobile keyboard open/close using visualViewport API
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const handleResize = () => {
+      // If viewport height shrinks significantly, keyboard is likely open
+      const keyboardOpen = window.visualViewport.height < window.innerHeight * 0.75;
+      setIsKeyboardOpen(keyboardOpen);
+    };
+
+    window.visualViewport.addEventListener('resize', handleResize);
+    return () => window.visualViewport.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Handle input focus - scroll into view on mobile
+  const handleInputFocus = () => {
+    if (window.innerWidth <= 768) {
+      // Small delay to let keyboard open
+      setTimeout(() => {
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  };
 
   // Load conversation history on mount
   useEffect(() => {
@@ -641,13 +667,14 @@ export default function NovaWidget() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-bg-elevated border-t border-border px-6 py-4">
+        <div className="bg-bg-elevated border-t border-border px-6 py-4 pb-safe">
           <div className="flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onFocus={handleInputFocus}
               placeholder="Ask Nova anything..."
               disabled={isLoading}
               className="flex-1 bg-bg-1 border border-border rounded-lg px-4 py-2 focus:outline-none focus:border-primary-500 disabled:opacity-50"
@@ -718,7 +745,7 @@ export default function NovaWidget() {
       {/* Expanded Chat - Rendered separately with fixed positioning */}
       {isExpanded && (
         <div
-          className="nova-expanded"
+          className={`nova-expanded ${isKeyboardOpen ? 'keyboard-open' : ''}`}
           style={getExpandedPosition()}
         >
           {/* Header - Draggable */}
@@ -852,10 +879,12 @@ export default function NovaWidget() {
           {/* Input */}
           <div className="nova-input">
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onFocus={handleInputFocus}
               placeholder="Type a message..."
               disabled={isLoading}
               className="flex-1 bg-bg-1 border border-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-primary-500 disabled:opacity-50"

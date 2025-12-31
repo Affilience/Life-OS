@@ -252,7 +252,17 @@
     /* On mobile, constrain width but allow JS-controlled positioning for dragging */
     width: calc(100vw - 32px);
     max-width: 400px;
-    /* Don't override left/right so dragging works */
+    /* Use dynamic viewport height to account for mobile keyboard */
+    max-height: calc(100dvh - 100px);
+    /* Ensure it stays in view when keyboard opens */
+    bottom: auto !important;
+  }
+
+  /* When keyboard is open, reposition the expanded chat */
+  .nova-expanded.keyboard-open {
+    top: 16px !important;
+    bottom: auto !important;
+    max-height: calc(50dvh);
   }
 
   .nova-header {
@@ -262,7 +272,19 @@
   }
 
   .nova-chat {
-    max-height: 280px;
+    max-height: 200px;
+    min-height: 120px;
+  }
+
+  .nova-input {
+    /* Ensure input stays visible and accessible */
+    position: relative;
+    z-index: 1;
+  }
+
+  .nova-input input:focus {
+    /* Scroll into view when focused */
+    scroll-margin-bottom: 100px;
   }
 }
 
