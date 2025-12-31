@@ -45,6 +45,57 @@ export const metadata: Metadata = {
   },
 };
 
+// JSON-LD structured data for SEO
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': 'https://lifeos.app/#website',
+      url: 'https://lifeos.app',
+      name: 'LifeOS',
+      description: 'Your Personal Operating System for Life',
+      publisher: {
+        '@id': 'https://lifeos.app/#organization',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': 'https://lifeos.app/#organization',
+      name: 'LifeOS',
+      url: 'https://lifeos.app',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://lifeos.app/logo.svg',
+      },
+      sameAs: [],
+    },
+    {
+      '@type': 'SoftwareApplication',
+      '@id': 'https://lifeos.app/#app',
+      name: 'LifeOS',
+      applicationCategory: 'LifestyleApplication',
+      operatingSystem: 'Web, iOS, Android',
+      description: 'The all-in-one productivity, health, and personal development platform with gamification that makes growth addictive.',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+        description: 'Free tier available',
+      },
+      featureList: [
+        'Habit tracking',
+        'Fitness tracking',
+        'Journal entries',
+        'Financial tracking',
+        'Gamification system',
+        'AI assistant',
+        'Progress analytics',
+      ],
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -54,7 +105,12 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="canonical" href="https://lifeos.app" />
+        {/* JSON-LD structured data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {/* Inline script to handle scroll restoration and returning visitor state */}
         <script
           dangerouslySetInnerHTML={{
