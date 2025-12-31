@@ -259,19 +259,6 @@ export default function ImmersiveOnboarding() {
         ))}
       </div>
 
-      {/* Skip button */}
-      <button
-        className="immersive-skip"
-        onClick={async () => {
-          if (window.confirm('Skip the onboarding experience?')) {
-            await completeOnboarding();
-            navigate('/', { replace: true });
-          }
-        }}
-      >
-        Skip
-      </button>
-
       {/* Sections - each is min-h-screen, handles its own pinning */}
       <main className="immersive-sections">
         {sections.map((section, index) => {
@@ -441,29 +428,6 @@ export default function ImmersiveOnboarding() {
           border-color: #8b5cf6;
         }
 
-        /* Skip button */
-        .immersive-skip {
-          position: fixed;
-          top: 2rem;
-          right: 2rem;
-          padding: 0.75rem 1.5rem;
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 9999px;
-          color: rgba(255, 255, 255, 0.5);
-          font-size: 0.875rem;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          z-index: 100;
-        }
-
-        .immersive-skip:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-
         @media (max-width: 768px) {
           .immersive-progress {
             right: 0.25rem;
@@ -482,13 +446,6 @@ export default function ImmersiveOnboarding() {
           .progress-dot.active .dot-inner {
             box-shadow: 0 0 3px rgba(139, 92, 246, 0.5);
           }
-
-          .immersive-skip {
-            top: 1rem;
-            right: 1rem;
-            padding: 0.5rem 1rem;
-            font-size: 0.75rem;
-          }
         }
 
         @media (max-width: 480px) {
@@ -504,13 +461,6 @@ export default function ImmersiveOnboarding() {
 
           .progress-dot.active .dot-inner {
             box-shadow: 0 0 2px rgba(139, 92, 246, 0.4);
-          }
-
-          .immersive-skip {
-            top: 0.75rem;
-            right: 0.75rem;
-            padding: 0.4rem 0.8rem;
-            font-size: 0.7rem;
           }
         }
       `}</style>

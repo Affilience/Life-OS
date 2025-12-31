@@ -26,6 +26,8 @@ if (typeof window !== 'undefined') {
 
 // Base container size (matches CSS default)
 const BASE_CONTAINER_SIZE = 450;
+// Base orb radius for the default container size
+const BASE_ORB_RADIUS = 160;
 
 const GOALS = [
   { id: 'productivity', icon: '⚡', label: 'Productivity', description: 'Master your time', color: '#fbbf24' },
@@ -46,7 +48,6 @@ const GOAL_POSITIONS = GOALS.map((_, i) => {
 });
 
 const CONTAINER_SIZE = 450;
-const ORB_RADIUS = 160;
 const CENTER = CONTAINER_SIZE / 2;
 
 export default function ImmersiveGoals({
@@ -140,12 +141,13 @@ export default function ImmersiveGoals({
               );
             }
 
-            // Individual orbs bloom from center
+            // Individual orbs bloom from center - use scaled radius for responsive sizing
+            const currentRadius = (orbsContainerRef.current?.getBoundingClientRect().width || BASE_CONTAINER_SIZE) / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
             orbRefs.current.forEach((orb, i) => {
               if (!orb) return;
               const pos = GOAL_POSITIONS[i];
-              const offsetX = pos.x * ORB_RADIUS;
-              const offsetY = -pos.y * ORB_RADIUS;
+              const offsetX = pos.x * currentRadius;
+              const offsetY = -pos.y * currentRadius;
 
               entranceTl.fromTo(orb,
                 { opacity: 0, x: 0, y: 0, scale: 0.3 },
@@ -193,11 +195,12 @@ export default function ImmersiveGoals({
               exitTl.to(instructionRef.current, { opacity: 0, y: -30, duration: 0.3 }, 0);
             }
 
+            const exitRadius = (orbsContainerRef.current?.getBoundingClientRect().width || BASE_CONTAINER_SIZE) / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
             orbRefs.current.forEach((orb, i) => {
               if (!orb) return;
               const pos = GOAL_POSITIONS[i];
-              const exitX = pos.x * ORB_RADIUS * 2.5;
-              const exitY = -pos.y * ORB_RADIUS * 2.5;
+              const exitX = pos.x * exitRadius * 2.5;
+              const exitY = -pos.y * exitRadius * 2.5;
               exitTl.to(orb, { opacity: 0, x: exitX, y: exitY, scale: 0.4, duration: 0.3 }, 0.05 + (i * 0.03));
             });
 
@@ -233,11 +236,12 @@ export default function ImmersiveGoals({
               restoreTl.to(orbsContainerRef.current, { opacity: 1, scale: 1, duration: 0.35 }, 0.15);
             }
 
+            const restoreRadius = (orbsContainerRef.current?.getBoundingClientRect().width || BASE_CONTAINER_SIZE) / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
             orbRefs.current.forEach((orb, i) => {
               if (!orb) return;
               const pos = GOAL_POSITIONS[i];
-              const offsetX = pos.x * ORB_RADIUS;
-              const offsetY = -pos.y * ORB_RADIUS;
+              const offsetX = pos.x * restoreRadius;
+              const offsetY = -pos.y * restoreRadius;
               restoreTl.to(orb, { opacity: 1, x: offsetX, y: offsetY, scale: selectedGoals.includes(GOALS[i].id) ? 1.15 : 1, duration: 0.35 }, 0.2 + (i * 0.03));
             });
 
@@ -308,12 +312,12 @@ export default function ImmersiveGoals({
     }
   }, [selectedGoals, setSelectedGoals, canSelectMore, maxGoals]);
 
-  // Calculate scaled ORB_RADIUS for SVG lines to match GSAP orb positions
+  // Calculate scaled orb radius for SVG lines to match GSAP orb positions
   // The SVG scales with container, but GSAP positions are absolute pixels
   // So we need to compensate by scaling up the SVG coordinates
   const svgOrbRadius = useMemo(() => {
     const scaleFactor = BASE_CONTAINER_SIZE / containerSize;
-    return ORB_RADIUS * scaleFactor;
+    return BASE_ORB_RADIUS * scaleFactor;
   }, [containerSize]);
 
   // Generate constellation lines
