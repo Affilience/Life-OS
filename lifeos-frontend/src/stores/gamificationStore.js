@@ -434,7 +434,7 @@ export const useGamificationStore = create(
           set({
             streaks,
             globalStreak,
-            shieldsRemaining: globalStreak?.shield_count || 0,
+            shieldsRemaining: globalStreak?.shields_available || 0,
           });
 
           // Process missions
@@ -1203,7 +1203,7 @@ export const useGamificationStore = create(
             newStreakCount = streak.current_streak + 1;
           } else {
             // Check for shield
-            if (streak.shield_count > 0) {
+            if (streak.shields_available > 0) {
               shieldsUsed = 1;
               // Streak protected by shield
             } else {
@@ -1216,7 +1216,7 @@ export const useGamificationStore = create(
               .from('momentum_chains')
               .update({
                 current_streak: newStreakCount,
-                shield_count: Math.max(0, streak.shield_count - shieldsUsed),
+                shields_available: Math.max(0, streak.shields_available - shieldsUsed),
                 longest_streak: Math.max(streak.longest_streak, newStreakCount),
                 updated_at: new Date().toISOString(),
               })

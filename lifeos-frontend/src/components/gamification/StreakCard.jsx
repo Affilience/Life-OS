@@ -44,10 +44,10 @@ export default function StreakCard({ streak, compact = false }) {
       <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${tierBorderColors[tier]} ${tierBgColors[tier]}`}>
         <FireIcon className={`w-5 h-5 ${tierColors[tier]}`} />
         <span className="text-white font-semibold">{streak.current_streak}</span>
-        {streak.shield_count > 0 && (
+        {streak.shields_available > 0 && (
           <div className="flex items-center gap-1">
             <ShieldCheckIcon className="w-4 h-4 text-cyan-400" />
-            <span className="text-cyan-400 text-sm">{streak.shield_count}</span>
+            <span className="text-cyan-400 text-sm">{streak.shields_available}</span>
           </div>
         )}
       </div>
@@ -108,13 +108,13 @@ export default function StreakCard({ streak, compact = false }) {
         </div>
 
         {/* Shields */}
-        {streak.shield_count > 0 && (
+        {streak.shields_available > 0 && (
           <div className="flex items-center gap-2">
             <ShieldCheckIcon className="w-5 h-5 text-cyan-400" />
             <div>
               <p className="text-xs text-white/60">Shields</p>
               <p className="text-sm text-cyan-400 font-semibold">
-                {streak.shield_count}
+                {streak.shields_available}
               </p>
             </div>
           </div>
