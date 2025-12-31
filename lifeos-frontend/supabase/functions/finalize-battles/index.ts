@@ -25,8 +25,6 @@ interface BattleResult {
   is_draw: boolean;
   player1_final_hp: number;
   player2_final_hp: number;
-  player1_damage: number;
-  player2_damage: number;
 }
 
 Deno.serve(async (req) => {
@@ -51,12 +49,12 @@ Deno.serve(async (req) => {
 
     const now = new Date();
 
-    // Find all expired active battles
+    // Find all expired active battles (using ends_at column)
     const { data: expiredBattles, error: fetchError } = await supabase
       .from('pvp_battles')
       .select('*')
       .eq('status', 'active')
-      .lt('end_date', now.toISOString());
+      .lt('ends_at', now.toISOString());
 
     if (fetchError) throw fetchError;
 
@@ -70,25 +68,18 @@ Deno.serve(async (req) => {
     const results: BattleResult[] = [];
 
     for (const battle of expiredBattles) {
-      // Determine winner based on HP remaining, then damage dealt
-      const player1HP = battle.player1_hp ?? 100;
-      const player2HP = battle.player2_hp ?? 100;
-      const player1Damage = battle.player1_total_damage ?? 0;
-      const player2Damage = battle.player2_total_damage ?? 0;
+      // Determine winner based on HP remaining
+      const player1HP = battle.player1_current_hp ?? battle.player1_max_hp ?? 100;
+      const player2HP = battle.player2_current_hp ?? battle.player2_max_hp ?? 100;
 
       let winnerId: string | null = null;
       let isDraw = false;
 
-      // Primary: Compare HP (lower HP = lost more = opponent won)
+      // Compare HP - higher HP wins
       if (player1HP !== player2HP) {
         winnerId = player1HP > player2HP ? battle.player1_id : battle.player2_id;
-      }
-      // Tiebreaker: Compare total damage dealt
-      else if (player1Damage !== player2Damage) {
-        winnerId = player1Damage > player2Damage ? battle.player1_id : battle.player2_id;
-      }
-      // True draw
-      else {
+      } else {
+        // True draw - same HP
         isDraw = true;
       }
 
@@ -98,8 +89,6 @@ Deno.serve(async (req) => {
         .update({
           status: 'completed',
           winner_id: winnerId,
-          is_draw: isDraw,
-          completed_at: now.toISOString(),
           updated_at: now.toISOString(),
         })
         .eq('id', battle.id);
@@ -115,8 +104,6 @@ Deno.serve(async (req) => {
         is_draw: isDraw,
         player1_final_hp: player1HP,
         player2_final_hp: player2HP,
-        player1_damage: player1Damage,
-        player2_damage: player2Damage,
       });
     }
 
