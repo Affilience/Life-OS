@@ -4,6 +4,8 @@
  * Each ability has unique animations, effects, and gameplay impact
  */
 
+import { EQUIPMENT_DATABASE } from './equipmentDatabase';
+
 // Ability type definitions by weapon category
 export const ABILITY_TYPES = {
   // ========================================
@@ -659,7 +661,7 @@ export const SHAKE_INTENSITIES = {
 };
 
 // Helper function to get ability for a weapon
-export function getWeaponAbility(weaponId, equipmentDatabase) {
+export function getWeaponAbility(weaponId, equipmentDatabase = EQUIPMENT_DATABASE) {
   const weapon = equipmentDatabase?.[weaponId];
   if (!weapon?.ability) return null;
 
