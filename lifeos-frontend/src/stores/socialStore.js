@@ -426,12 +426,38 @@ export const useSocialStore = create(
         console.log('[SocialStore] fetchFriends - found', friendships?.length || 0, 'friendships');
 
         if (friendships) {
+          // Get friend user IDs to fetch their active pets
+          const friendUserIds = friendships.map(f =>
+            f.requester_id === userId ? f.addressee_id : f.requester_id
+          ).filter(Boolean);
+
+          // Fetch active pets for friends (separate query, won't break if fails)
+          let petMap = {};
+          if (friendUserIds.length > 0) {
+            try {
+              const { data: activePets } = await supabase
+                .from('user_pets')
+                .select('user_id, pet_id')
+                .in('user_id', friendUserIds)
+                .eq('is_active', true);
+
+              (activePets || []).forEach(p => {
+                if (!petMap[p.user_id]) petMap[p.user_id] = [];
+                petMap[p.user_id].push(p.pet_id);
+              });
+            } catch (e) {
+              console.warn('[SocialStore] Failed to fetch friend pets:', e);
+            }
+          }
+
           const friends = friendships.map(f => {
             const friendProfile = f.requester_id === userId ? f.addressee : f.requester;
+            const friendUserId = friendProfile?.id;
             return {
               friendshipId: f.id,
               ...friendProfile,
-              user_id: friendProfile?.id, // Ensure user_id is set for filtering
+              user_id: friendUserId,
+              active_pets: petMap[friendUserId] || [],
               acceptedAt: f.accepted_at,
             };
           }).filter(f => f.user_id); // Filter out any friends with null profiles
@@ -1192,10 +1218,28 @@ export const useSocialStore = create(
 
           // Only query if we have user IDs to look up
           if (userIds.length > 0) {
-            const { data: profiles } = await supabase
-              .from('user_profiles')
-              .select('id, display_name, avatar_url, current_level, show_on_leaderboards, character_gender, equipped_items, dye_colors, skin_tone')
-              .in('id', userIds);
+            // Fetch profiles and active pets in parallel
+            const [profilesResult, petsResult] = await Promise.all([
+              supabase
+                .from('user_profiles')
+                .select('id, display_name, avatar_url, current_level, show_on_leaderboards, character_gender, equipped_items, dye_colors, skin_tone')
+                .in('id', userIds),
+              supabase
+                .from('user_pets')
+                .select('user_id, pet_id')
+                .in('user_id', userIds)
+                .eq('is_active', true)
+            ]);
+
+            const profiles = profilesResult.data;
+            const activePets = petsResult.data || [];
+
+            // Build a map of user_id -> array of active pet_ids
+            const petMap = {};
+            activePets.forEach(p => {
+              if (!petMap[p.user_id]) petMap[p.user_id] = [];
+              petMap[p.user_id].push(p.pet_id);
+            });
 
             profiles?.forEach(p => {
               // Check if user has opted out of leaderboards (top-level column, defaults to true)
@@ -1203,7 +1247,7 @@ export const useSocialStore = create(
               if (!showOnLeaderboards) {
                 hiddenUserIds.add(p.id);
               } else {
-                profileMap[p.id] = p;
+                profileMap[p.id] = { ...p, active_pets: petMap[p.id] || [] };
               }
             });
           }
@@ -1271,11 +1315,31 @@ export const useSocialStore = create(
             return showOnLeaderboards;
           }).slice(0, 100); // Limit to top 100 after filtering
 
+          // Fetch active pets for visible users
+          const userIds = visibleData.map(p => p.id);
+          let petMap = {};
+          if (userIds.length > 0) {
+            try {
+              const { data: activePets } = await supabase
+                .from('user_pets')
+                .select('user_id, pet_id')
+                .in('user_id', userIds)
+                .eq('is_active', true);
+
+              (activePets || []).forEach(p => {
+                if (!petMap[p.user_id]) petMap[p.user_id] = [];
+                petMap[p.user_id].push(p.pet_id);
+              });
+            } catch (e) {
+              console.warn('[SocialStore] Failed to fetch leaderboard pets:', e);
+            }
+          }
+
           const global = visibleData.map((p, i) => ({
             rank: i + 1,
             userId: p.id,
             score: p.total_xp,
-            profile: p,
+            profile: { ...p, active_pets: petMap[p.id] || [] },
           }));
 
           const streak = [...visibleData]
