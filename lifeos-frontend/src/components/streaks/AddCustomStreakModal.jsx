@@ -296,7 +296,7 @@ export default function AddCustomStreakModal({ onClose }) {
         )}
 
         {/* Footer */}
-        <div className="flex gap-3 p-4 border-t border-white/10">
+        <div className="flex gap-3 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 flex-shrink-0">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-3 text-white/60 hover:text-white transition-colors"

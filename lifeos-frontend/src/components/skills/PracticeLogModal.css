@@ -1,13 +1,21 @@
 .practice-log-modal {
   background: var(--color-bg-primary);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   width: 100%;
   max-width: 600px;
-  max-height: 90vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--color-border-subtle);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .practice-log-modal {
+    border-radius: var(--radius-xl);
+    max-height: 90vh;
+  }
 }
 
 .modal-header {
@@ -42,15 +50,18 @@
   flex-direction: column;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 .form-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  min-height: 0;
 }
 
 .form-group {
@@ -227,11 +238,13 @@
 
 .form-actions {
   padding: var(--space-6);
+  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--color-border-subtle);
   display: flex;
   justify-content: flex-end;
   gap: var(--space-3);
   background: var(--color-bg-secondary);
+  flex-shrink: 0;
 }
 
 .form-actions .button {

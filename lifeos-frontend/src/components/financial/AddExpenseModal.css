@@ -27,11 +27,11 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   width: 100%;
   max-width: 500px;
-  max-height: 95vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(148, 163, 184, 0.2);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 @media (min-width: 640px) {
@@ -79,10 +79,12 @@
 .form-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-height: 0;
 }
 
 .form-group {
@@ -152,11 +154,13 @@
 
 .form-actions {
   padding: 1.25rem 1.5rem;
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(148, 163, 184, 0.1);
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  background: rgba(26, 23, 36, 0.5);
+  background: #12101a;
+  flex-shrink: 0;
 }
 
 .form-actions .button {
@@ -270,8 +274,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .add-expense-modal {
-    max-height: 95vh;
-    margin: 0.5rem;
+    max-height: 85vh;
   }
 
   .modal-header {
@@ -284,6 +287,7 @@
 
   .form-actions {
     padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     flex-direction: column;
   }
 

@@ -173,8 +173,8 @@ export default function MicronutrientGoalsModal({ onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg max-h-[90vh] overflow-hidden bg-surface border border-border-subtle rounded-2xl shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-hidden bg-surface border border-border-subtle rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-subtle">
           <div className="flex items-center gap-3">
@@ -204,7 +204,7 @@ export default function MicronutrientGoalsModal({ onClose }) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           <CategorySection
             category="vitamin"
             goals={localGoals}
@@ -232,7 +232,7 @@ export default function MicronutrientGoalsModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border-subtle flex items-center justify-between">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-border-subtle flex items-center justify-between flex-shrink-0">
           <button
             onClick={handleReset}
             className="flex items-center gap-2 px-3 py-2 text-sm text-fg-secondary hover:text-fg-primary

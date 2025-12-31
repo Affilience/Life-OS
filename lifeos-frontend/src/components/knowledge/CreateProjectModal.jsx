@@ -46,8 +46,8 @@ export default function CreateProjectModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#12101a] border border-purple-500/30 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-[#12101a] border border-purple-500/30 rounded-t-xl sm:rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-b border-purple-500/30 p-6">
           <div className="flex items-center justify-between">
@@ -70,7 +70,7 @@ export default function CreateProjectModal({ onClose }) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
           {/* Project Title */}
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-2">
@@ -179,7 +179,7 @@ export default function CreateProjectModal({ onClose }) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 pb-[env(safe-area-inset-bottom,0px)]">
             <button
               type="button"
               onClick={onClose}

@@ -60,7 +60,7 @@ export default function AddFriendModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -68,7 +68,7 @@ export default function AddFriendModal({ isOpen, onClose }) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-md max-h-[85vh] sm:max-h-[90vh] bg-gray-900 border border-white/10 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -194,7 +194,7 @@ export default function AddFriendModal({ isOpen, onClose }) {
 
         {/* Sent Requests Info */}
         {sentRequests.length > 0 && (
-          <div className="p-4 bg-white/5 border-t border-white/10">
+          <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-white/5 border-t border-white/10 flex-shrink-0">
             <p className="text-sm text-white/60">
               <span className="text-blue-400 font-medium">{sentRequests.length}</span> pending sent request{sentRequests.length !== 1 && 's'}
             </p>

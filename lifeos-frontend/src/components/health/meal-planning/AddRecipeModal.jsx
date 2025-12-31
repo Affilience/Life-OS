@@ -385,7 +385,7 @@ export default function AddRecipeModal({ onClose, editRecipe = null }) {
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 flex gap-3">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 flex gap-3 flex-shrink-0">
           <button
             type="button"
             onClick={onClose}

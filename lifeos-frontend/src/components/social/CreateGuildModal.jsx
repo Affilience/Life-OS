@@ -95,7 +95,7 @@ export default function CreateGuildModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -103,7 +103,7 @@ export default function CreateGuildModal({ isOpen, onClose }) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg max-h-[90vh] bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="relative w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] bg-gray-900 border border-white/10 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -238,7 +238,7 @@ export default function CreateGuildModal({ isOpen, onClose }) {
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 flex gap-3 flex-shrink-0">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 flex gap-3 flex-shrink-0">
           <button
             type="button"
             onClick={handleClose}

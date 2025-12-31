@@ -34,6 +34,49 @@ import CombatCanvas from '../combat/CombatCanvas';
 import AvatarRenderer from '../avatar/AvatarRenderer';
 import AbilityIcon from '../ui/AbilityIcon';
 
+// Mobile detection helper
+const isMobileDevice = () => window.innerWidth < 768;
+
+// Calculate attack positions from avatar refs (accurate) or fallback to percentages
+const getAttackPositions = (dimensions, opponentRef, playerRef) => {
+  const { width, height } = dimensions;
+  const isMobile = isMobileDevice();
+
+  // Try to get positions from actual DOM elements for accuracy
+  if (opponentRef?.current && playerRef?.current) {
+    const opponentRect = opponentRef.current.getBoundingClientRect();
+    const playerRect = playerRef.current.getBoundingClientRect();
+
+    return {
+      opponentX: opponentRect.left + opponentRect.width / 2,
+      opponentY: opponentRect.top + opponentRect.height / 2,
+      playerX: playerRect.left + playerRect.width / 2,
+      playerY: playerRect.top + playerRect.height / 2,
+    };
+  }
+
+  // Fallback to percentage-based positions when refs not available
+  // On mobile portrait, adjust Y positions to match the flex layout
+  // The layout is: top health bar + avatar (roughly top 35%), VS divider, bottom avatar + controls (bottom 40%)
+  if (isMobile) {
+    // Mobile: taller viewport, avatars are roughly at 25% and 60% from top
+    return {
+      opponentX: width * 0.5,
+      opponentY: height * 0.22,  // Opponent avatar center (top section)
+      playerX: width * 0.5,
+      playerY: height * 0.58,    // Player avatar center (bottom section, above controls)
+    };
+  } else {
+    // Desktop: wider viewport with more spread
+    return {
+      opponentX: width * 0.5,
+      opponentY: height * 0.25,
+      playerX: width * 0.5,
+      playerY: height * 0.65,
+    };
+  }
+};
+
 // Damage number floating animation
 const DamageNumber = ({ damage, x, y, isCrit, isPlayer }) => (
   <motion.div
@@ -483,6 +526,31 @@ export default function PvPArena({ onClose }) {
   const [critCount, setCritCount] = useState(0);
   const arenaRef = useRef(null);
   const cooldownIntervalRef = useRef(null);
+  const opponentAvatarRef = useRef(null);
+  const playerAvatarRef = useRef(null);
+
+  // Responsive dimensions with resize listener
+  const [dimensions, setDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
 
   // Get weapon info
   const weaponId = equipped?.mainHand || equipped?.weapon;
@@ -567,23 +635,31 @@ export default function PvPArena({ onClose }) {
       const { type, damage, isCrit, element, attackType, abilityId } = attackData;
 
       // Calculate positions - opponent attacks come FROM top area TO bottom (player)
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const opponentX = width * 0.5;  // Opponent is centered at top
-      const opponentY = height * 0.25;
-      const playerX = width * 0.5;    // Player is centered at bottom
-      const playerY = height * 0.7;
+      // Use ref-based positions for accuracy, fallback to viewport percentages
+      const positions = getAttackPositions(dimensions, opponentAvatarRef, playerAvatarRef);
+      const { opponentX, opponentY, playerX, playerY } = positions;
 
       // Show damage number when attack impacts
       const showIncomingDamage = () => {
         const id = damageIdRef.current++;
-        const randomX = 40 + Math.random() * 20; // Centered around player
-        const randomY = 55 + Math.random() * 10;
+        // Position damage numbers at player avatar position (use refs for accuracy)
+        let dmgX, dmgY;
+        if (playerAvatarRef?.current) {
+          const rect = playerAvatarRef.current.getBoundingClientRect();
+          // Add some randomness around the center
+          dmgX = rect.left + rect.width / 2 + (Math.random() - 0.5) * 40;
+          dmgY = rect.top + rect.height / 3 + Math.random() * 20;
+        } else {
+          // Fallback to percentages
+          const isMobile = isMobileDevice();
+          dmgX = dimensions.width * (0.4 + Math.random() * 0.2);
+          dmgY = dimensions.height * (isMobile ? 0.5 + Math.random() * 0.08 : 0.55 + Math.random() * 0.1);
+        }
         setDamageNumbers(prev => [...prev, {
           id,
           damage,
-          x: `${randomX}%`,
-          y: `${randomY}%`,
+          x: `${dmgX}px`,
+          y: `${dmgY}px`,
           isCrit,
           isPlayer: false, // Red color for damage TO player
         }]);
@@ -703,23 +779,31 @@ export default function PvPArena({ onClose }) {
     const attackType = getAttackTypeFromWeapon(weapon);
 
     // Calculate positions - player attacks go FROM bottom TO top (opponent)
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const playerX = width * 0.5;      // Player is centered at bottom
-    const playerY = height * 0.7;
-    const opponentX = width * 0.5;    // Opponent is centered at top
-    const opponentY = height * 0.25;
+    // Use ref-based positions for accuracy, fallback to viewport percentages
+    const positions = getAttackPositions(dimensions, opponentAvatarRef, playerAvatarRef);
+    const { playerX, playerY, opponentX, opponentY } = positions;
 
     // Show damage number when attack impacts
     const showDamageOnImpact = () => {
       const id = damageIdRef.current++;
-      const randomX = 40 + Math.random() * 20; // Centered around opponent
-      const randomY = 20 + Math.random() * 10;
+      // Position damage numbers at opponent avatar position (use refs for accuracy)
+      let dmgX, dmgY;
+      if (opponentAvatarRef?.current) {
+        const rect = opponentAvatarRef.current.getBoundingClientRect();
+        // Add some randomness around the center
+        dmgX = rect.left + rect.width / 2 + (Math.random() - 0.5) * 40;
+        dmgY = rect.top + rect.height / 3 + Math.random() * 20;
+      } else {
+        // Fallback to percentages
+        const isMobile = isMobileDevice();
+        dmgX = dimensions.width * (0.4 + Math.random() * 0.2);
+        dmgY = dimensions.height * (isMobile ? 0.18 + Math.random() * 0.08 : 0.2 + Math.random() * 0.1);
+      }
       setDamageNumbers(prev => [...prev, {
         id,
         damage,
-        x: `${randomX}%`,
-        y: `${randomY}%`,
+        x: `${dmgX}px`,
+        y: `${dmgY}px`,
         isCrit,
         isPlayer: true, // Green color for damage TO opponent
       }]);
@@ -773,11 +857,11 @@ export default function PvPArena({ onClose }) {
       sounds.attackHit?.();
     }
 
-    // Show ability animation at opponent position
-    const opponentY = window.innerHeight * 0.25;
+    // Show ability animation at opponent position (ref-based for accuracy)
+    const abilityPositions = getAttackPositions(dimensions, opponentAvatarRef, playerAvatarRef);
     setActiveAbilityAnimation({
       ability: weaponAbility,
-      position: { x: window.innerWidth / 2, y: opponentY },
+      position: { x: abilityPositions.opponentX, y: abilityPositions.opponentY },
     });
 
     // Delay damage until animation completes
@@ -785,14 +869,23 @@ export default function PvPArena({ onClose }) {
       // Trigger screen shake
       triggerShake(weaponAbility.screenShake || 'heavy');
 
-      // Show damage number at opponent area
+      // Show damage number at opponent avatar position (use refs for accuracy)
+      let dmgX, dmgY;
+      if (opponentAvatarRef?.current) {
+        const rect = opponentAvatarRef.current.getBoundingClientRect();
+        dmgX = rect.left + rect.width / 2;
+        dmgY = rect.top + rect.height / 3;
+      } else {
+        dmgX = dimensions.width * 0.45;
+        dmgY = dimensions.height * 0.2;
+      }
       setDamageNumbers(prev => [
         ...prev,
         {
           id: Date.now(),
           damage: abilityDamage,
-          x: '45%',
-          y: '20%',
+          x: `${dmgX}px`,
+          y: `${dmgY}px`,
           isCrit: true,
           isPlayer: true,
         },
@@ -818,11 +911,10 @@ export default function PvPArena({ onClose }) {
     const ability = useElementalAbility(slot);
     if (!ability) return;
 
-    // Play PixiJS effect via CombatCanvas - target opponent position
-    const opponentX = window.innerWidth * 0.5;
-    const opponentY = window.innerHeight * 0.25;
+    // Play PixiJS effect via CombatCanvas - target opponent position (ref-based for accuracy)
+    const elementalPositions = getAttackPositions(dimensions, opponentAvatarRef, playerAvatarRef);
     if (combatCanvasRef.current) {
-      combatCanvasRef.current.playAbility(ability.id, opponentX, opponentY);
+      combatCanvasRef.current.playAbility(ability.id, elementalPositions.opponentX, elementalPositions.opponentY);
     }
 
     // Play sound
@@ -836,15 +928,24 @@ export default function PvPArena({ onClose }) {
     // Trigger screen shake
     triggerShake('heavy');
 
-    // Show damage number
+    // Show damage number at opponent avatar position (use refs for accuracy)
+    let dmgX, dmgY;
+    if (opponentAvatarRef?.current) {
+      const rect = opponentAvatarRef.current.getBoundingClientRect();
+      dmgX = rect.left + rect.width / 2;
+      dmgY = rect.top + rect.height / 3;
+    } else {
+      dmgX = dimensions.width * 0.5;
+      dmgY = dimensions.height * 0.25;
+    }
     const id = Date.now();
     setDamageNumbers(prev => [
       ...prev,
       {
         id,
         damage: abilityDamage,
-        x: '50%',
-        y: '25%',
+        x: `${dmgX}px`,
+        y: `${dmgY}px`,
         isCrit: true,
         isPlayer: true,
       },
@@ -1010,8 +1111,8 @@ export default function PvPArena({ onClose }) {
         <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 200 }}>
           <CombatCanvas
             ref={combatCanvasRef}
-            width={window.innerWidth}
-            height={window.innerHeight}
+            width={dimensions.width}
+            height={dimensions.height}
             className="w-full h-full"
           />
         </div>
@@ -1046,6 +1147,7 @@ export default function PvPArena({ onClose }) {
 
             {/* Opponent Avatar */}
             <motion.div
+              ref={opponentAvatarRef}
               initial={{ y: -50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2, type: 'spring' }}
@@ -1122,6 +1224,7 @@ export default function PvPArena({ onClose }) {
 
             {/* Player Avatar - Full size like opponent */}
             <motion.div
+              ref={playerAvatarRef}
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2, type: 'spring' }}

@@ -58,6 +58,11 @@ const usePvpArenaStore = create((set, get) => ({
   // Match history
   matchHistory: [],
 
+  // Friend invite state
+  pendingArenaInvites: [],
+  sentArenaInvites: [],
+  arenaInviteChannel: null,
+
   // UI state
   isLoading: false,
   error: null,
@@ -229,6 +234,320 @@ const usePvpArenaStore = create((set, get) => ({
 
     set({ arenaStats: data });
     return data;
+  },
+
+  // === FRIEND ARENA INVITES ===
+
+  sendArenaInvite: async (targetUserId) => {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) throw new Error('Not authenticated');
+
+    try {
+      // Get inviter's profile and combat stats
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id, display_name, avatar_url, current_level, equipped_items')
+        .eq('id', currentUserId)
+        .single();
+
+      const combatStats = calculatePlayerStats(
+        profile?.current_level || 1,
+        profile?.equipped_items || {},
+        null,
+        EQUIPMENT_DATABASE
+      );
+
+      // Create the invite
+      const { data: invite, error } = await supabase
+        .from('pvp_arena_invites')
+        .insert({
+          inviter_id: currentUserId,
+          invitee_id: targetUserId,
+          inviter_stats: {
+            level: profile?.current_level || 1,
+            maxHealth: combatStats.maxHealth,
+            damage: combatStats.damage,
+          },
+          inviter_profile: {
+            display_name: profile?.display_name || 'Anonymous',
+            avatar_url: profile?.avatar_url,
+          },
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Subscribe to this invite for status updates
+      get().subscribeToSentInvite(invite.id, currentUserId);
+
+      set(state => ({
+        sentArenaInvites: [...state.sentArenaInvites, invite],
+      }));
+
+      return invite;
+    } catch (error) {
+      console.error('Send arena invite error:', error);
+      throw error;
+    }
+  },
+
+  fetchPendingArenaInvites: async () => {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) return [];
+
+    try {
+      const { data: invites, error } = await supabase
+        .from('pvp_arena_invites')
+        .select('*')
+        .eq('invitee_id', currentUserId)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      set({ pendingArenaInvites: invites || [] });
+      return invites || [];
+    } catch (error) {
+      console.error('Fetch pending invites error:', error);
+      return [];
+    }
+  },
+
+  acceptArenaInvite: async (inviteId) => {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) throw new Error('Not authenticated');
+
+    try {
+      // First, get the invite to validate and get inviter info
+      const { data: invite, error: fetchError } = await supabase
+        .from('pvp_arena_invites')
+        .select('*')
+        .eq('id', inviteId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!invite) throw new Error('Invite not found');
+      if (invite.status !== 'pending') throw new Error('Invite already processed');
+      if (new Date(invite.expires_at) < new Date()) throw new Error('Invite expired');
+
+      // Get both players' profiles and calculate stats
+      const [inviterProfile, inviteeProfile] = await Promise.all([
+        get().fetchPlayerProfile(invite.inviter_id),
+        get().fetchPlayerProfile(currentUserId),
+      ]);
+
+      const inviterStats = calculatePlayerStats(
+        inviterProfile?.current_level || 1,
+        inviterProfile?.equipped_items || {},
+        null,
+        EQUIPMENT_DATABASE
+      );
+
+      const inviteeStats = calculatePlayerStats(
+        inviteeProfile?.current_level || 1,
+        inviteeProfile?.equipped_items || {},
+        null,
+        EQUIPMENT_DATABASE
+      );
+
+      // Create the match (channel_id is generated for realtime communication)
+      const channelId = `friend-arena-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      const { data: match, error: matchError } = await supabase
+        .from('pvp_arena_matches')
+        .insert({
+          player1_id: invite.inviter_id,
+          player2_id: currentUserId,
+          player1_max_health: inviterStats.maxHealth,
+          player1_current_health: inviterStats.maxHealth,
+          player1_damage_per_tap: inviterStats.damage,
+          player2_max_health: inviteeStats.maxHealth,
+          player2_current_health: inviteeStats.maxHealth,
+          player2_damage_per_tap: inviteeStats.damage,
+          channel_id: channelId,
+          status: 'active',
+          match_type: 'friendly',
+        })
+        .select()
+        .single();
+
+      if (matchError) throw matchError;
+
+      // Update invite with match_id and status
+      await supabase
+        .from('pvp_arena_invites')
+        .update({
+          status: 'accepted',
+          match_id: match.id,
+        })
+        .eq('id', inviteId);
+
+      // Remove from pending invites
+      set(state => ({
+        pendingArenaInvites: state.pendingArenaInvites.filter(inv => inv.id !== inviteId),
+      }));
+
+      // Set up match state (as player 2)
+      set({
+        currentMatch: match,
+        isInMatch: true,
+        myProfile: inviteeProfile,
+        opponentProfile: inviterProfile,
+        myHealth: inviteeStats.maxHealth,
+        myMaxHealth: inviteeStats.maxHealth,
+        opponentHealth: inviterStats.maxHealth,
+        opponentMaxHealth: inviterStats.maxHealth,
+        myTaps: 0,
+        opponentTaps: 0,
+        myDamageDealt: 0,
+        opponentDamageDealt: 0,
+      });
+
+      // Subscribe to match channel
+      get().subscribeToMatch(channelId, currentUserId);
+
+      return match;
+    } catch (error) {
+      console.error('Accept arena invite error:', error);
+      throw error;
+    }
+  },
+
+  declineArenaInvite: async (inviteId) => {
+    try {
+      await supabase
+        .from('pvp_arena_invites')
+        .update({ status: 'declined' })
+        .eq('id', inviteId);
+
+      set(state => ({
+        pendingArenaInvites: state.pendingArenaInvites.filter(inv => inv.id !== inviteId),
+      }));
+    } catch (error) {
+      console.error('Decline arena invite error:', error);
+    }
+  },
+
+  cancelArenaInvite: async (inviteId) => {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) return;
+
+    try {
+      await supabase
+        .from('pvp_arena_invites')
+        .delete()
+        .eq('id', inviteId)
+        .eq('inviter_id', currentUserId);
+
+      set(state => ({
+        sentArenaInvites: state.sentArenaInvites.filter(inv => inv.id !== inviteId),
+      }));
+    } catch (error) {
+      console.error('Cancel arena invite error:', error);
+    }
+  },
+
+  subscribeToArenaInvites: (userId, onInviteReceived) => {
+    const channel = supabase
+      .channel(`arena-invites-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pvp_arena_invites',
+          filter: `invitee_id=eq.${userId}`,
+        },
+        (payload) => {
+          // New invite received
+          set(state => ({
+            pendingArenaInvites: [payload.new, ...state.pendingArenaInvites],
+          }));
+          if (onInviteReceived) {
+            onInviteReceived(payload.new);
+          }
+        }
+      )
+      .subscribe();
+
+    set({ arenaInviteChannel: channel });
+    return () => {
+      supabase.removeChannel(channel);
+      set({ arenaInviteChannel: null });
+    };
+  },
+
+  subscribeToSentInvite: (inviteId, userId) => {
+    const channel = supabase
+      .channel(`sent-invite-${inviteId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'pvp_arena_invites',
+          filter: `id=eq.${inviteId}`,
+        },
+        async (payload) => {
+          const invite = payload.new;
+
+          if (invite.status === 'accepted' && invite.match_id) {
+            // Invite was accepted! Fetch the match and join
+            const { data: match } = await supabase
+              .from('pvp_arena_matches')
+              .select('*')
+              .eq('id', invite.match_id)
+              .single();
+
+            if (match) {
+              // Fetch profiles
+              const [myProfile, opponentProfile] = await Promise.all([
+                get().fetchPlayerProfile(userId),
+                get().fetchPlayerProfile(invite.invitee_id),
+              ]);
+
+              // Set up match state (as player 1 / inviter)
+              set({
+                currentMatch: match,
+                isInMatch: true,
+                myProfile,
+                opponentProfile,
+                myHealth: match.player1_current_health,
+                myMaxHealth: match.player1_max_health,
+                opponentHealth: match.player2_current_health,
+                opponentMaxHealth: match.player2_max_health,
+                myTaps: 0,
+                opponentTaps: 0,
+                myDamageDealt: 0,
+                opponentDamageDealt: 0,
+                sentArenaInvites: get().sentArenaInvites.filter(inv => inv.id !== inviteId),
+              });
+
+              // Subscribe to match channel
+              get().subscribeToMatch(match.channel_id, userId);
+            }
+          } else if (invite.status === 'declined') {
+            // Invite was declined
+            set(state => ({
+              sentArenaInvites: state.sentArenaInvites.filter(inv => inv.id !== inviteId),
+            }));
+          }
+
+          // Cleanup this subscription
+          supabase.removeChannel(channel);
+        }
+      )
+      .subscribe();
+  },
+
+  unsubscribeFromArenaInvites: () => {
+    const { arenaInviteChannel } = get();
+    if (arenaInviteChannel) {
+      supabase.removeChannel(arenaInviteChannel);
+      set({ arenaInviteChannel: null });
+    }
   },
 
   // === MATCHMAKING ===
@@ -747,6 +1066,7 @@ const usePvpArenaStore = create((set, get) => ({
   reset: () => {
     get().unsubscribeFromQueue();
     get().unsubscribeFromMatch();
+    get().unsubscribeFromArenaInvites();
     set({
       inQueue: false,
       queueStartTime: null,
@@ -766,6 +1086,8 @@ const usePvpArenaStore = create((set, get) => ({
       opponentDamageDealt: 0,
       arenaStats: null,
       matchHistory: [],
+      pendingArenaInvites: [],
+      sentArenaInvites: [],
       isLoading: false,
       error: null,
     });

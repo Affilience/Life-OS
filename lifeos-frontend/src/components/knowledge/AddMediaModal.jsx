@@ -242,8 +242,8 @@ export default function AddMediaModal({ isOpen, onClose }) {
   ];
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/10/50 bg-[#12101a]/50 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -260,7 +260,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Type Selection */}
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-3">Type</label>
@@ -496,7 +496,7 @@ export default function AddMediaModal({ isOpen, onClose }) {
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-white/10/50 bg-[#12101a]/50 flex items-center justify-between">
+        <div className="px-6 py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10/50 bg-[#12101a]/50 flex items-center justify-between flex-shrink-0">
           <p className="text-xs text-zinc-600">
             <span className="text-red-500">*</span> Required fields
           </p>

@@ -59,7 +59,7 @@ const AddSkillModal = ({ onClose }) => {
   ];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       <div className="add-skill-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="header-content">
@@ -70,7 +70,7 @@ const AddSkillModal = ({ onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="skill-form">
-          <div className="form-content">
+          <div className="form-content form-scrollable">
             {/* Skill Name */}
             <div className="form-group">
               <label className="form-label">

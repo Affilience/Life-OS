@@ -8,7 +8,7 @@
  * - Streak extended celebrations (Duolingo-style full-screen celebration)
  */
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNotificationStore } from '../../stores/notificationStore';
 import AchievementToast from './AchievementToast';
@@ -17,6 +17,9 @@ import LevelUpModal from './LevelUpModal';
 import { StreakExtendedCelebration } from '../ui/DuolingoCelebration';
 import { useGamificationModeStore, VISIBILITY } from '../../stores/gamificationModeStore';
 import useSettingsStore from '../../stores/settingsStore';
+import usePvpArenaStore from '../../stores/pvpArenaStore';
+import ArenaInvitePopup from '../pvp/ArenaInvitePopup';
+import { supabase } from '../../lib/supabase';
 import { X, Flame } from 'lucide-react';
 
 /**
@@ -45,6 +48,39 @@ export default function GlobalNotifications() {
   const xpToastEnabled = notifications?.xpToastEnabled ?? true;
   const xpToastMinThreshold = notifications?.xpToastMinThreshold ?? 15;
   const streakAlertsEnabled = notifications?.streakAlerts ?? true;
+
+  // Arena invite state
+  const [currentArenaInvite, setCurrentArenaInvite] = useState(null);
+  const { subscribeToArenaInvites, fetchPendingArenaInvites, isInMatch } = usePvpArenaStore();
+
+  // Subscribe to arena invites on mount
+  useEffect(() => {
+    let unsubscribe = null;
+
+    const setupArenaInvites = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch any pending invites on load
+      const invites = await fetchPendingArenaInvites();
+      if (invites.length > 0 && !isInMatch) {
+        setCurrentArenaInvite(invites[0]);
+      }
+
+      // Subscribe to new invites
+      unsubscribe = subscribeToArenaInvites(user.id, (newInvite) => {
+        if (!isInMatch) {
+          setCurrentArenaInvite(newInvite);
+        }
+      });
+    };
+
+    setupArenaInvites();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [subscribeToArenaInvites, fetchPendingArenaInvites, isInMatch]);
 
   // Handle XP completion
   const handleXPComplete = useCallback(() => {
@@ -164,6 +200,14 @@ export default function GlobalNotifications() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* PvP Arena Invite Popup */}
+      {currentArenaInvite && !isInMatch && (
+        <ArenaInvitePopup
+          invite={currentArenaInvite}
+          onClose={() => setCurrentArenaInvite(null)}
+        />
+      )}
     </>
   );
 }

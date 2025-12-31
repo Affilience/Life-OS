@@ -1153,6 +1153,20 @@ export default function Social() {
                             </div>
                             <div className="flex items-center gap-2">
                               <button
+                                onClick={async () => {
+                                  try {
+                                    await usePvpArenaStore.getState().sendArenaInvite(friend.user_id);
+                                    // Could show a toast here
+                                  } catch (err) {
+                                    console.error('Failed to send arena invite:', err);
+                                  }
+                                }}
+                                className="p-2 text-white/40 hover:text-orange-400 transition-colors"
+                                title="Invite to PvP Arena"
+                              >
+                                <Swords className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => removeFriend(friend.friendshipId)}
                                 className="p-2 text-white/40 hover:text-red-400 transition-colors"
                                 title="Remove friend"

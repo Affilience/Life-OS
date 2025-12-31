@@ -316,14 +316,27 @@
 
 @media (max-width: 768px) {
   .journal-writer {
-    padding: 16px;
+    padding: 12px;
     gap: 16px;
     padding-bottom: 100px;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 
   .writer-paper {
-    padding: 24px 20px;
+    padding: 20px 16px;
     min-height: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    /* Simpler background on mobile */
+    background-image:
+      repeating-linear-gradient(
+        transparent,
+        transparent 35px,
+        rgba(168, 213, 226, 0.3) 35px,
+        rgba(168, 213, 226, 0.3) 36px
+      );
   }
 
   .writer-header {
@@ -332,21 +345,38 @@
     align-items: stretch;
     margin-bottom: 24px;
     padding-bottom: 16px;
+    width: 100%;
   }
 
   .writer-actions {
-    justify-content: stretch;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
+    width: 100%;
   }
 
   .cancel-btn,
   .save-btn,
   .delete-btn {
-    flex: 1;
     justify-content: center;
-    padding: 10px 12px;
+    padding: 12px 8px;
     font-size: 13px;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  /* Save button spans full width when delete is present */
+  .save-btn {
+    grid-column: 1 / -1;
+  }
+
+  /* When delete button exists, rearrange grid */
+  .writer-actions:has(.delete-btn) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .writer-actions:has(.delete-btn) .save-btn {
+    grid-column: span 1;
   }
 
   .cancel-btn span,
@@ -357,12 +387,14 @@
   .title-input {
     font-size: 22px;
     line-height: 28px;
+    width: 100%;
   }
 
   .content-textarea {
     font-size: 16px;
     line-height: 30px;
     min-height: 300px;
+    width: 100%;
     /* Adjust lines for mobile */
     background-image: repeating-linear-gradient(
       transparent,
@@ -400,5 +432,56 @@
 
   .panel-section {
     padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .journal-writer {
+    padding: 8px;
+    padding-bottom: 120px;
+  }
+
+  .writer-paper {
+    padding: 16px 12px;
+    border-radius: 8px;
+  }
+
+  .writer-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
+  .writer-actions {
+    gap: 6px;
+  }
+
+  .cancel-btn,
+  .save-btn,
+  .delete-btn {
+    padding: 10px 6px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .cancel-btn svg,
+  .save-btn svg,
+  .delete-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .title-input {
+    font-size: 20px;
+  }
+
+  .content-textarea {
+    font-size: 15px;
+    min-height: 250px;
+  }
+
+  .mood-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
   }
 }

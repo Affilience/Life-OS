@@ -1463,16 +1463,16 @@ export default function ImmersiveGamification({
 
           .carousel-dots {
             margin-top: 0.75rem;
-            gap: 6px;
+            gap: 5px;
           }
 
           .carousel-dot {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
           }
 
           .carousel-dot-active {
-            transform: scale(1.3);
+            transform: scale(1.15);
           }
 
           .carousel-hint {
@@ -1572,7 +1572,7 @@ export default function ImmersiveGamification({
           }
 
           .carousel-dot-active {
-            transform: scale(1.2);
+            transform: scale(1.1);
           }
 
           .carousel-hint {
@@ -1595,9 +1595,17 @@ export default function ImmersiveGamification({
             height: 180px;
           }
 
+          .carousel-dots {
+            gap: 3px;
+          }
+
           .carousel-dot {
             width: 3px;
             height: 3px;
+          }
+
+          .carousel-dot-active {
+            transform: scale(1.05);
           }
         }
       `}</style>

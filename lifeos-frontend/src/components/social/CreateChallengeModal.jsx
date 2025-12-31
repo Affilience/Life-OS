@@ -121,7 +121,7 @@ export default function CreateChallengeModal({ isOpen, onClose, initialType = 'i
   const selectedMetric = METRIC_TYPES.find(m => m.id === formData.metricType);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -129,7 +129,7 @@ export default function CreateChallengeModal({ isOpen, onClose, initialType = 'i
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden">
+      <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-xl font-bold text-white">Create Challenge</h2>
@@ -142,7 +142,7 @@ export default function CreateChallengeModal({ isOpen, onClose, initialType = 'i
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Challenge Type Selection */}
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">
@@ -460,7 +460,7 @@ export default function CreateChallengeModal({ isOpen, onClose, initialType = 'i
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 flex gap-3">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 flex gap-3 flex-shrink-0">
           <button
             type="button"
             onClick={onClose}

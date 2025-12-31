@@ -25,8 +25,8 @@ export default function PvPInviteModal({ invites, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1a1724] border border-white/10 rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-[#1a1724] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-500/20 rounded-lg">
@@ -39,7 +39,7 @@ export default function PvPInviteModal({ invites, onClose }) {
           </button>
         </div>
 
-        <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] space-y-4 overflow-y-auto flex-1 min-h-0">
           {invites.map((invite) => {
             const inviterLoadout = invite.inviter_loadout || {};
             const inviterStats = inviterLoadout.stats || {};

@@ -42,7 +42,7 @@ export default function AddWidgetModal({ isOpen, onClose }) {
   const hiddenWidgets = availableWidgets.filter(w => !widgetVisibility[w.id]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -50,7 +50,7 @@ export default function AddWidgetModal({ isOpen, onClose }) {
       />
 
       {/* Modal */}
-      <div className="relative bg-[#1a1724] border border-white/10 rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden shadow-2xl">
+      <div className="relative bg-[#1a1724] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] sm:max-h-[80vh] overflow-hidden shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div>
@@ -110,7 +110,7 @@ export default function AddWidgetModal({ isOpen, onClose }) {
         </div>
 
         {/* Widget List */}
-        <div className="p-4 overflow-y-auto max-h-[400px]">
+        <div className="p-4 overflow-y-auto flex-1 min-h-0">
           {/* Hidden Widgets (Available to Add) */}
           {hiddenWidgets.length > 0 && (
             <div className="mb-6">
@@ -181,7 +181,7 @@ export default function AddWidgetModal({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 flex justify-between items-center">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 flex justify-between items-center flex-shrink-0">
           <p className="text-xs text-white/40">
             {visibleWidgets.length} widget{visibleWidgets.length !== 1 ? 's' : ''} active
           </p>

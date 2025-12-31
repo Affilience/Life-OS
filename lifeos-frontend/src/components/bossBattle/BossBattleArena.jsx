@@ -2851,9 +2851,15 @@ export default function BossBattleArena({ bossId, onClose }) {
   const weaponAbility = equippedWeaponId ? getWeaponAbility(equippedWeaponId) : null;
   const canUseAbility = weaponAbility && isAbilityReady(abilityLastUsed, weaponAbility.cooldown) && !isAbilityAnimating;
 
+  // State for battle initialization errors and retry trigger
+  const [initError, setInitError] = useState(null);
+  const [initAttempt, setInitAttempt] = useState(0);
+
   // Reset any stuck battle and start countdown
   useEffect(() => {
     let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
 
     const initBattle = async () => {
       // First, abandon any stuck battle from previous sessions
@@ -2880,12 +2886,45 @@ export default function BossBattleArena({ bossId, onClose }) {
       if (!isMounted) return;
       setIsCountdown(false);
 
-      // Start the actual battle
-      const result = await startBattle(bossId, level, equipped, activePet);
-      if (result.error) {
-        console.error('Failed to start battle:', result.error);
-        if (isMounted) onClose();
-      }
+      // Start the actual battle with retry logic for mobile network issues
+      const attemptStartBattle = async () => {
+        const result = await startBattle(bossId, level, equipped, activePet);
+
+        if (result.error) {
+          console.warn(`Battle start attempt ${retryCount + 1} failed:`, result.error);
+
+          // If battle already in progress, abandon and retry
+          if (result.error === 'Battle already in progress') {
+            await abandonBattle();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            if (isMounted && retryCount < maxRetries) {
+              retryCount++;
+              return attemptStartBattle();
+            }
+          }
+
+          // For auth errors, retry with exponential backoff (mobile network issues)
+          if (result.error === 'Not authenticated' && retryCount < maxRetries) {
+            retryCount++;
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 4000);
+            console.log(`Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            if (isMounted) {
+              return attemptStartBattle();
+            }
+          }
+
+          // Show error to user instead of immediately closing
+          if (isMounted) {
+            console.error('Failed to start battle after retries:', result.error);
+            setInitError(result.error);
+          }
+          return false;
+        }
+        return true;
+      };
+
+      await attemptStartBattle();
     };
 
     initBattle();
@@ -2896,7 +2935,7 @@ export default function BossBattleArena({ bossId, onClose }) {
         clearInterval(battleIntervalRef.current);
       }
     };
-  }, [bossId]); // Only depend on bossId to prevent re-runs
+  }, [bossId, initAttempt]); // Re-run on bossId change or manual retry
 
   // Boss auto-attack interval - uses boss's attackSpeed
   useEffect(() => {
@@ -3417,8 +3456,58 @@ export default function BossBattleArena({ bossId, onClose }) {
         )}
       </AnimatePresence>
 
+      {/* Battle initialization error overlay */}
+      <AnimatePresence>
+        {initError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-gradient-to-br from-red-900/90 to-slate-900/90 border border-red-500/30 rounded-2xl p-6 max-w-sm mx-4 text-center"
+            >
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+                <X className="w-8 h-8 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Battle Failed to Start</h3>
+              <p className="text-white/70 text-sm mb-4">
+                {initError === 'Not authenticated'
+                  ? 'Connection issue. Please check your internet and try again.'
+                  : initError}
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => {
+                    setInitError(null);
+                    onClose();
+                  }}
+                  className="px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={() => {
+                    setInitError(null);
+                    setIsCountdown(true);
+                    setCountdown(3);
+                    setInitAttempt(prev => prev + 1);
+                  }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-xl font-bold transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main battle area - Diagonal layout like CombatDemo */}
-      {!isCountdown && (
+      {!isCountdown && !initError && (
         <div className="h-full w-full flex items-center justify-center relative overflow-hidden">
           {/* Fixed aspect ratio battle arena - more vertical on mobile */}
           <div

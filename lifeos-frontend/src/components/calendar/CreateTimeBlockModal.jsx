@@ -119,8 +119,8 @@ export default function CreateTimeBlockModal({ initialData, editBlock, onClose }
   const selectedModule = modules.find((m) => m.id === formData.module);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="bg-[#12101a] border border-purple-500/30 rounded-t-xl sm:rounded-xl shadow-2xl w-full max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto pb-safe">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-[#12101a] border border-purple-500/30 rounded-t-xl sm:rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div
           className="border-b border-purple-500/30 p-6"
@@ -155,7 +155,8 @@ export default function CreateTimeBlockModal({ initialData, editBlock, onClose }
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-2">
@@ -351,9 +352,10 @@ export default function CreateTimeBlockModal({ initialData, editBlock, onClose }
               className="w-full px-4 py-3 bg-[#1a1724]/50 border border-white/15 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all"
             />
           </div>
+          </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
+          {/* Actions - Sticky Footer */}
+          <div className="flex gap-3 p-6 pt-4 border-t border-purple-500/20 bg-[#12101a] pb-safe">
             <button
               type="button"
               onClick={onClose}

@@ -131,12 +131,12 @@ export default function AddResolutionModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-[#1a1724] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+        className="bg-[#1a1724] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
         <div className="p-6 border-b border-white/10">
@@ -193,7 +193,7 @@ export default function AddResolutionModal({ onClose }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[50vh]">
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -212,7 +212,7 @@ export default function AddResolutionModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-white/10 flex justify-between">
+        <div className="p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 flex justify-between flex-shrink-0">
           <button
             onClick={handleBack}
             disabled={currentStep === 0}

@@ -7,22 +7,37 @@
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .modal-overlay {
+    align-items: center;
+    padding: 1rem;
+  }
 }
 
 .add-income-modal {
   background: #12101a;
-  border-radius: 1rem;
+  border-radius: 1rem 1rem 0 0;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .add-income-modal {
+    border-radius: 1rem;
+    max-height: 90vh;
+  }
 }
 
 .modal-header {
@@ -58,15 +73,18 @@
   flex-direction: column;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 .form-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-height: 0;
 }
 
 .form-group {
@@ -151,11 +169,13 @@
 
 .form-actions {
   padding: 1.25rem 1.5rem;
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(148, 163, 184, 0.1);
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  background: rgba(26, 23, 36, 0.5);
+  background: #12101a;
+  flex-shrink: 0;
 }
 
 .form-actions .button {
@@ -165,8 +185,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .add-income-modal {
-    max-height: 95vh;
-    margin: 0.5rem;
+    max-height: 85vh;
   }
 
   .modal-header {
@@ -179,6 +198,7 @@
 
   .form-actions {
     padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     flex-direction: column;
   }
 

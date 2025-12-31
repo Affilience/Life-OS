@@ -120,8 +120,12 @@
   justify-content: flex-end;
   gap: var(--space-3);
   padding-top: var(--space-4);
+  padding-bottom: env(safe-area-inset-bottom, 0);
   border-top: 1px solid rgba(255, 255, 255, 0.04);
   margin-top: var(--space-2);
+  background: var(--bg-1, #12101a);
+  position: sticky;
+  bottom: 0;
 }
 
 /* Responsive Design */

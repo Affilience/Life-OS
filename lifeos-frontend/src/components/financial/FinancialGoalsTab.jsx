@@ -754,8 +754,8 @@ export default function FinancialGoalsTab() {
 
       {/* Add Goal Modal */}
       {showAddGoal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#12101a] border border-slate-700 rounded-2xl max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-[#12101a] border border-slate-700 rounded-t-2xl sm:rounded-2xl max-w-lg w-full shadow-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 border-b border-slate-700/50 sticky top-0 bg-[#12101a]">
               <div>
@@ -899,7 +899,7 @@ export default function FinancialGoalsTab() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex gap-3 p-5 border-t border-slate-700/50 sticky bottom-0 bg-[#12101a]">
+            <div className="flex gap-3 p-5 pb-safe border-t border-slate-700/50 sticky bottom-0 bg-[#12101a]">
               <button
                 onClick={() => setShowAddGoal(false)}
                 className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-white font-medium transition-colors"

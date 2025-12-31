@@ -477,18 +477,39 @@ export default function ImmersiveSkinToneSelect({
           }
 
           .carousel-dots {
-            gap: 10px;
+            gap: 8px;
           }
 
           .carousel-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
+          }
+
+          .carousel-dot.active {
+            transform: scale(1.2);
+            box-shadow: 0 0 6px rgba(139, 92, 246, 0.4);
           }
 
           .select-button {
             padding: 0.875rem 2rem;
             font-size: 1rem;
             margin-top: 1.5rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .carousel-dots {
+            gap: 6px;
+          }
+
+          .carousel-dot {
+            width: 5px;
+            height: 5px;
+          }
+
+          .carousel-dot.active {
+            transform: scale(1.15);
+            box-shadow: 0 0 4px rgba(139, 92, 246, 0.4);
           }
         }
 
@@ -501,6 +522,15 @@ export default function ImmersiveSkinToneSelect({
           .carousel-arrow {
             width: 32px;
             height: 32px;
+          }
+
+          .carousel-dots {
+            gap: 5px;
+          }
+
+          .carousel-dot {
+            width: 4px;
+            height: 4px;
           }
         }
       `}</style>
