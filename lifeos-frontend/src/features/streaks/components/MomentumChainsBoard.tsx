@@ -338,7 +338,6 @@ export function MomentumChainsBoard() {
 
   // Calculate stats
   const longestActiveStreak = Math.max(...chains.map(c => c.currentStreak), 0);
-  const totalStreakDays = chains.reduce((sum, chain) => sum + chain.currentStreak, 0);
   const xpMultiplier = Math.min(1 + (longestActiveStreak * 0.02), 3);
 
   // Get tier based on longest streak
@@ -408,13 +407,6 @@ export function MomentumChainsBoard() {
             {/* Right - Quick Stats */}
             <div className="flex gap-4 sm:gap-6">
               <div className="text-center">
-                <div className="flex items-center gap-1 text-orange-400">
-                  <Flame className="w-4 h-4" />
-                  <span className="text-xl sm:text-2xl font-bold">{totalStreakDays}</span>
-                </div>
-                <div className="text-xs text-white/50">Total Days</div>
-              </div>
-              <div className="text-center">
                 <div className="flex items-center gap-1 text-yellow-400">
                   <Zap className="w-4 h-4" />
                   <span className="text-xl sm:text-2xl font-bold">+{Math.round((xpMultiplier - 1) * 100)}%</span>
@@ -449,13 +441,6 @@ export function MomentumChainsBoard() {
             {/* Right - Quick Stats */}
             <div className="flex gap-4 sm:gap-6">
               <div className="text-center">
-                <div className="flex items-center gap-1 text-blue-400">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-lg sm:text-xl font-bold">{totalStreakDays}</span>
-                </div>
-                <div className="text-xs text-white/50">Total Days</div>
-              </div>
-              <div className="text-center">
                 <div className="flex items-center gap-1 text-green-400">
                   <TrendingUp className="w-4 h-4" />
                   <span className="text-lg sm:text-xl font-bold">+{Math.round((xpMultiplier - 1) * 100)}%</span>
@@ -479,10 +464,6 @@ export function MomentumChainsBoard() {
                   <span className="text-sm text-white/60">day streak</span>
                 </div>
               </div>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <div className="text-lg font-bold text-white">{totalStreakDays}</div>
-              <div className="text-xs text-white/50">total days</div>
             </div>
           </div>
         </div>
