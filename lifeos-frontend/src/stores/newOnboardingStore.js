@@ -652,6 +652,13 @@ export const useNewOnboardingStore = create(
 
       // Complete onboarding - returns true on success, false on failure
       completeOnboarding: async () => {
+        // Guard: Check if already completed to prevent double bonus
+        const currentState = get();
+        if (currentState.isOnboardingComplete) {
+          console.log('[Onboarding] Already completed, skipping duplicate call');
+          return true;
+        }
+
         // Set up the default dashboard layout for new users
         // This ensures the dashboard tour has all the expected elements visible
         try {
@@ -683,7 +690,7 @@ export const useNewOnboardingStore = create(
           console.warn('[Onboarding] Could not save to localStorage:', e);
         }
 
-        // Award 100 starter credits
+        // Award 100 starter credits (only once - guard above prevents duplicates)
         try {
           const gamificationStore = await getGamificationStore();
           await gamificationStore.getState().addCredits(100, 'onboarding_bonus');

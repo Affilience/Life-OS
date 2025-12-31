@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Save, X, Calendar, Tag, Smile, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { journalDB, settingsDB } from '../db/journalDB';
-import { triggerGamification } from '../hooks/useGamification';
 import './JournalWriter.css';
 
 // Font family mappings
@@ -85,16 +84,11 @@ export default function JournalWriter() {
           wordCount
         });
       } else {
-        // Create new entry
+        // Create new entry (XP is awarded inside journalDB.addEntry)
         await journalDB.addEntry({
           ...entry,
           wordCount
         });
-
-        // Award XP based on word count - only for new entries
-        const baseXP = 20;
-        const bonusXP = Math.min(Math.floor(wordCount / 50) * 5, 30);
-        triggerGamification('journalEntry', { xpOverride: baseXP + bonusXP, module: 'journal' });
       }
 
       navigate('/journal');
