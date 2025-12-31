@@ -60,9 +60,10 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
   const viewportHeight = window.innerHeight;
   const isMobile = viewportWidth <= 640;
 
-  // On mobile, use smaller tooltip dimensions
+  // On mobile, use smaller tooltip dimensions but ensure enough height for content
+  // Centered tooltips need more height as they contain welcome messages
   const actualTooltipSize = isMobile
-    ? { width: viewportWidth - 32, height: 160 }
+    ? { width: viewportWidth - 32, height: position === 'center' ? 280 : 180 }
     : tooltipSize;
 
   let top, left;
@@ -70,8 +71,24 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
 
   // Center position (no target element)
   if (position === 'center' || !targetRect) {
-    // Ensure centered tooltip doesn't get cut off at top
-    const centeredTop = Math.max(padding, (viewportHeight - actualTooltipSize.height) / 2);
+    // On mobile, position closer to top to ensure full visibility
+    // Leave room for bottom navigation bar (~60px)
+    const safeBottomPadding = isMobile ? 80 : padding;
+    const availableHeight = viewportHeight - safeBottomPadding - padding;
+
+    // Calculate top position - ensure tooltip fits within safe area
+    let centeredTop = (viewportHeight - actualTooltipSize.height) / 2;
+
+    // On mobile, cap the top position to ensure full visibility
+    if (isMobile) {
+      // Don't let it go too low - ensure at least 100px from bottom
+      const maxTop = viewportHeight - actualTooltipSize.height - safeBottomPadding;
+      centeredTop = Math.min(centeredTop, maxTop);
+      centeredTop = Math.max(padding + 20, centeredTop); // At least 36px from top
+    } else {
+      centeredTop = Math.max(padding, centeredTop);
+    }
+
     return {
       top: centeredTop,
       left: Math.max(padding, (viewportWidth - actualTooltipSize.width) / 2),
