@@ -1723,6 +1723,10 @@ const useAchievementsStore = create(
           }
 
           console.log(`[AchievementsStore] ✅ Initialized: ${mergedUnlocked.length} unlocked (${localUnlocked.length} local, ${supabaseUnlocked.length} from Supabase)`);
+
+          // Populate achievementProgress by running checkAchievements
+          // This calculates progress % for "Almost There" display
+          get().checkAchievements();
         } catch (error) {
           console.error('[AchievementsStore] ❌ Error initializing:', error);
           // On error, keep local state - don't wipe it

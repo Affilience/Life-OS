@@ -72,6 +72,7 @@ import useModuleMasteryStore from '../stores/moduleMasteryStore';  // default ex
 import usePerkStore from '../stores/perkStore';  // default export
 import useNotificationStore from '../stores/notificationStore';  // default export
 import useDashboardStore from '../stores/dashboardStore';  // default export
+import useElementalAbilityStore from '../stores/elementalAbilityStore';  // default export
 
 export function RealtimeProvider({ children, showNotifications = false }) {
   const channelsRef = useRef([]);
@@ -140,6 +141,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
   const refreshPerks = usePerkStore(state => state.initializeFromSupabase);
   const refreshNotifications = useNotificationStore(state => state.fetchNotifications);
   const refreshDashboard = useDashboardStore(state => state.initializeFromSupabase);
+  const refreshElementalAbilities = useElementalAbilityStore(state => state.initializeFromSupabase);
 
   // Helper to show realtime notification (only if enabled)
   const notifyRealtime = (module, eventType) => {
@@ -910,6 +912,23 @@ export function RealtimeProvider({ children, showNotifications = false }) {
     channels.push(perksChannel);
 
     // ============================================
+    // ELEMENTAL ABILITIES - Combat ability unlocks
+    // ============================================
+    const abilitiesChannel = supabase
+      .channel('global_abilities')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_ability_unlocks',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        debug('[Realtime] Ability unlock changed:', payload.eventType);
+        debouncedRefresh('abilities', refreshElementalAbilities);
+      })
+      .subscribe(handleSubscriptionStatus('Abilities'));
+    channels.push(abilitiesChannel);
+
+    // ============================================
     // NOTIFICATIONS - System notifications
     // ============================================
     const notificationsChannel = supabase
@@ -1090,6 +1109,7 @@ export function RealtimeProvider({ children, showNotifications = false }) {
     refreshPerks,
     refreshNotifications,
     refreshDashboard,
+    refreshElementalAbilities,
     // Utilities
     toast,
     showNotifications,

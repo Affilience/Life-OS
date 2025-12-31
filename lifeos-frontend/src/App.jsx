@@ -119,6 +119,7 @@ import { initializeSkillPointsStore } from './stores/skillPointsStore';
 import { initializeBossStore } from './stores/bossStore';
 import { initializeCustomStreaksStore } from './stores/customStreaksStore';
 import { initializeGamificationModeStore } from './stores/gamificationModeStore';
+import { initializeElementalAbilityStore } from './stores/elementalAbilityStore';
 import { initializeSettingsStore } from './stores/settingsStore';
 import { initializeTourStore } from './stores/tourStore';
 import { initializeLevelProgressionStore } from './stores/levelProgressionStore';
@@ -381,6 +382,7 @@ function AppContent() {
           initWithLog('BossStore', () => initializeBossStore(userId)),
           initWithLog('CustomStreaksStore', () => initializeCustomStreaksStore(userId)),
           initWithLog('TourStore', () => initializeTourStore(userId)),
+          initWithLog('ElementalAbilityStore', () => initializeElementalAbilityStore(userId)),
         ]);
 
         // Stores that depend on others being initialized first

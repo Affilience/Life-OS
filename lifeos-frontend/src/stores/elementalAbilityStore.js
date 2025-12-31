@@ -539,3 +539,12 @@ const useElementalAbilityStore = create(
 );
 
 export default useElementalAbilityStore;
+
+/**
+ * Initialize elemental ability store with user data from Supabase
+ * @param {string} userId - The user ID to load data for
+ */
+export async function initializeElementalAbilityStore(userId) {
+  const store = useElementalAbilityStore.getState();
+  await store.initializeFromSupabase(userId);
+}
