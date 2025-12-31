@@ -293,7 +293,7 @@ export function getNextFrame(level) {
 // ============================================
 
 // Base values
-export const BASE_PET_SLOTS = 1;
+export const BASE_PET_SLOTS = 0; // All 6 slots unlock at milestones
 export const BASE_EQUIPMENT_SET_SLOTS = 1;
 export const BASE_INVENTORY_SLOTS = 10;
 
