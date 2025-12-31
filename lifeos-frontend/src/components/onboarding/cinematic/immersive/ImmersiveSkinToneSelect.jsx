@@ -46,6 +46,9 @@ export default function ImmersiveSkinToneSelect({
   const [touchEnd, setTouchEnd] = useState(null);
   const minSwipeDistance = 50;
 
+  // Track previous gender to detect changes
+  const prevGenderRef = useRef(characterGender);
+
   // Store callbacks in refs
   const onCompleteRef = useRef(onComplete);
   const onLockScrollRef = useRef(onLockScroll);
@@ -55,6 +58,14 @@ export default function ImmersiveSkinToneSelect({
     onLockScrollRef.current = onLockScroll;
     onSectionEnterRef.current = onSectionEnter;
   }, [onComplete, onLockScroll, onSectionEnter]);
+
+  // Reset isInView when character gender changes so animations replay
+  useEffect(() => {
+    if (prevGenderRef.current !== characterGender) {
+      prevGenderRef.current = characterGender;
+      setIsInView(false);
+    }
+  }, [characterGender]);
 
   // Get avatar path based on gender and variant
   const getAvatarPath = (variantId) => {
@@ -200,12 +211,12 @@ export default function ImmersiveSkinToneSelect({
     >
       <div className="avatar-select-content">
         {/* Title */}
-        <h2 ref={titleRef} className="avatar-select-title" style={{ opacity: 0 }}>
+        <h2 ref={titleRef} className="avatar-select-title" style={isInView ? undefined : { opacity: 0 }}>
           Choose Your <span className="gradient-text">Avatar</span>
         </h2>
 
         {/* Subtitle */}
-        <p ref={subtitleRef} className="avatar-select-subtitle" style={{ opacity: 0 }}>
+        <p ref={subtitleRef} className="avatar-select-subtitle" style={isInView ? undefined : { opacity: 0 }}>
           Swipe to browse, tap to select
         </p>
 
@@ -213,7 +224,7 @@ export default function ImmersiveSkinToneSelect({
         <div
           ref={carouselRef}
           className="avatar-carousel"
-          style={{ opacity: 0 }}
+          style={isInView ? undefined : { opacity: 0 }}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
@@ -272,7 +283,7 @@ export default function ImmersiveSkinToneSelect({
           ref={promptRef}
           className="select-button"
           onClick={handleSelect}
-          style={{ opacity: 0 }}
+          style={isInView ? undefined : { opacity: 0 }}
           disabled={hasSelected}
         >
           {hasSelected ? '✓ Selected!' : 'Choose This Avatar'}
@@ -363,8 +374,8 @@ export default function ImmersiveSkinToneSelect({
 
         .avatar-display {
           position: relative;
-          width: 200px;
-          height: 200px;
+          width: 280px;
+          height: 280px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -372,7 +383,7 @@ export default function ImmersiveSkinToneSelect({
 
         .avatar-glow {
           position: absolute;
-          inset: -40px;
+          inset: -60px;
           border-radius: 50%;
           z-index: 1;
           transition: all 0.3s ease;
@@ -458,8 +469,8 @@ export default function ImmersiveSkinToneSelect({
           }
 
           .avatar-display {
-            width: 160px;
-            height: 160px;
+            width: 220px;
+            height: 220px;
           }
 
           .avatar-glow {
@@ -515,8 +526,8 @@ export default function ImmersiveSkinToneSelect({
 
         @media (max-width: 380px) {
           .avatar-display {
-            width: 140px;
-            height: 140px;
+            width: 180px;
+            height: 180px;
           }
 
           .carousel-arrow {
