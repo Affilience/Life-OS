@@ -97,7 +97,7 @@ const usePvpArenaStore = create((set, get) => ({
           .select('*')
           .eq('user_id', userId)
           .eq('status', 'waiting')
-          .single(),
+          .maybeSingle(),
         'checkQueue'
       );
 
@@ -116,7 +116,7 @@ const usePvpArenaStore = create((set, get) => ({
           .select('*')
           .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
           .eq('status', 'active')
-          .single(),
+          .maybeSingle(),
         'checkActiveMatch'
       );
 

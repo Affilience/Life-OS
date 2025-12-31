@@ -804,7 +804,7 @@ export default function Social() {
               ) : (
                 <div className="space-y-2">
                   {leaderboards[leaderboardType]?.map((entry, index) => {
-                    const isCurrentUser = entry.userId === socialProfile?.user_id;
+                    const isCurrentUser = entry.userId === socialProfile?.id;
                     const rank = entry.rank || index + 1;
 
                     return (
