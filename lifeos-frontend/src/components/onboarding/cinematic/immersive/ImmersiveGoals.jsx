@@ -68,6 +68,8 @@ export default function ImmersiveGoals({
   const [rotation, setRotation] = useState(0);
   const lastWheelTime = useRef(0);
   const [containerSize, setContainerSize] = useState(BASE_CONTAINER_SIZE);
+  // Store initial container size to use for all animations (not affected by transforms)
+  const initialContainerSize = useRef(BASE_CONTAINER_SIZE);
 
   const maxGoals = 3;
   const canSelectMore = selectedGoals.length < maxGoals;
@@ -86,13 +88,18 @@ export default function ImmersiveGoals({
   const [isInView, setIsInView] = useState(false);
 
   // Track container size for responsive SVG line positioning
+  // Store initial size once on mount, use CSS width for resize updates
   useLayoutEffect(() => {
     if (!orbsContainerRef.current) return;
 
     const updateSize = () => {
-      const rect = orbsContainerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setContainerSize(rect.width);
+      // Get computed width (unaffected by transforms like scale)
+      const computedStyle = window.getComputedStyle(orbsContainerRef.current);
+      const width = parseFloat(computedStyle.width) || BASE_CONTAINER_SIZE;
+      setContainerSize(width);
+      // Store initial size for animation calculations
+      if (initialContainerSize.current === BASE_CONTAINER_SIZE) {
+        initialContainerSize.current = width;
       }
     };
 
@@ -141,8 +148,8 @@ export default function ImmersiveGoals({
               );
             }
 
-            // Individual orbs bloom from center - use scaled radius for responsive sizing
-            const currentRadius = (orbsContainerRef.current?.getBoundingClientRect().width || BASE_CONTAINER_SIZE) / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
+            // Individual orbs bloom from center - use stored initial size for consistent positioning
+            const currentRadius = initialContainerSize.current / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
             orbRefs.current.forEach((orb, i) => {
               if (!orb) return;
               const pos = GOAL_POSITIONS[i];
@@ -195,7 +202,7 @@ export default function ImmersiveGoals({
               exitTl.to(instructionRef.current, { opacity: 0, y: -30, duration: 0.3 }, 0);
             }
 
-            const exitRadius = (orbsContainerRef.current?.getBoundingClientRect().width || BASE_CONTAINER_SIZE) / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
+            const exitRadius = initialContainerSize.current / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
             orbRefs.current.forEach((orb, i) => {
               if (!orb) return;
               const pos = GOAL_POSITIONS[i];
@@ -236,7 +243,7 @@ export default function ImmersiveGoals({
               restoreTl.to(orbsContainerRef.current, { opacity: 1, scale: 1, duration: 0.35 }, 0.15);
             }
 
-            const restoreRadius = (orbsContainerRef.current?.getBoundingClientRect().width || BASE_CONTAINER_SIZE) / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
+            const restoreRadius = initialContainerSize.current / BASE_CONTAINER_SIZE * BASE_ORB_RADIUS;
             orbRefs.current.forEach((orb, i) => {
               if (!orb) return;
               const pos = GOAL_POSITIONS[i];

@@ -60,10 +60,14 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
   const viewportHeight = window.innerHeight;
   const isMobile = viewportWidth <= 640;
 
+  // Mobile bottom navigation is ~60px, plus some extra padding
+  const mobileNavHeight = 100;
+
   // On mobile, use smaller tooltip dimensions but ensure enough height for content
-  // Centered tooltips need more height as they contain welcome messages
+  // Centered/welcome tooltips need MORE height as they contain full messages with Nova
+  // Regular tooltips also need more height (240px) to avoid content cutoff
   const actualTooltipSize = isMobile
-    ? { width: viewportWidth - 32, height: position === 'center' ? 280 : 180 }
+    ? { width: viewportWidth - 32, height: position === 'center' ? 320 : 240 }
     : tooltipSize;
 
   let top, left;
@@ -71,22 +75,22 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
 
   // Center position (no target element)
   if (position === 'center' || !targetRect) {
-    // On mobile, position closer to top to ensure full visibility
-    // Leave room for bottom navigation bar (~60px)
-    const safeBottomPadding = isMobile ? 80 : padding;
-    const availableHeight = viewportHeight - safeBottomPadding - padding;
+    // On mobile, position toward top third of screen to ensure full visibility
+    // Leave room for bottom navigation bar
+    const safeBottomPadding = isMobile ? mobileNavHeight : padding;
 
-    // Calculate top position - ensure tooltip fits within safe area
-    let centeredTop = (viewportHeight - actualTooltipSize.height) / 2;
-
-    // On mobile, cap the top position to ensure full visibility
+    // Calculate top position - on mobile, favor upper positioning
+    let centeredTop;
     if (isMobile) {
-      // Don't let it go too low - ensure at least 100px from bottom
+      // Position in upper third of available space
+      const availableHeight = viewportHeight - safeBottomPadding - padding;
+      centeredTop = padding + (availableHeight - actualTooltipSize.height) / 3;
+      centeredTop = Math.max(padding, centeredTop);
+      // Ensure it doesn't go too low
       const maxTop = viewportHeight - actualTooltipSize.height - safeBottomPadding;
       centeredTop = Math.min(centeredTop, maxTop);
-      centeredTop = Math.max(padding + 20, centeredTop); // At least 36px from top
     } else {
-      centeredTop = Math.max(padding, centeredTop);
+      centeredTop = Math.max(padding, (viewportHeight - actualTooltipSize.height) / 2);
     }
 
     return {
@@ -98,46 +102,76 @@ function calculateTooltipPosition(targetRect, position, tooltipSize = { width: 3
 
   // On mobile, use smart positioning to avoid blocking the spotlight
   if (isMobile) {
-    // Calculate available space above and below the target
-    const spaceAbove = targetRect.top - padding;
-    const spaceBelow = viewportHeight - targetRect.bottom - padding;
-    const spotlightPadding = 8; // Additional padding around spotlight
+    const spotlightPadding = 12; // Padding around spotlight
 
-    // Target's center point
+    // Calculate the target center and available spaces
     const targetCenterY = targetRect.top + targetRect.height / 2;
     const screenCenterY = viewportHeight / 2;
 
-    // If target is in the upper half of screen, place tooltip at bottom
-    // If target is in the lower half, place tooltip at top
+    // Calculate available space above and below the target
+    const spaceAbove = targetRect.top - spotlightPadding - arrowSize - padding;
+    const spaceBelow = viewportHeight - targetRect.bottom - spotlightPadding - arrowSize - mobileNavHeight;
+
+    // Decide placement based on which area has more space
+    const tooltipHeight = actualTooltipSize.height;
+
+    // Preference: if target is in upper half, put tooltip below. Otherwise above.
+    // But override if there's not enough space
     if (targetCenterY < screenCenterY) {
-      // Target is in upper half - place tooltip at bottom of screen
-      top = Math.max(
-        targetRect.bottom + spotlightPadding + arrowSize + padding,
-        viewportHeight - actualTooltipSize.height - padding - 60 // Leave room for nav
-      );
-      actualPosition = POSITIONS.BOTTOM;
+      // Target is in upper half - try to place tooltip below
+      if (spaceBelow >= tooltipHeight) {
+        // Fits below - place right after target
+        top = targetRect.bottom + spotlightPadding + arrowSize;
+        actualPosition = POSITIONS.BOTTOM;
+      } else if (spaceAbove >= tooltipHeight) {
+        // Doesn't fit below but fits above
+        top = targetRect.top - spotlightPadding - arrowSize - tooltipHeight;
+        actualPosition = POSITIONS.TOP;
+      } else {
+        // Neither fits - place at bottom of screen, above nav
+        top = viewportHeight - tooltipHeight - mobileNavHeight;
+        actualPosition = POSITIONS.BOTTOM;
+      }
     } else {
-      // Target is in lower half - place tooltip at top of screen
-      top = padding;
-      actualPosition = POSITIONS.TOP;
+      // Target is in lower half - try to place tooltip above
+      if (spaceAbove >= tooltipHeight) {
+        // Fits above
+        top = targetRect.top - spotlightPadding - arrowSize - tooltipHeight;
+        actualPosition = POSITIONS.TOP;
+      } else if (spaceBelow >= tooltipHeight) {
+        // Doesn't fit above but fits below
+        top = targetRect.bottom + spotlightPadding + arrowSize;
+        actualPosition = POSITIONS.BOTTOM;
+      } else {
+        // Neither fits - place at top of screen
+        top = padding;
+        actualPosition = POSITIONS.TOP;
+      }
     }
 
-    // Check if tooltip would still overlap with target
-    const tooltipBottom = top + actualTooltipSize.height;
-    const tooltipTop = top;
+    // Final bounds check - ensure tooltip stays within viewport
+    top = Math.max(padding, top);
+    top = Math.min(top, viewportHeight - tooltipHeight - mobileNavHeight);
+
+    // Final overlap check with the target spotlight
+    const tooltipBottom = top + tooltipHeight;
     const targetTopWithPadding = targetRect.top - spotlightPadding;
     const targetBottomWithPadding = targetRect.bottom + spotlightPadding;
 
-    // If there's overlap, push to safe position
-    if (actualPosition === POSITIONS.BOTTOM && top < targetBottomWithPadding) {
-      top = targetBottomWithPadding + arrowSize + padding;
-    } else if (actualPosition === POSITIONS.TOP && tooltipBottom > targetTopWithPadding) {
-      top = Math.max(padding, targetTopWithPadding - actualTooltipSize.height - arrowSize - padding);
-      // If still overlapping, force to bottom
-      if (top + actualTooltipSize.height > targetTopWithPadding) {
-        top = targetBottomWithPadding + arrowSize + padding;
+    // If there's still overlap, adjust position
+    if (tooltipBottom > targetTopWithPadding && top < targetBottomWithPadding) {
+      // Overlap detected - determine which direction to push
+      const pushUp = targetTopWithPadding - tooltipHeight - arrowSize;
+      const pushDown = targetBottomWithPadding + arrowSize;
+
+      if (pushUp >= padding) {
+        top = pushUp;
+        actualPosition = POSITIONS.TOP;
+      } else if (pushDown + tooltipHeight <= viewportHeight - mobileNavHeight) {
+        top = pushDown;
         actualPosition = POSITIONS.BOTTOM;
       }
+      // If neither works, the current position is the best we can do
     }
 
     // Mobile left position handled by CSS

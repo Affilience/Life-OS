@@ -99,7 +99,7 @@ export const TOURS = {
         title: "Today's Plan",
         content: "Your scheduled tasks and time blocks appear here. Check items off as you complete them to earn XP!",
         novaState: NOVA_STATES.ENCOURAGING,
-        position: POSITIONS.LEFT,
+        position: POSITIONS.BOTTOM,
       },
       {
         id: 'widgets',
@@ -131,7 +131,7 @@ export const TOURS = {
         title: 'Add More Widgets',
         content: "Want more on your dashboard? Tap this button to browse all available widgets and add the ones you want! When done, click the X to exit edit mode.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.LEFT,
+        position: POSITIONS.BOTTOM,
       },
       {
         id: 'complete',
@@ -198,11 +198,11 @@ export const TOURS = {
       },
       {
         id: 'projects-list',
-        target: '[data-tour="projects-list"]',
+        target: null, // Large container - use centered message
         title: 'Your Projects',
         content: "All your projects appear here. You can see progress, time spent, and expand each to view tasks. Click a project to add tasks or track work sessions against it!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'work-sessions-intro',
@@ -214,11 +214,11 @@ export const TOURS = {
       },
       {
         id: 'pomodoro',
-        target: '[data-tour="pomodoro-timer"]',
+        target: null, // Large form section - use centered message
         title: 'Focus Timer Setup',
         content: "Select a session type (Deep Work, Learning, etc.) and optionally link it to a project. This helps categorize your time for better analytics.",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.LEFT,
+        position: 'center',
       },
       {
         id: 'start-session',
@@ -231,11 +231,11 @@ export const TOURS = {
       },
       {
         id: 'stats',
-        target: '[data-tour="productivity-stats"]',
+        target: null, // Stats grid - use centered message
         title: 'Your Productivity Stats',
         content: "Track your productivity trends here. See today's focus time, average focus quality, and weekly totals. Data helps you understand your most productive times!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'complete',
@@ -405,7 +405,7 @@ export const TOURS = {
         title: 'Your Avatar',
         content: "This is your visual representation. As you level up, your avatar evolves through 40 unique stages - from Dreamer to Avatar of Mastery!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.RIGHT,
+        position: POSITIONS.BOTTOM,
       },
       {
         id: 'stats',
@@ -413,7 +413,7 @@ export const TOURS = {
         title: 'RPG Stats',
         content: "These stats reflect your real-life activities. Strength from workouts, Intelligence from learning, Wisdom from journaling. They provide real bonuses to XP gains!",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.LEFT,
+        position: POSITIONS.BOTTOM,
       },
       {
         id: 'equipment-tab',
@@ -619,19 +619,19 @@ export const TOURS = {
       },
       {
         id: 'financial-summary',
-        target: '[data-tour="financial-summary"]',
+        target: null, // Stats grid - use centered message
         title: 'Financial Overview',
         content: "See your monthly snapshot at a glance - total income, expenses, net savings, and your savings rate. These update automatically as you log transactions.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.BOTTOM,
+        position: 'center',
       },
       {
         id: 'financial-charts',
-        target: '[data-tour="financial-charts"]',
+        target: null, // Very large chart section - use centered message
         title: 'Visual Insights',
         content: "These charts show your Budget vs Actual spending by category, and a spending breakdown pie chart. Below you'll find a 6-month trend showing income vs expenses over time.",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'create-budget',
@@ -644,11 +644,11 @@ export const TOURS = {
       },
       {
         id: 'budget-categories',
-        target: '[data-tour="budget-categories"]',
+        target: null, // Category list - use centered message
         title: 'Category Budgets',
         content: "Once set up, your category budgets appear here with progress bars. See at a glance which categories are on track and which need attention.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.BOTTOM,
+        position: 'center',
       },
       {
         id: 'add-income',
@@ -679,11 +679,11 @@ export const TOURS = {
       },
       {
         id: 'savings-goals',
-        target: '[data-tour="savings-goals"]',
+        target: null, // Goals list - use centered message
         title: 'Your Savings Goals',
         content: "Create goals with target amounts and deadlines. The app calculates how much to save daily, weekly, or monthly to reach your target on time. Hit milestones to earn XP!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'complete',
@@ -734,27 +734,27 @@ export const TOURS = {
       },
       {
         id: 'reading-progress',
-        target: '[data-tour="books-section"]',
+        target: null, // Large section - use centered message
         title: 'Reading Progress',
         content: "See your current books in progress here. Track how far you've gotten and how many you've completed this month.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'knowledge-stats',
-        target: '[data-tour="knowledge-stats"]',
+        target: null, // Stats section - use centered message
         title: 'Your Knowledge Stats',
         content: "Quick stats showing books read, notes captured, and ideas saved. These grow as you learn and document!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'notes-capture',
-        target: '[data-tour="notes-section"]',
+        target: null, // Notes section - use centered message
         title: 'Knowledge Capture',
         content: "See how many notes you're capturing each week. Regular note-taking builds a valuable knowledge base over time.",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'library-tab',
@@ -779,7 +779,7 @@ export const TOURS = {
         title: 'Library Navigation',
         content: "Use this sidebar to filter by content type - All Items, Books, Podcasts, Videos, or Courses. You can also view your Collections here.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.RIGHT,
+        position: POSITIONS.BOTTOM,
       },
       {
         id: 'quick-capture',
@@ -943,11 +943,11 @@ export const TOURS = {
       },
       {
         id: 'writer-content',
-        target: '[data-tour="writer-content"]',
+        target: null, // Large textarea - use centered message
         title: 'Write Your Thoughts',
         content: "This is your writing space. Just start typing! The more you write, the more XP you earn. Word count is tracked at the bottom.",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'mood-tracker',
@@ -997,11 +997,11 @@ export const TOURS = {
       },
       {
         id: 'skills-grid',
-        target: '[data-tour="skill-constellation"]',
+        target: null, // Large grid container - use centered message
         title: 'Your Skills',
         content: "Here are all the skills you're developing. Each card shows your progress level, practice streak, total hours invested, and XP earned.",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.BOTTOM,
+        position: 'center',
       },
       {
         id: 'skill-detail',
@@ -1009,7 +1009,7 @@ export const TOURS = {
         title: 'Skill Details',
         content: "Click any skill card to see detailed progress, practice history, and log new practice sessions. Track your journey from Beginner to Expert!",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.LEFT,
+        position: POSITIONS.BOTTOM,
       },
       {
         id: 'add-skill',
@@ -1069,19 +1069,19 @@ export const TOURS = {
       },
       {
         id: 'dashboard-stats',
-        target: '[data-tour="purpose-overview-stats"]',
+        target: null, // Stats grid - use centered message
         title: 'Purpose Stats',
         content: "See your key metrics - how many values you've defined, whether your mission is set, and how many visions you've created. These help you track intentional living!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.BOTTOM,
+        position: 'center',
       },
       {
         id: 'mission-preview',
-        target: '[data-tour="purpose-mission-preview"]',
+        target: null, // Large hero section - use centered message
         title: 'Your Mission',
         content: "Your personal mission statement appears here. It's the answer to 'Why am I here?' - a guiding star for all your decisions.",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'mission-tab',
@@ -1094,11 +1094,11 @@ export const TOURS = {
       },
       {
         id: 'mission-section',
-        target: '[data-tour="purpose-mission-section"]',
+        target: null, // Large section - use centered message
         title: 'Define Your Mission',
         content: "Your mission statement captures your purpose - what impact you want to make and why you do what you do. Examples are provided for inspiration!",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'values-tab',
@@ -1111,11 +1111,11 @@ export const TOURS = {
       },
       {
         id: 'values-section',
-        target: '[data-tour="purpose-values-section"]',
+        target: null, // Large section - use centered message
         title: 'Your Core Values',
         content: "Define and rank your core values here. Rate their importance from 1-10. When facing tough decisions, check if your choice aligns with these values!",
         novaState: NOVA_STATES.HAPPY,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'add-value',
@@ -1137,11 +1137,11 @@ export const TOURS = {
       },
       {
         id: 'vision-section',
-        target: '[data-tour="purpose-vision-section"]',
+        target: null, // Large section - use centered message
         title: 'Life Vision',
         content: "Define your vision at each time horizon. Where do you want to be? What will you have achieved? Clear vision makes daily choices easier!",
         novaState: NOVA_STATES.THOUGHTFUL,
-        position: POSITIONS.TOP,
+        position: 'center',
       },
       {
         id: 'complete',

@@ -360,9 +360,10 @@ export default function ImmersiveOnboarding() {
           z-index: 10;
         }
 
-        /* Spacer for scroll height - provides space for 7 sections with exit animations */
+        /* Minimal spacer - just enough to ensure last section is reachable */
+        /* Reduced from 600vh to prevent scrolling past launch button */
         .spacer {
-          height: 600vh;
+          height: 20vh;
         }
 
         /* Progress indicator */
