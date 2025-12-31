@@ -306,6 +306,7 @@ export const useGamificationStore = create(
             inventoryData,
             activeBoostsData,
             moduleMasteryData,
+            recentEventsData,
           ] = await Promise.all([
             // 1. User progress (level, stage, XP, stats)
             withTimeout(supabase
@@ -385,6 +386,14 @@ export const useGamificationStore = create(
               .select('*')
               .eq('user_id', userId)
               .maybeSingle()),
+
+            // 12. Recent gamification events (for heatmap)
+            withTimeout(supabase
+              .from('gamification_events')
+              .select('event_type, event_source, event_data, xp_awarded, credits_awarded, created_at')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+              .limit(500)),
           ]);
 
           // Process user progress
@@ -523,6 +532,18 @@ export const useGamificationStore = create(
               },
             });
           }
+
+          // Process recent events (for heatmap)
+          const events = recentEventsData.data || [];
+          const formattedEvents = events.map(e => ({
+            eventType: e.event_type,
+            eventSource: e.event_source,
+            eventData: e.event_data,
+            xpAwarded: e.xp_awarded,
+            creditsAwarded: e.credits_awarded,
+            timestamp: e.created_at,
+          }));
+          set({ recentEvents: formattedEvents });
 
           set({
             isInitialized: true,
