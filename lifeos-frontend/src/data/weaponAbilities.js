@@ -4,7 +4,8 @@
  * Each ability has unique animations, effects, and gameplay impact
  */
 
-import { EQUIPMENT_DATABASE } from './equipmentDatabase';
+// Note: Callers must pass EQUIPMENT_DATABASE explicitly to avoid circular dependency
+// (equipmentDatabase.js imports ABILITY_TYPES from this file, so we can't import it here)
 
 // Ability type definitions by weapon category
 export const ABILITY_TYPES = {
@@ -661,8 +662,12 @@ export const SHAKE_INTENSITIES = {
 };
 
 // Helper function to get ability for a weapon
-export function getWeaponAbility(weaponId, equipmentDatabase = EQUIPMENT_DATABASE) {
-  const weapon = equipmentDatabase?.[weaponId];
+// IMPORTANT: Must pass equipmentDatabase explicitly to avoid circular dependency
+// (equipmentDatabase.js imports ABILITY_TYPES from this file)
+export function getWeaponAbility(weaponId, equipmentDatabase) {
+  if (!equipmentDatabase || !weaponId) return null;
+
+  const weapon = equipmentDatabase[weaponId];
   if (!weapon?.ability) return null;
 
   // If ability is a string reference, look it up

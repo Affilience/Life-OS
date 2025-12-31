@@ -557,7 +557,7 @@ export default function PvPArena({ onClose }) {
   const weapon = weaponId ? EQUIPMENT_DATABASE[weaponId] : null;
 
   // Get the ability for the equipped weapon
-  const weaponAbility = weaponId ? getWeaponAbility(weaponId) : null;
+  const weaponAbility = weaponId ? getWeaponAbility(weaponId, EQUIPMENT_DATABASE) : null;
   const canUseAbility = weaponAbility && isAbilityReady(abilityLastUsed, weaponAbility.cooldown) && !isAbilityAnimating;
 
   // Get user ID

@@ -16,6 +16,7 @@ import useElementalAbilityStore from '../../stores/elementalAbilityStore';
 import { BOSS_DATABASE, BOSS_DIFFICULTY } from '../../data/bossDatabase';
 import { WEAPON_ATTACKS, ATTACK_ANIMATIONS } from '../../data/weaponAttacks';
 import { ABILITY_TYPES, getWeaponAbility, isAbilityReady, calculateAbilityDamage } from '../../data/weaponAbilities';
+import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
 import { getAbilityById, calculateAbilityDamage as calcElementalDamage } from '../../data/elementalAbilities';
 import { sounds } from '../../services/microInteractions';
 import { playBossAttack } from '../../services/combatSounds';
@@ -2848,7 +2849,7 @@ export default function BossBattleArena({ bossId, onClose }) {
 
   // Get the ability for the equipped weapon
   const equippedWeaponId = equipped?.mainHand;
-  const weaponAbility = equippedWeaponId ? getWeaponAbility(equippedWeaponId) : null;
+  const weaponAbility = equippedWeaponId ? getWeaponAbility(equippedWeaponId, EQUIPMENT_DATABASE) : null;
   const canUseAbility = weaponAbility && isAbilityReady(abilityLastUsed, weaponAbility.cooldown) && !isAbilityAnimating;
 
   // State for battle initialization errors and retry trigger
