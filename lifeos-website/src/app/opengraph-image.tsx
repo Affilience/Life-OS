@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'LifeOS - Your Personal Operating System for Life';
+export const alt = 'LifeOS - Your Life as an RPG';
 export const size = {
   width: 1200,
   height: 630,
@@ -110,7 +110,7 @@ export default async function Image() {
             lineHeight: 1.4,
           }}
         >
-          Your Personal Operating System for Life
+          Your Entire Life. One System. Fully Gamified.
         </p>
 
         {/* Subtitle */}
@@ -121,7 +121,7 @@ export default async function Image() {
             marginTop: '16px',
           }}
         >
-          Track everything. Level up your life.
+          Productivity • Health • Finances • Learning • Goals
         </p>
       </div>
     ),

@@ -11,14 +11,14 @@ if (typeof window !== 'undefined') {
 }
 
 const modules = [
-  { name: "Productivity", icon: "✓", color: "#8b5cf6", description: "Deep work & tasks" },
-  { name: "Health", icon: "💪", color: "#22d3ee", description: "Fitness & nutrition" },
-  { name: "Financial", icon: "💰", color: "#34d399", description: "Money & budgets" },
-  { name: "Knowledge", icon: "📚", color: "#fbbf24", description: "Learning & notes" },
-  { name: "Journal", icon: "📝", color: "#fb7185", description: "Reflection & mood" },
-  { name: "Calendar", icon: "📅", color: "#a78bfa", description: "Time & scheduling" },
-  { name: "Skills", icon: "⭐", color: "#f472b6", description: "Growth & mastery" },
-  { name: "Purpose", icon: "🎯", color: "#818cf8", description: "Goals & vision" },
+  { name: "Productivity", icon: "/assets/icons/module_productivity.png", color: "#8b5cf6", description: "Tasks that get done" },
+  { name: "Health", icon: "/assets/icons/module_health.png", color: "#22d3ee", description: "Workouts + nutrition" },
+  { name: "Financial", icon: "/assets/icons/module_financial.png", color: "#34d399", description: "Track every pound" },
+  { name: "Knowledge", icon: "/assets/icons/module_knowledge.png", color: "#fbbf24", description: "Books + ideas" },
+  { name: "Journal", icon: "/assets/icons/module_journal.png", color: "#fb7185", description: "Thoughts + mood" },
+  { name: "Calendar", icon: "/assets/icons/module_calendar.png", color: "#a78bfa", description: "Time blocking" },
+  { name: "Skills", icon: "/assets/icons/module_skills.png", color: "#f472b6", description: "Practice + mastery" },
+  { name: "Purpose", icon: "/assets/icons/module_purpose.png", color: "#818cf8", description: "Vision + direction" },
 ];
 
 // Cross-connections between related modules (pairs of indices) - spider web pattern
@@ -277,7 +277,7 @@ export function Modules() {
   const RADIUS = 280;
 
   // Split title into words
-  const titleWords = ["8 Modules,", "One", "Connected", "System"];
+  const titleWords = ["Everything", "Connects.", "Everything", "Counts."];
 
   return (
     <section
@@ -322,7 +322,7 @@ export function Modules() {
             className="text-lg text-white/50 max-w-xl mx-auto"
             style={{ opacity: 0 }}
           >
-            Track everything. Discover the patterns that shape your life.
+            Your workout affects your focus. Your sleep affects your mood. LifeOS reveals the connections you'd never spot alone.
           </p>
         </div>
 
@@ -446,7 +446,7 @@ export function Modules() {
               >
                 {/* Module Icon */}
                 <motion.div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-2 cursor-pointer"
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center mb-2 cursor-pointer p-2"
                   style={{
                     backgroundColor: `${module.color}20`,
                     border: `2px solid ${module.color}40`,
@@ -458,7 +458,12 @@ export function Modules() {
                   }}
                   transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                 >
-                  {module.icon}
+                  <img
+                    src={module.icon}
+                    alt={module.name}
+                    className="w-10 h-10 object-contain"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
                 </motion.div>
                 {/* Module Label */}
                 <div className="text-center">

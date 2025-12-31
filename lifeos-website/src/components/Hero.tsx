@@ -378,9 +378,9 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
               ref={headlineRef}
               className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
             >
-              <span className="headline-line block" style={{ opacity: 0, willChange: 'transform, opacity' }}>Your Personal</span>
-              <span className="headline-line block gradient-text" style={{ opacity: 0, willChange: 'transform, opacity' }}>Operating System</span>
-              <span className="headline-line block" style={{ opacity: 0, willChange: 'transform, opacity' }}>for Life</span>
+              <span className="headline-line block" style={{ opacity: 0, willChange: 'transform, opacity' }}>Your Entire Life.</span>
+              <span className="headline-line block gradient-text" style={{ opacity: 0, willChange: 'transform, opacity' }}>One System.</span>
+              <span className="headline-line block" style={{ opacity: 0, willChange: 'transform, opacity' }}>Fully Gamified.</span>
             </h1>
 
             {/* Subtitle */}
@@ -389,8 +389,8 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
               className="text-lg md:text-xl text-white/60 mb-10"
               style={{ opacity: 0 }}
             >
-              Track productivity, fitness, finances, and personal growth — all in one place.
-              With gamification that makes self-improvement addictive.
+              Productivity, health, finances, learning, journaling — all connected.
+              Earn XP, level up your avatar, unlock gear. Become who you're meant to be.
             </p>
 
             {/* CTA Buttons */}
