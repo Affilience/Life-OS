@@ -644,9 +644,28 @@ export default function FeatureTour() {
   const currentStep = currentTour ? getTourStep(activeTour, currentStepIndex) : null;
   const totalSteps = currentTour ? getTourStepCount(activeTour) : 0;
 
+  // Check for force-start tour from settings (bypasses toursEnabled)
+  useEffect(() => {
+    const forceStartTourId = sessionStorage.getItem('lifeos-force-start-tour');
+    if (forceStartTourId && !isActive) {
+      // Clear the flag immediately to prevent re-triggering
+      sessionStorage.removeItem('lifeos-force-start-tour');
+      // Start the tour directly (skip prompt since user explicitly requested it)
+      const timeout = setTimeout(() => {
+        startTour(forceStartTourId);
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [location.pathname, isActive, startTour]);
+
   // Check for auto-start tour when route changes
   useEffect(() => {
     const tourId = ROUTE_TO_TOUR[location.pathname];
+
+    // Don't auto-start if force-start is pending (handled above)
+    if (sessionStorage.getItem('lifeos-force-start-tour')) {
+      return;
+    }
 
     if (!toursEnabled || !tourId || isActive) {
       return;

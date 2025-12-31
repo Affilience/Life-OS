@@ -787,9 +787,12 @@ function FeatureToursSettingsPanel() {
 
   const handleReplayTour = (tourId) => {
     resetTour(tourId);
-    // Navigate to the tour's route and start it
+    // Navigate to the tour's route and explicitly start the tour
+    // (bypasses toursEnabled check for manual replay from settings)
     const tour = allTours.find(t => t.id === tourId);
     if (tour) {
+      // Use sessionStorage flag to force-start tour on page load
+      sessionStorage.setItem('lifeos-force-start-tour', tourId);
       window.location.href = tour.route;
     }
   };

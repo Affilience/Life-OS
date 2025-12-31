@@ -231,16 +231,45 @@ export default function NovaWidget() {
     });
   };
 
+  // Track touch start position to distinguish tap from drag
+  const touchStartPos = useRef({ x: 0, y: 0 });
+  const touchStartTime = useRef(0);
+
   // Handle dragging for minimized avatar (touch)
   const handleTouchStart = (e) => {
     if (isExpanded || isFullscreen) return;
     const touch = e.touches[0];
+
+    // Store touch start position and time
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    touchStartTime.current = Date.now();
+
     setIsDragging(true);
     setWasDragged(false);
     setDragOffset({
       x: touch.clientX - position.x,
       y: touch.clientY - position.y
     });
+  };
+
+  // Handle touch end - detect tap vs drag
+  const handleTouchEnd = (e) => {
+    if (!isDragging) return;
+
+    const touchDuration = Date.now() - touchStartTime.current;
+    const wasTap = !wasDragged && touchDuration < 300;
+
+    setIsDragging(false);
+
+    // If it was a quick tap (not a drag), expand the widget
+    if (wasTap && !isExpanded && !isFullscreen) {
+      e.preventDefault(); // Prevent click event from also firing
+      setIsExpanded(true);
+      setHasNotification(false);
+    }
+
+    // Reset wasDragged after a delay
+    setTimeout(() => setWasDragged(false), 100);
   };
 
   useEffect(() => {
@@ -308,15 +337,15 @@ export default function NovaWidget() {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleEnd);
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleEnd);
       window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleEnd);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isDragging, dragOffset, position, isExpanded]);
+  }, [isDragging, dragOffset, position, isExpanded, handleTouchEnd]);
 
   // Initialize Nova and get current stage/emotional state
   useEffect(() => {
