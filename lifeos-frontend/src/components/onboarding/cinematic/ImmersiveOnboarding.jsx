@@ -430,13 +430,18 @@ export default function ImmersiveOnboarding() {
 
         @media (max-width: 768px) {
           .immersive-progress {
-            right: 0.25rem;
-            gap: 4px;
+            right: 0.15rem;
+            gap: 3px;
           }
 
           .progress-dot {
-            width: 4px;
-            height: 4px;
+            width: 3px !important;
+            height: 3px !important;
+          }
+
+          .dot-inner {
+            width: 3px !important;
+            height: 3px !important;
           }
 
           .dot-pulse {
@@ -444,23 +449,28 @@ export default function ImmersiveOnboarding() {
           }
 
           .progress-dot.active .dot-inner {
-            box-shadow: 0 0 3px rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 2px rgba(139, 92, 246, 0.4);
           }
         }
 
         @media (max-width: 480px) {
           .immersive-progress {
-            right: 0.2rem;
-            gap: 3px;
+            right: 0.1rem;
+            gap: 2px;
           }
 
           .progress-dot {
-            width: 3px;
-            height: 3px;
+            width: 2px !important;
+            height: 2px !important;
+          }
+
+          .dot-inner {
+            width: 2px !important;
+            height: 2px !important;
           }
 
           .progress-dot.active .dot-inner {
-            box-shadow: 0 0 2px rgba(139, 92, 246, 0.4);
+            box-shadow: none;
           }
         }
       `}</style>

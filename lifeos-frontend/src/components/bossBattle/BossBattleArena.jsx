@@ -2820,9 +2820,9 @@ export default function BossBattleArena({ bossId, onClose }) {
     const isMobile = width < 768;
 
     if (isMobile) {
-      // Mobile: Boss at top center, Player at bottom center
+      // Mobile: Boss slightly right of center (55%), Player at bottom center
       return {
-        bossX: width * 0.5,
+        bossX: width * 0.55,
         bossY: height * 0.22,
         playerX: width * 0.5,
         playerY: height * 0.72,
@@ -3558,10 +3558,10 @@ export default function BossBattleArena({ bossId, onClose }) {
             ))}
 
             {/* Boss section - Responsive positioning to match attack coordinates */}
-            {/* Mobile: center-top with smaller size, Desktop: top-right */}
+            {/* Mobile: slightly right of center for attack alignment, Desktop: top-right */}
             <div className={`absolute z-0 ${
               dimensions.width < 768
-                ? 'left-1/2 -translate-x-1/2 top-2 scale-90 origin-top'  // Mobile: centered, smaller
+                ? 'left-[55%] -translate-x-1/2 top-2 scale-90 origin-top'  // Mobile: slightly right of center
                 : 'right-4 top-2'                     // Desktop: top-right diagonal
             }`}>
             {/* Boss name and difficulty */}

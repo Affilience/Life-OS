@@ -1419,32 +1419,37 @@ export default function ImmersiveGamification({
 
         @media (max-width: 768px) {
           .gamification-content {
-            padding: 1.5rem;
-            padding-right: 2rem;
-            padding-top: 2rem;
+            padding: 1rem;
+            padding-right: 1.5rem;
+            padding-top: 3rem;
+            padding-bottom: 1rem;
           }
 
           .gamification-title {
             font-size: clamp(1.5rem, 7vw, 2rem);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
           }
 
           .gamification-subtitle {
             font-size: 0.85rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
           }
 
           .carousel-container {
-            height: 340px;
+            height: 400px;
             touch-action: pan-y;
           }
 
           .carousel-card {
-            width: 260px;
+            width: 300px;
+          }
+
+          .card-inner {
+            padding: 1.25rem;
           }
 
           .card-content {
-            height: 240px;
+            height: 280px;
             overflow: visible;
           }
 
@@ -1463,21 +1468,21 @@ export default function ImmersiveGamification({
 
           .carousel-dots {
             margin-top: 0.75rem;
-            gap: 5px;
+            gap: 6px;
           }
 
           .carousel-dot {
-            width: 5px;
-            height: 5px;
+            width: 6px;
+            height: 6px;
           }
 
           .carousel-dot-active {
-            transform: scale(1.15);
+            transform: scale(1.2);
           }
 
           .carousel-hint {
             font-size: 0.75rem;
-            margin-top: 0.5rem;
+            margin-top: 0.75rem;
           }
 
           .hint-mobile {
@@ -1487,34 +1492,39 @@ export default function ImmersiveGamification({
           .hint-desktop {
             display: none;
           }
+
+          .continue-btn {
+            margin-top: 0.75rem;
+          }
         }
 
         @media (max-width: 480px) {
           .gamification-content {
-            padding: 1rem;
-            padding-right: 1.5rem;
-            padding-top: 1.5rem;
+            padding: 0.75rem;
+            padding-right: 1.25rem;
+            padding-top: 2.5rem;
+            padding-bottom: 0.5rem;
           }
 
           .gamification-title {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
           }
 
           .gamification-subtitle {
-            font-size: 0.8rem;
-            margin-bottom: 1rem;
+            font-size: 0.75rem;
+            margin-bottom: 0.75rem;
           }
 
           .carousel-container {
-            height: 320px;
+            height: 380px;
           }
 
           .carousel-card {
-            width: 240px;
+            width: 280px;
           }
 
           .card-inner {
-            padding: 0.75rem;
+            padding: 1rem;
             border-radius: 14px;
           }
 
@@ -1539,7 +1549,7 @@ export default function ImmersiveGamification({
           }
 
           .card-content {
-            height: 200px;
+            height: 260px;
             overflow: visible;
           }
 
@@ -1563,6 +1573,48 @@ export default function ImmersiveGamification({
 
           .carousel-dots {
             margin-top: 0.5rem;
+            gap: 5px;
+          }
+
+          .carousel-dot {
+            width: 5px;
+            height: 5px;
+          }
+
+          .carousel-dot-active {
+            transform: scale(1.15);
+          }
+
+          .carousel-hint {
+            font-size: 0.65rem;
+            margin-top: 0.5rem;
+          }
+
+          .continue-btn {
+            padding: 0.6rem 1.25rem;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .gamification-content {
+            padding-top: 2rem;
+          }
+
+          .carousel-container {
+            height: 360px;
+          }
+
+          .carousel-card {
+            width: 260px;
+          }
+
+          .card-content {
+            height: 240px;
+          }
+
+          .carousel-dots {
             gap: 4px;
           }
 
@@ -1573,39 +1625,6 @@ export default function ImmersiveGamification({
 
           .carousel-dot-active {
             transform: scale(1.1);
-          }
-
-          .carousel-hint {
-            font-size: 0.7rem;
-          }
-
-          .continue-btn {
-            padding: 0.75rem 1.5rem;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .carousel-card {
-            width: 210px;
-          }
-
-          .card-content {
-            height: 180px;
-          }
-
-          .carousel-dots {
-            gap: 3px;
-          }
-
-          .carousel-dot {
-            width: 3px;
-            height: 3px;
-          }
-
-          .carousel-dot-active {
-            transform: scale(1.05);
           }
         }
       `}</style>
