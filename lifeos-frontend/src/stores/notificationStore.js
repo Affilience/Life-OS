@@ -15,6 +15,12 @@ import { create } from 'zustand';
 const shownAchievementIds = new Set();
 const recentXPGains = []; // Track recent XP gains to merge quick successive gains
 
+// Equipment unlock batching
+let equipmentBatchBuffer = [];
+let equipmentBatchTimeout = null;
+const EQUIPMENT_BATCH_DELAY = 800; // ms to wait before processing batch
+const EQUIPMENT_BATCH_THRESHOLD = 2; // Show summary if this many or more items
+
 // Notification priority (higher = more important, shows first)
 const NOTIFICATION_PRIORITY = {
   levelUp: 100,
@@ -304,6 +310,7 @@ export const useNotificationStore = create((set, get) => ({
   // ==========================================
 
   // Add equipment unlock to master queue (called by unlockNotificationStore)
+  // Uses batching: if multiple unlocks happen quickly, they're combined into one notification
   addEquipmentUnlockNotification: (item) => {
     const timestamp = Date.now();
     const notificationData = {
@@ -312,8 +319,58 @@ export const useNotificationStore = create((set, get) => ({
       notificationId: `equipment-${item.id}-${timestamp}`,
     };
 
-    // Add to master queue
-    get()._addToMasterQueue('equipment', notificationData);
+    // Add to batch buffer
+    equipmentBatchBuffer.push(notificationData);
+
+    // Clear existing timeout and set a new one
+    if (equipmentBatchTimeout) {
+      clearTimeout(equipmentBatchTimeout);
+    }
+
+    // Process batch after delay
+    equipmentBatchTimeout = setTimeout(() => {
+      get()._processEquipmentBatch();
+    }, EQUIPMENT_BATCH_DELAY);
+  },
+
+  // Process batched equipment unlocks
+  _processEquipmentBatch: () => {
+    const items = [...equipmentBatchBuffer];
+    equipmentBatchBuffer = [];
+    equipmentBatchTimeout = null;
+
+    if (items.length === 0) return;
+
+    // If only 1 item, show detailed notification
+    if (items.length < EQUIPMENT_BATCH_THRESHOLD) {
+      items.forEach(item => {
+        get()._addToMasterQueue('equipment', item);
+      });
+      return;
+    }
+
+    // Multiple items: create a summary notification
+    const equipmentItems = items.filter(i => i.type === 'equipment');
+    const petItems = items.filter(i => i.type === 'pet');
+
+    const summaryNotification = {
+      isBatched: true,
+      items: items,
+      equipmentCount: equipmentItems.length,
+      petCount: petItems.length,
+      totalCount: items.length,
+      // Use the highest rarity item for the notification color
+      bestRarity: items.reduce((best, item) => {
+        const rarityOrder = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythical: 5 };
+        const itemRarity = item.rarity || item.tier || 'common';
+        const bestRarity = best || 'common';
+        return (rarityOrder[itemRarity] || 0) > (rarityOrder[bestRarity] || 0) ? itemRarity : best;
+      }, 'common'),
+      timestamp: Date.now(),
+      notificationId: `equipment-batch-${Date.now()}`,
+    };
+
+    get()._addToMasterQueue('equipment', summaryNotification);
   },
 
   // Dismiss equipment unlock notification

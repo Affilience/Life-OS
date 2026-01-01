@@ -276,9 +276,20 @@ export default function EquipmentUnlockToast() {
     }
   }, [current, phase]);
 
-  // Auto-dismiss after 8 seconds (longer to show off effects)
+  // Auto-dismiss after delay (batched: 5s, individual: 6s after stats phase)
   useEffect(() => {
-    if (current && phase === 'stats') {
+    if (!current) return;
+
+    // Batched notifications auto-dismiss after 5 seconds
+    if (current.isBatched) {
+      const timer = setTimeout(() => {
+        dismiss();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+
+    // Individual notifications auto-dismiss 6s after stats phase
+    if (phase === 'stats') {
       const timer = setTimeout(() => {
         dismiss();
       }, 6000);
@@ -292,6 +303,156 @@ export default function EquipmentUnlockToast() {
   }
 
   if (!current) return null;
+
+  // Handle batched notifications (multiple items unlocked at once)
+  if (current.isBatched) {
+    const rarityData = EQUIPMENT_RARITY[current.bestRarity] || EQUIPMENT_RARITY.common;
+    const batchColor = rarityData.color;
+
+    // Build description text
+    const parts = [];
+    if (current.equipmentCount > 0) {
+      parts.push(`${current.equipmentCount} equipment`);
+    }
+    if (current.petCount > 0) {
+      parts.push(`${current.petCount} companion${current.petCount > 1 ? 's' : ''}`);
+    }
+    const description = parts.join(' and ');
+
+    return (
+      <AnimatePresence>
+        <motion.div
+          key={current.notificationId}
+          initial={{ opacity: 0, y: -100 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50, scale: 0.9 }}
+          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+          className="fixed top-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[9999] sm:w-96 max-w-[calc(100vw-2rem)]"
+        >
+          <div
+            className="bg-[#1a1625] border-2 rounded-2xl overflow-hidden relative shadow-2xl"
+            style={{ borderColor: batchColor }}
+          >
+            {/* Glow effect */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.1, 0.2, 0.1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute inset-0 blur-3xl"
+              style={{ backgroundColor: batchColor }}
+            />
+
+            <div className="relative z-10 p-5">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <motion.div
+                    initial={{ rotate: -180, scale: 0 }}
+                    animate={{ rotate: 0, scale: 1 }}
+                    transition={{ type: 'spring' }}
+                  >
+                    <Sparkles className="w-5 h-5" style={{ color: batchColor }} />
+                  </motion.div>
+                  <span
+                    className="text-xs font-bold uppercase tracking-wider"
+                    style={{ color: batchColor }}
+                  >
+                    New Unlocks!
+                  </span>
+                </div>
+                <button
+                  onClick={dismiss}
+                  className="text-white/40 hover:text-white/80 transition-colors p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="text-center py-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', delay: 0.2 }}
+                  className="text-4xl font-bold text-white mb-2"
+                >
+                  {current.totalCount}
+                </motion.div>
+                <p className="text-white/70 text-lg mb-1">Items Unlocked!</p>
+                <p className="text-white/50 text-sm">{description}</p>
+              </div>
+
+              {/* Preview icons */}
+              <div className="flex justify-center gap-2 mb-4">
+                {current.items.slice(0, 5).map((item, idx) => {
+                  const itemRarity = EQUIPMENT_RARITY[item.rarity || item.tier] || EQUIPMENT_RARITY.common;
+                  return (
+                    <motion.div
+                      key={item.notificationId || idx}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.3 + idx * 0.1 }}
+                      className="w-10 h-10 rounded-lg border flex items-center justify-center"
+                      style={{
+                        backgroundColor: `${itemRarity.color}20`,
+                        borderColor: `${itemRarity.color}50`,
+                      }}
+                    >
+                      {item.type === 'pet' ? (
+                        <Heart className="w-5 h-5" style={{ color: itemRarity.color }} />
+                      ) : (
+                        <Shield className="w-5 h-5" style={{ color: itemRarity.color }} />
+                      )}
+                    </motion.div>
+                  );
+                })}
+                {current.totalCount > 5 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white/60 text-sm font-bold"
+                  >
+                    +{current.totalCount - 5}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* View All Button */}
+              <motion.button
+                onClick={() => {
+                  dismiss();
+                  navigate('/character?tab=equipment');
+                }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: batchColor,
+                  boxShadow: `0 0 20px ${batchColor}50`,
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <span>View All</span>
+                <ChevronRight className="w-5 h-5" />
+              </motion.button>
+            </div>
+
+            {/* Auto-dismiss progress bar */}
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 5, ease: 'linear' }}
+              className="h-1 origin-left"
+              style={{ backgroundColor: batchColor }}
+            />
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   // Determine if this is a pet or equipment unlock
   const isPet = current.type === UNLOCK_TYPES.PET;
