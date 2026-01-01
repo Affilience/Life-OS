@@ -176,7 +176,7 @@ const Rewards = lazy(() => import('./pages/Rewards'));
 const Discoveries = lazy(() => import('./pages/Discoveries'));
 const Resolutions = lazy(() => import('./pages/Resolutions'));
 
-// Demo pages
+// Feature pages
 const EvolutionShowcase = lazy(() => import('./components/avatar/EvolutionShowcase'));
 const EquipmentInventory = lazy(() => import('./components/avatar/EquipmentInventory'));
 const Social = lazy(() => import('./pages/Social'));
@@ -271,8 +271,8 @@ function AppContent() {
     // Check if we should show onboarding using FRESH store state (synced from Supabase)
     const needsOnboarding = freshIsOnboardingActive && !freshIsOnboardingComplete;
     if (needsOnboarding) {
-      // Only redirect if not already on onboarding page, auth page, or demo pages
-      const excludedPaths = ['/onboarding', '/auth', '/combat-demo', '/equipment-test', '/level-up-test'];
+      // Only redirect if not already on onboarding or auth pages
+      const excludedPaths = ['/onboarding', '/auth'];
       const shouldRedirect = !excludedPaths.some(path => window.location.pathname.includes(path));
       if (shouldRedirect) {
         console.log('🎯 First-time user detected, redirecting to onboarding...');
@@ -434,9 +434,6 @@ function AppContent() {
                   <OnboardingPage />
                 </ProtectedRoute>
               } />
-
-              {/* Combat Demo - standalone page for testing effects */}
-              <Route path="/combat-demo" element={<CombatDemo />} />
 
               {/* Main app routes - protected */}
               <Route path="/*" element={
