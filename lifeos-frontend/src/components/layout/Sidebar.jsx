@@ -104,7 +104,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <Sparkles size={18} className="text-white" />
               </div>
               <h1 className="text-xl font-bold text-text-high tracking-tighter">
-                ONYXOS
+                Ascnt
               </h1>
             </div>
             {/* Close button (mobile only) */}
@@ -115,7 +115,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               <X size={20} className="text-text-med" />
             </button>
           </div>
-          <p className="text-xs text-text-dim ml-10">Life Operating System</p>
+          <p className="text-xs text-text-dim ml-10">Level up your life</p>
         </div>
 
         {/* Navigation */}

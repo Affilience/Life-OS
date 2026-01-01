@@ -27,6 +27,7 @@ import { usePetStore } from '../../stores/petStore';
 import useElementalAbilityStore from '../../stores/elementalAbilityStore';
 import { EQUIPMENT_DATABASE } from '../../data/equipmentDatabase';
 import { getWeaponAbility, isAbilityReady, calculateAbilityDamage } from '../../data/weaponAbilities';
+import { getWeaponAttack, WEAPON_ATTACKS } from '../../data/weaponAttacks';
 import { getAbilityById, calculateAbilityDamage as calcElementalDamage } from '../../data/elementalAbilities';
 import { sounds } from '../../services/microInteractions';
 import AbilityAnimation from '../combat/AbilityAnimation';
@@ -555,9 +556,12 @@ export default function PvPArena({ onClose }) {
   // Get weapon info
   const weaponId = equipped?.mainHand || equipped?.weapon;
   const weapon = weaponId ? EQUIPMENT_DATABASE[weaponId] : null;
+  const weaponAttack = getWeaponAttack(weaponId, EQUIPMENT_DATABASE);
 
   // Get the ability for the equipped weapon
   const weaponAbility = weaponId ? getWeaponAbility(weaponId, EQUIPMENT_DATABASE) : null;
+  // Use ability name as the attack name
+  const attackName = weaponAbility?.name || weaponAttack?.attackName || 'Attack';
   const canUseAbility = weaponAbility && isAbilityReady(abilityLastUsed, weaponAbility.cooldown) && !isAbilityAnimating;
 
   // Get user ID
@@ -848,7 +852,7 @@ export default function PvPArena({ onClose }) {
     setIsAbilityAnimating(true);
 
     // Calculate ability damage
-    const abilityDamage = calculateAbilityDamage(damagePerTap, weaponAbility);
+    const abilityDamage = calculateAbilityDamage(weaponAbility, damagePerTap);
 
     // Play ability sound
     if (sounds.powerAttack) {
@@ -1303,30 +1307,10 @@ export default function PvPArena({ onClose }) {
             </div>
           </div>
 
-          {/* Attack and Ability Buttons */}
+          {/* Attack Button - shows ability if weapon has one, otherwise basic attack */}
           <div className="px-4 pb-2 flex flex-col items-center gap-3">
             <div className="flex gap-3">
-              {/* Attack Button */}
-              <motion.button
-                onClick={(e) => { e.stopPropagation(); handleAttack(); }}
-                disabled={!isAttackReady}
-                whileHover={isAttackReady ? { scale: 1.05 } : {}}
-                whileTap={isAttackReady ? { scale: 0.95 } : {}}
-                className={`px-6 py-3 rounded-2xl font-bold text-base transition-all ${
-                  isAttackReady
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
-                    : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
-                }`}
-                style={{ touchAction: 'manipulation' }}
-              >
-                <div className="flex items-center gap-2">
-                  <Swords className="w-5 h-5" />
-                  <span>{weapon?.attackName || 'Attack'}</span>
-                </div>
-              </motion.button>
-
-              {/* Weapon Ability Button */}
-              {weaponAbility && (
+              {weaponAbility ? (
                 <motion.button
                   onClick={(e) => { e.stopPropagation(); handleWeaponAbility(); }}
                   disabled={!canUseAbility}
@@ -1345,8 +1329,26 @@ export default function PvPArena({ onClose }) {
                   }}
                 >
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5" />
+                    <Swords className="w-5 h-5" />
                     <span>{weaponAbility.name}</span>
+                  </div>
+                </motion.button>
+              ) : (
+                <motion.button
+                  onClick={(e) => { e.stopPropagation(); handleAttack(); }}
+                  disabled={!isAttackReady}
+                  whileHover={isAttackReady ? { scale: 1.05 } : {}}
+                  whileTap={isAttackReady ? { scale: 0.95 } : {}}
+                  className={`px-6 py-3 rounded-2xl font-bold text-base transition-all ${
+                    isAttackReady
+                      ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
+                      : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
+                  }`}
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Swords className="w-5 h-5" />
+                    <span>{attackName}</span>
                   </div>
                 </motion.button>
               )}
@@ -1403,19 +1405,20 @@ export default function PvPArena({ onClose }) {
               </div>
             )}
 
-            {/* Cooldown indicators */}
+            {/* Cooldown indicator - shows ability cooldown if weapon has ability */}
             <div className="w-full max-w-xs">
-              <CooldownIndicator
-                progress={cooldownProgress}
-                weaponName={weapon?.attackName || 'Attack'}
-                cooldownMs={weaponCooldownMs}
-                canAttack={isAttackReady}
-              />
-              {weaponAbility && (
+              {weaponAbility ? (
                 <AbilityCooldownIndicator
                   ability={weaponAbility}
                   lastUsedTime={abilityLastUsed}
                   canUse={canUseAbility}
+                />
+              ) : (
+                <CooldownIndicator
+                  progress={cooldownProgress}
+                  weaponName={attackName}
+                  cooldownMs={weaponCooldownMs}
+                  canAttack={isAttackReady}
                 />
               )}
             </div>

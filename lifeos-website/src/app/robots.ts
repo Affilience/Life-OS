@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/equipment-test/'],
       },
     ],
-    sitemap: 'https://lifeos.app/sitemap.xml',
+    sitemap: 'https://ascnt.app/sitemap.xml',
   };
 }

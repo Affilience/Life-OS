@@ -19,21 +19,21 @@ export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
     if (!svgRef.current) return;
 
     const svg = svgRef.current;
-    const logoL = svg.querySelector('#logo-l') as SVGPathElement;
+    const logoA = svg.querySelector('#logo-a') as SVGPathElement;
     const logoOrbit = svg.querySelector('#logo-orbit') as SVGEllipseElement;
     const logoDot = svg.querySelector('#logo-dot') as SVGCircleElement;
     const logoAccent = svg.querySelector('#logo-accent') as SVGPathElement;
 
-    if (!logoL || !logoOrbit || !logoDot || !logoAccent) return;
+    if (!logoA || !logoOrbit || !logoDot || !logoAccent) return;
 
     // Get path lengths for stroke animation
-    const lLength = logoL.getTotalLength();
+    const aLength = logoA.getTotalLength();
     const orbitLength = logoOrbit.getTotalLength();
     const accentLength = logoAccent.getTotalLength();
 
     // Set initial state - paths hidden
-    logoL.style.strokeDasharray = `${lLength}`;
-    logoL.style.strokeDashoffset = `${lLength}`;
+    logoA.style.strokeDasharray = `${aLength}`;
+    logoA.style.strokeDashoffset = `${aLength}`;
     logoOrbit.style.strokeDasharray = `${orbitLength}`;
     logoOrbit.style.strokeDashoffset = `${orbitLength}`;
     logoAccent.style.strokeDasharray = `${accentLength}`;
@@ -43,9 +43,9 @@ export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
 
     // Animation sequence
     const runAnimations = async () => {
-      // Phase 1: Draw the L
-      animate(logoL, {
-        strokeDashoffset: [lLength, 0],
+      // Phase 1: Draw the A
+      animate(logoA, {
+        strokeDashoffset: [aLength, 0],
         duration: 800,
         easing: 'easeInOutQuad',
       });
@@ -192,10 +192,10 @@ export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
             </linearGradient>
           </defs>
 
-          {/* Main L shape */}
+          {/* Main A shape */}
           <path
-            id="logo-l"
-            d="M60 40 L60 140 L140 140"
+            id="logo-a"
+            d="M50 140 L100 40 L150 140 M70 105 L130 105"
             fill="none"
             stroke="url(#loadingLogoGradient)"
             strokeWidth="8"
@@ -203,7 +203,7 @@ export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
             strokeLinejoin="round"
           />
 
-          {/* Orbital ring around the L */}
+          {/* Orbital ring around the A */}
           <ellipse
             id="logo-orbit"
             cx="100"
@@ -243,11 +243,11 @@ export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
         ref={textRef}
         className="mt-8 text-2xl md:text-3xl font-bold tracking-wider"
       >
-        {'LifeOS'.split('').map((char, i) => (
+        {'Ascnt'.split('').map((char, i) => (
           <span
             key={i}
             className="letter inline-block opacity-0"
-            style={{ color: i < 4 ? '#fff' : '#a78bfa' }}
+            style={{ color: '#fff' }}
           >
             {char}
           </span>
@@ -256,7 +256,7 @@ export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
 
       {/* Subtle tagline */}
       <p className="tagline mt-3 text-white/40 text-sm tracking-wide opacity-0 animate-fade-in-delayed">
-        Your Personal Operating System
+        Level up your life
       </p>
 
       <style jsx>{`

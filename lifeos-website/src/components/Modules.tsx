@@ -1,9 +1,12 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion } from 'framer-motion';
+
+// DEV MODE: Set to true to enable dragging icons into position
+const DEV_DRAG_MODE = false;
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -11,14 +14,14 @@ if (typeof window !== 'undefined') {
 }
 
 const modules = [
-  { name: "Productivity", icon: "/assets/icons/module_productivity.png", color: "#8b5cf6", description: "Tasks that get done" },
-  { name: "Health", icon: "/assets/icons/module_health.png", color: "#22d3ee", description: "Workouts + nutrition" },
-  { name: "Financial", icon: "/assets/icons/module_financial.png", color: "#34d399", description: "Track every pound" },
-  { name: "Knowledge", icon: "/assets/icons/module_knowledge.png", color: "#fbbf24", description: "Books + ideas" },
-  { name: "Journal", icon: "/assets/icons/module_journal.png", color: "#fb7185", description: "Thoughts + mood" },
-  { name: "Calendar", icon: "/assets/icons/module_calendar.png", color: "#a78bfa", description: "Time blocking" },
-  { name: "Skills", icon: "/assets/icons/module_skills.png", color: "#f472b6", description: "Practice + mastery" },
-  { name: "Purpose", icon: "/assets/icons/module_purpose.png", color: "#818cf8", description: "Vision + direction" },
+  { name: "Productivity", icon: "/assets/icons/module_productivity.png", color: "#8b5cf6", description: "Tasks that get done", iconOffset: { x: -22, y: -26 } },
+  { name: "Health", icon: "/assets/icons/module_health.png", color: "#22d3ee", description: "Workouts + nutrition", iconOffset: { x: -1, y: -29 } },
+  { name: "Financial", icon: "/assets/icons/module_financial.png", color: "#34d399", description: "Track every pound", iconOffset: { x: 10, y: 0 } },
+  { name: "Knowledge", icon: "/assets/icons/module_knowledge.png", color: "#fbbf24", description: "Books + ideas", iconOffset: { x: 22, y: 26 } },
+  { name: "Journal", icon: "/assets/icons/module_journal.png", color: "#fb7185", description: "Thoughts + mood", iconOffset: { x: -19, y: 32 } },
+  { name: "Calendar", icon: "/assets/icons/module_calendar.png", color: "#a78bfa", description: "Time blocking", iconOffset: { x: -31, y: 27 } },
+  { name: "Skills", icon: "/assets/icons/module_skills.png", color: "#f472b6", description: "Practice + mastery", iconOffset: { x: -53, y: -2 } },
+  { name: "Purpose", icon: "/assets/icons/module_purpose.png", color: "#818cf8", description: "Vision + direction", iconOffset: { x: -43, y: -25 } },
 ];
 
 // Cross-connections between related modules (pairs of indices) - spider web pattern
@@ -50,9 +53,65 @@ export function Modules() {
   const moduleRefs = useRef<(HTMLDivElement | null)[]>([]);
   const lineRefs = useRef<(SVGPathElement | null)[]>([]);
   const crossLineRefs = useRef<(SVGPathElement | null)[]>([]);
-  const particlesRef = useRef<HTMLDivElement>(null);
+
+  // DEV MODE: Draggable icon offsets
+  const [iconOffsets, setIconOffsets] = useState<{ x: number; y: number }[]>(
+    modules.map(m => m.iconOffset || { x: 0, y: 0 })
+  );
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const dragStartRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
+
+  // DEV MODE: Drag handlers
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    if (!DEV_DRAG_MODE) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingIndex(index);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      offsetX: iconOffsets[index].x,
+      offsetY: iconOffsets[index].y,
+    };
+  };
 
   useEffect(() => {
+    if (!DEV_DRAG_MODE || draggingIndex === null) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const dragStart = dragStartRef.current;
+      if (dragStart === null) return;
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
+      const newX = Math.round(dragStart.offsetX + dx);
+      const newY = Math.round(dragStart.offsetY + dy);
+      setIconOffsets(prev => {
+        const newOffsets = [...prev];
+        newOffsets[draggingIndex] = { x: newX, y: newY };
+        return newOffsets;
+      });
+    };
+
+    const handleMouseUp = () => {
+      setDraggingIndex(null);
+      dragStartRef.current = null;
+      // Log all offsets to console
+      console.log('📍 Current icon offsets:');
+      console.log(JSON.stringify(iconOffsets.map((o, i) => ({ name: modules[i].name, ...o })), null, 2));
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [draggingIndex, iconOffsets]);
+
+  useEffect(() => {
+    // Skip GSAP animations in dev drag mode
+    if (DEV_DRAG_MODE) return;
+
     if (!sectionRef.current || typeof window === 'undefined') return;
 
     const section = sectionRef.current;
@@ -129,7 +188,7 @@ export function Modules() {
         );
       }
 
-      // Phase 3: Connection lines draw from center to modules (0.26-0.40)
+      // Phase 3: Connection lines draw from center outward FIRST
       lineRefs.current.forEach((line, i) => {
         if (!line) return;
         const length = line.getTotalLength();
@@ -139,32 +198,34 @@ export function Modules() {
           strokeDashoffset: 0,
           duration: 0.12,
           ease: 'power2.out',
-        }, BUILD_OFFSET + 0.14 + (i * 0.010));
+        }, BUILD_OFFSET + 0.14 + (i * 0.015));
       });
 
-      // Phase 4: Modules materialize at end of lines (0.34-0.52)
+      // Phase 4: Modules fly outward from center along the lines
       moduleRefs.current.forEach((mod, i) => {
         if (!mod) return;
         const pos = getModulePosition(i, modules.length, RADIUS);
 
+        // Start modules at center, hidden
         gsap.set(mod, {
-          x: pos.x * 0.3,
-          y: pos.y * 0.3,
+          x: 0,
+          y: 0,
           scale: 0,
           opacity: 0,
         });
 
+        // Modules fly out to their positions as lines draw
         tl.to(mod, {
           x: pos.x,
           y: pos.y,
           scale: 1,
           opacity: 1,
-          duration: 0.1,
-          ease: 'back.out(1.7)',
-        }, BUILD_OFFSET + 0.22 + (i * 0.020));
+          duration: 0.12,
+          ease: 'power2.out',
+        }, BUILD_OFFSET + 0.16 + (i * 0.015));
       });
 
-      // Phase 5: Cross-connections draw between modules (0.50-0.64)
+      // Phase 5: Cross-connections draw between modules
       crossLineRefs.current.forEach((line, i) => {
         if (!line) return;
         const length = line.getTotalLength();
@@ -172,19 +233,10 @@ export function Modules() {
 
         tl.to(line, {
           strokeDashoffset: 0,
-          duration: 0.1,
+          duration: 0.08,
           ease: 'power1.inOut',
-        }, BUILD_OFFSET + 0.38 + (i * 0.006));
+        }, BUILD_OFFSET + 0.32 + (i * 0.004));
       });
-
-      // Phase 6: Particles container fades in (0.60-0.67)
-      if (particlesRef.current) {
-        tl.fromTo(particlesRef.current,
-          { opacity: 0 },
-          { opacity: 1, duration: 0.1 },
-          BUILD_OFFSET + 0.48
-        );
-      }
 
       // ===== DISMANTLING PHASE (0.72-0.95) - Adjusted for BUILD_OFFSET =====
 
@@ -240,9 +292,9 @@ export function Modules() {
         const length = line.getTotalLength();
         tl.to(line, {
           strokeDashoffset: length,
-          duration: 0.10,
+          duration: 0.08,
           ease: 'power2.inOut',
-        }, 0.77 + (i * 0.004));
+        }, 0.74 + (i * 0.003));
       });
 
       // Modules scatter outward
@@ -260,14 +312,6 @@ export function Modules() {
           ease: 'power2.inOut',
         }, 0.78 + (i * 0.010));
       });
-
-      // Particles fade
-      if (particlesRef.current) {
-        tl.to(particlesRef.current, {
-          opacity: 0,
-          duration: 0.08,
-        }, 0.80);
-      }
 
     }, section);
 
@@ -309,7 +353,7 @@ export function Modules() {
                 key={i}
                 className="title-word inline-block mx-2"
                 style={{
-                  opacity: 0,
+                  opacity: DEV_DRAG_MODE ? 1 : 0,
                   color: i >= 2 ? (i === 2 ? '#a78bfa' : '#22d3ee') : 'white',
                 }}
               >
@@ -320,9 +364,9 @@ export function Modules() {
           <p
             ref={subtitleRef}
             className="text-lg text-white/50 max-w-xl mx-auto"
-            style={{ opacity: 0 }}
+            style={{ opacity: DEV_DRAG_MODE ? 1 : 0 }}
           >
-            Your workout affects your focus. Your sleep affects your mood. LifeOS reveals the connections you'd never spot alone.
+            Your workout affects your focus. Your sleep affects your mood. Ascnt reveals the connections you'd never spot alone.
           </p>
         </div>
 
@@ -339,8 +383,8 @@ export function Modules() {
                 <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.4" />
               </linearGradient>
               <linearGradient id="crossLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.3" />
+                <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.4" />
               </linearGradient>
               <filter id="glow">
                 <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -354,8 +398,8 @@ export function Modules() {
             {/* Lines from hub to each module */}
             {modules.map((_, i) => {
               const pos = getModulePosition(i, modules.length, RADIUS);
-              const centerX = RADIUS + 100;
-              const centerY = RADIUS + 100;
+              const centerX = (RADIUS * 2 + 200) / 2; // Match CSS 50%
+              const centerY = (RADIUS * 2 + 280) / 2; // Match CSS 50%
               return (
                 <path
                   key={`line-${i}`}
@@ -365,29 +409,34 @@ export function Modules() {
                   strokeWidth="2"
                   fill="none"
                   filter="url(#glow)"
+                  style={DEV_DRAG_MODE ? { strokeDasharray: 'none', strokeDashoffset: 0 } : undefined}
                 />
               );
             })}
 
-            {/* Cross-connections between modules */}
+            {/* Cross-connections between modules - curved lines */}
             {CONNECTIONS.map(([from, to], i) => {
               const posFrom = getModulePosition(from, modules.length, RADIUS);
               const posTo = getModulePosition(to, modules.length, RADIUS);
-              const centerX = RADIUS + 100;
-              const centerY = RADIUS + 100;
-              // Curved path using quadratic bezier
+              const centerX = (RADIUS * 2 + 200) / 2;
+              const centerY = (RADIUS * 2 + 280) / 2;
+              // Curved path using quadratic bezier - curve inward toward center
               const midX = (posFrom.x + posTo.x) / 2;
               const midY = (posFrom.y + posTo.y) / 2;
-              const curveOffset = 30;
+              // Pull the curve toward the center for a web effect
+              const curveStrength = 0.3;
+              const controlX = midX * (1 - curveStrength);
+              const controlY = midY * (1 - curveStrength);
               return (
                 <path
                   key={`cross-${i}`}
                   ref={el => { crossLineRefs.current[i] = el; }}
-                  d={`M ${centerX + posFrom.x} ${centerY + posFrom.y} Q ${centerX + midX + curveOffset} ${centerY + midY + curveOffset} ${centerX + posTo.x} ${centerY + posTo.y}`}
+                  d={`M ${centerX + posFrom.x} ${centerY + posFrom.y} Q ${centerX + controlX} ${centerY + controlY} ${centerX + posTo.x} ${centerY + posTo.y}`}
                   stroke="url(#crossLineGradient)"
-                  strokeWidth="1"
+                  strokeWidth="1.5"
                   fill="none"
-                  opacity="0.5"
+                  opacity="0.6"
+                  style={DEV_DRAG_MODE ? { strokeDasharray: 'none', strokeDashoffset: 0 } : undefined}
                 />
               );
             })}
@@ -400,59 +449,48 @@ export function Modules() {
             style={{
               background: 'radial-gradient(circle, rgba(167,139,250,0.3) 0%, rgba(34,211,238,0.1) 70%, transparent 100%)',
               boxShadow: '0 0 60px rgba(167,139,250,0.4), inset 0 0 30px rgba(167,139,250,0.2)',
-              opacity: 0,
+              opacity: DEV_DRAG_MODE ? 1 : 0,
             }}
           >
             <div className="text-2xl font-bold text-white/80">OS</div>
           </div>
 
-          {/* Flowing Particles */}
-          <div ref={particlesRef} className="absolute inset-0 pointer-events-none" style={{ opacity: 0 }}>
-            {[...Array(12)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-2 h-2 rounded-full"
-                style={{
-                  background: i % 2 === 0 ? '#a78bfa' : '#22d3ee',
-                  left: '50%',
-                  top: '50%',
-                  boxShadow: `0 0 10px ${i % 2 === 0 ? '#a78bfa' : '#22d3ee'}`,
-                }}
-                animate={{
-                  x: [0, Math.cos((i / 12) * Math.PI * 2) * RADIUS, 0],
-                  y: [0, Math.sin((i / 12) * Math.PI * 2) * RADIUS, 0],
-                  opacity: [0, 1, 0],
-                  scale: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 4 + (i % 3),
-                  repeat: Infinity,
-                  delay: i * 0.3,
-                  ease: 'easeInOut',
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Module Nodes */}
+          {/* Module Nodes - Icon centered on line endpoint, label below */}
           {modules.map((module, i) => {
+            const offset = DEV_DRAG_MODE ? iconOffsets[i] : (module.iconOffset || { x: 0, y: 0 });
             const pos = getModulePosition(i, modules.length, RADIUS);
             return (
               <div
                 key={module.name}
                 ref={el => { moduleRefs.current[i] = el; }}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
-                style={{ opacity: 0 }}
+                className="absolute flex flex-col items-center"
+                style={{
+                  opacity: DEV_DRAG_MODE ? 1 : 0,
+                  // Position so ICON CENTER is at the line endpoint, with per-icon adjustments
+                  left: (RADIUS * 2 + 200) / 2 - 32 + offset.x,
+                  top: (RADIUS * 2 + 280) / 2 - 32 + offset.y,
+                  // In dev mode, show at final position immediately
+                  transform: DEV_DRAG_MODE ? `translate(${pos.x}px, ${pos.y}px)` : undefined,
+                  cursor: DEV_DRAG_MODE ? 'grab' : 'pointer',
+                  zIndex: draggingIndex === i ? 100 : 1,
+                }}
+                onMouseDown={(e) => handleMouseDown(i, e)}
               >
-                {/* Module Icon */}
+                {/* DEV MODE: Show offset values */}
+                {DEV_DRAG_MODE && (
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs bg-black/80 text-green-400 px-2 py-0.5 rounded whitespace-nowrap font-mono">
+                    x:{offset.x} y:{offset.y}
+                  </div>
+                )}
+                {/* Module Icon - exactly at line endpoint */}
                 <motion.div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center mb-2 cursor-pointer p-2"
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center p-2"
                   style={{
                     backgroundColor: `${module.color}20`,
                     border: `2px solid ${module.color}40`,
                     boxShadow: `0 0 30px ${module.color}30`,
                   }}
-                  whileHover={{
+                  whileHover={DEV_DRAG_MODE ? {} : {
                     scale: 1.15,
                     boxShadow: `0 0 50px ${module.color}50`,
                   }}
@@ -461,12 +499,12 @@ export function Modules() {
                   <img
                     src={module.icon}
                     alt={module.name}
-                    className="w-10 h-10 object-contain"
+                    className="w-10 h-10 object-contain pointer-events-none"
                     style={{ imageRendering: 'pixelated' }}
                   />
                 </motion.div>
-                {/* Module Label */}
-                <div className="text-center">
+                {/* Module Label - positioned below icon */}
+                <div className="text-center mt-2 pointer-events-none">
                   <div className="text-sm font-semibold text-white">{module.name}</div>
                   <div className="text-xs text-white/40">{module.description}</div>
                 </div>

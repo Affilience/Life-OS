@@ -17,6 +17,9 @@ import BossBattleArena from './BossBattleArena';
 const BossCard = ({ boss, isLocked, isDefeated, playerLevel, onSelect }) => {
   const difficulty = BOSS_DIFFICULTY[boss.difficulty];
   const isRecommended = playerLevel >= boss.levelRange[0] && playerLevel <= boss.levelRange[1];
+  // Calculate actual battle health with difficulty multiplier
+  const actualHealth = Math.floor(boss.health * (difficulty?.multiplier || 1.0));
+  const actualDamage = Math.floor(boss.damage * (difficulty?.multiplier || 1.0));
 
   return (
     <motion.button
@@ -82,15 +85,15 @@ const BossCard = ({ boss, isLocked, isDefeated, playerLevel, onSelect }) => {
             Level {boss.levelRange[0]} - {boss.levelRange[1]}
           </p>
 
-          {/* Stats */}
+          {/* Stats - shows actual battle values with difficulty multiplier */}
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1 text-red-400">
               <Heart className="w-3 h-3" />
-              <span>{boss.health}</span>
+              <span>{actualHealth.toLocaleString()} HP</span>
             </div>
             <div className="flex items-center gap-1 text-orange-400">
               <Swords className="w-3 h-3" />
-              <span>{boss.damage}/s</span>
+              <span>{actualDamage}/s</span>
             </div>
           </div>
         </div>

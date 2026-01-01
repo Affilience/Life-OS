@@ -2,7 +2,7 @@
  * ResolutionCard - Individual resolution display with animated progress ring
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Heart,
@@ -20,6 +20,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { RESOLUTION_CATEGORIES, useResolutionStore } from '../../stores/resolutionStore';
+import ResolutionProgressModal from './ResolutionProgressModal';
 
 const CATEGORY_ICONS = {
   Heart,
@@ -33,6 +34,7 @@ const CATEGORY_ICONS = {
 };
 
 export default function ResolutionCard({ resolution, onCheckIn, onEdit, compact = false }) {
+  const [showProgressModal, setShowProgressModal] = useState(false);
   const { getResolutionProgress, hasCheckedInToday } = useResolutionStore();
   const category = RESOLUTION_CATEGORIES[resolution.category] || RESOLUTION_CATEGORIES.habits;
   const CategoryIcon = CATEGORY_ICONS[category.icon] || Target;
@@ -266,13 +268,21 @@ export default function ResolutionCard({ resolution, onCheckIn, onEdit, compact 
             {checkedInToday ? 'Checked In Today' : 'Check In'}
           </button>
           <button
-            onClick={() => onEdit(resolution)}
+            onClick={() => setShowProgressModal(true)}
             className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white/70 rounded-xl transition-all"
+            title="View Progress"
           >
             <TrendingUp className="w-5 h-5" />
           </button>
         </div>
       </div>
+
+      {/* Progress Modal */}
+      <ResolutionProgressModal
+        resolution={resolution}
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+      />
     </motion.div>
   );
 }

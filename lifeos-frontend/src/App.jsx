@@ -126,6 +126,9 @@ import { initializeLevelProgressionStore } from './stores/levelProgressionStore'
 // Note: PvP stores are lazy-loaded on Social page for faster initial load
 import { initializeNotificationService } from './services/notificationService';
 
+// Demo data utility for screenshots (available on window.populateDemoData)
+import './utils/populateDemoData';
+
 // Create React Query client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -174,17 +177,10 @@ const Discoveries = lazy(() => import('./pages/Discoveries'));
 const Resolutions = lazy(() => import('./pages/Resolutions'));
 
 // Demo pages
-const ConstellationsTest = lazy(() => import('./features/constellations/demo/ConstellationsTestPage'));
-const ConstellationsDemo = lazy(() => import('./pages/ConstellationsDemo'));
 const EvolutionShowcase = lazy(() => import('./components/avatar/EvolutionShowcase'));
 const EquipmentInventory = lazy(() => import('./components/avatar/EquipmentInventory'));
 const Social = lazy(() => import('./pages/Social'));
 const AICompanion = lazy(() => import('./pages/AICompanion'));
-const EquipmentTest = lazy(() => import('./pages/EquipmentTest'));
-const EquipmentTestHeroine = lazy(() => import('./pages/EquipmentTestHeroine'));
-const CombatDemo = lazy(() => import('./pages/CombatDemo'));
-const LevelUpTest = lazy(() => import('./pages/LevelUpTest'));
-const AvatarEthnicities = lazy(() => import('./pages/AvatarEthnicities'));
 
 // Protected Route - requires authentication
 function ProtectedRoute({ children }) {
@@ -502,33 +498,11 @@ function AppContent() {
                   {/* AI Companion */}
                   <Route path="/ai" element={<AICompanion />} />
 
-                  {/* Demo pages - cosmic mode only */}
-                  <Route path="/constellations-test" element={
-                    <ModeAwareRoute requiredVisibility="showConstellationEffects" redirectTo="/skills">
-                      <ConstellationsTest />
-                    </ModeAwareRoute>
-                  } />
-                  <Route path="/constellations-demo" element={
-                    <ModeAwareRoute requiredVisibility="showConstellationEffects" redirectTo="/skills">
-                      <ConstellationsDemo />
-                    </ModeAwareRoute>
-                  } />
+                  {/* Evolution gallery - cosmic mode only */}
                   <Route path="/evolution" element={
                     <ModeAwareRoute requiredVisibility="showEvolutionGallery" redirectTo="/character">
                       <EvolutionShowcase />
                     </ModeAwareRoute>
-                  } />
-                  <Route path="/equipment-test" element={
-                    <EquipmentTest />
-                  } />
-                  <Route path="/equipment-test-heroine" element={
-                    <EquipmentTestHeroine />
-                  } />
-                  <Route path="/level-up-test" element={
-                    <LevelUpTest />
-                  } />
-                  <Route path="/avatar-ethnicities" element={
-                    <AvatarEthnicities />
                   } />
                 </Routes>
                 </MainLayout>

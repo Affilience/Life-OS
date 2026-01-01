@@ -439,7 +439,7 @@ const DamageNumber = ({ damage, position, isPlayer, isCrit = false, color }) => 
 );
 
 // Weapon cooldown indicator component
-const CooldownIndicator = ({ progress, weaponAttack, canAttack }) => {
+const CooldownIndicator = ({ progress, weaponAttack, canAttack, attackName }) => {
   const percentage = Math.min(100, progress * 100);
   const isReady = canAttack;
 
@@ -448,7 +448,7 @@ const CooldownIndicator = ({ progress, weaponAttack, canAttack }) => {
       <div className="flex items-center justify-between text-xs mb-1">
         <span className="text-white/60 font-medium flex items-center gap-1">
           <Swords className="w-3 h-3" />
-          {weaponAttack?.attackName || 'Attack'}
+          {attackName || weaponAttack?.attackName || 'Attack'}
         </span>
         {isReady ? (
           <span className="text-green-400 font-bold animate-pulse">READY!</span>
@@ -2815,26 +2815,30 @@ export default function BossBattleArena({ bossId, onClose }) {
   }, []);
 
   // Calculate responsive attack positions based on screen size
-  // Mobile: more vertical layout, Desktop: diagonal layout
+  // These MUST match the actual CSS positions of boss and player avatars
   const getAttackPositions = useCallback(() => {
     const { width, height } = dimensions;
     const isMobile = width < 768;
 
     if (isMobile) {
-      // Mobile: Boss slightly right of center (55%), Player at bottom center
+      // Mobile layout:
+      // Boss: left-[55%] top-2, with ~100px of content above sprite → sprite center ~15% down
+      // Player: left-1/2 top-65% translateY(-50%) → center at 65%
       return {
         bossX: width * 0.55,
-        bossY: height * 0.22,
+        bossY: height * 0.15, // Boss sprite center (after name/health bar)
         playerX: width * 0.5,
-        playerY: height * 0.72,
+        playerY: height * 0.65, // Player center
       };
     } else {
-      // Desktop: Diagonal layout - Boss top-right, Player bottom-left
+      // Desktop layout:
+      // Boss: right-4 top-4 (16px from edges), sprite is ~192px, center ~96px from edge
+      // Player: left-4 bottom-4 (16px from edges), container ~150px wide
       return {
-        bossX: width * 0.75,
-        bossY: height * 0.2,
-        playerX: width * 0.25,
-        playerY: height * 0.75,
+        bossX: width - 120, // right-4 (16px) plus half the boss sprite width (~104px)
+        bossY: height * 0.20, // Boss sprite center (after name/health bar ~100px)
+        playerX: 90, // left-4 (16px) plus player container padding + half avatar width
+        playerY: height - 70, // bottom-4 (16px) plus half container height
       };
     }
   }, [dimensions]);
@@ -2850,6 +2854,8 @@ export default function BossBattleArena({ bossId, onClose }) {
   // Get the ability for the equipped weapon
   const equippedWeaponId = equipped?.mainHand;
   const weaponAbility = equippedWeaponId ? getWeaponAbility(equippedWeaponId, EQUIPMENT_DATABASE) : null;
+  // Basic attack uses weapon type name (Slash, Stab, etc.)
+  const currentAttackName = currentWeapon?.attackName || 'Attack';
   const canUseAbility = weaponAbility && isAbilityReady(abilityLastUsed, weaponAbility.cooldown) && !isAbilityAnimating;
 
   // State for battle initialization errors and retry trigger
@@ -2965,13 +2971,13 @@ export default function BossBattleArena({ bossId, onClose }) {
             // Apply damage when projectile hits
             bossAttack();
 
-            // Show damage number on player side - responsive positioning
+            // Show damage number on player side - match player visual position
             const id = damageIdRef.current++;
             const isMobile = dimensions.width < 768;
             setDamageNumbers(prev => [...prev, {
               id,
               damage: currentBattle?.boss?.damage || boss?.damage || 0,
-              position: { x: isMobile ? '45%' : '30%', y: isMobile ? '65%' : '70%' },
+              position: { x: isMobile ? '50%' : '5%', y: isMobile ? '60%' : '88%' },
               isPlayer: true,
               attackName: boss?.attackName || 'Attack',
             }]);
@@ -3002,7 +3008,7 @@ export default function BossBattleArena({ bossId, onClose }) {
           setDamageNumbers(prev => [...prev, {
             id,
             damage: currentBattle?.boss?.damage || boss?.damage || 0,
-            position: { x: isMobileFallback ? '45%' : '30%', y: isMobileFallback ? '65%' : '70%' },
+            position: { x: isMobileFallback ? '45%' : '5%', y: isMobileFallback ? '65%' : '88%' },
             isPlayer: true,
             attackName: boss?.attackName || 'Attack',
           }]);
@@ -3019,9 +3025,10 @@ export default function BossBattleArena({ bossId, onClose }) {
         clearInterval(battleIntervalRef.current);
       }
     };
-  }, [isBattleActive, isCountdown, battleEnded, bossAttack, currentBattle, boss, getAttackPositions, dimensions]);
+  // Minimal dependencies - functions accessed via refs inside interval
+  }, [isBattleActive, isCountdown, battleEnded, boss?.attackSpeed]);
 
-  // Cooldown progress tracking - updates every 50ms for smooth animation
+  // Cooldown progress tracking - updates every 100ms (reduced from 50ms for performance)
   useEffect(() => {
     if (!isBattleActive || isCountdown || battleEnded) return;
 
@@ -3032,19 +3039,22 @@ export default function BossBattleArena({ bossId, onClose }) {
       setCooldownProgress(progress);
       setIsAttackReady(ready);
 
-      // Elemental ability cooldowns
-      const newElementalCooldowns = equippedAbilities.map((_, slot) => {
-        return getElementalCooldownProgress(slot);
-      });
-      setElementalCooldowns(newElementalCooldowns);
-    }, 50);
+      // Elemental ability cooldowns - only update if we have abilities equipped
+      if (equippedAbilities.length > 0) {
+        const newElementalCooldowns = equippedAbilities.map((_, slot) => {
+          return getElementalCooldownProgress(slot);
+        });
+        setElementalCooldowns(newElementalCooldowns);
+      }
+    }, 100);
 
     return () => {
       if (cooldownIntervalRef.current) {
         clearInterval(cooldownIntervalRef.current);
       }
     };
-  }, [isBattleActive, isCountdown, battleEnded, getCooldownProgress, canAttack, equippedAbilities, getElementalCooldownProgress]);
+  // Minimal dependencies - functions called from within interval don't need to be deps
+  }, [isBattleActive, isCountdown, battleEnded]);
 
   // Check for rage mode (boss below 30% health)
   useEffect(() => {
@@ -3162,10 +3172,10 @@ export default function BossBattleArena({ bossId, onClose }) {
       // Position damage numbers relative to boss position for responsive display
       const showDamageOnImpact = () => {
         const id = damageIdRef.current++;
-        // Calculate damage number position as percentage of screen for responsive display
+        // Calculate damage number position to match boss visual position (top-right corner)
         const isMobile = dimensions.width < 768;
-        const damageX = isMobile ? '40%' : '65%';
-        const damageY = isMobile ? '18%' : '15%';
+        const damageX = isMobile ? '55%' : '85%'; // Near boss in top-right corner
+        const damageY = isMobile ? '12%' : '10%'; // Above boss sprite
 
         setDamageNumbers(prev => [...prev, {
           id,
@@ -3245,20 +3255,20 @@ export default function BossBattleArena({ bossId, onClose }) {
 
     // Calculate ability damage
     const baseDamage = currentBattle?.playerDamage || 10;
-    const abilityDamage = calculateAbilityDamage(baseDamage, weaponAbility);
+    const abilityDamage = calculateAbilityDamage(weaponAbility, baseDamage);
 
     // Get responsive attack positions based on viewport size
     const { bossX, bossY } = getAttackPositions();
 
     // Show damage when ability visually impacts the target
     const showAbilityDamageOnImpact = () => {
-      // Show damage number - responsive position based on screen size
+      // Show damage number - responsive position based on screen size (top-right corner)
       const id = damageIdRef.current++;
       const isMobile = dimensions.width < 768;
       setDamageNumbers(prev => [...prev, {
         id,
         damage: abilityDamage,
-        position: { x: isMobile ? '40%' : '65%', y: isMobile ? '18%' : '15%' },
+        position: { x: isMobile ? '55%' : '85%', y: isMobile ? '12%' : '10%' },
         isPlayer: false,
         isCrit: true,
         color: weaponAbility.color,
@@ -3319,13 +3329,13 @@ export default function BossBattleArena({ bossId, onClose }) {
 
     // Show damage when ability visually impacts the target
     const showElementalDamageOnImpact = () => {
-      // Show damage number - responsive position based on screen size
+      // Show damage number - responsive position based on screen size (top-right corner)
       const id = damageIdRef.current++;
       const isMobile = dimensions.width < 768;
       setDamageNumbers(prev => [...prev, {
         id,
         damage: abilityDamage,
-        position: { x: isMobile ? '40%' : '65%', y: isMobile ? '18%' : '15%' },
+        position: { x: isMobile ? '55%' : '85%', y: isMobile ? '12%' : '10%' },
         isPlayer: false,
         isCrit: true,
         color: ability.elementColor || ability.color,
@@ -3509,16 +3519,174 @@ export default function BossBattleArena({ bossId, onClose }) {
 
       {/* Main battle area - Diagonal layout like CombatDemo */}
       {!isCountdown && !initError && (
-        <div className="h-full w-full flex items-center justify-center relative overflow-hidden">
-          {/* Fixed aspect ratio battle arena - more vertical on mobile */}
-          <div
-            className={`relative w-full ${
-              dimensions.width < 768
-                ? 'h-full max-h-full' // Mobile: use full height, no aspect ratio constraint
-                : 'max-w-4xl aspect-[1000/600]'
-            }`}
-            style={{ maxHeight: dimensions.width >= 768 ? 'calc(100vh - 2rem)' : undefined }}
-          >
+        <div className="h-full w-full relative overflow-hidden">
+          {/* Boss section - positioned relative to full screen for attack alignment */}
+          <div className={`absolute z-10 ${
+            dimensions.width < 768
+              ? 'left-[55%] -translate-x-1/2 top-2 scale-90 origin-top'
+              : 'right-4 top-4'
+          }`}>
+            {/* Boss name and difficulty */}
+            <div className="text-center mb-3">
+              <h2 className="text-2xl font-black text-white drop-shadow-lg">{boss?.name}</h2>
+              <span
+                className="text-xs font-bold px-3 py-1 rounded-full"
+                style={{ backgroundColor: `${difficulty.color}40`, color: difficulty.color }}
+              >
+                {difficulty.label}
+              </span>
+            </div>
+
+            {/* Boss health bar */}
+            <div className="w-full max-w-sm mb-4 px-4">
+              <HealthBar
+                current={currentBattle?.bossCurrentHealth ?? boss?.health}
+                max={currentBattle?.bossMaxHealth ?? boss?.health}
+                label="BOSS HP"
+              />
+            </div>
+
+            {/* Boss sprite */}
+            <motion.div
+              ref={bossRef}
+              className="relative select-none"
+            >
+              {showBossDisintegration && (
+                <BossDisintegration
+                  active={showBossDisintegration}
+                  bossSprite={boss?.sprite}
+                  onComplete={() => setShowBossDisintegration(false)}
+                />
+              )}
+
+              {!showBossDisintegration && (
+                <motion.div
+                  animate={!battleResult ? {
+                    y: [0, -8, 0],
+                    ...(isRageMode && !battleEnded ? { scale: [1, 1.05, 1] } : {}),
+                  } : {}}
+                  transition={{ duration: isRageMode ? 0.8 : 1.5, repeat: Infinity }}
+                >
+                  <img
+                    src={boss?.sprite}
+                    alt={boss?.name}
+                    className={`w-28 h-28 sm:w-40 sm:h-40 md:w-48 md:h-48 object-contain ${
+                      isRageMode && !battleEnded
+                        ? 'drop-shadow-[0_0_40px_rgba(255,0,0,0.6)]'
+                        : 'drop-shadow-[0_0_30px_rgba(255,0,0,0.3)]'
+                    }`}
+                    style={{
+                      imageRendering: 'pixelated',
+                      filter: isRageMode && !battleEnded ? 'brightness(1.2) saturate(1.3)' : undefined,
+                    }}
+                    onError={(e) => { e.target.src = '/assets/icons/placeholder.png'; }}
+                  />
+                  {isRageMode && !battleEnded && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full"
+                      style={{ background: 'radial-gradient(circle, transparent 40%, rgba(255,0,0,0.3) 100%)' }}
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                      transition={{ duration: 0.5, repeat: Infinity }}
+                    />
+                  )}
+                </motion.div>
+              )}
+
+              {/* Attack effects */}
+              <AnimatePresence>
+                {attackEffects.map(effect => (
+                  <AttackEffect key={effect.id} attackResult={effect} position={effect.position} />
+                ))}
+              </AnimatePresence>
+
+              {/* Ability Animation */}
+              <AnimatePresence>
+                {activeAbilityAnimation && (
+                  <AbilityAnimation
+                    ability={activeAbilityAnimation.ability}
+                    position={activeAbilityAnimation.position}
+                    containerRef={arenaRef}
+                    onComplete={() => setActiveAbilityAnimation(null)}
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Boss damage numbers */}
+              <AnimatePresence>
+                {damageNumbers.filter(d => !d.isPlayer).map(d => (
+                  <DamageNumber key={d.id} damage={d.damage} position={d.position} isPlayer={false} isCrit={d.isCrit} color={d.color} />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+
+          {/* Player section - positioned relative to full screen for attack alignment */}
+          <div className={`absolute z-10 flex items-center gap-2 sm:gap-4 p-2 sm:p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm ${
+            dimensions.width < 768
+              ? 'left-1/2 -translate-x-1/2 bottom-32'
+              : 'left-4 bottom-4'
+          }`}>
+            {/* Player avatar */}
+            <div className="w-14 h-14 sm:w-20 sm:h-20 relative flex-shrink-0">
+              <AvatarRenderer
+                equipped={equipped}
+                characterGender={characterGender}
+                size={dimensions.width < 768 ? 56 : 80}
+                showEffects={false}
+              />
+              <AnimatePresence>
+                {damageNumbers.filter(d => d.isPlayer).map(d => (
+                  <DamageNumber key={d.id} damage={d.damage} position={{ x: '50%', y: '0' }} isPlayer={true} />
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Player stats */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-white font-bold">Level {level}</span>
+                {activePet && (
+                  <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded-full">
+                    + {activePet.name}
+                  </span>
+                )}
+              </div>
+              <HealthBar
+                current={currentBattle?.playerCurrentHealth ?? playerStats?.maxHealth ?? 100}
+                max={currentBattle?.playerMaxHealth ?? playerStats?.maxHealth ?? 100}
+                label="YOUR HP"
+                isPlayer
+              />
+              <div className="flex flex-wrap gap-3 mt-2 text-sm">
+                <div className="flex items-center gap-1.5 text-yellow-400">
+                  <Swords className="w-4 h-4" />
+                  <span className="font-bold">{currentBattle?.playerDamage ?? playerStats?.damage ?? 10}</span>
+                  <span className="text-white/40 text-xs">DMG</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-white/50">
+                  <span className="font-medium">{currentBattle?.tapCount ?? 0} hits</span>
+                </div>
+                {(currentBattle?.critCount ?? 0) > 0 && (
+                  <div className="flex items-center gap-1.5 text-orange-400">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="font-bold">{currentBattle?.critCount ?? 0}</span>
+                    <span className="text-white/40 text-xs">CRITS</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Effects container - centered for visual effects */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div
+              className={`relative w-full ${
+                dimensions.width < 768
+                  ? 'h-full max-h-full'
+                  : 'max-w-4xl aspect-[1000/600]'
+              }`}
+              style={{ maxHeight: dimensions.width >= 768 ? 'calc(100vh - 2rem)' : undefined }}
+            >
             {/* Anime.js Player Projectiles */}
             {playerProjectiles.map(proj => (
               <AnimeProjectile
@@ -3557,161 +3725,17 @@ export default function BossBattleArena({ bossId, onClose }) {
                 onComplete={() => setImpactEffects(prev => prev.filter(e => e.id !== impact.id))}
               />
             ))}
-
-            {/* Boss section - Responsive positioning to match attack coordinates */}
-            {/* Mobile: slightly right of center for attack alignment, Desktop: top-right */}
-            <div className={`absolute z-0 ${
-              dimensions.width < 768
-                ? 'left-[55%] -translate-x-1/2 top-2 scale-90 origin-top'  // Mobile: slightly right of center
-                : 'right-4 top-2'                     // Desktop: top-right diagonal
-            }`}>
-            {/* Boss name and difficulty */}
-            <div className="text-center mb-3">
-              <h2 className="text-2xl font-black text-white drop-shadow-lg">{boss?.name}</h2>
-              <span
-                className="text-xs font-bold px-3 py-1 rounded-full"
-                style={{ backgroundColor: `${difficulty.color}40`, color: difficulty.color }}
-              >
-                {difficulty.label}
-              </span>
             </div>
-
-            {/* Boss health bar */}
-            <div className="w-full max-w-sm mb-4 px-4">
-              <HealthBar
-                current={currentBattle?.bossCurrentHealth ?? boss?.health}
-                max={currentBattle?.bossMaxHealth ?? boss?.health}
-                label="BOSS HP"
-              />
-            </div>
-
-            {/* Boss sprite - NOT tappable, attacks via button only */}
-            <motion.div
-              ref={bossRef}
-              className="relative select-none"
-            >
-              {/* Boss Disintegration Effect */}
-              {showBossDisintegration && (
-                <BossDisintegration
-                  active={showBossDisintegration}
-                  bossSprite={boss?.sprite}
-                  onComplete={() => setShowBossDisintegration(false)}
-                />
-              )}
-
-              {/* Boss sprite - hidden when disintegrating */}
-              {!showBossDisintegration && (
-                <motion.div
-                  animate={!battleResult ? {
-                    y: [0, -8, 0],
-                    // Rage mode: faster bounce, red glow
-                    ...(isRageMode && !battleEnded ? {
-                      scale: [1, 1.05, 1],
-                    } : {}),
-                  } : {}}
-                  transition={{
-                    duration: isRageMode ? 0.8 : 1.5,
-                    repeat: Infinity,
-                  }}
-                >
-                  <img
-                    src={boss?.sprite}
-                    alt={boss?.name}
-                    className={`w-28 h-28 sm:w-40 sm:h-40 md:w-52 md:h-52 object-contain ${
-                      isRageMode && !battleEnded
-                        ? 'drop-shadow-[0_0_40px_rgba(255,0,0,0.6)]'
-                        : 'drop-shadow-[0_0_30px_rgba(255,0,0,0.3)]'
-                    }`}
-                    style={{
-                      imageRendering: 'pixelated',
-                      filter: isRageMode && !battleEnded ? 'brightness(1.2) saturate(1.3)' : undefined,
-                    }}
-                    onError={(e) => {
-                      e.target.src = '/assets/icons/placeholder.png';
-                    }}
-                  />
-                  {/* Rage aura effect */}
-                  {isRageMode && !battleEnded && (
-                    <motion.div
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        background: 'radial-gradient(circle, transparent 40%, rgba(255,0,0,0.3) 100%)',
-                      }}
-                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                      transition={{ duration: 0.5, repeat: Infinity }}
-                    />
-                  )}
-                </motion.div>
-              )}
-
-              {/* Attack effects */}
-              <AnimatePresence>
-                {attackEffects.map(effect => (
-                  <AttackEffect key={effect.id} attackResult={effect} position={effect.position} />
-                ))}
-              </AnimatePresence>
-
-              {/* Ability Animation */}
-              <AnimatePresence>
-                {activeAbilityAnimation && (
-                  <AbilityAnimation
-                    ability={activeAbilityAnimation.ability}
-                    position={activeAbilityAnimation.position}
-                    containerRef={arenaRef}
-                    onComplete={() => setActiveAbilityAnimation(null)}
-                  />
-                )}
-              </AnimatePresence>
-
-              {/* Damage numbers on boss */}
-              <AnimatePresence>
-                {damageNumbers.filter(d => !d.isPlayer).map(d => (
-                  <DamageNumber
-                    key={d.id}
-                    damage={d.damage}
-                    position={d.position}
-                    isPlayer={false}
-                    isCrit={d.isCrit}
-                    color={d.color}
-                  />
-                ))}
-              </AnimatePresence>
-            </motion.div>
-            </div>
+          </div>
 
           {/* Battle Controls - Bottom center, higher on mobile to avoid overlap */}
           {isBattleActive && !battleResult && (
             <div className={`absolute left-1/2 -translate-x-1/2 z-10 bg-black/30 backdrop-blur-sm rounded-2xl p-2 sm:p-3 ${
               dimensions.width < 768 ? 'bottom-2' : 'bottom-4'
             }`}>
-              {/* Attack and Ability Buttons */}
+              {/* Attack Button - shows ability if weapon has one, otherwise basic attack */}
               <div className="flex gap-3 justify-center">
-                {/* Attack Button */}
-                <motion.button
-                  onClick={handleAttack}
-                  disabled={!isAttackReady}
-                  whileHover={isAttackReady ? { scale: 1.05 } : {}}
-                  whileTap={isAttackReady ? { scale: 0.95 } : {}}
-                  className={`px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base transition-all ${
-                    isAttackReady
-                      ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
-                      : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
-                  }`}
-                  style={{
-                    touchAction: 'manipulation',
-                    borderColor: isAttackReady ? (currentWeapon?.color || '#ff6600') : 'transparent',
-                    borderWidth: '2px',
-                    boxShadow: isAttackReady ? `0 0 20px ${currentWeapon?.color || '#ff6600'}40` : 'none',
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Swords className="w-5 h-5" />
-                    <span>{currentWeapon?.attackName || 'Attack'}</span>
-                  </div>
-                </motion.button>
-
-                {/* Ability Button (if weapon has ability) */}
-                {weaponAbility && (
+                {weaponAbility ? (
                   <motion.button
                     onClick={handleAbility}
                     disabled={!canUseAbility}
@@ -3733,8 +3757,31 @@ export default function BossBattleArena({ bossId, onClose }) {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5" />
+                      <Swords className="w-5 h-5" />
                       <span>{weaponAbility.name}</span>
+                    </div>
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    onClick={handleAttack}
+                    disabled={!isAttackReady}
+                    whileHover={isAttackReady ? { scale: 1.05 } : {}}
+                    whileTap={isAttackReady ? { scale: 0.95 } : {}}
+                    className={`px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base transition-all ${
+                      isAttackReady
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 cursor-pointer'
+                        : 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
+                    }`}
+                    style={{
+                      touchAction: 'manipulation',
+                      borderColor: isAttackReady ? (currentWeapon?.color || '#ff6600') : 'transparent',
+                      borderWidth: '2px',
+                      boxShadow: isAttackReady ? `0 0 20px ${currentWeapon?.color || '#ff6600'}40` : 'none',
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Swords className="w-5 h-5" />
+                      <span>{currentAttackName}</span>
                     </div>
                   </motion.button>
                 )}
@@ -3792,18 +3839,20 @@ export default function BossBattleArena({ bossId, onClose }) {
                 </div>
               )}
 
-              {/* Cooldown indicators */}
+              {/* Cooldown indicator - shows ability cooldown if weapon has ability */}
               <div className="w-full max-w-xs mx-auto mt-2">
-                <CooldownIndicator
-                  progress={cooldownProgress}
-                  weaponAttack={currentWeapon}
-                  canAttack={isAttackReady}
-                />
-                {weaponAbility && (
+                {weaponAbility ? (
                   <AbilityCooldownIndicator
                     ability={weaponAbility}
                     lastUsedTime={abilityLastUsed}
                     canUse={canUseAbility}
+                  />
+                ) : (
+                  <CooldownIndicator
+                    progress={cooldownProgress}
+                    weaponAttack={currentWeapon}
+                    canAttack={isAttackReady}
+                    attackName={currentAttackName}
                   />
                 )}
               </div>
@@ -3820,87 +3869,6 @@ export default function BossBattleArena({ bossId, onClose }) {
               </motion.p>
             </div>
           )}
-
-          {/* Player section - Responsive positioning to match attack coordinates */}
-          {/* Mobile: 65% down to match attack target (playerY: 0.72), Desktop: bottom-left */}
-          <div className={`absolute z-0 flex items-center gap-2 sm:gap-4 p-2 sm:p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm ${
-            dimensions.width < 768
-              ? 'left-1/2 -translate-x-1/2 scale-90'  // Mobile: horizontally centered
-              : 'left-8 bottom-8'                       // Desktop: bottom-left diagonal
-          }`}
-          style={dimensions.width < 768 ? { top: '65%', transform: 'translateX(-50%) translateY(-50%)' } : {}}>
-            {/* Player avatar */}
-            <div className="w-14 h-14 sm:w-20 sm:h-20 relative flex-shrink-0">
-              <AvatarRenderer
-                equipped={equipped}
-                characterGender={characterGender}
-                size={dimensions.width < 768 ? 56 : 80}
-                showEffects={false}
-              />
-
-              {/* Player damage numbers */}
-              <AnimatePresence>
-                {damageNumbers.filter(d => d.isPlayer).map(d => (
-                  <DamageNumber key={d.id} damage={d.damage} position={{ x: '50%', y: '0' }} isPlayer={true} />
-                ))}
-              </AnimatePresence>
-            </div>
-
-            {/* Player stats */}
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-white font-bold">Level {level}</span>
-                {activePet && (
-                  <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded-full">
-                    + {activePet.name}
-                  </span>
-                )}
-              </div>
-
-              {/* Player health bar */}
-              <HealthBar
-                current={currentBattle?.playerCurrentHealth ?? playerStats?.maxHealth ?? 100}
-                max={currentBattle?.playerMaxHealth ?? playerStats?.maxHealth ?? 100}
-                label="YOUR HP"
-                isPlayer
-              />
-
-              {/* Combat stats */}
-              <div className="flex flex-wrap gap-3 mt-2 text-sm">
-                <div className="flex items-center gap-1.5 text-yellow-400">
-                  <Swords className="w-4 h-4" />
-                  <span className="font-bold">{currentBattle?.playerDamage ?? playerStats?.damage ?? 10}</span>
-                  <span className="text-white/40 text-xs">DMG</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-white/50">
-                  <span className="font-medium">{currentBattle?.tapCount ?? 0} hits</span>
-                </div>
-                {(currentBattle?.critCount ?? 0) > 0 && (
-                  <div className="flex items-center gap-1.5 text-orange-400">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="font-bold">{currentBattle?.critCount ?? 0}</span>
-                    <span className="text-white/40 text-xs">CRITS</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Weapon info */}
-              <div className="mt-2 text-xs text-white/40 flex items-center gap-2">
-                <span
-                  className="px-2 py-0.5 rounded-full"
-                  style={{
-                    backgroundColor: `${currentWeapon?.color || '#ffffff'}20`,
-                    color: currentWeapon?.color || '#ffffff',
-                  }}
-                >
-                  {currentWeapon?.name || 'Fists'}
-                </span>
-                <span>×{currentWeapon?.damageMultiplier?.toFixed(1) || '0.5'}</span>
-                <span>{currentWeapon?.cooldown || 500}ms</span>
-              </div>
-            </div>
-          </div>
-          </div>
         </div>
       )}
     </div>,

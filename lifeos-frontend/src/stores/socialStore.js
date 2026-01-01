@@ -1308,7 +1308,7 @@ export const useSocialStore = create(
           .order('total_xp', { ascending: false })
           .limit(200); // Fetch more to account for filtered users
 
-        if (data) {
+        if (data && data.length > 0) {
           // Filter out users who have opted out of leaderboards (top-level column, defaults to true)
           const visibleData = data.filter(p => {
             const showOnLeaderboards = p.show_on_leaderboards ?? true;
@@ -1355,6 +1355,52 @@ export const useSocialStore = create(
             leaderboards: {
               ...get().leaderboards,
               global,
+              streak,
+            },
+          });
+        } else {
+          // Demo data for development/empty state
+          const demoUsers = [
+            { id: 'demo-1', display_name: 'QuantumKnight', total_xp: 125000, current_level: 42, current_streak: 156, character_gender: 'male', equipped_items: { mainHand: 'weapon_godslayer', helmet: 'helmet_phoenix_crown', chest: 'chest_phoenix' } },
+            { id: 'demo-2', display_name: 'ShadowMage', total_xp: 98500, current_level: 38, current_streak: 89, character_gender: 'female', equipped_items: { mainHand: 'weapon_archmage_staff', helmet: 'helmet_sage_crown', cape: 'cape_celestial_wings' } },
+            { id: 'demo-3', display_name: 'IronWill', total_xp: 87200, current_level: 35, current_streak: 234, character_gender: 'male', equipped_items: { mainHand: 'weapon_thunder_hammer', chest: 'chest_dragon', shield: 'shield_dragon' } },
+            { id: 'demo-4', display_name: 'NovaStar', total_xp: 76800, current_level: 32, current_streak: 67, character_gender: 'female', equipped_items: { mainHand: 'weapon_eternity_edge', helmet: 'helmet_eternal_crown' } },
+            { id: 'demo-5', display_name: 'ZenMaster', total_xp: 65400, current_level: 29, current_streak: 312, character_gender: 'male', equipped_items: { mainHand: 'weapon_void_scythe', cape: 'cape_void_shroud' } },
+            { id: 'demo-6', display_name: 'PhoenixRider', total_xp: 54200, current_level: 26, current_streak: 45, character_gender: 'female', equipped_items: { helmet: 'helmet_dragon', chest: 'chest_paladin_chestguard' } },
+            { id: 'demo-7', display_name: 'StormBringer', total_xp: 43800, current_level: 23, current_streak: 78, character_gender: 'male', equipped_items: { mainHand: 'weapon_battle_axe', shield: 'shield_steel_kite' } },
+            { id: 'demo-8', display_name: 'MysticSage', total_xp: 32500, current_level: 20, current_streak: 28, character_gender: 'female', equipped_items: { mainHand: 'weapon_crystal_wand', cape: 'cape_mystic_robe' } },
+            { id: 'demo-9', display_name: 'DragonSlayer', total_xp: 28900, current_level: 18, current_streak: 92, character_gender: 'male', equipped_items: { helmet: 'helmet_reinforced_coif', chest: 'chest_reinforced_breastplate' } },
+            { id: 'demo-10', display_name: 'LightSeeker', total_xp: 21600, current_level: 15, current_streak: 34, character_gender: 'female', equipped_items: { mainHand: 'weapon_sword_crystal', cape: 'cape_ancient' } },
+          ];
+
+          const global = demoUsers.map((p, i) => ({
+            rank: i + 1,
+            userId: p.id,
+            score: p.total_xp,
+            profile: p,
+          }));
+
+          const streak = [...demoUsers]
+            .sort((a, b) => b.current_streak - a.current_streak)
+            .map((p, i) => ({
+              rank: i + 1,
+              userId: p.id,
+              score: p.current_streak,
+              profile: p,
+            }));
+
+          const weekly = demoUsers.slice(0, 8).map((p, i) => ({
+            rank: i + 1,
+            userId: p.id,
+            score: Math.floor(p.total_xp * 0.1), // Simulated weekly XP
+            profile: p,
+          }));
+
+          set({
+            leaderboards: {
+              ...get().leaderboards,
+              global,
+              weekly,
               streak,
             },
           });

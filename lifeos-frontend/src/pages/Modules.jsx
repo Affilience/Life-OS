@@ -105,7 +105,7 @@ const ModuleCard = ({ module, index }) => {
   return (
     <motion.button
       onClick={() => navigate(module.route)}
-      className="relative flex items-center gap-4 p-4 rounded-xl border bg-[#1a1724]/60 backdrop-blur-sm text-left w-full group transition-all duration-200 hover:border-opacity-60"
+      className="relative flex items-center gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-xl border bg-[#1a1724]/60 backdrop-blur-sm text-left w-full group transition-all duration-200 hover:border-opacity-60"
       style={{
         borderColor: module.borderColor,
         background: `linear-gradient(135deg, ${module.bgColor} 0%, transparent 100%)`,
@@ -118,13 +118,13 @@ const ModuleCard = ({ module, index }) => {
     >
       {/* Icon Container */}
       <div
-        className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center"
+        className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center"
         style={{ backgroundColor: module.bgColor }}
       >
         <img
           src={MODULE_ICONS[module.iconKey]}
           alt={module.name}
-          className="w-8 h-8"
+          className="w-6 h-6 sm:w-8 sm:h-8"
           style={{
             imageRendering: 'pixelated',
             filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
@@ -137,14 +137,14 @@ const ModuleCard = ({ module, index }) => {
         <h3 className="font-semibold text-white text-sm sm:text-base truncate">
           {module.name}
         </h3>
-        <p className="text-xs text-white/50 truncate mt-0.5">
+        <p className="text-[10px] sm:text-xs text-white/50 truncate mt-0.5">
           {module.description}
         </p>
       </div>
 
       {/* Arrow */}
       <ChevronRight
-        className="w-5 h-5 text-white/30 group-hover:text-white/60 group-hover:translate-x-1 transition-all flex-shrink-0"
+        className="w-4 h-4 sm:w-5 sm:h-5 text-white/30 group-hover:text-white/60 group-hover:translate-x-1 transition-all flex-shrink-0"
         style={{ color: module.accentColor }}
       />
 
@@ -175,9 +175,9 @@ export default function Modules() {
       </div>
 
       {/* Module Grid */}
-      <div className="px-4 pt-6 pb-4 max-w-4xl mx-auto">
+      <div className="px-3 sm:px-4 pt-4 sm:pt-6 pb-4 max-w-4xl mx-auto">
         {/* Grid - 1 col mobile, 2 cols desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
           {CORE_MODULES.map((module, index) => (
             <ModuleCard key={module.id} module={module} index={index} />
           ))}

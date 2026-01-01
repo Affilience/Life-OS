@@ -8,12 +8,12 @@
  * progresses slower, allowing Gamification to fully dismantle before Screenshots builds.
  *
  * Phases:
- * - Cinematic Build (0.55-0.62): Title emerges, cards stagger in
- * - Horizontal Scroll (0.62-0.78): Smooth gallery scroll with synced progress bar
+ * - Cinematic Build (0.55-0.65): Title emerges, first screenshot prominently visible
+ * - Horizontal Scroll (0.65-0.78): Smooth gallery scroll with synced progress bar
  * - Cinematic Dismantle (0.78-0.88): 3D exit with blur
  */
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -29,9 +29,9 @@ const screenshots = [
     id: 'dashboard',
     title: 'Command Center',
     subtitle: 'Dashboard',
-    description: 'Your unified view of everything. Track progress, see insights, and stay motivated.',
+    description: 'Your unified hub for tracking progress across all life modules at a glance.',
     image: '/assets/screenshots/dashboard.png',
-    color: '#8b5cf6', // purple
+    color: '#8b5cf6', // violet
   },
   {
     id: 'character',
@@ -42,6 +42,14 @@ const screenshots = [
     color: '#06b6d4', // cyan
   },
   {
+    id: 'equipment',
+    title: 'Gear Up',
+    subtitle: 'Equipment',
+    description: 'Equip powerful weapons, armor, and accessories to boost your stats.',
+    image: '/assets/screenshots/avatar-equipment.png',
+    color: '#a855f7', // purple
+  },
+  {
     id: 'quests',
     title: 'Daily Quests',
     subtitle: 'Missions',
@@ -50,12 +58,12 @@ const screenshots = [
     color: '#f59e0b', // amber
   },
   {
-    id: 'journal',
-    title: 'Beautiful Journaling',
-    subtitle: 'Journal',
-    description: 'A stunning book-style interface that makes daily reflection a joy.',
-    image: '/assets/screenshots/journal.png',
-    color: '#fb7185', // rose
+    id: 'skills',
+    title: 'Skill Trees',
+    subtitle: 'Progression',
+    description: 'Unlock powerful perks and abilities as you master different skill trees.',
+    image: '/assets/screenshots/skills.png',
+    color: '#3b82f6', // blue
   },
   {
     id: 'streaks',
@@ -73,6 +81,14 @@ const screenshots = [
     image: '/assets/screenshots/achievements.png',
     color: '#10b981', // emerald
   },
+  {
+    id: 'bazaar',
+    title: 'Cosmic Bazaar',
+    subtitle: 'Shop',
+    description: 'Spend your hard-earned credits on gear, potions, and cosmetics.',
+    image: '/assets/screenshots/bazaar.png',
+    color: '#ec4899', // pink
+  },
 ];
 
 export function Screenshots() {
@@ -80,11 +96,6 @@ export function Screenshots() {
   const horizontalRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
-  const progressBarRef = useRef<HTMLDivElement>(null);
-  const scrollHintRef = useRef<HTMLParagraphElement>(null);
-  const ctaCardRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     if (!sectionRef.current || !horizontalRef.current || typeof window === 'undefined') return;
@@ -99,8 +110,6 @@ export function Screenshots() {
       if (subtitleRef.current) subtitleRef.current.style.opacity = '1';
       horizontal.style.opacity = '1';
       horizontal.style.transform = 'none';
-      if (progressRef.current) progressRef.current.style.opacity = '1';
-      if (scrollHintRef.current) scrollHintRef.current.style.opacity = '1';
 
       // Show all cards
       const cards = horizontal.querySelectorAll('.screenshot-card');
@@ -127,23 +136,6 @@ export function Screenshots() {
           pin: true,
           pinSpacing: false,
           anticipatePin: 1,
-          onUpdate: (self) => {
-            // Calculate which screenshot is active based on scroll progress
-            // Scroll phase runs from 0.62-0.78 (duration 0.16) for smoother pacing
-            const scrollPhaseStart = 0.62;
-            const scrollPhaseDuration = 0.16;
-            const scrollPhaseProgress = Math.max(0, Math.min(1, (self.progress - scrollPhaseStart) / scrollPhaseDuration));
-            const newIndex = Math.min(
-              Math.floor(scrollPhaseProgress * screenshots.length),
-              screenshots.length - 1
-            );
-            setActiveIndex(newIndex);
-
-            // Update progress bar
-            if (progressBarRef.current) {
-              progressBarRef.current.style.width = `${scrollPhaseProgress * 100}%`;
-            }
-          },
         },
       });
 
@@ -210,7 +202,7 @@ export function Screenshots() {
         ease: 'back.out(1.2)',
       }, BUILD_OFFSET + 0.05);
 
-      // Individual screenshot cards stagger in
+      // Individual screenshot cards stagger in - first card appears immediately, rest stagger
       const cards = horizontal.querySelectorAll('.screenshot-card');
       cards.forEach((card, index) => {
         gsap.set(card, {
@@ -219,45 +211,25 @@ export function Screenshots() {
           scale: 0.9,
           rotateY: -15
         });
+        // First card appears at the same time as the container, giving 10% scroll to view it
+        // Other cards appear with slight stagger
+        const cardDelay = index === 0 ? 0 : 0.02 + (index * 0.003);
         tl.to(card, {
           opacity: 1,
           y: 0,
           scale: 1,
           rotateY: 0,
-          duration: 0.025,
+          duration: index === 0 ? 0.05 : 0.02, // First card gets longer animation
           ease: 'power3.out',
-        }, BUILD_OFFSET + 0.07 + (index * 0.005)); // Staggered entrance
+        }, BUILD_OFFSET + cardDelay);
       });
 
-      // Progress indicator: fade up from below
-      if (progressRef.current) {
-        gsap.set(progressRef.current, { opacity: 0, y: 40, scale: 0.95 });
-        tl.to(progressRef.current, {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.025,
-          ease: 'power3.out',
-        }, BUILD_OFFSET + 0.10);
-      }
-
-      // Scroll hint: subtle fade in
-      if (scrollHintRef.current) {
-        gsap.set(scrollHintRef.current, { opacity: 0, y: 10 });
-        tl.to(scrollHintRef.current, {
-          opacity: 1,
-          y: 0,
-          duration: 0.02,
-          ease: 'power3.out',
-        }, BUILD_OFFSET + 0.12);
-      }
-
-      // ===== PHASE 2: Horizontal Scroll (0.62-0.78) =====
+      // ===== PHASE 2: Horizontal Scroll (0.65-0.78) =====
       tl.to(horizontal, {
         x: -scrollDistance,
         ease: 'none',
-        duration: 0.16, // Scroll phase (0.62 to 0.78) - longer for smoother pacing
-      }, 0.62);
+        duration: 0.13, // Scroll phase (0.65 to 0.78)
+      }, 0.65);
 
       // Parallax disabled - was causing right-side gaps
       // const images = horizontal.querySelectorAll('.screenshot-image');
@@ -270,28 +242,6 @@ export function Screenshots() {
       // });
 
       // ===== PHASE 3: Cinematic Dismantle (0.78-0.88) =====
-
-      // Fade out scroll hint first
-      if (scrollHintRef.current) {
-        tl.to(scrollHintRef.current, {
-          opacity: 0,
-          y: 20,
-          duration: 0.02,
-          ease: 'power2.in',
-        }, 0.78);
-      }
-
-      // Progress indicator fades with scale
-      if (progressRef.current) {
-        tl.to(progressRef.current, {
-          opacity: 0,
-          y: -30,
-          scale: 0.9,
-          filter: 'blur(5px)',
-          duration: 0.02,
-          ease: 'power2.in',
-        }, 0.79);
-      }
 
       // Horizontal container: dramatic exit with 3D rotation and blur
       tl.to(horizontal, {
@@ -374,7 +324,7 @@ export function Screenshots() {
           >
             See{' '}
             <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              LifeOS
+              Ascnt
             </span>{' '}
             in Action
           </h2>
@@ -442,67 +392,6 @@ export function Screenshots() {
           </div>
         </div>
 
-        {/* Progress Indicator - Hidden on mobile */}
-        <div
-          ref={progressRef}
-          className="hidden md:block absolute bottom-8 left-8 right-8 z-20"
-          style={{ opacity: 0 }}
-        >
-          <div className="max-w-7xl mx-auto">
-            {/* Screenshot Navigation Dots */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex gap-2">
-                {screenshots.map((screenshot, index) => (
-                  <div
-                    key={screenshot.id}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      index === activeIndex
-                        ? 'w-8 bg-gradient-to-r from-purple-500 to-cyan-500'
-                        : index < activeIndex
-                          ? 'w-2 bg-white/40'
-                          : 'w-2 bg-white/20'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              {/* Current Screenshot Label */}
-              <div className="text-right">
-                <p className="text-white/40 text-sm">
-                  <span className="text-white font-medium">{String(activeIndex + 1).padStart(2, '0')}</span>
-                  {' / '}
-                  {String(screenshots.length).padStart(2, '0')}
-                </p>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-              <div
-                ref={progressBarRef}
-                className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full transition-none"
-                style={{ width: '0%' }}
-              />
-            </div>
-
-            {/* Scroll Hint */}
-            <p
-              ref={scrollHintRef}
-              className="text-white/30 text-sm mt-4 text-center"
-              style={{ opacity: 0 }}
-            >
-              <span className="inline-flex items-center gap-2">
-                <motion.span
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  →
-                </motion.span>
-                Scroll to explore
-              </span>
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   );

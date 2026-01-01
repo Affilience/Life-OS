@@ -24,16 +24,6 @@ export const EQUIPMENT_UNLOCK_OVERRIDES = {
     unlockRequirement: { module: MODULES.FITNESS, metric: UNLOCK_METRICS.WORKOUTS_COMPLETED, target: 30 },
     unlockDescription: 'Complete 30 workouts',
   },
-  legs_steel_legplates: {
-    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
-    unlockRequirement: { module: MODULES.PRODUCTIVITY, metric: UNLOCK_METRICS.TASKS_COMPLETED, target: 150 },
-    unlockDescription: 'Complete 150 tasks',
-  },
-  legs_mage_robes: {
-    unlockMethod: UNLOCK_METHODS.MODULE_PROGRESS,
-    unlockRequirement: { module: MODULES.KNOWLEDGE, metric: UNLOCK_METRICS.BOOKS_READ, target: 15 },
-    unlockDescription: 'Finish 15 books',
-  },
   legs_dragon: {
     unlockMethod: UNLOCK_METHODS.ACHIEVEMENT,
     unlockRequirement: { achievementId: 'dragon_legs', achievementName: 'Iron Legs' },
@@ -426,33 +416,33 @@ export const EQUIPMENT_UNLOCK_OVERRIDES = {
 
 /**
  * Bazaar-purchasable equipment items
- * These items can be bought with Cosmic Credits
+ * These items can ONLY be bought with Cosmic Credits (bazaar-exclusive)
+ * Combined with 8 abilities in elementalAbilities.js = ~20 total bazaar items
  */
 export const BAZAAR_EQUIPMENT = {
-  // Common Bazaar Items (100-300 credits)
-  weapon_sword_novice: { price: 100, category: 'weapons' },
-  ring_copper_band: { price: 100, category: 'accessories' },
-  amulet_wooden_charm: { price: 100, category: 'accessories' },
-  cape_traveler: { price: 150, category: 'capes' },
+  // ========================================
+  // WEAPONS (4 items) - 350-2000 credits
+  // ========================================
+  weapon_crystal_wand: { price: 350, category: 'weapons' },      // Uncommon mage weapon
+  weapon_sword_crystal: { price: 500, category: 'weapons' },     // Uncommon crystal sword
+  weapon_battle_axe: { price: 800, category: 'weapons' },        // Rare warrior weapon
+  weapon_archmage_staff: { price: 1500, category: 'weapons' },   // Rare mage staff
 
-  // Uncommon Bazaar Items (300-800 credits)
-  weapon_crystal_wand: { price: 350, category: 'weapons' },
-  weapon_sword_crystal: { price: 500, category: 'weapons' },
-  cape_sage: { price: 400, category: 'capes' },
+  // ========================================
+  // ARMOR (4 items) - 400-1800 credits
+  // ========================================
+  helmet_reinforced_coif: { price: 400, category: 'helmets' },   // Uncommon helmet
+  helmet_mindguard: { price: 1200, category: 'helmets' },        // Rare mage helmet
+  chest_padded_armor: { price: 500, category: 'armor' },         // Uncommon chest
+  chest_reinforced_breastplate: { price: 1800, category: 'armor' }, // Rare chest
 
-  // Rare Bazaar Items (800-2000 credits)
-  weapon_enchanted_blade: { price: 1200, category: 'weapons' },
-  cape_mystic_robe: { price: 1000, category: 'capes' },
-  shield_steel_kite: { price: 1500, category: 'shields' },
-
-  // Epic Bazaar Items (2000-5000 credits)
-  weapon_thunder_hammer: { price: 3000, category: 'weapons' },
-  chest_paladin_chestguard: { price: 3500, category: 'armor' },
-  cape_shadow: { price: 2500, category: 'capes' },
-
-  // Legendary Bazaar Items (5000+ credits)
-  weapon_eternity_edge: { price: 8000, category: 'weapons' },
-  cape_dragon: { price: 7500, category: 'capes' },
+  // ========================================
+  // ACCESSORIES & OTHER (4 items) - 600-1500 credits
+  // ========================================
+  cape_mystic_robe: { price: 800, category: 'capes' },           // Rare mage cape
+  cape_ancient: { price: 600, category: 'capes' },               // Uncommon ancient cape
+  legs_steel_legplates: { price: 1000, category: 'legs' },       // Rare leg armor
+  shield_steel_kite: { price: 1500, category: 'shields' },       // Rare shield
 };
 
 /**
@@ -463,7 +453,7 @@ export const PVP_EQUIPMENT = {
   // PvP Victory Rewards
   ring_warrior_signet: { wins: 25, rank: null },
   helmet_steel_greathelm: { wins: 50, rank: null },
-  weapon_battle_axe: { wins: 75, rank: null },
+  weapon_thunder_hammer: { wins: 75, rank: null },
   shield_fortress: { wins: 100, rank: null },
 
   // Rank Rewards
@@ -542,7 +532,7 @@ export const ACHIEVEMENT_PETS = {
  */
 export const ACHIEVEMENT_EQUIPMENT = {
   // Fitness Achievements - redistributed from conflicting achievements
-  workout_10: ['chest_padded_armor'],              // No conflict - only unlocks this
+  workout_10: ['legs_leather_leggings'],           // Basic leg armor for early fitness
   burn_1000_cal: ['helmet_training'],              // Moved from first_workout (has ability)
   burn_10000_cal: ['helmet_steel_greathelm'],      // Moved from workout_50 (has ability)
   burn_50000_cal: ['chest_dragon'],                // Moved from workout_100 (has pet)
@@ -641,7 +631,7 @@ export const NOVA_GIFT_EQUIPMENT = {
   night_owl: ['cape_shadow'],              // Consistently active at night
   balanced_life: ['amulet_guardian'],      // Using all modules regularly
   productivity_star: ['weapon_taskmaster_hammer'], // High productivity week
-  fitness_star: ['chest_reinforced_breastplate'], // Hitting all fitness goals
+  fitness_star: ['chest_paladin_chestguard'], // Hitting all fitness goals
   knowledge_star: ['weapon_scholars_tome'], // Reading streak
 };
 

@@ -607,19 +607,39 @@ export const usePetStore = create(
           // Continue with empty data on timeout - don't throw
           if (petsError && petsError !== 'timeout') throw petsError;
 
-          // Load max slots from profile
-          if (profile?.max_pet_slots) {
-            set({ maxSlots: profile.max_pet_slots });
-          }
+          // Always set maxSlots from profile (default to 1 to override localStorage)
+          set({ maxSlots: profile?.max_pet_slots || 1 });
+
+          // Map database pet names to PET_DATABASE keys
+          // Database stores UUIDs with names like "Kitsune Pup"
+          // PET_DATABASE uses keys like "common_kitsune_pup" with name: "Kitsune Pup"
+          const findPetDatabaseId = (dbPetName) => {
+            if (!dbPetName) return null;
+            // Find the PET_DATABASE entry that matches this name
+            for (const [petId, pet] of Object.entries(PET_DATABASE)) {
+              if (pet.name === dbPetName) {
+                return petId;
+              }
+            }
+            return null;
+          };
 
           if (userPets && userPets.length > 0) {
-            const ownedPets = userPets.map(up => up.pet?.name?.toLowerCase().replace(/\s+/g, '_') || up.pet_id);
-            const activePets = userPets.filter(up => up.is_active).map(up => up.pet?.name?.toLowerCase().replace(/\s+/g, '_') || up.pet_id);
+            const ownedPets = userPets
+              .map(up => findPetDatabaseId(up.pet?.name))
+              .filter(Boolean);
+            const activePets = userPets
+              .filter(up => up.is_active)
+              .map(up => findPetDatabaseId(up.pet?.name))
+              .filter(Boolean);
 
             set({
-              ownedPets: ownedPets.length > 0 ? ownedPets : Object.keys(PET_DATABASE),
-              activePets: activePets.length > 0 ? activePets : ['common_kitsune_pup'],
+              ownedPets: ownedPets.length > 0 ? ownedPets : [],
+              activePets: activePets.length > 0 ? activePets : [],
             });
+          } else {
+            // No pets in database - reset to empty (override localStorage)
+            set({ ownedPets: [], activePets: [] });
           }
 
           // Mark as initialized after loading from Supabase
@@ -680,10 +700,19 @@ export const usePetStore = create(
             const userId = await getCurrentUserId();
             if (!userId) return true;
 
-            // Try to sync to database (table may not exist yet)
+            // Look up the pet's UUID from the pets table by name
+            const petUUID = await get()._getPetUUID(petId);
+
+            if (!petUUID) {
+              // Pet doesn't exist in database - this is OK for new pets not yet migrated
+              console.warn('[PetStore] Pet not found in database:', petId, '- skipping sync');
+              return true;
+            }
+
+            // Try to sync to database with proper UUID
             const { error: petError } = await supabase.from('user_pets').upsert({
               user_id: userId,
-              pet_id: petId,
+              pet_id: petUUID,
               is_active: false,
               unlocked_at: new Date().toISOString(),
             }, { onConflict: 'user_id,pet_id' });
@@ -720,9 +749,24 @@ export const usePetStore = create(
         return false;
       },
 
+      // Helper to get database UUID for a pet by its PET_DATABASE key
+      _getPetUUID: async (petId) => {
+        const pet = PET_DATABASE[petId];
+        if (!pet) return null;
+
+        // Look up the pet's UUID by name
+        const { data } = await supabase
+          .from('pets')
+          .select('id')
+          .eq('name', pet.name)
+          .maybeSingle();
+
+        return data?.id || null;
+      },
+
       // Equip/unequip pets
       equipPet: async (petId) => {
-        const { activePets, maxSlots, ownedPets } = get();
+        const { activePets, maxSlots, ownedPets, _getPetUUID } = get();
 
         // In dev mode, allow equipping any pet; otherwise check ownership
         const canEquip = DEV_UNLOCK_ALL_PETS ? PET_DATABASE[petId] !== undefined : ownedPets.includes(petId);
@@ -735,10 +779,14 @@ export const usePetStore = create(
           try {
             const userId = await getCurrentUserId();
             if (userId) {
-              await supabase.from('user_pets')
-                .update({ is_active: false })
-                .eq('user_id', userId)
-                .eq('pet_id', petId);
+              // Get the database UUID for this pet
+              const petUUID = await _getPetUUID(petId);
+              if (petUUID) {
+                await supabase.from('user_pets')
+                  .update({ is_active: false })
+                  .eq('user_id', userId)
+                  .eq('pet_id', petUUID);
+              }
             }
           } catch (error) {
             console.error('Error syncing pet unequip:', error);
@@ -755,10 +803,14 @@ export const usePetStore = create(
         try {
           const userId = await getCurrentUserId();
           if (userId) {
-            await supabase.from('user_pets')
-              .update({ is_active: true })
-              .eq('user_id', userId)
-              .eq('pet_id', petId);
+            // Get the database UUID for this pet
+            const petUUID = await _getPetUUID(petId);
+            if (petUUID) {
+              await supabase.from('user_pets')
+                .update({ is_active: true })
+                .eq('user_id', userId)
+                .eq('pet_id', petUUID);
+            }
           }
         } catch (error) {
           console.error('Error syncing pet equip:', error);
@@ -768,16 +820,20 @@ export const usePetStore = create(
 
       // Unequip a pet
       unequipPet: async (petId) => {
-        const { activePets } = get();
+        const { activePets, _getPetUUID } = get();
         set({ activePets: activePets.filter(id => id !== petId) });
         // Sync to database
         try {
           const userId = await getCurrentUserId();
           if (userId) {
-            await supabase.from('user_pets')
-              .update({ is_active: false })
-              .eq('user_id', userId)
-              .eq('pet_id', petId);
+            // Get the database UUID for this pet
+            const petUUID = await _getPetUUID(petId);
+            if (petUUID) {
+              await supabase.from('user_pets')
+                .update({ is_active: false })
+                .eq('user_id', userId)
+                .eq('pet_id', petUUID);
+            }
           }
         } catch (error) {
           console.error('Error syncing pet unequip:', error);

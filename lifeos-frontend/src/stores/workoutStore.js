@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { WORKOUT_TEMPLATES } from '../data/exerciseDatabase';
+import { WORKOUT_TEMPLATES, getExerciseById } from '../data/exerciseDatabase';
+import { ALL_EXERCISES } from '../data/exercises/index.js';
 import { useAvatarStore } from './avatarStore';
 import { supabase, getCurrentUserId } from '../lib/supabase';
 import { triggerGamification } from '../hooks/useGamification';
@@ -392,8 +393,14 @@ export const useWorkoutStore = create(
               const exerciseGroups = {};
               exercises.forEach(e => {
                 if (!exerciseGroups[e.exercise_name]) {
+                  // Look up exercise in database to get muscle group
+                  const exerciseData = ALL_EXERCISES[e.exercise_name];
+                  const muscleGroup = exerciseData?.category || 'other';
+
                   exerciseGroups[e.exercise_name] = {
                     exerciseId: e.exercise_name,
+                    name: exerciseData?.name || e.exercise_name,
+                    muscleGroup: muscleGroup,
                     sets: [],
                     targetSets: 0,
                     targetReps: 10,
@@ -408,12 +415,28 @@ export const useWorkoutStore = create(
                 exerciseGroups[e.exercise_name].targetSets++;
               });
 
+              // Derive muscle group type from workout title for chart categorization
+              const title = (w.title || '').toLowerCase();
+              let workoutMuscleType = 'other';
+              if (title.includes('push') || title.includes('chest') || title.includes('upper body push')) {
+                workoutMuscleType = 'push';
+              } else if (title.includes('pull') || title.includes('back') || title.includes('bicep')) {
+                workoutMuscleType = 'pull';
+              } else if (title.includes('leg') || title.includes('lower') || title.includes('squat')) {
+                workoutMuscleType = 'legs';
+              } else if (title.includes('shoulder') || title.includes('delt')) {
+                workoutMuscleType = 'shoulders';
+              } else if (title.includes('arm') || title.includes('tricep')) {
+                workoutMuscleType = 'arms';
+              }
+
               strengthWorkouts.push({
                 id: w.id,
                 date: w.workout_date,
                 startTime: w.workout_date,
                 endTime: w.workout_date,
-                name: w.name || 'Workout',
+                name: w.title || 'Workout',
+                type: workoutMuscleType,
                 templateId: null,
                 exercises: Object.values(exerciseGroups),
                 notes: w.notes || '',

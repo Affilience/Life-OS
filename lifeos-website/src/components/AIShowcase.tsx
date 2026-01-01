@@ -29,28 +29,28 @@ const AI_INSIGHTS = [
     content: 'Productivity peaks on Tuesdays (87%) and dips on Fridays (54%).',
     icon: '🔍',
     side: 'left',
-    yPos: -60,
+    yPos: -80,
   },
   {
     title: 'Hidden Connection',
     content: 'Your workouts are improving your sleep. Keep the 3x/week routine.',
     icon: '🔗',
     side: 'left',
-    yPos: 80,
+    yPos: 100,
   },
   {
     title: 'Momentum Building',
     content: '7-day streak active. This consistency is spilling into other areas.',
     icon: '🔥',
     side: 'right',
-    yPos: -60,
+    yPos: -80,
   },
   {
     title: 'Worth Noting',
     content: 'Budget stress may be affecting focus. Review spending this week.',
     icon: '💡',
     side: 'right',
-    yPos: 80,
+    yPos: 100,
   },
 ];
 
@@ -82,7 +82,7 @@ export function AIShowcase() {
     if (!sectionRef.current || typeof window === 'undefined') return;
 
     const section = sectionRef.current;
-    const RADIUS = 160;
+    const RADIUS = 220; // Larger orbit for more impressive visuals
     const isMobile = window.innerWidth < 768;
 
     // On mobile, show content immediately without pinned scrolling
@@ -232,9 +232,9 @@ export function AIShowcase() {
       insightRefs.current.forEach((insight, i) => {
         if (!insight) return;
 
-        // Position insights on sides - 2 left, 2 right
+        // Position insights on sides - 2 left, 2 right (further out for larger layout)
         const insightData = AI_INSIGHTS[i];
-        const xOffset = insightData.side === 'left' ? -320 : 320;
+        const xOffset = insightData.side === 'left' ? -380 : 380;
         const yOffset = insightData.yPos;
 
         gsap.set(insight, {
@@ -345,9 +345,9 @@ export function AIShowcase() {
     return () => ctx.revert();
   }, []);
 
-  const RADIUS = 160; // Compact radius
-  const NODE_SIZE = 56; // Size of source nodes
-  const CONTAINER_SIZE = RADIUS * 2 + 120;
+  const RADIUS = 220; // Larger orbit for impressive visuals
+  const NODE_SIZE = 64; // Larger source nodes
+  const CONTAINER_SIZE = RADIUS * 2 + 180; // More spacious container
   const CENTER = CONTAINER_SIZE / 2;
 
   return (
@@ -527,28 +527,28 @@ export function AIShowcase() {
               transform: 'translate(-50%, -50%)'
             }}
           >
-            {/* Outer Glow Rings */}
+            {/* Outer Glow Rings - Larger and more dramatic */}
             <div
               ref={novaGlowRef}
               className="absolute rounded-full opacity-0"
               style={{
-                width: 280,
-                height: 280,
+                width: 380,
+                height: 380,
                 left: '50%',
                 top: '50%',
                 transform: 'translate(-50%, -50%)',
-                background: 'radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(34,211,238,0.15) 40%, transparent 65%)',
+                background: 'radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(34,211,238,0.2) 35%, rgba(139,92,246,0.1) 55%, transparent 70%)',
                 animation: isProcessing ? 'pulse 1.5s ease-in-out infinite' : 'none',
               }}
             />
 
-            {/* Nova Character Container */}
+            {/* Nova Character Container - Larger */}
             <motion.div
               ref={novaRef}
               className="relative flex items-center justify-center"
               style={{
-                width: 140,
-                height: 140,
+                width: 180,
+                height: 180,
                 opacity: 0,
               }}
               animate={isProcessing ? {
@@ -570,57 +570,76 @@ export function AIShowcase() {
                 }}
               />
 
-              {/* Nova Character Sprite */}
+              {/* Nova Character Sprite - Larger */}
               <div className="relative z-10" style={{ imageRendering: 'pixelated' }}>
                 <Image
                   src="/assets/nova/nova_stellar.png"
                   alt="Nova AI Companion"
-                  width={100}
-                  height={100}
-                  className="drop-shadow-[0_0_30px_rgba(139,92,246,0.8)]"
+                  width={140}
+                  height={140}
+                  className="drop-shadow-[0_0_40px_rgba(139,92,246,0.9)]"
                   style={{ imageRendering: 'pixelated' }}
                   priority
                 />
               </div>
 
-              {/* Orbiting rings */}
+              {/* Orbiting rings - Larger and more dramatic */}
               <div
-                className="absolute rounded-full border-2 border-purple-400/40"
+                className="absolute rounded-full border-2 border-purple-400/50"
                 style={{
-                  inset: -25,
+                  inset: -35,
                   animation: 'spin 12s linear infinite',
-                  boxShadow: '0 0 20px rgba(139,92,246,0.3)',
+                  boxShadow: '0 0 30px rgba(139,92,246,0.4)',
                 }}
               />
               <div
-                className="absolute rounded-full border border-cyan-400/30"
+                className="absolute rounded-full border-2 border-cyan-400/40"
                 style={{
-                  inset: -45,
+                  inset: -60,
                   animation: 'spin 18s linear infinite reverse',
-                  boxShadow: '0 0 15px rgba(34,211,238,0.2)',
+                  boxShadow: '0 0 25px rgba(34,211,238,0.3)',
                 }}
               />
-              {/* Orbiting dots on the rings */}
               <div
-                className="absolute w-2 h-2 rounded-full bg-purple-400"
+                className="absolute rounded-full border border-purple-300/20"
                 style={{
-                  top: -25,
+                  inset: -85,
+                  animation: 'spin 25s linear infinite',
+                  boxShadow: '0 0 20px rgba(139,92,246,0.2)',
+                }}
+              />
+              {/* Orbiting dots on the rings - more of them */}
+              <div
+                className="absolute w-3 h-3 rounded-full bg-purple-400"
+                style={{
+                  top: -35,
+                  left: '50%',
+                  marginLeft: -6,
+                  animation: 'spin 12s linear infinite',
+                  transformOrigin: '6px 125px',
+                  boxShadow: '0 0 15px rgba(139,92,246,0.9)',
+                }}
+              />
+              <div
+                className="absolute w-2.5 h-2.5 rounded-full bg-cyan-400"
+                style={{
+                  bottom: -60,
+                  left: '50%',
+                  marginLeft: -5,
+                  animation: 'spin 18s linear infinite reverse',
+                  transformOrigin: '5px -145px',
+                  boxShadow: '0 0 15px rgba(34,211,238,0.9)',
+                }}
+              />
+              <div
+                className="absolute w-2 h-2 rounded-full bg-purple-300"
+                style={{
+                  top: -85,
                   left: '50%',
                   marginLeft: -4,
-                  animation: 'spin 12s linear infinite',
-                  transformOrigin: '4px 95px',
-                  boxShadow: '0 0 10px rgba(139,92,246,0.8)',
-                }}
-              />
-              <div
-                className="absolute w-1.5 h-1.5 rounded-full bg-cyan-400"
-                style={{
-                  bottom: -45,
-                  left: '50%',
-                  marginLeft: -3,
-                  animation: 'spin 18s linear infinite reverse',
-                  transformOrigin: '3px -112px',
-                  boxShadow: '0 0 10px rgba(34,211,238,0.8)',
+                  animation: 'spin 25s linear infinite',
+                  transformOrigin: '4px 175px',
+                  boxShadow: '0 0 12px rgba(139,92,246,0.7)',
                 }}
               />
             </motion.div>
@@ -629,7 +648,7 @@ export function AIShowcase() {
             <div
               ref={processingTextRef}
               className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap"
-              style={{ opacity: 0, top: 160 }}
+              style={{ opacity: 0, top: 200 }}
             >
               <motion.span
                 className="text-sm text-purple-300 font-medium"
@@ -641,7 +660,7 @@ export function AIShowcase() {
             </div>
           </div>
 
-          {/* Data Source Nodes - positioned relative to center */}
+          {/* Data Source Nodes - positioned relative to center, larger */}
           {DATA_SOURCES.map((source, i) => {
             return (
               <div
@@ -650,69 +669,71 @@ export function AIShowcase() {
                 className="absolute flex flex-col items-center"
                 style={{
                   opacity: 0,
-                  left: CENTER - 28, // Half of node width (56/2)
-                  top: CENTER - 28, // Center the icon (56/2)
+                  left: CENTER - 36, // Half of node width (72/2)
+                  top: CENTER - 36, // Center the icon (72/2)
                 }}
               >
-                {/* Source Icon with enhanced styling */}
+                {/* Source Icon with enhanced styling - larger */}
                 <motion.div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center text-xl mb-1 relative"
+                  className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-2xl mb-2 relative"
                   style={{
-                    backgroundColor: `${source.color}20`,
-                    border: `2px solid ${source.color}60`,
-                    boxShadow: `0 0 25px ${source.color}40, inset 0 0 15px ${source.color}15`,
+                    backgroundColor: `${source.color}25`,
+                    border: `2px solid ${source.color}70`,
+                    boxShadow: `0 0 35px ${source.color}50, inset 0 0 20px ${source.color}20`,
                   }}
                   whileHover={{
-                    scale: 1.1,
-                    boxShadow: `0 0 40px ${source.color}60, inset 0 0 25px ${source.color}25`,
+                    scale: 1.15,
+                    boxShadow: `0 0 50px ${source.color}70, inset 0 0 30px ${source.color}30`,
                     borderColor: source.color,
                   }}
                 >
                   <span className="relative z-10">{source.icon}</span>
                 </motion.div>
-                {/* Source Label */}
-                <span className="text-[11px] text-white/90 font-semibold">{source.label}</span>
+                {/* Source Label - larger */}
+                <span className="text-xs text-white/90 font-semibold">{source.label}</span>
+                <span className="text-[10px] text-white/50">{source.insight}</span>
               </div>
             );
           })}
 
-          {/* AI Insight Cards - positioned on sides, hidden on mobile/tablet */}
+          {/* AI Insight Cards - positioned on sides, hidden on mobile/tablet, larger */}
           {AI_INSIGHTS.map((insight, i) => (
             <div
               key={i}
               ref={el => { insightRefs.current[i] = el; }}
-              className="absolute w-56 hidden lg:block"
+              className="absolute w-64 hidden lg:block"
               style={{
                 opacity: 0,
-                left: CENTER - 112,
-                top: CENTER - 60,
+                left: CENTER - 128,
+                top: CENTER - 70,
               }}
             >
               <div
-                className="bg-[#1a1625] rounded-xl p-4 border border-white/20 relative overflow-hidden"
+                className="bg-[#1a1625]/95 backdrop-blur-sm rounded-2xl p-5 border border-white/20 relative overflow-hidden"
                 style={{
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                  boxShadow: '0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(139,92,246,0.15)',
                 }}
               >
                 <div
-                  className="absolute top-0 left-0 right-0 h-0.5"
+                  className="absolute top-0 left-0 right-0 h-1"
                   style={{
                     background: 'linear-gradient(90deg, #8b5cf6, #22d3ee, #8b5cf6)',
                   }}
                 />
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-3 mb-3">
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-base"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(34,211,238,0.2))',
-                      border: '1px solid rgba(139,92,246,0.3)',
+                      background: 'linear-gradient(135deg, rgba(139,92,246,0.4), rgba(34,211,238,0.25))',
+                      border: '1px solid rgba(139,92,246,0.4)',
+                      boxShadow: '0 0 20px rgba(139,92,246,0.2)',
                     }}
                   >
                     {insight.icon}
                   </div>
-                  <span className="text-purple-300 font-bold text-xs tracking-wide">{insight.title}</span>
+                  <span className="text-purple-300 font-bold text-sm tracking-wide">{insight.title}</span>
                 </div>
-                <p className="text-white/80 text-xs leading-relaxed">
+                <p className="text-white/85 text-sm leading-relaxed">
                   {insight.content}
                 </p>
               </div>
@@ -728,14 +749,14 @@ export function AIShowcase() {
         }
         @keyframes pulse {
           0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
-          50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.9; }
+          50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
         }
         @keyframes novaGlow {
           0%, 100% {
-            box-shadow: 0 0 60px rgba(139,92,246,0.6), 0 0 120px rgba(139,92,246,0.3), inset 0 0 40px rgba(255,255,255,0.1);
+            box-shadow: 0 0 80px rgba(139,92,246,0.7), 0 0 150px rgba(139,92,246,0.4), 0 0 200px rgba(34,211,238,0.2), inset 0 0 50px rgba(255,255,255,0.1);
           }
           50% {
-            box-shadow: 0 0 80px rgba(139,92,246,0.8), 0 0 160px rgba(139,92,246,0.4), inset 0 0 60px rgba(255,255,255,0.15);
+            box-shadow: 0 0 100px rgba(139,92,246,0.9), 0 0 200px rgba(139,92,246,0.5), 0 0 250px rgba(34,211,238,0.3), inset 0 0 70px rgba(255,255,255,0.15);
           }
         }
       `}</style>

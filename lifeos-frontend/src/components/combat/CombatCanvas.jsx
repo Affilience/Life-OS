@@ -3288,6 +3288,7 @@ const CombatCanvas = forwardRef(({
               screenShake(25, 400);
               freezeFrame(80);
               createShockwave(cx, cy, { radius: 140, amplitude: 50, duration: 500 });
+              if (onImpact) onImpact();
 
               // Blood rain
               for (let i = 0; i < 50; i++) {
@@ -5192,6 +5193,45 @@ const CombatCanvas = forwardRef(({
         break;
 
       // ========== DARK/SHADOW ABILITIES ==========
+      case 'shadow_strike':
+        // Fast blink strike from shadows - instant dash to target
+        elementalSounds.shadow_bolt();
+        screenFlash(0x000000, 100, 0.6); // Darkness flash
+        // Create afterimage trail
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            const progress = i / 3;
+            const trailX = leftEdge + (targetX - leftEdge) * progress;
+            const trailY = startY + (targetY - startY) * progress;
+            createParticleBurst(trailX, trailY, {
+              count: 8,
+              color: 0x8844aa,
+              glowColor: 0x440066,
+              minSpeed: 2,
+              maxSpeed: 5,
+              minSize: 2,
+              maxSize: 5,
+              gravity: 0,
+              duration: 300,
+              drag: 0.9,
+            });
+          }, i * 50);
+        }
+        // Impact at target
+        setTimeout(() => {
+          createDarkExplosion(targetX, targetY);
+          createDynamicSlash(targetX - 40, targetY - 40, targetX + 40, targetY + 40, {
+            color: 0x8844aa,
+            glowColor: 0x440066,
+            maxThickness: 20,
+            curvature: 0.2,
+          });
+          screenShake(15, 200);
+          freezeFrame(60);
+          if (onImpact) onImpact();
+        }, 150);
+        break;
+
       case 'shadow_burst':
         elementalSounds.shadow_bolt();
         createProjectile(leftEdge, startY, targetX, targetY, {
@@ -6135,9 +6175,35 @@ const CombatCanvas = forwardRef(({
         break;
 
       default:
-        createParticleBurst(targetX, targetY, { count: 25 });
-        screenFlash(0xffffff, 80, 0.3);
-        if (onImpact) onImpact();
+        // Check if this is a weapon ability - delegate to playWeaponAttack
+        const weaponAbilities = [
+          'dragon_soul_slash', 'crimson_rampage', 'temporal_rift', 'divine_annihilation',
+          'reapers_harvest', 'glacial_sunder', 'starfall_smash', 'maelstrom',
+          'storm_cleaver', 'hellfire_execution', 'mjolnir_strike', 'final_verdict',
+          'arcane_singularity', 'soul_harvest', 'forbidden_knowledge', 'elemental_blade_storm',
+          'berserkers_fury', 'knights_honor', 'prismatic_cascade',
+          // Basic weapon attacks
+          'slash', 'horizontal_slash', 'vertical_slash', 'diagonal_slash',
+          'rising_slash', 'falling_slash', 'x_slash', 'double_slash', 'triple_slash',
+          'thrust', 'quick_stab', 'rapid_stab', 'lunge', 'cleave'
+        ];
+
+        if (weaponAbilities.includes(abilityType)) {
+          // Delegate to playWeaponAttack for weapon abilities
+          playWeaponAttack({
+            attackType: abilityType,
+            targetX: targetX,
+            targetY: targetY,
+            startX: width * 0.15,
+            startY: height * 0.5,
+            onImpact: onImpact,
+          });
+        } else {
+          // Unknown ability - show generic particle effect
+          createParticleBurst(targetX, targetY, { count: 25 });
+          screenFlash(0xffffff, 80, 0.3);
+          if (onImpact) onImpact();
+        }
     }
   }, [width, height, createProjectile, createFireExplosion, createIceExplosion,
       createLightningExplosion, createDarkExplosion, createHolyExplosion,
@@ -6146,7 +6212,7 @@ const CombatCanvas = forwardRef(({
       createTornado, createHealEffect, createShieldEffect, createBuffEffect,
       createDebuffEffect, createComboExplosion, createLaserBeam, createBlackHole,
       createHolyBeam, createLightningBolt, createDynamicSlash, createParticleBurst,
-      createShockwave, screenFlash, screenShake, freezeFrame]);
+      createShockwave, screenFlash, screenShake, freezeFrame, playWeaponAttack]);
 
   // ============================================
   // BOSS ATTACK VISUALS
@@ -6683,6 +6749,7 @@ const CombatCanvas = forwardRef(({
         createParticleBurst(cx, cy, { count: 30, color: 0xff4444 });
         screenShake(15, 300);
         screenFlash(0xff4444, 100, 0.4);
+        if (onImpact) onImpact();
     }
   }, [width, height, createDynamicSlash, createParticleBurst, createShockwave,
       createFireExplosion, createIceExplosion, createDarkExplosion, createEarthExplosion,

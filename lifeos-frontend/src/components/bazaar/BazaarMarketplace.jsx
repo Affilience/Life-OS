@@ -5,20 +5,12 @@ import {
   Sparkles,
   Gift,
   Zap,
-  Star,
-  Shield,
-  Crown,
-  Heart,
-  Brain,
   Lock,
   Check,
-  ChevronRight,
   Coins,
   Package,
-  Filter,
   Search,
   PawPrint,
-  HardHat,
   Wand2,
 } from 'lucide-react';
 import { useGamificationStore, getRarityColor } from '../../stores/gamificationStore';
@@ -68,190 +60,9 @@ const getItemSprite = (item) => {
 // SHOP ITEM DEFINITIONS
 // ============================================
 
-const EQUIPMENT_ITEMS = [
-  // Weapons - each weapon has a weaponType and ability that grants a special attack
-  {
-    id: 'sword_novice',
-    name: 'Novice Blade',
-    description: 'A simple training sword for beginners',
-    category: 'equipment',
-    slot: 'weapon',
-    rarity: 'common',
-    price: 50,
-    icon: '🗡️',
-    sprite: '/assets/bazaar/weapons/sword_novice.png',
-    stats: { strength: 3 },
-    levelRequired: 1,
-    weaponType: 'sword',
-    ability: 'power_slash',
-  },
-  {
-    id: 'sword_iron',
-    name: 'Iron Longsword',
-    description: 'A sturdy iron blade forged by skilled hands',
-    category: 'equipment',
-    slot: 'weapon',
-    rarity: 'uncommon',
-    price: 150,
-    icon: '⚔️',
-    sprite: '/assets/bazaar/weapons/sword_iron.png',
-    stats: { strength: 8, vitality: 2 },
-    levelRequired: 5,
-    weaponType: 'sword',
-    ability: 'blade_dance',
-  },
-  {
-    id: 'sword_crystal',
-    name: 'Crystal Saber',
-    description: 'Infused with crystalline energy',
-    category: 'equipment',
-    slot: 'weapon',
-    rarity: 'rare',
-    price: 400,
-    icon: '💎',
-    sprite: '/assets/bazaar/weapons/sword_crystal.png',
-    stats: { strength: 15, intelligence: 5 },
-    levelRequired: 10,
-    weaponType: 'sword',
-    ability: 'shadow_strike',
-  },
-  {
-    id: 'sword_void',
-    name: 'Voidbringer',
-    description: 'A blade that cuts through reality itself',
-    category: 'equipment',
-    slot: 'weapon',
-    rarity: 'epic',
-    price: 1000,
-    icon: '🌑',
-    sprite: '/assets/bazaar/weapons/sword_void.png',
-    stats: { strength: 25, wisdom: 10, intelligence: 8 },
-    levelRequired: 20,
-    weaponType: 'sword',
-    ability: 'assassinate',
-  },
-  {
-    id: 'sword_celestial',
-    name: 'Celestial Excalibur',
-    description: 'Forged from a fallen star',
-    category: 'equipment',
-    slot: 'weapon',
-    rarity: 'legendary',
-    price: 2500,
-    icon: '✨',
-    sprite: '/assets/bazaar/weapons/sword_celestial.png',
-    stats: { strength: 40, vitality: 15, wisdom: 15, intelligence: 15 },
-    levelRequired: 30,
-    weaponType: 'sword',
-    ability: 'meteor',
-  },
-  // Armor
-  {
-    id: 'armor_leather',
-    name: 'Leather Vest',
-    description: 'Basic protection for new adventurers',
-    category: 'equipment',
-    slot: 'armor',
-    rarity: 'common',
-    price: 40,
-    icon: '🥋',
-    sprite: '/assets/bazaar/armor/armor_leather.png',
-    stats: { defense: 3 },
-    levelRequired: 1,
-  },
-  {
-    id: 'armor_chainmail',
-    name: 'Chainmail Hauberk',
-    description: 'Linked rings of steel provide solid defense',
-    category: 'equipment',
-    slot: 'armor',
-    rarity: 'uncommon',
-    price: 180,
-    icon: '🛡️',
-    sprite: '/assets/bazaar/armor/armor_chainmail.png',
-    stats: { defense: 10, vitality: 3 },
-    levelRequired: 5,
-  },
-  {
-    id: 'armor_plate',
-    name: 'Plate Armor',
-    description: 'Heavy but nearly impenetrable',
-    category: 'equipment',
-    slot: 'armor',
-    rarity: 'rare',
-    price: 450,
-    icon: '🏰',
-    sprite: '/assets/bazaar/armor/armor_plate.png',
-    stats: { defense: 20, vitality: 8 },
-    levelRequired: 12,
-  },
-  {
-    id: 'armor_cosmic',
-    name: 'Cosmic Guardian Plate',
-    description: 'Armor blessed by the stars themselves',
-    category: 'equipment',
-    slot: 'armor',
-    rarity: 'epic',
-    price: 1200,
-    icon: '🌌',
-    sprite: '/assets/bazaar/armor/armor_cosmic.png',
-    stats: { defense: 35, vitality: 15, wisdom: 5 },
-    levelRequired: 22,
-  },
-  // Leg Armor & Accessories
-  {
-    id: 'ring_vitality',
-    name: 'Ring of Vitality',
-    description: 'A ring pulsing with life energy',
-    category: 'equipment',
-    slot: 'ring',
-    rarity: 'rare',
-    price: 250,
-    icon: '💍',
-    sprite: '/assets/equipment/rings/vitality_ring.png',
-    stats: { vitality: 6, defense: 3 },
-    levelRequired: 15,
-  },
-  {
-    id: 'amulet_guardian',
-    name: 'Guardian Pendant',
-    description: 'Protection of the guardians',
-    category: 'equipment',
-    slot: 'amulet',
-    rarity: 'rare',
-    price: 300,
-    icon: '📿',
-    sprite: '/assets/equipment/amulets/guardian_pendant.png',
-    stats: { defense: 6, vitality: 5 },
-    levelRequired: 15,
-  },
-  {
-    id: 'legs_chainmail',
-    name: 'Chainmail Leggings',
-    description: 'Interlocking metal rings protect your legs',
-    category: 'equipment',
-    slot: 'legs',
-    rarity: 'rare',
-    price: 350,
-    icon: '👖',
-    sprite: '/assets/equipment/legs/chainmail_leggings.png',
-    stats: { defense: 4, vitality: 2 },
-    levelRequired: 8,
-  },
-  {
-    id: 'cloak_shadows',
-    name: 'Cloak of Shadows',
-    description: 'Wraps you in protective darkness',
-    category: 'equipment',
-    slot: 'accessory',
-    rarity: 'epic',
-    price: 800,
-    icon: '🧥',
-    sprite: '/assets/bazaar/accessories/cloak_shadows.png',
-    stats: { wisdom: 20, intelligence: 10, defense: 5 },
-    levelRequired: 18,
-  },
-];
+// Equipment items are now loaded dynamically from equipmentDatabase via getPurchasableEquipment()
+// This avoids duplicates between hardcoded and database items
+const EQUIPMENT_ITEMS = [];
 
 const CONSUMABLE_ITEMS = [
   {
@@ -464,10 +275,9 @@ const ALL_ITEMS = [...EQUIPMENT_ITEMS, ...CONSUMABLE_ITEMS, ...COSMETIC_ITEMS, .
 
 const CATEGORIES = [
   { id: 'all', label: 'All Items', icon: Package },
-  { id: 'companions', label: 'Companions', icon: PawPrint },
-  { id: 'gear', label: 'Gear', icon: HardHat },
+  { id: 'gear', label: 'Gear', icon: Sword },
   { id: 'abilities', label: 'Abilities', icon: Wand2 },
-  { id: 'equipment', label: 'Equipment', icon: Sword },
+  { id: 'companions', label: 'Companions', icon: PawPrint },
   { id: 'consumable', label: 'Consumables', icon: Zap },
   { id: 'cosmetic', label: 'Cosmetics', icon: Sparkles },
   { id: 'irl_reward', label: 'IRL Rewards', icon: Gift },
@@ -479,199 +289,155 @@ const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 // SUB-COMPONENTS
 // ============================================
 
+// Rarity-based visual styles for showcase cards
+const RARITY_STYLES = {
+  common: {
+    border: 'border-gray-500/50',
+    bg: 'from-gray-500/20 to-gray-600/10',
+    glow: 'shadow-gray-500/20',
+    text: 'text-gray-400',
+    badge: 'bg-gray-500/30 text-gray-300',
+  },
+  uncommon: {
+    border: 'border-green-500/50',
+    bg: 'from-green-500/20 to-green-600/10',
+    glow: 'shadow-green-500/20',
+    text: 'text-green-400',
+    badge: 'bg-green-500/30 text-green-300',
+  },
+  rare: {
+    border: 'border-blue-500/50',
+    bg: 'from-blue-500/20 to-blue-600/10',
+    glow: 'shadow-blue-500/30',
+    text: 'text-blue-400',
+    badge: 'bg-blue-500/30 text-blue-300',
+  },
+  epic: {
+    border: 'border-purple-500/50',
+    bg: 'from-purple-500/20 to-purple-600/10',
+    glow: 'shadow-purple-500/30',
+    text: 'text-purple-400',
+    badge: 'bg-purple-500/30 text-purple-300',
+  },
+  legendary: {
+    border: 'border-yellow-500/50',
+    bg: 'from-yellow-500/20 to-amber-600/10',
+    glow: 'shadow-yellow-500/40',
+    text: 'text-yellow-400',
+    badge: 'bg-yellow-500/30 text-yellow-200',
+  },
+  mythic: {
+    border: 'border-pink-500/50',
+    bg: 'from-pink-500/20 to-rose-600/10',
+    glow: 'shadow-pink-500/40',
+    text: 'text-pink-400',
+    badge: 'bg-pink-500/30 text-pink-200',
+  },
+};
+
 function ItemCard({ item, owned, canAfford, onPurchase, level, mode }) {
   const isLocked = item.levelRequired && level < item.levelRequired;
   const rarityColor = getRarityColor(item.rarity);
+  const style = RARITY_STYLES[item.rarity] || RARITY_STYLES.common;
+  const isAbility = item.itemType === 'ability';
+  const isPet = item.itemType === 'pet';
 
   return (
-    <div
+    <button
+      onClick={() => !owned && canAfford && !isLocked && onPurchase(item)}
+      disabled={owned || !canAfford || isLocked}
       className={`
-        relative bg-[#1a1724] border rounded-xl overflow-hidden
-        transition-all duration-200 hover:scale-[1.02]
-        ${owned ? 'border-green-500/30 bg-green-500/5' : `border-white/10 hover:border-[${rarityColor}]/50`}
-        ${isLocked ? 'opacity-60' : ''}
+        relative rounded-xl border overflow-hidden text-left w-full
+        bg-gradient-to-br ${style.bg} ${style.border}
+        shadow-lg ${style.glow}
+        transition-all duration-200
+        ${!owned && canAfford && !isLocked ? 'hover:scale-[1.03] hover:shadow-xl cursor-pointer' : ''}
+        ${owned ? 'ring-2 ring-green-500/50' : ''}
+        ${isLocked ? 'opacity-50' : ''}
       `}
-      style={{ borderColor: owned ? 'rgba(34, 197, 94, 0.3)' : undefined }}
     >
-      {/* Rarity Indicator */}
-      <div
-        className="absolute top-0 left-0 right-0 h-1"
-        style={{ background: rarityColor }}
-      />
+      {/* Top badges row */}
+      <div className="absolute top-1.5 left-1.5 right-1.5 z-10 flex justify-between items-start">
+        {/* Rarity badge */}
+        <span className={`px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold uppercase ${style.badge}`}>
+          {isAbility ? 'Skill' : isPet ? 'Pet' : item.rarity?.charAt(0)}
+        </span>
 
-      {/* Owned Badge */}
-      {owned && (
-        <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-          <Check className="w-3 h-3" />
-          Owned
-        </div>
-      )}
-
-      {/* Locked Badge */}
-      {isLocked && (
-        <div className="absolute top-3 right-3 bg-red-500/80 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-          <Lock className="w-3 h-3" />
-          Lv {item.levelRequired}
-        </div>
-      )}
-
-      <div className="p-4">
-        {/* Item Icon & Name */}
-        <div className="flex items-start gap-3 mb-3">
-          <div
-            className="w-12 h-12 p-1 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: `${rarityColor}20` }}
-          >
-            {getItemSprite(item) ? (
-              <img
-                src={getItemSprite(item)}
-                alt={item.name}
-                className="w-full h-full object-contain pixelated"
-                style={{ imageRendering: 'pixelated' }}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-            ) : null}
-            {/* Fallback: Use pixel art slot icon for gear, or emoji for other items */}
-            {item.slotIcon ? (
-              <img
-                src={item.slotIcon}
-                alt={item.slot || 'item'}
-                className="w-full h-full object-contain"
-                style={{
-                  imageRendering: 'pixelated',
-                  display: getItemSprite(item) ? 'none' : 'block'
-                }}
-              />
-            ) : (
-              <span
-                className="text-2xl items-center justify-center"
-                style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
-              >
-                {item.icon}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-white truncate">{item.name}</h4>
-            <p
-              className="text-xs font-medium capitalize"
-              style={{ color: rarityColor }}
-            >
-              {item.rarity}
-            </p>
-          </div>
-        </div>
-
-        {/* Description */}
-        <p className="text-sm text-white/60 mb-3 line-clamp-2">
-          {item.description}
-        </p>
-
-        {/* Stats (for equipment) */}
-        {item.stats && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {Object.entries(item.stats).map(([stat, value]) => (
-              <span
-                key={stat}
-                className="text-xs bg-white/5 border border-white/10 rounded px-2 py-0.5 text-white/80"
-              >
-                +{value} {stat.charAt(0).toUpperCase() + stat.slice(1)}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Effect (for consumables) */}
-        {item.effect && (
-          <div className="text-xs text-purple-400 bg-purple-500/10 rounded px-2 py-1 mb-3">
-            {item.effect.type === 'xp' && `+${item.effect.amount} XP`}
-            {item.effect.type === 'xp_multiplier' && `${item.effect.amount}x XP for ${item.effect.duration}h`}
-            {item.effect.type === 'shield' && `+${item.effect.amount} Shield${item.effect.amount > 1 ? 's' : ''}`}
-          </div>
-        )}
-
-        {/* Pet Bonus (for companions) */}
-        {item.bonusDescription && (
-          <div className="text-xs text-cyan-400 bg-cyan-500/10 rounded px-2 py-1 mb-3 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
-            {item.bonusDescription}
-          </div>
-        )}
-
-        {/* Ability Info (for abilities) */}
-        {item.itemType === 'ability' && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            <span className="text-xs bg-purple-500/10 border border-purple-500/20 rounded px-2 py-0.5 text-purple-400 capitalize">
-              {item.element}
+        {/* Status badges */}
+        <div className="flex gap-1">
+          {owned && (
+            <span className="bg-green-500 text-white text-[8px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+              <Check className="w-2.5 h-2.5" />
             </span>
-            <span className="text-xs bg-red-500/10 border border-red-500/20 rounded px-2 py-0.5 text-red-400">
-              {item.damage}x DMG
+          )}
+          {isLocked && (
+            <span className="bg-red-500/80 text-white text-[8px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+              <Lock className="w-2.5 h-2.5" />
+              {item.levelRequired}
             </span>
-            <span className="text-xs bg-blue-500/10 border border-blue-500/20 rounded px-2 py-0.5 text-blue-400">
-              {(item.cooldown / 1000).toFixed(0)}s CD
-            </span>
-          </div>
-        )}
-
-        {/* Weapon Ability Info (for weapons with abilities) */}
-        {item.slot === 'weapon' && item.ability && ABILITY_TYPES[item.ability] && (() => {
-          const ability = ABILITY_TYPES[item.ability];
-          return (
-            <div className="mb-3 p-2 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <Zap className="w-3 h-3 text-orange-400" />
-                <span className="text-xs font-medium text-orange-300">{ability.name}</span>
-              </div>
-              <p className="text-xs text-white/50 mb-2 line-clamp-1">{ability.description}</p>
-              <div className="flex flex-wrap gap-1">
-                <span className="text-xs bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5 text-red-400">
-                  {ability.damage}x DMG
-                </span>
-                <span className="text-xs bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5 text-blue-400">
-                  {(ability.cooldown / 1000).toFixed(0)}s CD
-                </span>
-                {ability.hits && (
-                  <span className="text-xs bg-purple-500/10 border border-purple-500/20 rounded px-1.5 py-0.5 text-purple-400">
-                    {ability.hits} hits
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Price & Purchase */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-          <div className="flex items-center gap-1">
-            <Coins className="w-4 h-4 text-yellow-400" />
-            <span className={`font-bold ${canAfford ? 'text-white' : 'text-red-400'}`}>
-              {item.price}
-            </span>
-          </div>
-
-          <button
-            onClick={() => onPurchase(item)}
-            disabled={owned || !canAfford || isLocked}
-            className={`
-              px-4 py-1.5 rounded-lg text-sm font-medium transition-all
-              ${owned
-                ? 'bg-green-500/20 text-green-400 cursor-default'
-                : isLocked
-                  ? 'bg-white/5 text-white/30 cursor-not-allowed'
-                  : canAfford
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90'
-                    : 'bg-white/5 text-white/30 cursor-not-allowed'
-              }
-            `}
-          >
-            {owned ? 'Owned' : isLocked ? 'Locked' : 'Buy'}
-          </button>
+          )}
+          {item.rarity === 'legendary' && (
+            <Sparkles className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
+          )}
+          {isAbility && (
+            <Zap className="w-3.5 h-3.5 text-cyan-400" />
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Item sprite - larger and centered */}
+      <div className="flex items-center justify-center p-3 pt-7 sm:p-4 sm:pt-8">
+        {getItemSprite(item) ? (
+          <img
+            src={getItemSprite(item)}
+            alt={item.name}
+            className="w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-lg"
+            style={{ imageRendering: 'pixelated' }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        {/* Fallback emoji */}
+        <span
+          className="text-3xl sm:text-4xl items-center justify-center"
+          style={{ display: getItemSprite(item) ? 'none' : 'flex' }}
+        >
+          {item.icon}
+        </span>
+      </div>
+
+      {/* Item info */}
+      <div className="px-2 pb-2 sm:px-3 sm:pb-3 text-center">
+        <h4 className={`text-[11px] sm:text-sm font-bold truncate ${style.text}`}>
+          {item.name}
+        </h4>
+
+        {/* Stats preview or description */}
+        {item.stats ? (
+          <p className="text-[9px] sm:text-[10px] text-white/50 truncate mt-0.5">
+            {Object.entries(item.stats).slice(0, 2).map(([stat, val]) => `+${val} ${stat.slice(0, 3).toUpperCase()}`).join(' ')}
+          </p>
+        ) : isAbility ? (
+          <p className="text-[9px] sm:text-[10px] text-white/50 truncate mt-0.5">
+            {item.element} • {item.damage}x DMG
+          </p>
+        ) : (
+          <p className="text-[9px] sm:text-[10px] text-white/50 truncate mt-0.5 line-clamp-1">
+            {item.description?.slice(0, 30)}
+          </p>
+        )}
+
+        {/* Price */}
+        <div className="flex items-center justify-center gap-1 mt-1.5">
+          <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-400" />
+          <span className={`text-[11px] sm:text-xs font-bold ${canAfford ? 'text-yellow-400' : 'text-red-400'}`}>
+            {item.price?.toLocaleString()}
+          </span>
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -975,6 +741,8 @@ export default function BazaarMarketplace() {
           sprite: spritePath,
           stats: item.stats,
           itemType: 'gear',
+          ability: item.ability, // Include weapon ability for display
+          weaponType: item.weaponType, // Include weapon type
         };
       }));
 
@@ -1187,38 +955,37 @@ export default function BazaarMarketplace() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with Currency */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
-            {terms.bazaar}
-          </h2>
-          <p className="text-white/60 text-xs sm:text-sm mt-1">
-            Spend your hard-earned {terms.credits.toLowerCase()} on rewards
-          </p>
+    <div className="space-y-3 sm:space-y-4">
+      {/* Header with Currency - compact */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-base sm:text-xl font-bold text-white">{terms.bazaar}</h2>
+            <p className="text-[10px] sm:text-xs text-white/50">Equipment & Abilities</p>
+          </div>
         </div>
 
         {/* Currency Display */}
-        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl px-3 sm:px-4 py-2 flex items-center gap-2 self-start sm:self-auto">
-          <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
-          <span className="text-lg sm:text-xl font-bold text-white">{cosmicCredits}</span>
-          <span className="text-white/60 text-xs sm:text-sm">{terms.credits.toLowerCase()}</span>
+        <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1">
+          <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
+          <span className="text-sm sm:text-base font-bold text-yellow-400">{cosmicCredits?.toLocaleString()}</span>
         </div>
       </div>
 
-      {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Search & Filters - compact row */}
+      <div className="flex gap-2">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
           <input
             type="text"
-            placeholder="Search items..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#1a1724] border border-white/10 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50"
+            className="w-full pl-8 pr-3 py-1.5 bg-[#1a1724] border border-white/10 rounded-lg text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50"
           />
         </div>
 
@@ -1226,9 +993,9 @@ export default function BazaarMarketplace() {
         <select
           value={rarityFilter}
           onChange={(e) => setRarityFilter(e.target.value)}
-          className="px-4 py-2 bg-[#1a1724] border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500/50"
+          className="px-2 py-1.5 bg-[#1a1724] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500/50"
         >
-          <option value="all">All Rarities</option>
+          <option value="all">All</option>
           {RARITY_ORDER.map(rarity => (
             <option key={rarity} value={rarity}>
               {rarity.charAt(0).toUpperCase() + rarity.slice(1)}
@@ -1237,8 +1004,8 @@ export default function BazaarMarketplace() {
         </select>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide w-full">
+      {/* Category Tabs - compact pills */}
+      <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide w-full">
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           const isActive = selectedCategory === cat.id;
@@ -1258,27 +1025,25 @@ export default function BazaarMarketplace() {
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={`
-                flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm
+                flex items-center gap-1 px-2.5 py-1.5 rounded-full font-medium text-[10px] sm:text-xs
                 whitespace-nowrap transition-all duration-200 flex-shrink-0
                 ${isActive
-                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg'
-                  : 'bg-[#1a1724] text-white/60 hover:text-white hover:bg-[#221e2e] border border-white/10'
+                  ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50'
+                  : 'bg-white/5 text-white/50 border border-white/10 hover:text-white/80'
                 }
               `}
             >
-              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>{cat.label}</span>
-              <span className={`text-xs ${isActive ? 'text-white/70' : 'text-white/40'}`}>
-                ({count})
-              </span>
+              <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">{cat.label}</span>
+              <span className="sm:hidden">{cat.label.split(' ')[0]}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Items Grid */}
+      {/* Items Grid - 3 cols mobile, 4 cols tablet, 5 cols desktop */}
       {filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
           {filteredItems.map((item) => (
             <ItemCard
               key={item.id}

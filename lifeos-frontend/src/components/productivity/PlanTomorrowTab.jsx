@@ -399,52 +399,52 @@ export default function PlanTomorrowTab() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-white/60 text-sm mb-1">
-            <Target className="w-4 h-4" />
-            Tasks
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-white/60 text-[10px] sm:text-sm mb-1">
+            <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="truncate">Tasks</span>
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-lg sm:text-2xl font-bold text-white">
             {viewMode === 'today' ? `${todayStats.completed}/${todayStats.total}` : currentTasks.length}
           </div>
         </div>
 
-        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-white/60 text-sm mb-1">
-            <Clock className="w-4 h-4" />
-            Est. Time
+        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-white/60 text-[10px] sm:text-sm mb-1">
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="truncate">Time</span>
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-lg sm:text-2xl font-bold text-white">
             {Math.floor(totalEstimatedTime / 60)}h {totalEstimatedTime % 60}m
           </div>
         </div>
 
-        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-white/60 text-sm mb-1">
-            <Zap className="w-4 h-4 text-yellow-400" />
-            Potential {terms.xp}
+        <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-white/60 text-[10px] sm:text-sm mb-1">
+            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400 flex-shrink-0" />
+            <span className="truncate">{terms.xp}</span>
           </div>
-          <div className="text-2xl font-bold text-yellow-400">+{totalXP}</div>
+          <div className="text-lg sm:text-2xl font-bold text-yellow-400">+{totalXP}</div>
         </div>
 
         {viewMode === 'today' && (
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-white/60 text-sm mb-1">
-              <Sparkles className="w-4 h-4 text-green-400" />
-              Earned {terms.xp}
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-white/60 text-[10px] sm:text-sm mb-1">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400 flex-shrink-0" />
+              <span className="truncate">Earned</span>
             </div>
-            <div className="text-2xl font-bold text-green-400">+{todayStats.totalXP}</div>
+            <div className="text-lg sm:text-2xl font-bold text-green-400">+{todayStats.totalXP}</div>
           </div>
         )}
 
         {viewMode === 'tomorrow' && (
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-white/60 text-sm mb-1">
-              <FolderOpen className="w-4 h-4" />
-              Templates
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-white/60 text-[10px] sm:text-sm mb-1">
+              <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">Templates</span>
             </div>
-            <div className="text-2xl font-bold text-white">{templates?.length || 0}</div>
+            <div className="text-lg sm:text-2xl font-bold text-white">{templates?.length || 0}</div>
           </div>
         )}
       </div>
@@ -667,18 +667,18 @@ export default function PlanTomorrowTab() {
               <div key={task.id} className="space-y-2">
                 {/* Main Task */}
                 <div
-                  className={`bg-[#1a1724] border rounded-xl p-4 transition-all ${
+                  className={`bg-[#1a1724] border rounded-xl p-3 sm:p-4 transition-all ${
                     task.completed
                       ? 'border-green-500/30 bg-green-500/5'
                       : `border-white/10 ${modeStyle.hoverBorder}`
                   }`}
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Expand/Collapse or Drag Handle */}
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    {/* Expand/Collapse or Drag Handle - hidden on mobile when no subtasks */}
                     {hasSubtasks ? (
                       <button
                         onClick={() => toggleExpanded(task.id)}
-                        className="mt-1 text-white/50 hover:text-white transition-colors"
+                        className="mt-1 text-white/50 hover:text-white transition-colors flex-shrink-0"
                       >
                         {isExpanded ? (
                           <ChevronDown className="w-4 h-4" />
@@ -687,7 +687,7 @@ export default function PlanTomorrowTab() {
                         )}
                       </button>
                     ) : (
-                      <div className="mt-1 text-white/30 cursor-grab">
+                      <div className="mt-1 text-white/30 cursor-grab hidden sm:block flex-shrink-0">
                         <GripVertical className="w-4 h-4" />
                       </div>
                     )}
@@ -698,60 +698,63 @@ export default function PlanTomorrowTab() {
                       className="mt-0.5 flex-shrink-0"
                     >
                       {task.completed ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-400" />
+                        <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
                       ) : (
-                        <Circle className={`w-6 h-6 text-white/40 ${modeStyle.hoverCircle} transition-colors`} />
+                        <Circle className={`w-5 h-5 sm:w-6 sm:h-6 text-white/40 ${modeStyle.hoverCircle} transition-colors`} />
                       )}
                     </button>
 
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className={`font-medium ${task.completed ? 'text-white/50 line-through' : 'text-white'}`}>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      {/* Title and badges */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <h4 className={`font-medium text-sm sm:text-base truncate ${task.completed ? 'text-white/50 line-through' : 'text-white'}`}>
                           {task.title}
                         </h4>
-                        <span className={`text-xs px-2 py-0.5 rounded-full bg-gradient-to-r ${category.color} text-white`}>
-                          {category.label}
-                        </span>
-                        <span className={`text-xs ${priority.color}`}>
-                          {priority.label}
-                        </span>
-                        {/* Subtask count badge */}
-                        {hasSubtasks && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            subtaskStats.completed === subtaskStats.total
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-white/10 text-white/60'
-                          }`}>
-                            {subtaskStats.completed}/{subtaskStats.total} subtasks
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-gradient-to-r ${category.color} text-white`}>
+                            {category.label}
                           </span>
-                        )}
+                          <span className={`text-[10px] sm:text-xs ${priority.color}`}>
+                            {priority.label}
+                          </span>
+                          {/* Subtask count badge */}
+                          {hasSubtasks && (
+                            <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
+                              subtaskStats.completed === subtaskStats.total
+                                ? 'bg-green-500/20 text-green-400'
+                                : 'bg-white/10 text-white/60'
+                            }`}>
+                              {subtaskStats.completed}/{subtaskStats.total}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {task.description && (
-                        <p className={`text-sm mt-1 ${task.completed ? 'text-white/30' : 'text-white/50'}`}>
+                        <p className={`text-xs sm:text-sm mt-1 line-clamp-2 ${task.completed ? 'text-white/30' : 'text-white/50'}`}>
                           {task.description}
                         </p>
                       )}
 
-                      <div className="flex items-center gap-4 mt-2 text-xs text-white/40">
+                      <div className="flex items-center gap-2 sm:gap-4 mt-2 text-[10px] sm:text-xs text-white/40">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {task.estimatedMinutes} min
+                          {task.estimatedMinutes}m
                         </span>
                         <span className="flex items-center gap-1">
                           <Zap className="w-3 h-3 text-yellow-400" />
-                          +{priority.xp} {terms.xp}
+                          +{priority.xp}
                         </span>
                         {task.carriedFrom && (
-                          <span className="text-amber-400">Carried over</span>
+                          <span className="text-amber-400">Carried</span>
                         )}
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-1">
-                      {/* Go To Action Button - only show if task has a matching action route and not completed */}
+                    {/* Action Buttons - condensed on mobile */}
+                    <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                      {/* Go To Action Button - icon only on mobile */}
                       {(() => {
                         const actionInfo = getTaskActionRoute(task);
                         if (!actionInfo || task.completed) return null;
@@ -760,10 +763,10 @@ export default function PlanTomorrowTab() {
                         return (
                           <button
                             onClick={() => navigate(actionInfo.fullPath)}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-xs font-medium ${modeStyle.templateButton}`}
+                            className={`flex items-center justify-center gap-1.5 p-1.5 sm:p-2 sm:px-2.5 rounded-lg transition-all text-xs font-medium ${modeStyle.templateButton}`}
                             title={`Go to ${actionInfo.label}`}
                           >
-                            <ActionIcon className="w-3.5 h-3.5" />
+                            <ActionIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                             <span className="hidden sm:inline">{actionInfo.label}</span>
                           </button>
                         );
@@ -775,22 +778,22 @@ export default function PlanTomorrowTab() {
                           setAddingSubtaskTo(addingSubtaskTo === task.id ? null : task.id);
                           setExpandedTasks(prev => ({ ...prev, [task.id]: true }));
                         }}
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`flex items-center justify-center p-1.5 sm:p-2 rounded-lg transition-colors ${
                           addingSubtaskTo === task.id
                             ? `${modeStyle.textAccent} bg-white/10`
                             : 'text-white/40 hover:text-white/70 hover:bg-white/5'
                         }`}
                         title="Add subtask"
                       >
-                        <ListTree className="w-4 h-4" />
+                        <ListTree className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
 
                       {/* Delete Button */}
                       <button
                         onClick={() => handleDeleteTask(task.id)}
-                        className="p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        className="flex items-center justify-center p-1.5 sm:p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </div>

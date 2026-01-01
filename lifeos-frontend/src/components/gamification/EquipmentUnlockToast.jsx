@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Sparkles, X, Shield, Sword, Crown, Heart, Star, ChevronRight } from 'lucide-react';
 import { useUnlockNotificationStore, UNLOCK_TYPES } from '../../stores/unlockNotificationStore';
+import { useNotificationStore } from '../../stores/notificationStore';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../stores/gamificationModeStore';
 import { EQUIPMENT_RARITY, EQUIPMENT_SLOTS } from '../../data/equipmentDatabase';
 import { TIER_INFO as PET_TIER_INFO } from '../../stores/petStore';
@@ -183,7 +184,9 @@ const getSpritePath = (item) => {
 
 export default function EquipmentUnlockToast() {
   const navigate = useNavigate();
-  const { current, dismiss } = useUnlockNotificationStore();
+  // Use main notification store for proper queueing with achievements
+  const current = useNotificationStore((state) => state.currentEquipmentUnlock);
+  const dismiss = useNotificationStore((state) => state.dismissEquipmentUnlock);
   const mode = useGamificationModeStore((state) => state.mode);
   const visibility = VISIBILITY[mode] || VISIBILITY.cosmic;
   const prefersReducedMotion = useReducedMotion();

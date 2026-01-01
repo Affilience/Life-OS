@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'LifeOS - Your Life as an RPG';
+export const alt = 'Ascnt - Level up your life';
 export const size = {
   width: 1200,
   height: 630,
@@ -68,7 +68,7 @@ export default async function Image() {
               </linearGradient>
             </defs>
             <path
-              d="M60 40 L60 140 L140 140"
+              d="M50 140 L100 40 L150 140 M70 105 L130 105"
               fill="none"
               stroke="url(#logoGradient)"
               strokeWidth="8"
@@ -96,7 +96,7 @@ export default async function Image() {
               color: 'transparent',
             }}
           >
-            LifeOS
+            Ascnt
           </span>
         </div>
 
@@ -110,7 +110,7 @@ export default async function Image() {
             lineHeight: 1.4,
           }}
         >
-          Your Entire Life. One System. Fully Gamified.
+          Level up your life.
         </p>
 
         {/* Subtitle */}

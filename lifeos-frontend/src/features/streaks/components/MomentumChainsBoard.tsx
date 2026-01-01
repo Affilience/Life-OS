@@ -2,19 +2,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Shield, Zap, TrendingUp, BarChart2, Calendar, Plus, Check, Settings, Trash2, ChevronDown, ChevronUp, Grid, List, LayoutGrid } from 'lucide-react';
 import { YearlyHeatmap } from './YearlyHeatmap';
+import { StreakDetailModal } from './StreakDetailModal';
 import { useGamificationStore } from '../../../stores/gamificationStore';
 import { useGamificationModeStore, TERMINOLOGY, VISIBILITY } from '../../../stores/gamificationModeStore';
 import useCustomStreaksStore from '../../../stores/customStreaksStore';
 import AddCustomStreakModal from '../../../components/streaks/AddCustomStreakModal';
 import { feedback } from '../../../services/microInteractions';
-import {
-  CalendarGridView,
-  ChainLinksView,
-  CircleProgressView,
-  MiniHeatmapView,
-  StatsOverviewView,
-  StreakViewSelector,
-} from '../../../components/streaks/StreakVisualizations';
 
 // Type for streak chains
 interface Chain {
@@ -237,9 +230,8 @@ export function MomentumChainsBoard() {
 
   // Local state
   const [showAddModal, setShowAddModal] = useState(false);
-  const [expandedStreak, setExpandedStreak] = useState<string | null>(null);
+  const [selectedStreak, setSelectedStreak] = useState<(Chain & { isCustom?: boolean; goal?: number; frequency?: string }) | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'detailed'>('grid');
-  const [selectedVisualization, setSelectedVisualization] = useState<string>('calendar');
 
   // Initialize custom streaks on mount
   useEffect(() => {
@@ -532,80 +524,48 @@ export function MomentumChainsBoard() {
     const weekCompletion = chain.weekData.filter(Boolean).length;
     const today = new Date().toISOString().split('T')[0];
     const isCompletedToday = chain.isCustom ? isCompletedForDate(chain.id, today) : chain.weekData[chain.weekData.length - 1];
-    const isExpanded = expandedStreak === chain.id;
-    const completions = chain.isCustom ? getCompletionsForStreak(chain.id) : [];
+
+    // Open detail modal on click
+    const handleCardClick = () => {
+      setSelectedStreak(chain);
+    };
 
     // Minimal mode - simple list item with check-in
     if (mode === 'minimal') {
       return (
-        <div key={chain.id} className="space-y-2">
-          <div
-            className={`
-              flex items-center justify-between p-3 rounded-lg border cursor-pointer
-              ${isActive ? 'bg-white/5 border-white/20' : 'bg-white/[0.02] border-white/10'}
-            `}
-            onClick={() => chain.isCustom && setExpandedStreak(isExpanded ? null : chain.id)}
-          >
-            <div className="flex items-center gap-3">
-              {chain.isCustom && (
-                <button
-                  onClick={(e) => handleCheckIn(chain.id, e)}
-                  className={`
-                    w-6 h-6 rounded-full border-2 flex items-center justify-center
-                    transition-all
-                    ${isCompletedToday
-                      ? 'bg-emerald-500 border-emerald-500 text-white'
-                      : 'border-white/30 hover:border-emerald-500'
-                    }
-                  `}
-                >
-                  {isCompletedToday && <Check className="w-4 h-4" />}
-                </button>
-              )}
-              <span className={`text-sm ${isCompletedToday ? 'text-white' : 'text-white/80'}`}>{chain.name}</span>
-              {isActive && !chain.isCustom && <span className="text-green-400 text-xs">•</span>}
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <span className="text-lg font-bold text-white">{chain.currentStreak}</span>
-                <span className="text-xs text-white/50 ml-1">days</span>
-              </div>
-              {chain.isCustom && (
-                <ChevronDown className={`w-4 h-4 text-white/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-              )}
-            </div>
-          </div>
-
-          {/* Expanded visualization */}
-          {isExpanded && chain.isCustom && (
-            <div className="bg-[#0c0a10] rounded-lg p-4 space-y-4">
-              <StreakViewSelector currentView={selectedVisualization} onViewChange={setSelectedVisualization} />
-              <div className="mt-4">
-                {selectedVisualization === 'calendar' && (
-                  <CalendarGridView completions={completions} streak={chain} />
-                )}
-                {selectedVisualization === 'chain' && (
-                  <ChainLinksView completions={completions} streak={chain} />
-                )}
-                {selectedVisualization === 'circles' && (
-                  <CircleProgressView streak={chain} completions={completions} goal={chain.goal || 30} />
-                )}
-                {selectedVisualization === 'heatmap' && (
-                  <MiniHeatmapView completions={completions} weeks={12} />
-                )}
-                {selectedVisualization === 'stats' && (
-                  <StatsOverviewView streak={chain} completions={completions} />
-                )}
-              </div>
+        <div
+          key={chain.id}
+          className={`
+            flex items-center justify-between p-3 rounded-lg border cursor-pointer
+            ${isActive ? 'bg-white/5 border-white/20' : 'bg-white/[0.02] border-white/10'}
+            hover:bg-white/10 transition-colors
+          `}
+          onClick={handleCardClick}
+        >
+          <div className="flex items-center gap-3">
+            {chain.isCustom && (
               <button
-                onClick={(e) => handleDeleteStreak(chain.id, e)}
-                className="w-full p-2 text-red-400 hover:bg-red-500/10 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+                onClick={(e) => handleCheckIn(chain.id, e)}
+                className={`
+                  w-6 h-6 rounded-full border-2 flex items-center justify-center
+                  transition-all
+                  ${isCompletedToday
+                    ? 'bg-emerald-500 border-emerald-500 text-white'
+                    : 'border-white/30 hover:border-emerald-500'
+                  }
+                `}
               >
-                <Trash2 className="w-4 h-4" />
-                Delete Streak
+                {isCompletedToday && <Check className="w-4 h-4" />}
               </button>
-            </div>
-          )}
+            )}
+            <span className="text-xl mr-1">{chain.icon}</span>
+            <span className={`text-sm ${isCompletedToday ? 'text-white' : 'text-white/80'}`}>{chain.name}</span>
+            {isActive && !chain.isCustom && <span className="text-green-400 text-xs">•</span>}
+          </div>
+          <div className="text-right">
+            <span className="text-lg font-bold text-white">{chain.currentStreak}</span>
+            <span className="text-xs text-white/50 ml-1">days</span>
+          </div>
         </div>
       );
     }
@@ -613,124 +573,32 @@ export function MomentumChainsBoard() {
     // Professional mode - clean cards with check-in
     if (mode === 'professional') {
       return (
-        <div key={chain.id} className="space-y-2">
-          <div
-            onClick={() => chain.isCustom && setExpandedStreak(isExpanded ? null : chain.id)}
-            className={`
-              rounded-xl p-3 border transition-colors cursor-pointer
-              ${isActive
-                ? 'bg-blue-500/10 border-blue-500/30'
-                : 'bg-white/5 border-white/10 hover:bg-white/10'
-              }
-            `}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-white/90">{chain.name}</span>
-              <div className="flex items-center gap-2">
-                {chain.isCustom && (
-                  <button
-                    onClick={(e) => handleCheckIn(chain.id, e)}
-                    className={`
-                      w-6 h-6 rounded-full border-2 flex items-center justify-center
-                      transition-all
-                      ${isCompletedToday
-                        ? 'bg-blue-500 border-blue-500 text-white'
-                        : 'border-white/30 hover:border-blue-500'
-                      }
-                    `}
-                  >
-                    {isCompletedToday && <Check className="w-4 h-4" />}
-                  </button>
-                )}
-                {isActive && !chain.isCustom && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
-                    ✓
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-xl font-bold text-white">{chain.currentStreak}</span>
-              <span className="text-xs text-white/50">days</span>
-            </div>
-            <div className="flex gap-0.5">
-              {chain.weekData.map((completed, i) => (
-                <div
-                  key={i}
-                  className={`flex-1 h-1 rounded-full ${completed ? 'bg-blue-500' : 'bg-white/10'}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Expanded visualization */}
-          <AnimatePresence>
-            {isExpanded && chain.isCustom && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="bg-[#0c0a10] rounded-xl p-4 space-y-4 overflow-hidden"
-              >
-                <StreakViewSelector currentView={selectedVisualization} onViewChange={setSelectedVisualization} />
-                <div className="mt-4">
-                  {selectedVisualization === 'calendar' && (
-                    <CalendarGridView completions={completions} streak={chain} />
-                  )}
-                  {selectedVisualization === 'chain' && (
-                    <ChainLinksView completions={completions} streak={chain} />
-                  )}
-                  {selectedVisualization === 'circles' && (
-                    <CircleProgressView streak={chain} completions={completions} goal={chain.goal || 30} />
-                  )}
-                  {selectedVisualization === 'heatmap' && (
-                    <MiniHeatmapView completions={completions} weeks={12} />
-                  )}
-                  {selectedVisualization === 'stats' && (
-                    <StatsOverviewView streak={chain} completions={completions} />
-                  )}
-                </div>
-                <button
-                  onClick={(e) => handleDeleteStreak(chain.id, e)}
-                  className="w-full p-2 text-red-400 hover:bg-red-500/10 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Streak
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      );
-    }
-
-    // Cosmic mode - full visual experience with check-in
-    return (
-      <div key={chain.id} className="space-y-2">
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          onClick={() => chain.isCustom && setExpandedStreak(isExpanded ? null : chain.id)}
+        <div
+          key={chain.id}
+          onClick={handleCardClick}
           className={`
-            rounded-xl p-3 border cursor-pointer transition-colors
+            rounded-xl p-3 border transition-colors cursor-pointer
             ${isActive
-              ? `bg-gradient-to-br ${colorMap[chain.color]}/10 border-white/20`
+              ? 'bg-blue-500/10 border-blue-500/30'
               : 'bg-white/5 border-white/10 hover:bg-white/10'
             }
           `}
         >
-          {/* Header */}
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xl">{chain.icon}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{chain.icon}</span>
+              <span className="text-sm font-medium text-white/90">{chain.name}</span>
+            </div>
             <div className="flex items-center gap-2">
               {chain.isCustom && (
                 <button
                   onClick={(e) => handleCheckIn(chain.id, e)}
                   className={`
-                    w-7 h-7 rounded-full border-2 flex items-center justify-center
+                    w-6 h-6 rounded-full border-2 flex items-center justify-center
                     transition-all
                     ${isCompletedToday
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-purple-400 text-white'
-                      : 'border-white/30 hover:border-purple-500'
+                      ? 'bg-blue-500 border-blue-500 text-white'
+                      : 'border-white/30 hover:border-blue-500'
                     }
                   `}
                 >
@@ -739,90 +607,102 @@ export function MomentumChainsBoard() {
               )}
               {isActive && !chain.isCustom && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
-                  🔥
+                  ✓
                 </span>
               )}
             </div>
           </div>
-
-          {/* Name */}
-          <div className="text-sm font-medium text-white/90 mb-0.5">{chain.name}</div>
-
-          {/* Description */}
-          {chain.description && (
-            <div className="text-[10px] text-white/40 mb-2 line-clamp-1">{chain.description}</div>
-          )}
-
-          {/* Streak Count */}
           <div className="flex items-baseline gap-1 mb-2">
-            <span className="text-2xl font-bold text-white">{chain.currentStreak}</span>
+            <span className="text-xl font-bold text-white">{chain.currentStreak}</span>
             <span className="text-xs text-white/50">days</span>
-            {chain.goal && (
-              <span className="text-xs text-white/30 ml-1">/ {chain.goal}</span>
-            )}
           </div>
-
-          {/* Week Progress */}
           <div className="flex gap-0.5">
             {chain.weekData.map((completed, i) => (
               <div
                 key={i}
-                className={`
-                  flex-1 h-1 rounded-full
-                  ${completed
-                    ? `bg-gradient-to-r ${colorMap[chain.color]}`
-                    : 'bg-white/10'
-                  }
-                `}
+                className={`flex-1 h-1 rounded-full ${completed ? 'bg-blue-500' : 'bg-white/10'}`}
               />
             ))}
           </div>
-          <div className="flex items-center justify-between mt-1">
-            <div className="text-[10px] text-white/40">{weekCompletion}/7 this week</div>
+        </div>
+      );
+    }
+
+    // Cosmic mode - full visual experience with check-in
+    return (
+      <motion.div
+        key={chain.id}
+        whileHover={{ scale: 1.02 }}
+        onClick={handleCardClick}
+        className={`
+          rounded-xl p-3 border cursor-pointer transition-colors
+          ${isActive
+            ? `bg-gradient-to-br ${colorMap[chain.color]}/10 border-white/20`
+            : 'bg-white/5 border-white/10 hover:bg-white/10'
+          }
+        `}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xl">{chain.icon}</span>
+          <div className="flex items-center gap-2">
             {chain.isCustom && (
-              <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              <button
+                onClick={(e) => handleCheckIn(chain.id, e)}
+                className={`
+                  w-7 h-7 rounded-full border-2 flex items-center justify-center
+                  transition-all
+                  ${isCompletedToday
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-purple-400 text-white'
+                    : 'border-white/30 hover:border-purple-500'
+                  }
+                `}
+              >
+                {isCompletedToday && <Check className="w-4 h-4" />}
+              </button>
+            )}
+            {isActive && !chain.isCustom && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
+                🔥
+              </span>
             )}
           </div>
-        </motion.div>
+        </div>
 
-        {/* Expanded visualization */}
-        <AnimatePresence>
-          {isExpanded && chain.isCustom && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="cosmic-panel rounded-xl p-4 space-y-4 overflow-hidden border border-white/10"
-            >
-              <StreakViewSelector currentView={selectedVisualization} onViewChange={setSelectedVisualization} />
-              <div className="mt-4">
-                {selectedVisualization === 'calendar' && (
-                  <CalendarGridView completions={completions} streak={chain} />
-                )}
-                {selectedVisualization === 'chain' && (
-                  <ChainLinksView completions={completions} streak={chain} />
-                )}
-                {selectedVisualization === 'circles' && (
-                  <CircleProgressView streak={chain} completions={completions} goal={chain.goal || 30} />
-                )}
-                {selectedVisualization === 'heatmap' && (
-                  <MiniHeatmapView completions={completions} weeks={12} />
-                )}
-                {selectedVisualization === 'stats' && (
-                  <StatsOverviewView streak={chain} completions={completions} />
-                )}
-              </div>
-              <button
-                onClick={(e) => handleDeleteStreak(chain.id, e)}
-                className="w-full p-2 text-red-400 hover:bg-red-500/10 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Streak
-              </button>
-            </motion.div>
+        {/* Name */}
+        <div className="text-sm font-medium text-white/90 mb-0.5">{chain.name}</div>
+
+        {/* Description */}
+        {chain.description && (
+          <div className="text-[10px] text-white/40 mb-2 line-clamp-1">{chain.description}</div>
+        )}
+
+        {/* Streak Count */}
+        <div className="flex items-baseline gap-1 mb-2">
+          <span className="text-2xl font-bold text-white">{chain.currentStreak}</span>
+          <span className="text-xs text-white/50">days</span>
+          {chain.goal && (
+            <span className="text-xs text-white/30 ml-1">/ {chain.goal}</span>
           )}
-        </AnimatePresence>
-      </div>
+        </div>
+
+        {/* Week Progress */}
+        <div className="flex gap-0.5">
+          {chain.weekData.map((completed, i) => (
+            <div
+              key={i}
+              className={`
+                flex-1 h-1 rounded-full
+                ${completed
+                  ? `bg-gradient-to-r ${colorMap[chain.color]}`
+                  : 'bg-white/10'
+                }
+              `}
+            />
+          ))}
+        </div>
+        <div className="text-[10px] text-white/40 mt-1">{weekCompletion}/7 this week</div>
+      </motion.div>
     );
   };
 
@@ -938,6 +818,65 @@ export function MomentumChainsBoard() {
       {showAddModal && (
         <AddCustomStreakModal onClose={() => setShowAddModal(false)} />
       )}
+
+      {/* Streak Detail Modal */}
+      {selectedStreak && (
+        <StreakDetailModal
+          streak={selectedStreak}
+          completions={selectedStreak.isCustom ? getCompletionsForStreak(selectedStreak.id) : generateSystemStreakCompletions(selectedStreak)}
+          isOpen={!!selectedStreak}
+          onClose={() => setSelectedStreak(null)}
+          onCheckIn={selectedStreak.isCustom ? (streakId) => {
+            const today = new Date().toISOString().split('T')[0];
+            const isCompleted = isCompletedForDate(streakId, today);
+            if (isCompleted) {
+              feedback.taskUncomplete();
+              undoCompletion(streakId, today);
+            } else {
+              feedback.taskComplete({ celebrate: true });
+              logCompletion(streakId, today);
+            }
+          } : undefined}
+          onDelete={selectedStreak.isCustom ? async (streakId) => {
+            await deleteCustomStreak(streakId);
+            setSelectedStreak(null);
+          } : undefined}
+          isCompletedToday={selectedStreak.isCustom ? isCompletedForDate(selectedStreak.id, new Date().toISOString().split('T')[0]) : false}
+        />
+      )}
     </div>
   );
+}
+
+// Helper to generate completions for system-tracked streaks based on weekData
+function generateSystemStreakCompletions(streak: Chain): { streak_id: string; completed_date: string }[] {
+  const completions: { streak_id: string; completed_date: string }[] = [];
+  const today = new Date();
+
+  // Use weekData to generate recent completions
+  streak.weekData.forEach((completed, i) => {
+    if (completed) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - (6 - i));
+      completions.push({
+        streak_id: streak.id,
+        completed_date: date.toISOString().split('T')[0],
+      });
+    }
+  });
+
+  // Also generate completions based on current streak
+  // (going back from today for currentStreak days)
+  if (streak.currentStreak > 7) {
+    for (let i = 7; i < streak.currentStreak; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      completions.push({
+        streak_id: streak.id,
+        completed_date: date.toISOString().split('T')[0],
+      });
+    }
+  }
+
+  return completions;
 }

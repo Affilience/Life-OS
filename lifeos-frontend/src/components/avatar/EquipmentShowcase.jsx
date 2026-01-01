@@ -31,6 +31,7 @@ import {
   Plus
 } from 'lucide-react';
 import { WEAPON_ATTACKS } from '../../data/weaponAttacks';
+import { ABILITY_TYPES, getWeaponAbility } from '../../data/weaponAbilities';
 import { getAbilityById, ELEMENTAL_ABILITIES } from '../../data/elementalAbilities';
 import AbilityIcon from '../ui/AbilityIcon';
 
@@ -165,7 +166,11 @@ export default function EquipmentShowcase() {
 
   // Get equipped weapon for weapon ability display
   const equippedWeapon = getEquippedForSlot('mainHand');
-  const weaponAbility = equippedWeapon?.weaponType ? WEAPON_ATTACKS[equippedWeapon.weaponType] : null;
+  const equippedWeaponId = equipped['mainHand'];
+  // Use getWeaponAbility to get the unique ability, fallback to generic WEAPON_ATTACKS
+  const weaponAbility = equippedWeaponId
+    ? getWeaponAbility(equippedWeaponId, EQUIPMENT_DATABASE) || (equippedWeapon?.weaponType ? WEAPON_ATTACKS[equippedWeapon.weaponType] : null)
+    : null;
 
   // Get UNLOCKED abilities, filtered by element
   const getFilteredAbilities = () => {
@@ -465,7 +470,7 @@ export default function EquipmentShowcase() {
                 {weaponAbility ? '⚔️' : '🔒'}
               </div>
               <div className="text-xs font-bold truncate text-orange-400">
-                {weaponAbility ? weaponAbility.attackName : 'Weapon'}
+                {weaponAbility ? (weaponAbility.name || weaponAbility.attackName) : 'Weapon'}
               </div>
               {weaponAbility ? (
                 <>
@@ -965,7 +970,7 @@ function InventoryModal({
                         <div className="flex items-center gap-1 mb-1">
                           <Flame className="w-3 h-3 text-orange-400" />
                           <span className="text-[10px] font-bold text-orange-400">
-                            {WEAPON_ATTACKS[item.weaponType].attackName}
+                            {(item.ability && ABILITY_TYPES[item.ability]?.name) || WEAPON_ATTACKS[item.weaponType].attackName}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-1 text-[9px]">

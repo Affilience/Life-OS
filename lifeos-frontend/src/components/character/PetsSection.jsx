@@ -55,7 +55,7 @@ const PetsSection = ({ forceShow = false }) => {
   } = usePetStore();
 
   // Get gamification mode settings
-  const { mode, getTerm, isVisible, getPetName } = useGamificationModeStore();
+  const { mode, getTerm, isVisible } = useGamificationModeStore();
   // If forceShow is true (e.g., on dedicated Pets page), always show full UI
   const showPets = forceShow || isVisible('showPets');
   const showPetSprites = forceShow || isVisible('showPetSprites');
@@ -273,7 +273,7 @@ const PetsSection = ({ forceShow = false }) => {
 // Pet Slot Component
 function PetSlot({ petId, slotNumber, onSelect, onOpenCodex, forceShowSprites = false }) {
   const { equipPet, isPetActive } = usePetStore();
-  const { mode, isVisible, getPetName, getTerm } = useGamificationModeStore();
+  const { mode, isVisible, getTerm } = useGamificationModeStore();
   const showSprites = forceShowSprites || isVisible('showPetSprites');
 
   if (!petId) {
@@ -300,7 +300,7 @@ function PetSlot({ petId, slotNumber, onSelect, onOpenCodex, forceShowSprites = 
   if (!pet) return null;
 
   const tierColor = TIER_INFO[pet.tier].color;
-  const displayName = getPetName(petId);
+  const displayName = pet.name; // Use pet name directly from database
   const unequipLabel = getTerm('unequip');
 
   // Professional mode: show as icon-based booster card
@@ -541,10 +541,10 @@ function FilterButton({ active, onClick, label, color }) {
 // Pet Card in Codex
 function PetCard({ pet, unlocked, active, onClick, onEquip, forceShowSprites = false }) {
   const tierColor = TIER_INFO[pet.tier].color;
-  const { mode, isVisible, getPetName, getTerm } = useGamificationModeStore();
+  const { mode, isVisible, getTerm } = useGamificationModeStore();
   const showSprites = forceShowSprites || isVisible('showPetSprites');
 
-  const displayName = getPetName(pet.id);
+  const displayName = pet.name; // Use pet name directly from database
   const equipLabel = getTerm('equip');
 
   // Calculate stat contributions for this pet

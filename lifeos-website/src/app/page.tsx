@@ -24,7 +24,7 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-const LOADING_SHOWN_KEY = 'lifeos-loading-shown';
+const LOADING_SHOWN_KEY = 'ascnt-loading-shown';
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +34,14 @@ export default function Home() {
 
   // Check sessionStorage on mount and set up initial state
   useEffect(() => {
+    // Always scroll to top on page load/refresh
+    window.scrollTo(0, 0);
+
+    // Also reset scroll history to prevent browser from restoring position
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+
     const hasSeenLoading = sessionStorage.getItem(LOADING_SHOWN_KEY) === 'true';
 
     if (hasSeenLoading) {

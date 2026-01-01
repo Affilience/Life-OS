@@ -239,13 +239,13 @@ export function Features() {
             ref={titleRef}
             className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 features-title"
           >
-            Why LifeOS Actually Works
+            Why Ascnt Actually Works
           </h2>
           <p
             ref={subtitleRef}
             className="text-white/50 max-w-2xl mx-auto text-lg features-subtitle"
           >
-            Most habit apps get abandoned in 2 weeks. LifeOS is different — it's designed
+            Most habit apps get abandoned in 2 weeks. Ascnt is different — it's designed
             around how your brain actually works, not how productivity gurus think it should.
           </p>
         </div>

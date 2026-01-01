@@ -19,6 +19,7 @@ const recentXPGains = []; // Track recent XP gains to merge quick successive gai
 const NOTIFICATION_PRIORITY = {
   levelUp: 100,
   achievement: 80,
+  equipment: 75, // Equipment unlocks show after achievements but before streaks
   streak: 60,
   xp: 40,
   brokenStreak: 20,
@@ -51,6 +52,9 @@ export const useNotificationStore = create((set, get) => ({
 
   // Level up notification
   levelUpNotification: null,
+
+  // Equipment unlock notification (integrated with master queue)
+  currentEquipmentUnlock: null,
 
   // ==========================================
   // ACHIEVEMENT NOTIFICATIONS
@@ -296,6 +300,29 @@ export const useNotificationStore = create((set, get) => ({
   },
 
   // ==========================================
+  // EQUIPMENT UNLOCK NOTIFICATIONS
+  // ==========================================
+
+  // Add equipment unlock to master queue (called by unlockNotificationStore)
+  addEquipmentUnlockNotification: (item) => {
+    const timestamp = Date.now();
+    const notificationData = {
+      ...item,
+      timestamp,
+      notificationId: `equipment-${item.id}-${timestamp}`,
+    };
+
+    // Add to master queue
+    get()._addToMasterQueue('equipment', notificationData);
+  },
+
+  // Dismiss equipment unlock notification
+  dismissEquipmentUnlock: () => {
+    set({ currentEquipmentUnlock: null });
+    get()._onNotificationDismissed();
+  },
+
+  // ==========================================
   // MASTER QUEUE MANAGEMENT
   // ==========================================
 
@@ -336,6 +363,9 @@ export const useNotificationStore = create((set, get) => ({
       case 'achievement':
         set({ currentAchievement: next.data });
         break;
+      case 'equipment':
+        set({ currentEquipmentUnlock: next.data });
+        break;
       case 'streak':
         set({ streakCelebration: next.data });
         break;
@@ -371,6 +401,7 @@ export const useNotificationStore = create((set, get) => ({
       xpQueue: [],
       currentXP: null,
       levelUpNotification: null,
+      currentEquipmentUnlock: null,
       streakCelebration: null,
       brokenStreakNotification: null,
     });

@@ -21,9 +21,9 @@ export const useUnlockNotificationStore = create((set, get) => ({
   // Currently displayed notification
   current: null,
 
-  // Add an unlock notification to the queue
+  // Add an unlock notification - routes to main notification store for proper queueing
   // item should include: { ...itemData, type: 'equipment' | 'pet' }
-  addUnlock: (item, type = UNLOCK_TYPES.EQUIPMENT) => {
+  addUnlock: async (item, type = UNLOCK_TYPES.EQUIPMENT) => {
     // Deduplicate: Don't show the same item twice in one session
     const originalId = item.id;
     if (shownItemIds.has(originalId)) {
@@ -32,19 +32,27 @@ export const useUnlockNotificationStore = create((set, get) => ({
     }
     shownItemIds.add(originalId);
 
-    set(state => ({
-      queue: [...state.queue, {
-        ...item,
-        type: item.type || type, // Use item's type if provided, fallback to parameter
-        id: `${item.id}-${Date.now()}`, // Unique ID for animation keys
-        originalId, // Keep original for reference
-        timestamp: Date.now(),
-      }],
-    }));
+    const notificationItem = {
+      ...item,
+      type: item.type || type,
+      id: `${item.id}-${Date.now()}`,
+      originalId,
+      timestamp: Date.now(),
+    };
 
-    // If nothing is currently showing, show this one
-    if (!get().current) {
-      get().showNext();
+    // Route to main notification store for proper queueing with achievements
+    try {
+      const { useNotificationStore } = await import('./notificationStore');
+      useNotificationStore.getState().addEquipmentUnlockNotification(notificationItem);
+    } catch (err) {
+      console.error('[UnlockNotification] Failed to route to main notification store:', err);
+      // Fallback to own queue if main store fails
+      set(state => ({
+        queue: [...state.queue, notificationItem],
+      }));
+      if (!get().current) {
+        get().showNext();
+      }
     }
   },
 

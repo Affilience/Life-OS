@@ -97,10 +97,10 @@ export const Navbar = forwardRef<NavbarHandle, NavbarProps>(function Navbar({ vi
         {/* Logo */}
         <Link ref={logoRef} href="/" className="navbar-element flex items-center gap-2 group">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">L</span>
+            <span className="text-white font-bold text-sm">A</span>
           </div>
           <span className="text-white font-semibold text-lg group-hover:text-purple-400 transition-colors">
-            LifeOS
+            Ascnt
           </span>
         </Link>
 

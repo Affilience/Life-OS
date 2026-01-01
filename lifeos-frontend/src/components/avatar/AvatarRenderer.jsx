@@ -57,19 +57,10 @@ function setCachedPositions(positions) {
   }
 }
 
-// Load global positions from Supabase (cached)
+// Load global positions from Supabase - fetch ALL with pagination
 async function loadGlobalPositions() {
   // Return memory cache if available
   if (globalPositionsCache !== null) {
-    return globalPositionsCache;
-  }
-
-  // Try localStorage cache first (instant on mobile)
-  const cachedPositions = getCachedPositions();
-  if (cachedPositions && Object.keys(cachedPositions).length > 0) {
-    globalPositionsCache = cachedPositions;
-    // Still fetch from Supabase in background to update cache
-    fetchAndCachePositions();
     return globalPositionsCache;
   }
 
@@ -83,30 +74,43 @@ async function loadGlobalPositions() {
   globalPositionsLoading = true;
 
   try {
-    const { data, error } = await supabase
-      .from('equipment_default_positions')
-      .select('position_key, x, y, scale');
+    // Fetch ALL positions using pagination (Supabase limits to 1000 per request)
+    const allPositions = {};
+    let offset = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    if (error) {
-      console.error('[AvatarRenderer] Failed to load global positions:', error);
-      globalPositionsCache = cachedPositions || {};
-    } else if (data && data.length > 0) {
-      globalPositionsCache = {};
-      data.forEach(row => {
-        globalPositionsCache[row.position_key] = {
-          x: parseFloat(row.x),
-          y: parseFloat(row.y),
-          scale: parseFloat(row.scale)
-        };
-      });
-      // Cache to localStorage for instant mobile load
-      setCachedPositions(globalPositionsCache);
-    } else {
-      globalPositionsCache = {};
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('equipment_default_positions')
+        .select('position_key, x, y, scale')
+        .range(offset, offset + pageSize - 1);
+
+      if (error) {
+        console.error('[AvatarRenderer] Failed to load positions:', error);
+        break;
+      }
+
+      if (data && data.length > 0) {
+        data.forEach(row => {
+          allPositions[row.position_key] = {
+            x: parseFloat(row.x),
+            y: parseFloat(row.y),
+            scale: parseFloat(row.scale)
+          };
+        });
+        offset += data.length;
+        hasMore = data.length === pageSize;
+      } else {
+        hasMore = false;
+      }
     }
+
+    globalPositionsCache = allPositions;
+    console.log(`[AvatarRenderer] Loaded ${Object.keys(allPositions).length} positions`);
   } catch (err) {
     console.error('[AvatarRenderer] Error loading global positions:', err);
-    globalPositionsCache = cachedPositions || {};
+    globalPositionsCache = {};
   }
 
   globalPositionsLoading = false;
@@ -116,30 +120,6 @@ async function loadGlobalPositions() {
   globalPositionsListeners = [];
 
   return globalPositionsCache;
-}
-
-// Background fetch to update cache without blocking
-async function fetchAndCachePositions() {
-  try {
-    const { data, error } = await supabase
-      .from('equipment_default_positions')
-      .select('position_key, x, y, scale');
-
-    if (!error && data && data.length > 0) {
-      const newPositions = {};
-      data.forEach(row => {
-        newPositions[row.position_key] = {
-          x: parseFloat(row.x),
-          y: parseFloat(row.y),
-          scale: parseFloat(row.scale)
-        };
-      });
-      globalPositionsCache = newPositions;
-      setCachedPositions(newPositions);
-    }
-  } catch (err) {
-    // Silent fail - we already have cached data
-  }
 }
 
 // Helper to load an image with caching
@@ -270,7 +250,15 @@ export default function AvatarRenderer({
         return acc;
       }, {})
     : getEquippedItems();
-  const visualEquipment = isExternalAvatar ? equipped : getVisualEquipment();
+  // For external avatars, create visualEquipment in the expected format: { slot: { item, dye } }
+  const visualEquipment = isExternalAvatar
+    ? Object.entries(equipped || {}).reduce((acc, [slot, itemId]) => {
+        if (itemId && EQUIPMENT_DATABASE[itemId]) {
+          acc[slot] = { item: EQUIPMENT_DATABASE[itemId], dye: (externalDyeColors || {})[slot] || null };
+        }
+        return acc;
+      }, {})
+    : getVisualEquipment();
 
   // If avatar is hidden in current mode, show a minimal placeholder
   if (!showAvatar) {
@@ -496,6 +484,7 @@ export default function AvatarRenderer({
       }
       // Get saved position with gender/skin tone prefix or default
       const savedPos = getPositionWithFallback(positionKey);
+
       const defaultKey = slot === 'offHand'
         ? `shields_${shieldHand}`
         : slot === 'mainHand'
@@ -503,20 +492,18 @@ export default function AvatarRenderer({
           : folder;
       const defaultPos = DEFAULT_POSITIONS[defaultKey] || { x: 0, y: 0, scale: 1 };
 
-      let position;
+      const position = savedPos || defaultPos;
 
-      // For shields, prefer saved position with hand suffix, but don't force x if saved position exists
-      if (slot === 'offHand') {
-        if (savedPos) {
-          // Use saved position entirely - it was positioned correctly in EquipmentTest
-          position = savedPos;
-        } else {
-          // Use default with forced x for correct hand
-          const forcedX = shieldHand === 'left' ? 90 : 60;
-          position = { ...defaultPos, x: forcedX };
-        }
-      } else {
-        position = savedPos || defaultPos;
+      // Debug: log position lookup for all equipment (once per session)
+      if (!window._equipDebugDone) {
+        if (!window._equipDebugData) window._equipDebugData = [];
+        window._equipDebugData.push({
+          slot,
+          positionKey,
+          fullKey: `${genderKey}_${skinToneKey}_${positionKey}`,
+          hasSavedPos: !!savedPos,
+          position
+        });
       }
 
       equipmentToRender.push({
@@ -529,6 +516,13 @@ export default function AvatarRenderer({
         shieldHand: slot === 'offHand' ? shieldHand : null,
       });
     });
+
+    // Output debug data once
+    if (!window._equipDebugDone && window._equipDebugData?.length > 0) {
+      window._equipDebugDone = true;
+      console.log('[AvatarRenderer] Equipment position lookups:', window._equipDebugData);
+      console.log('[AvatarRenderer] Total positions loaded:', Object.keys(globalPositions).length);
+    }
 
     // Load base sprite and all equipment sprites in parallel
     let isCancelled = false;

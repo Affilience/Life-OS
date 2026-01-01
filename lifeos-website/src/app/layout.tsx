@@ -12,22 +12,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://lifeos.app"),
-  title: "LifeOS - Your Life as an RPG",
-  description: "The operating system for your life. Track productivity, health, finances, learning and goals — all connected, all gamified. Earn XP, level up your avatar, and watch yourself transform.",
-  keywords: ["life operating system", "gamified life tracker", "personal development RPG", "all-in-one life app", "productivity gamification", "self-improvement game", "life management", "AI life assistant"],
-  authors: [{ name: "LifeOS" }],
+  metadataBase: new URL("https://ascnt.app"),
+  title: "Ascnt - Level up your life",
+  description: "The gamified life operating system. Track productivity, health, finances, learning and goals — all connected, all gamified. Earn XP, level up your avatar, and watch yourself transform.",
+  keywords: ["life operating system", "gamified life tracker", "personal development RPG", "all-in-one life app", "productivity gamification", "self-improvement game", "life management", "AI life assistant", "level up your life"],
+  authors: [{ name: "Ascnt" }],
   openGraph: {
-    title: "LifeOS - Your Life as an RPG",
+    title: "Ascnt - Level up your life",
     description: "Productivity. Health. Finances. Learning. Goals. All connected. All gamified. Finally, an app that makes becoming your best self addictive.",
-    url: "https://lifeos.app",
-    siteName: "LifeOS",
+    url: "https://ascnt.app",
+    siteName: "Ascnt",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "LifeOS - Your Life as an RPG",
+        alt: "Ascnt - Level up your life",
       },
     ],
     locale: "en_GB",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LifeOS - Your Life as an RPG",
+    title: "Ascnt - Level up your life",
     description: "Productivity. Health. Finances. Learning. Goals. All connected. All gamified. Level up for real.",
     images: ["/og-image.png"],
   },
@@ -51,32 +51,32 @@ const jsonLd = {
   '@graph': [
     {
       '@type': 'WebSite',
-      '@id': 'https://lifeos.app/#website',
-      url: 'https://lifeos.app',
-      name: 'LifeOS',
-      description: 'The operating system for your life — fully gamified',
+      '@id': 'https://ascnt.app/#website',
+      url: 'https://ascnt.app',
+      name: 'Ascnt',
+      description: 'Level up your life — the gamified life operating system',
       publisher: {
-        '@id': 'https://lifeos.app/#organization',
+        '@id': 'https://ascnt.app/#organization',
       },
     },
     {
       '@type': 'Organization',
-      '@id': 'https://lifeos.app/#organization',
-      name: 'LifeOS',
-      url: 'https://lifeos.app',
+      '@id': 'https://ascnt.app/#organization',
+      name: 'Ascnt',
+      url: 'https://ascnt.app',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://lifeos.app/logo.svg',
+        url: 'https://ascnt.app/logo.svg',
       },
       sameAs: [],
     },
     {
       '@type': 'SoftwareApplication',
-      '@id': 'https://lifeos.app/#app',
-      name: 'LifeOS',
+      '@id': 'https://ascnt.app/#app',
+      name: 'Ascnt',
       applicationCategory: 'LifestyleApplication',
       operatingSystem: 'Web, iOS, Android',
-      description: 'The operating system for your life. Track productivity, health, finances, learning and goals — all connected, all gamified.',
+      description: 'Level up your life. Track productivity, health, finances, learning and goals — all connected, all gamified.',
       offers: {
         '@type': 'Offer',
         price: '0',
@@ -105,7 +105,7 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="canonical" href="https://lifeos.app" />
+        <link rel="canonical" href="https://ascnt.app" />
         {/* JSON-LD structured data */}
         <script
           type="application/ld+json"
@@ -124,7 +124,7 @@ export default function RootLayout({
                 window.scrollTo(0, 0);
 
                 // Show navbar immediately if returning visitor (we're now guaranteed to be at top)
-                if (sessionStorage.getItem('lifeos-loading-shown') === 'true') {
+                if (sessionStorage.getItem('ascnt-loading-shown') === 'true') {
                   document.documentElement.classList.add('returning-visitor');
                 }
               } catch (e) {}

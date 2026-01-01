@@ -412,7 +412,7 @@ export default function SkyrimPerkTree() {
       </div>
 
       {/* Tree indicator dots */}
-      <div className="absolute bottom-12 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+      <div className="absolute bottom-12 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 sm:gap-2">
         {treeKeys.map((key, index) => (
           <button
             key={key}
@@ -420,7 +420,7 @@ export default function SkyrimPerkTree() {
               setCurrentTreeIndex(index);
               setSelectedPerk(null);
             }}
-            className={`w-2 h-2 rounded-full transition-all ${
+            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all ${
               index === currentTreeIndex
                 ? 'bg-white scale-125'
                 : 'bg-white/30 hover:bg-white/50'
