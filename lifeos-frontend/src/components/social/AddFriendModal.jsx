@@ -3,7 +3,7 @@
  * Search for and send friend requests to other users
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X,
   Search,
@@ -16,7 +16,11 @@ import {
 import { useSocialStore } from '../../stores/socialStore';
 
 export default function AddFriendModal({ isOpen, onClose }) {
-  const { searchUsers, sendFriendRequest, sentRequests } = useSocialStore();
+  const sendFriendRequest = useSocialStore((state) => state.sendFriendRequest);
+  const sentRequests = useSocialStore((state) => state.sentRequests);
+
+  // Use ref to get stable reference to searchUsers (avoid re-triggering searches on store updates)
+  const searchUsersRef = useRef(useSocialStore.getState().searchUsers);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -24,22 +28,35 @@ export default function AddFriendModal({ isOpen, onClose }) {
   const [sendingTo, setSendingTo] = useState(null);
   const [sentTo, setSentTo] = useState([]);
 
-  // Debounced search
+  // Debounced search with race condition protection
+  // Only depends on searchQuery - NOT on store functions (to prevent re-searches when store updates)
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 2) {
       setSearchResults([]);
       return;
     }
 
+    // Track which request this is to prevent stale results
+    let isCancelled = false;
+
     const timeoutId = setTimeout(async () => {
       setSearching(true);
-      const results = await searchUsers(searchQuery);
-      setSearchResults(results);
-      setSearching(false);
+      // Use the ref to avoid dependency on store function reference
+      const results = await searchUsersRef.current(searchQuery);
+
+      // Only update results if this request wasn't cancelled
+      // This prevents older requests from overwriting newer results
+      if (!isCancelled) {
+        setSearchResults(results);
+        setSearching(false);
+      }
     }, 300);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, searchUsers]);
+    return () => {
+      clearTimeout(timeoutId);
+      isCancelled = true; // Mark this request as stale
+    };
+  }, [searchQuery]); // Only re-run when searchQuery changes
 
   const handleSendRequest = async (userId) => {
     setSendingTo(userId);
