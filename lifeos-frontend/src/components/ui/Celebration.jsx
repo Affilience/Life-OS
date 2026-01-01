@@ -538,7 +538,7 @@ export function AchievementToast({
   return createPortal(
     <div
       className={`
-        fixed top-4 left-1/2 -translate-x-1/2 z-[9999]
+        fixed top-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[9999]
         ${isVisible ? 'animate-achievement-enter' : 'animate-achievement-exit'}
       `}
     >

@@ -152,10 +152,10 @@ export default function GlobalNotifications() {
       <AnimatePresence>
         {brokenStreakNotification && streakAlertsEnabled && (
           <motion.div
-            initial={{ opacity: 0, y: -50, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: -50, x: '-50%' }}
-            className="fixed top-20 left-1/2 z-[9999] max-w-sm w-full mx-4"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[9999] sm:max-w-sm"
           >
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 border border-red-500/30 rounded-2xl p-4 shadow-2xl shadow-red-500/20">
               <div className="flex items-start gap-3">

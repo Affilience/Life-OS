@@ -344,7 +344,7 @@ export default function EquipmentUnlockToast() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] w-96 max-w-[95vw]"
+            className="fixed top-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[9999] sm:w-96 max-w-[calc(100vw-2rem)]"
             style={{ perspective: '1000px' }}
           >
             {/* 3D Flip Card Container */}
