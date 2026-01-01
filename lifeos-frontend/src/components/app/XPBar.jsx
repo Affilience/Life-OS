@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useGamificationModeStore } from '../../stores/gamificationModeStore';
 
 /**
- * ONYXOS XPBar Component
+ * Ascnd XPBar Component
  *
  * Global or domain-specific XP progress bar with neon afterglow animation.
  * Signature interaction: fills with gentle neon glow (1.2s) when XP is added.

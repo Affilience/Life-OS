@@ -1,4 +1,4 @@
-// ONYXOS UI Components
+// Ascnd UI Components
 // Centralized exports for easy importing
 
 export { default as Button } from './Button';

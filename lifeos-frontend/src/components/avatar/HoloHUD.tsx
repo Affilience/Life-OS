@@ -1,5 +1,5 @@
 /**
- * ONYXOS HoloHUD
+ * Ascnd HoloHUD
  * 2D overlay showing level, XP bar, and stats
  */
 

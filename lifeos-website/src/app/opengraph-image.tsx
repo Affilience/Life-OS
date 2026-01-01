@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'Ascnt - Level up your life';
+export const alt = 'Ascnd - Level up your life';
 export const size = {
   width: 1200,
   height: 630,
@@ -96,7 +96,7 @@ export default async function Image() {
               color: 'transparent',
             }}
           >
-            Ascnt
+            Ascnd
           </span>
         </div>
 

@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 
 /**
- * ONYXOS Progress Bar Component
+ * Ascnd Progress Bar Component
  *
  * Linear progress indicator with smooth animations.
  */

@@ -1,5 +1,5 @@
 /**
- * ONYXOS Holographic Avatar System
+ * Ascnd Holographic Avatar System
  * Type definitions for 3D avatar with reactive states
  */
 

@@ -5,7 +5,7 @@ import Button from '../ui/Button';
 import NotificationCenter from '../notifications/NotificationCenter';
 
 /**
- * ONYXOS TopBar
+ * Ascnd TopBar
  *
  * Premium top navigation bar with date, quick-add, search, and season indicator.
  * Mobile-responsive: shows hamburger menu on mobile to open sidebar drawer

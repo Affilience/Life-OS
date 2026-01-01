@@ -100,7 +100,7 @@ export const Navbar = forwardRef<NavbarHandle, NavbarProps>(function Navbar({ vi
             <span className="text-white font-bold text-sm">A</span>
           </div>
           <span className="text-white font-semibold text-lg group-hover:text-purple-400 transition-colors">
-            Ascnt
+            Ascnd
           </span>
         </Link>
 

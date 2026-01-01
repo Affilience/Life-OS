@@ -495,11 +495,11 @@ export function CTA() {
               <div className="flex-1">
                 <p
                   ref={quoteRef}
-                  data-text="&quot;Ascnt completely changed how I approach personal development. The gamification actually makes me excited to log my workouts and complete tasks.&quot;"
+                  data-text="&quot;Ascnd completely changed how I approach personal development. The gamification actually makes me excited to log my workouts and complete tasks.&quot;"
                   className="text-white/80 text-lg italic mb-4"
                   style={{ opacity: 0, minHeight: '3rem' }}
                 >
-                  "Ascnt completely changed how I approach personal development. The gamification
+                  "Ascnd completely changed how I approach personal development. The gamification
                   actually makes me excited to log my workouts and complete tasks."
                 </p>
 

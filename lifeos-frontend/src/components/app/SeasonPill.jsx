@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * ONYXOS SeasonPill Component
+ * Ascnd SeasonPill Component
  *
  * Displays the current season with dynamic accent colors.
  * Seasons rotate every 6-8 weeks and shift background gradients.

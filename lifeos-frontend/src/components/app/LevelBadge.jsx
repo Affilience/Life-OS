@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * ONYXOS LevelBadge Component
+ * Ascnd LevelBadge Component
  *
  * Displays user level with premium styling.
  * Can show as large hero element or compact inline badge.

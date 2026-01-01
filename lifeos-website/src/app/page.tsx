@@ -24,7 +24,7 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-const LOADING_SHOWN_KEY = 'ascnt-loading-shown';
+const LOADING_SHOWN_KEY = 'ascnd-loading-shown';
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);

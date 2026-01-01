@@ -37,7 +37,7 @@ const MODE_LABELS = {
 };
 
 /**
- * ONYXOS Sidebar
+ * Ascnd Sidebar
  *
  * Mobile-first responsive sidebar:
  * - Desktop (md+): Fixed sidebar at 280px width
@@ -104,7 +104,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <Sparkles size={18} className="text-white" />
               </div>
               <h1 className="text-xl font-bold text-text-high tracking-tighter">
-                Ascnt
+                Ascnd
               </h1>
             </div>
             {/* Close button (mobile only) */}

@@ -366,7 +366,7 @@ export function Modules() {
             className="text-lg text-white/50 max-w-xl mx-auto"
             style={{ opacity: DEV_DRAG_MODE ? 1 : 0 }}
           >
-            Your workout affects your focus. Your sleep affects your mood. Ascnt reveals the connections you'd never spot alone.
+            Your workout affects your focus. Your sleep affects your mood. Ascnd reveals the connections you'd never spot alone.
           </p>
         </div>
 

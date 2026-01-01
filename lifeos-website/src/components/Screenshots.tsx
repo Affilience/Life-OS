@@ -324,7 +324,7 @@ export function Screenshots() {
           >
             See{' '}
             <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Ascnt
+              Ascnd
             </span>{' '}
             in Action
           </h2>

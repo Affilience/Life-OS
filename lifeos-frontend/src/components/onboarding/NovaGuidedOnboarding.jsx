@@ -1649,7 +1649,7 @@ function SocialStep({ onContinue, onBack, onSkip, username, displayName }) {
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const inviteLink = import.meta.env.VITE_APP_URL || 'https://onyx-lifeos.vercel.app';
+  const inviteLink = import.meta.env.VITE_APP_URL || 'https://app.ascnd.app';
 
   // Send invite via edge function
   const handleInvite = async () => {

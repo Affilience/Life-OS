@@ -1,4 +1,4 @@
-// ONYXOS App-Specific Components
+// Ascnd App-Specific Components
 // Centralized exports for easy importing
 
 export { default as XPBar } from './XPBar';

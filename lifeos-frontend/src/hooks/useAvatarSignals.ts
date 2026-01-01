@@ -1,5 +1,5 @@
 /**
- * ONYXOS useAvatarSignals Hook
+ * Ascnd useAvatarSignals Hook
  * Manages avatar animation state and computed values
  */
 

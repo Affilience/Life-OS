@@ -243,7 +243,7 @@ export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
         ref={textRef}
         className="mt-8 text-2xl md:text-3xl font-bold tracking-wider"
       >
-        {'Ascnt'.split('').map((char, i) => (
+        {'Ascnd'.split('').map((char, i) => (
           <span
             key={i}
             className="letter inline-block opacity-0"

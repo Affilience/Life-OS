@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * ONYXOS StreakHeatmap Component
+ * Ascnd StreakHeatmap Component
  *
  * GitHub-style heatmap showing daily activity/consistency.
  * Displays last N days with intensity-based coloring.

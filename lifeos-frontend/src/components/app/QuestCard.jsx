@@ -3,7 +3,7 @@ import { CheckCircle2, Circle } from 'lucide-react';
 import Badge from '../ui/Badge';
 
 /**
- * ONYXOS QuestCard Component
+ * Ascnd QuestCard Component
  *
  * Interactive card for daily/weekly quests.
  * Shows XP value, difficulty, identity tag, and completion state.
