@@ -13,8 +13,8 @@
  * - Cinematic Dismantle (0.78-0.88): 3D exit with blur
  */
 
-import { useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useRef, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -24,46 +24,25 @@ if (typeof window !== 'undefined') {
 }
 
 // Screenshot data - curated selection for best visual impact
+// Mobile screenshots are separate images optimized for portrait view
 const screenshots = [
   {
-    id: 'dashboard',
-    title: 'Command Center',
-    subtitle: 'Dashboard',
-    description: 'Your unified hub for tracking progress across all life modules at a glance.',
+    id: 'nova',
+    title: 'Nova AI',
+    subtitle: 'Your AI Companion',
+    description: 'Get personalized insights and recommendations from your AI life coach.',
     image: '/assets/screenshots/dashboard.png',
+    mobileImage: '/assets/screenshots/mobile/nova.png',
     color: '#8b5cf6', // violet
   },
   {
-    id: 'character',
-    title: 'Your Hero',
-    subtitle: 'Character',
-    description: 'Watch your pixel art avatar evolve as you level up and unlock new equipment.',
+    id: 'modules',
+    title: 'Life Modules',
+    subtitle: 'Track Everything',
+    description: 'Eight interconnected modules to track every aspect of your life.',
     image: '/assets/screenshots/character.png',
+    mobileImage: '/assets/screenshots/mobile/modules.png',
     color: '#06b6d4', // cyan
-  },
-  {
-    id: 'equipment',
-    title: 'Gear Up',
-    subtitle: 'Equipment',
-    description: 'Equip powerful weapons, armor, and accessories to boost your stats.',
-    image: '/assets/screenshots/avatar-equipment.png',
-    color: '#a855f7', // purple
-  },
-  {
-    id: 'quests',
-    title: 'Daily Quests',
-    subtitle: 'Missions',
-    description: 'Complete daily quests, track your tasks, and earn XP for staying consistent.',
-    image: '/assets/screenshots/quests.png',
-    color: '#f59e0b', // amber
-  },
-  {
-    id: 'skills',
-    title: 'Skill Trees',
-    subtitle: 'Progression',
-    description: 'Unlock powerful perks and abilities as you master different skill trees.',
-    image: '/assets/screenshots/skills.png',
-    color: '#3b82f6', // blue
   },
   {
     id: 'streaks',
@@ -71,15 +50,8 @@ const screenshots = [
     subtitle: 'Daily Streaks',
     description: 'Build powerful habits with visual streak tracking that keeps you motivated.',
     image: '/assets/screenshots/streaks.png',
+    mobileImage: '/assets/screenshots/mobile/streaks.png',
     color: '#f97316', // orange
-  },
-  {
-    id: 'achievements',
-    title: 'Epic Achievements',
-    subtitle: 'Unlockables',
-    description: 'Unlock achievements as you progress and showcase your accomplishments.',
-    image: '/assets/screenshots/achievements.png',
-    color: '#10b981', // emerald
   },
   {
     id: 'bazaar',
@@ -87,7 +59,35 @@ const screenshots = [
     subtitle: 'Shop',
     description: 'Spend your hard-earned credits on gear, potions, and cosmetics.',
     image: '/assets/screenshots/bazaar.png',
+    mobileImage: '/assets/screenshots/mobile/bazaar.png',
     color: '#ec4899', // pink
+  },
+  {
+    id: 'boss',
+    title: 'Boss Battles',
+    subtitle: 'Epic Challenges',
+    description: 'Take on weekly boss battles and earn legendary rewards.',
+    image: '/assets/screenshots/quests.png',
+    mobileImage: '/assets/screenshots/mobile/boss.png',
+    color: '#ef4444', // red
+  },
+  {
+    id: 'pvp',
+    title: 'PvP Arena',
+    subtitle: 'Compete',
+    description: 'Challenge friends and climb the ranks in real-time battles.',
+    image: '/assets/screenshots/skills.png',
+    mobileImage: '/assets/screenshots/mobile/pvp.png',
+    color: '#f59e0b', // amber
+  },
+  {
+    id: 'leaderboard',
+    title: 'Leaderboards',
+    subtitle: 'Rankings',
+    description: 'See how you stack up against the community on global leaderboards.',
+    image: '/assets/screenshots/achievements.png',
+    mobileImage: '/assets/screenshots/mobile/leaderboard.png',
+    color: '#10b981', // emerald
   },
 ];
 
@@ -96,29 +96,66 @@ export function Screenshots() {
   const horizontalRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const touchStartX = useRef<number>(0);
+
+  // Handle swipe gestures on mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+
+    if (Math.abs(diff) > 50) { // Minimum swipe distance
+      if (diff > 0) {
+        // Swipe left - next
+        setCurrentIndex(prev => (prev + 1) % screenshots.length);
+      } else {
+        // Swipe right - previous
+        setCurrentIndex(prev => (prev - 1 + screenshots.length) % screenshots.length);
+      }
+    }
+  };
 
   useEffect(() => {
-    if (!sectionRef.current || !horizontalRef.current || typeof window === 'undefined') return;
+    if (!sectionRef.current || typeof window === 'undefined') return;
 
     const section = sectionRef.current;
     const horizontal = horizontalRef.current;
     const isMobile = window.innerWidth < 768;
 
-    // On mobile, show content immediately without pinned scrolling
+    // On mobile, use scroll-based carousel progression (like Gamification)
     if (isMobile) {
-      if (titleRef.current) titleRef.current.style.opacity = '1';
-      if (subtitleRef.current) subtitleRef.current.style.opacity = '1';
-      horizontal.style.opacity = '1';
-      horizontal.style.transform = 'none';
+      const handleScroll = () => {
+        if (!section) return;
+        const rect = section.getBoundingClientRect();
+        const sectionHeight = section.offsetHeight;
+        const viewportHeight = window.innerHeight;
 
-      // Show all cards
-      const cards = horizontal.querySelectorAll('.screenshot-card');
-      cards.forEach((card) => {
-        (card as HTMLElement).style.opacity = '1';
-        (card as HTMLElement).style.transform = 'none';
-      });
-      return;
+        // Calculate how far through the section we've scrolled
+        const scrollProgress = Math.max(0, Math.min(1,
+          (viewportHeight - rect.top) / (sectionHeight + viewportHeight)
+        ));
+
+        // Map scroll progress to carousel index
+        const newIndex = Math.min(
+          screenshots.length - 1,
+          Math.floor(scrollProgress * screenshots.length)
+        );
+
+        setCurrentIndex(newIndex);
+      };
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      handleScroll(); // Initial call
+
+      return () => window.removeEventListener('scroll', handleScroll);
     }
+
+    if (!horizontal) return;
 
     const ctx = gsap.context(() => {
       // Calculate scroll distance for horizontal movement
@@ -298,10 +335,10 @@ export function Screenshots() {
     <section
       id="screenshots"
       ref={sectionRef}
-      className="relative min-h-screen overflow-hidden"
+      className="hidden md:block relative min-h-screen overflow-hidden"
     >
-      {/* Ambient Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Ambient Background - hidden on mobile */}
+      <div className="hidden md:block absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-1/3 left-1/4 w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[150px]"
           animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.15, 0.1] }}
@@ -319,8 +356,7 @@ export function Screenshots() {
         <div className="text-center px-8 mb-6">
           <h2
             ref={titleRef}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
-            style={{ opacity: 0 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 opacity-100 md:opacity-0"
           >
             See{' '}
             <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
@@ -330,24 +366,23 @@ export function Screenshots() {
           </h2>
           <p
             ref={subtitleRef}
-            className="text-white/50 text-lg max-w-xl mx-auto"
-            style={{ opacity: 0 }}
+            className="text-white/50 text-lg max-w-xl mx-auto opacity-100 md:opacity-0"
           >
             Scroll to explore every corner of your new personal operating system
           </p>
         </div>
 
-        {/* Horizontal Scroll Container - Positioned higher, vertical on mobile */}
-        <div className="flex-1 flex items-start pt-4 overflow-hidden md:overflow-visible w-full" style={{ perspective: '1200px' }}>
+        {/* Desktop: Horizontal Scroll Container */}
+        <div className="hidden md:flex flex-1 items-start pt-4 overflow-visible w-full" style={{ perspective: '1200px' }}>
           <div
             ref={horizontalRef}
-            className="flex flex-col md:flex-row gap-8 px-4 md:pl-8 md:pr-[50vw] w-full md:w-auto"
+            className="flex flex-row gap-8 pl-8 pr-[50vw] w-auto"
             style={{ opacity: 0, willChange: 'transform', transformStyle: 'preserve-3d' }}
           >
             {screenshots.map((screenshot, index) => (
               <div
                 key={screenshot.id}
-                className="screenshot-card flex-shrink-0 w-full md:w-[65vw] lg:w-[55vw] max-w-[950px]"
+                className="screenshot-card flex-shrink-0 w-[65vw] lg:w-[55vw] max-w-[950px]"
               >
                 <div className="screenshot-inner relative">
                   {/* Screenshot Frame - Clean, no browser chrome */}
@@ -388,8 +423,95 @@ export function Screenshots() {
                 </div>
               </div>
             ))}
-
           </div>
+        </div>
+
+        {/* Mobile: Carousel with phone screenshots */}
+        <div
+          ref={mobileContainerRef}
+          className="md:hidden flex flex-col items-center px-4 w-full pb-8 min-h-[70vh]"
+        >
+          <AnimatePresence mode="wait">
+            {screenshots.map((screenshot, index) => {
+              if (index !== currentIndex) return null;
+
+              return (
+                <motion.div
+                  key={screenshot.id}
+                  className="w-full max-w-[240px]"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Phone Frame */}
+                  <div
+                    className="relative rounded-[2rem] overflow-hidden border-4 border-white/20 shadow-2xl bg-black"
+                    style={{
+                      boxShadow: `0 0 60px ${screenshot.color}30, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
+                    }}
+                  >
+                    {/* Notch */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-b-xl z-10" />
+
+                    {/* Screenshot Image */}
+                    <div className="aspect-[9/19] bg-[#0d0a14] overflow-hidden">
+                      <img
+                        src={screenshot.mobileImage}
+                        alt={screenshot.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Content below phone */}
+                  <div className="mt-4 text-center">
+                    <div
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-2"
+                      style={{ background: `${screenshot.color}15`, border: `1px solid ${screenshot.color}30` }}
+                    >
+                      <span className="font-bold text-sm" style={{ color: screenshot.color }}>
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <span className="text-white/60 text-xs">{screenshot.subtitle}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-1">{screenshot.title}</h3>
+                    <p className="text-white/50 text-xs">{screenshot.description}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+
+          {/* Mobile Navigation */}
+          <div className="flex items-center justify-center gap-4 mt-4">
+            <button
+              onClick={() => setCurrentIndex(prev => (prev - 1 + screenshots.length) % screenshots.length)}
+              className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
+              ←
+            </button>
+            <div className="flex gap-2">
+              {screenshots.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentIndex(i)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    i === currentIndex
+                      ? 'bg-purple-500 scale-150'
+                      : 'bg-white/30'
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentIndex(prev => (prev + 1) % screenshots.length)}
+              className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
+              →
+            </button>
+          </div>
+          <p className="text-white/40 text-xs mt-2">{currentIndex + 1} of {screenshots.length}</p>
         </div>
 
       </div>

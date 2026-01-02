@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { animate } from 'animejs';
 
 interface LoadingScreenProps {
@@ -10,72 +10,55 @@ interface LoadingScreenProps {
 
 export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
   const [phase, setPhase] = useState<'drawing' | 'text' | 'hold' | 'transition' | 'complete'>('drawing');
-  const svgRef = useRef<SVGSVGElement>(null);
+  const logoRef = useRef<HTMLImageElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const logoContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!svgRef.current) return;
+    if (!logoRef.current || !glowRef.current) return;
 
-    const svg = svgRef.current;
-    const logoA = svg.querySelector('#logo-a') as SVGPathElement;
-    const logoOrbit = svg.querySelector('#logo-orbit') as SVGEllipseElement;
-    const logoDot = svg.querySelector('#logo-dot') as SVGCircleElement;
-    const logoAccent = svg.querySelector('#logo-accent') as SVGPathElement;
+    const logo = logoRef.current;
+    const glow = glowRef.current;
 
-    if (!logoA || !logoOrbit || !logoDot || !logoAccent) return;
-
-    // Get path lengths for stroke animation
-    const aLength = logoA.getTotalLength();
-    const orbitLength = logoOrbit.getTotalLength();
-    const accentLength = logoAccent.getTotalLength();
-
-    // Set initial state - paths hidden
-    logoA.style.strokeDasharray = `${aLength}`;
-    logoA.style.strokeDashoffset = `${aLength}`;
-    logoOrbit.style.strokeDasharray = `${orbitLength}`;
-    logoOrbit.style.strokeDashoffset = `${orbitLength}`;
-    logoAccent.style.strokeDasharray = `${accentLength}`;
-    logoAccent.style.strokeDashoffset = `${accentLength}`;
-    logoDot.style.opacity = '0';
-    logoDot.style.transform = 'scale(0)';
+    // Set initial state
+    logo.style.opacity = '0';
+    logo.style.transform = 'scale(0.8)';
+    glow.style.opacity = '0';
+    glow.style.transform = 'scale(0.5)';
 
     // Animation sequence
     const runAnimations = async () => {
-      // Phase 1: Draw the A
-      animate(logoA, {
-        strokeDashoffset: [aLength, 0],
+      // Phase 1: Glow appears and expands
+      animate(glow, {
+        opacity: [0, 0.6],
+        scale: [0.5, 1.2],
+        duration: 600,
+        easing: 'easeOutQuad',
+      });
+
+      await new Promise(r => setTimeout(r, 200));
+
+      // Phase 2: Logo fades in and scales up
+      animate(logo, {
+        opacity: [0, 1],
+        scale: [0.8, 1],
         duration: 800,
-        easing: 'easeInOutQuad',
+        easing: 'easeOutBack',
       });
 
       await new Promise(r => setTimeout(r, 400));
 
-      // Phase 2: Draw the orbit
-      animate(logoOrbit, {
-        strokeDashoffset: [orbitLength, 0],
+      // Phase 3: Glow pulses
+      animate(glow, {
+        opacity: [0.6, 0.3, 0.5],
+        scale: [1.2, 1.0, 1.1],
         duration: 1000,
         easing: 'easeInOutQuad',
       });
 
-      await new Promise(r => setTimeout(r, 300));
-
-      // Phase 3: Draw accent and show dot
-      animate(logoAccent, {
-        strokeDashoffset: [accentLength, 0],
-        duration: 400,
-        easing: 'easeOutQuad',
-      });
-
-      animate(logoDot, {
-        opacity: [0, 1],
-        scale: [0, 1],
-        duration: 400,
-        easing: 'easeOutBack',
-      });
-
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 400));
 
       // Phase 4: Show text
       setPhase('text');
@@ -179,63 +162,21 @@ export function LoadingScreen({ onComplete, onLogoReady }: LoadingScreenProps) {
     >
       {/* Logo Container - animates separately */}
       <div ref={logoContainerRef} className="flex flex-col items-center">
-        {/* Logo SVG */}
-        <svg
-          ref={svgRef}
-          viewBox="0 0 200 200"
-          className="w-32 h-32 md:w-40 md:h-40"
-        >
-          <defs>
-            <linearGradient id="loadingLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#a78bfa"/>
-              <stop offset="100%" stopColor="#22d3ee"/>
-            </linearGradient>
-          </defs>
-
-          {/* Main A shape */}
-          <path
-            id="logo-a"
-            d="M50 140 L100 40 L150 140 M70 105 L130 105"
-            fill="none"
-            stroke="url(#loadingLogoGradient)"
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* Glow effect behind logo */}
+        <div className="relative">
+          <div
+            ref={glowRef}
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500/40 via-purple-500/30 to-cyan-500/40 blur-3xl"
+            style={{ width: '160px', height: '160px', left: '-20px', top: '0' }}
           />
-
-          {/* Orbital ring around the A */}
-          <ellipse
-            id="logo-orbit"
-            cx="100"
-            cy="100"
-            rx="70"
-            ry="30"
-            fill="none"
-            stroke="url(#loadingLogoGradient)"
-            strokeWidth="3"
-            transform="rotate(-30 100 100)"
+          {/* Logo Image */}
+          <img
+            ref={logoRef}
+            src="/logo.png"
+            alt="Ascnd Logo"
+            className="relative w-32 h-auto md:w-36 drop-shadow-[0_0_25px_rgba(167,139,250,0.5)]"
           />
-
-          {/* Accent dot on orbit */}
-          <circle
-            id="logo-dot"
-            cx="165"
-            cy="85"
-            r="6"
-            fill="#22d3ee"
-          />
-
-          {/* Inner corner accent */}
-          <path
-            id="logo-accent"
-            d="M75 125 L75 115 L85 115"
-            fill="none"
-            stroke="#22d3ee"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        </div>
       </div>
 
       {/* Brand text */}

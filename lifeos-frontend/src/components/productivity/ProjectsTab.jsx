@@ -619,7 +619,7 @@ export default function ProjectsTab() {
 
       {/* Create/Edit Project Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto" onClick={handleCloseModal}>
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4 overflow-y-auto" onClick={handleCloseModal}>
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
           <div
             className="relative w-full max-w-lg bg-[#1a1724] border border-white/10 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"

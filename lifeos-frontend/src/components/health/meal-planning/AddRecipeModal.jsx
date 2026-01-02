@@ -135,7 +135,7 @@ export default function AddRecipeModal({ onClose, editRecipe = null }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4 overflow-y-auto">
       <div className="bg-[#1a1724] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">

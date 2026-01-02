@@ -120,25 +120,35 @@ export function Modules() {
 
     // On mobile, show content immediately without pinned scrolling
     if (isMobile) {
-      if (titleRef.current) {
-        const words = titleRef.current.querySelectorAll('.title-word');
-        words.forEach((word) => {
-          (word as HTMLElement).style.opacity = '1';
-          (word as HTMLElement).style.transform = 'none';
-        });
-      }
-      if (subtitleRef.current) subtitleRef.current.style.opacity = '1';
-      if (hubRef.current) {
-        hubRef.current.style.opacity = '1';
-        hubRef.current.style.transform = 'none';
-      }
-      moduleRefs.current.forEach((mod) => {
-        if (mod) {
-          mod.style.opacity = '1';
-          mod.style.transform = 'none';
+      const initMobile = () => {
+        if (titleRef.current) {
+          const words = titleRef.current.querySelectorAll('.title-word');
+          words.forEach((word) => {
+            (word as HTMLElement).style.opacity = '1';
+            (word as HTMLElement).style.transform = 'none';
+          });
         }
-      });
-      return;
+        if (subtitleRef.current) subtitleRef.current.style.opacity = '1';
+        if (hubRef.current) {
+          hubRef.current.style.opacity = '1';
+          hubRef.current.style.transform = 'none';
+        }
+        moduleRefs.current.forEach((mod) => {
+          if (mod) {
+            mod.style.opacity = '1';
+            mod.style.transform = 'none';
+          }
+        });
+      };
+
+      // Double RAF + small delay ensures DOM is fully settled after hydration
+      const timer = setTimeout(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(initMobile);
+        });
+      }, 50);
+
+      return () => clearTimeout(timer);
     }
 
     const ctx = gsap.context(() => {
@@ -371,7 +381,7 @@ export function Modules() {
         </div>
 
         {/* Constellation Container - scaled down on mobile, extra height for labels */}
-        <div className="relative scale-50 md:scale-75 lg:scale-100 origin-center -mt-8" style={{ width: RADIUS * 2 + 200, height: RADIUS * 2 + 280 }}>
+        <div className="relative scale-50 md:scale-[0.65] lg:scale-[0.8] origin-center -mt-32 md:-mt-44" style={{ width: RADIUS * 2 + 200, height: RADIUS * 2 + 280 }}>
           {/* SVG for connection lines */}
           <svg
             className="absolute inset-0 w-full h-full"

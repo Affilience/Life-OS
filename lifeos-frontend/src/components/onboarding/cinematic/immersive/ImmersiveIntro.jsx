@@ -192,7 +192,7 @@ export default function ImmersiveIntro({
   }, []);
 
   // Title characters
-  const titleText = 'Ascynt';
+  const titleText = 'Ascnd';
   const titleChars = titleText.split('');
 
   return (
@@ -204,62 +204,11 @@ export default function ImmersiveIntro({
         {/* Animated Logo */}
         <div className="logo-container" style={{ perspective: '1200px' }}>
           <div ref={logoRef} className="logo-wrapper" style={{ opacity: 0, transformStyle: 'preserve-3d' }}>
-            <svg viewBox="0 0 200 200" className="quanta-logo" fill="none">
-              {/* Outer orbital ring */}
-              <circle
-                cx="100" cy="100" r="90"
-                stroke="url(#introGradient1)"
-                strokeWidth="1.5"
-                opacity="0.6"
-              />
-
-              {/* Inner orbital ring */}
-              <circle
-                cx="100" cy="100" r="70"
-                stroke="url(#introGradient2)"
-                strokeWidth="1"
-                opacity="0.4"
-              />
-
-              {/* Q letter - main body */}
-              <circle
-                cx="100" cy="95" r="35"
-                stroke="url(#introGradient3)"
-                strokeWidth="6"
-                strokeLinecap="round"
-              />
-
-              {/* Q letter - tail */}
-              <path
-                d="M 120 115 L 145 145"
-                stroke="url(#introGradient3)"
-                strokeWidth="6"
-                strokeLinecap="round"
-              />
-
-              {/* Orbital dots */}
-              <circle cx="100" cy="10" r="4" fill="#a855f7" />
-              <circle cx="190" cy="100" r="3" fill="#ec4899" />
-              <circle cx="100" cy="190" r="4" fill="#3b82f6" />
-              <circle cx="10" cy="100" r="3" fill="#a855f7" />
-
-              {/* Gradients */}
-              <defs>
-                <linearGradient id="introGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#a855f7" />
-                  <stop offset="100%" stopColor="#ec4899" />
-                </linearGradient>
-                <linearGradient id="introGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#a855f7" />
-                </linearGradient>
-                <linearGradient id="introGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="50%" stopColor="#c4b5fd" />
-                  <stop offset="100%" stopColor="#a855f7" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <img
+              src="/logo.png"
+              alt="Ascnd"
+              className="ascnd-logo"
+            />
           </div>
 
           {/* Logo glow effect */}
@@ -321,11 +270,15 @@ export default function ImmersiveIntro({
         .logo-wrapper {
           width: 100%;
           height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .quanta-logo {
+        .ascnd-logo {
           width: 100%;
-          height: 100%;
+          height: auto;
+          filter: drop-shadow(0 0 30px rgba(167, 139, 250, 0.5));
         }
 
         .logo-glow {

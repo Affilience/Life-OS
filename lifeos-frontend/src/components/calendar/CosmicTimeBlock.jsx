@@ -185,7 +185,7 @@ export default function CosmicTimeBlock({ block, heightMultiplier = 1, onEdit })
             </div>
           )}
 
-          {block.tags.length > 0 && (
+          {block.tags?.length > 0 && (
             <span className="text-xs text-zinc-600 truncate">
               #{block.tags[0]}
             </span>

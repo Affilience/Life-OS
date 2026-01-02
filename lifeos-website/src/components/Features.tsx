@@ -93,15 +93,25 @@ export function Features() {
 
     // On mobile, show content immediately without pinned scrolling
     if (isMobile) {
-      if (titleRef.current) titleRef.current.style.opacity = '1';
-      if (subtitleRef.current) subtitleRef.current.style.opacity = '1';
-      cardRefs.current.forEach((card) => {
-        if (card) {
-          card.style.opacity = '1';
-          card.style.transform = 'none';
-        }
-      });
-      return;
+      const initMobile = () => {
+        if (titleRef.current) titleRef.current.style.opacity = '1';
+        if (subtitleRef.current) subtitleRef.current.style.opacity = '1';
+        cardRefs.current.forEach((card) => {
+          if (card) {
+            card.style.opacity = '1';
+            card.style.transform = 'none';
+          }
+        });
+      };
+
+      // Double RAF + small delay ensures DOM is fully settled after hydration
+      const timer = setTimeout(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(initMobile);
+        });
+      }, 50);
+
+      return () => clearTimeout(timer);
     }
 
     const ctx = gsap.context(() => {

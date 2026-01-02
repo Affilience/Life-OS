@@ -65,6 +65,14 @@ const PET_POSITIONS = [
   { x: 170, y: 170 },    // Bottom-right (moved left to avoid stats)
 ];
 
+// Mobile pet positions - 4 pets in corners, wider spacing for avatar
+const MOBILE_PET_POSITIONS = [
+  { x: -110, y: -100 },   // Top-left
+  { x: 110, y: -100 },    // Top-right
+  { x: -110, y: 100 },    // Bottom-left
+  { x: 110, y: 100 },     // Bottom-right
+];
+
 // Starting positions for equipment spiral-in
 const getEquipmentStartPosition = (index: number, total: number) => {
   const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
@@ -83,6 +91,7 @@ export function CharacterReveal() {
   const avatarRef = useRef<HTMLDivElement>(null);
   const equipmentRefs = useRef<(HTMLDivElement | null)[]>([]);
   const petRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const mobilePetRefs = useRef<(HTMLDivElement | null)[]>([]);
   const statBarsRef = useRef<HTMLDivElement>(null);
   const statBarFillRefs = useRef<(HTMLDivElement | null)[]>([]);
   const xpBarRef = useRef<HTMLDivElement>(null);
@@ -95,56 +104,126 @@ export function CharacterReveal() {
     const section = sectionRef.current;
     const isMobile = window.innerWidth < 768;
 
-    // On mobile, show content immediately without pinned scrolling
+    // On mobile, use GSAP animations without scroll-triggered pinning
     if (isMobile) {
-      if (titleRef.current) {
-        const words = titleRef.current.querySelectorAll('.title-word');
-        words.forEach((word) => {
-          (word as HTMLElement).style.opacity = '1';
-          (word as HTMLElement).style.transform = 'none';
+      const mobileCtx = gsap.context(() => {
+        const tl = gsap.timeline({ delay: 0.2 });
+
+        // Title words animate in
+        if (titleRef.current) {
+          const words = titleRef.current.querySelectorAll('.title-word');
+          tl.to(words, {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            stagger: 0.1,
+            ease: 'back.out(1.7)',
+          }, 0);
+        }
+
+        // Subtitle fades in
+        if (subtitleRef.current) {
+          tl.to(subtitleRef.current, {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            ease: 'power3.out',
+          }, 0.2);
+        }
+
+        // XP bar appears
+        if (xpBarRef.current) {
+          tl.to(xpBarRef.current, {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            ease: 'power3.out',
+          }, 0.3);
+        }
+
+        if (xpFillRef.current) {
+          tl.to(xpFillRef.current, {
+            width: '73%',
+            duration: 0.6,
+            ease: 'power2.out',
+          }, 0.4);
+        }
+
+        // Avatar zooms in
+        if (avatarRef.current) {
+          tl.to(avatarRef.current, {
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            duration: 0.5,
+            ease: 'power2.out',
+          }, 0.3);
+        }
+
+        // Set initial states for equipment and pets
+        equipmentRefs.current.forEach((ref) => {
+          if (ref) gsap.set(ref, { opacity: 0, scale: 0.5 });
         });
-      }
-      if (subtitleRef.current) {
-        subtitleRef.current.style.opacity = '1';
-        subtitleRef.current.style.transform = 'none';
-      }
-      if (avatarRef.current) {
-        avatarRef.current.style.opacity = '1';
-        avatarRef.current.style.transform = 'none';
-        avatarRef.current.style.filter = 'none';
-      }
-      equipmentRefs.current.forEach((ref) => {
-        if (ref) {
-          ref.style.opacity = '1';
-          ref.style.transform = 'none';
+        mobilePetRefs.current.forEach((ref) => {
+          if (ref) gsap.set(ref, { opacity: 0, scale: 0.5 });
+        });
+
+        // Equipment and pets animate in together
+        equipmentRefs.current.forEach((ref, index) => {
+          if (ref) {
+            tl.to(ref, {
+              opacity: 1,
+              scale: 1,
+              duration: 0.4,
+              ease: 'back.out(1.4)',
+            }, 0.4 + index * 0.05);
+          }
+        });
+
+        // Mobile pets animate in sync with equipment
+        mobilePetRefs.current.forEach((ref, index) => {
+          if (ref) {
+            tl.to(ref, {
+              opacity: 1,
+              scale: 1,
+              duration: 0.4,
+              ease: 'back.out(1.4)',
+            }, 0.4 + index * 0.05);
+          }
+        });
+
+        // Stat bars appear
+        if (statBarsRef.current) {
+          tl.to(statBarsRef.current, {
+            opacity: 1,
+            x: 0,
+            duration: 0.4,
+            ease: 'power3.out',
+          }, 0.6);
         }
-      });
-      petRefs.current.forEach((ref) => {
-        if (ref) {
-          ref.style.opacity = '1';
+
+        statBarFillRefs.current.forEach((ref, index) => {
+          if (ref) {
+            tl.to(ref, {
+              width: `${STAT_BARS[index].value}%`,
+              duration: 0.5,
+              ease: 'power2.out',
+            }, 0.7 + index * 0.05);
+          }
+        });
+
+        // Quick stats fade in
+        if (statsRef.current) {
+          tl.to(statsRef.current, {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            ease: 'power3.out',
+          }, 0.8);
         }
-      });
-      if (statBarsRef.current) {
-        statBarsRef.current.style.opacity = '1';
-        statBarsRef.current.style.transform = 'none';
-      }
-      statBarFillRefs.current.forEach((ref, i) => {
-        if (ref) {
-          ref.style.width = `${STAT_BARS[i].value}%`;
-        }
-      });
-      if (xpBarRef.current) {
-        xpBarRef.current.style.opacity = '1';
-        xpBarRef.current.style.transform = 'none';
-      }
-      if (xpFillRef.current) {
-        xpFillRef.current.style.width = '73%';
-      }
-      if (statsRef.current) {
-        statsRef.current.style.opacity = '1';
-        statsRef.current.style.transform = 'none';
-      }
-      return;
+      }, section);
+
+      return () => mobileCtx.revert();
     }
 
     const ctx = gsap.context(() => {
@@ -271,8 +350,8 @@ export function CharacterReveal() {
       // XP bar appears after title (0.06-0.15)
       if (xpBarRef.current) {
         tl.fromTo(xpBarRef.current,
-          { opacity: 0, y: -30, xPercent: -50, x: -20 },
-          { opacity: 1, y: 0, xPercent: -50, x: -20, duration: 0.08, ease: 'power3.out' },
+          { opacity: 0, y: -30 },
+          { opacity: 1, y: 0, duration: 0.08, ease: 'power3.out' },
           0.06
         );
       }
@@ -434,9 +513,9 @@ export function CharacterReveal() {
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
       />
 
-      <div className="container-wide relative z-10 min-h-screen flex flex-col items-center justify-center py-16 overflow-visible">
+      <div className="container-wide relative z-10 min-h-screen flex flex-col items-center justify-center pt-32 pb-16 md:py-16 overflow-visible">
         {/* Title Section */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-4 md:mb-8">
           <h2
             ref={titleRef}
             className="text-4xl md:text-5xl lg:text-6xl font-bold mb-3 perspective-1000"
@@ -464,18 +543,18 @@ export function CharacterReveal() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex flex-col items-center gap-8 relative lg:-translate-x-[100px]">
-          {/* XP Bar - Positioned above character area, hidden on mobile */}
+        <div className="flex flex-col items-center gap-4 md:gap-8 relative mt-8 md:mt-0 lg:-translate-x-[100px]">
+          {/* XP Bar - Positioned above character area */}
           <div
             ref={xpBarRef}
-            className="hidden md:block absolute -top-4 w-[300px] lg:w-[500px] z-20"
-            style={{ opacity: 0, left: '50%', transform: 'translateX(calc(-50% - 80px))' }}
+            className="w-[200px] left-1/2 -translate-x-1/2 absolute -top-4 md:-top-8 md:left-1/2 md:-translate-x-1/2 md:w-[300px] lg:w-[500px] z-20"
+            style={{ opacity: 0 }}
           >
-            <div className="flex justify-between text-sm text-white/60 mb-2">
+            <div className="flex justify-between text-xs md:text-sm text-white/60 mb-1 md:mb-2">
               <span className="font-medium">Level 42</span>
               <span>7,342 / 10,000 XP</span>
             </div>
-            <div className="h-4 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-2 md:h-4 bg-white/10 rounded-full overflow-hidden">
               <div
                 ref={xpFillRef}
                 className="h-full bg-gradient-to-r from-purple-500 via-purple-400 to-cyan-400 rounded-full relative"
@@ -484,11 +563,42 @@ export function CharacterReveal() {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
               </div>
             </div>
-            <p className="text-center text-white/40 text-xs mt-1">2,658 XP until next level</p>
+            <p className="hidden md:block text-center text-white/40 text-xs mt-1">2,658 XP until next level</p>
           </div>
           {/* Character + Pets Area */}
-          <div className="relative flex items-center justify-center w-full lg:w-auto" style={{ maxWidth: displaySize + 500, height: displaySize + 100 }}>
-            {/* Pets on sides - hidden on mobile/tablet */}
+          <div className="relative flex items-center justify-center w-full lg:w-auto px-4 md:px-0" style={{ maxWidth: displaySize + 500, minHeight: displaySize + 100 }}>
+            {/* Mobile Pets - 4 pets in corners */}
+            {SHOWCASE_PETS.slice(0, 4).map((pet, index) => {
+              const pos = MOBILE_PET_POSITIONS[index];
+              return (
+                <div
+                  key={`mobile-${pet.file}`}
+                  ref={el => { mobilePetRefs.current[index] = el; }}
+                  className="absolute lg:hidden z-10 mobile-pet"
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    transform: `translate(-50%, -50%) translate(${pos.x}px, ${pos.y}px)`,
+                  }}
+                >
+                  <motion.div
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 2.5 + index * 0.3, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <Image
+                      src={`/assets/pets/${pet.file}.png`}
+                      alt={pet.label}
+                      width={48}
+                      height={48}
+                      className="[image-rendering:pixelated] drop-shadow-[0_0_12px_rgba(167,139,250,0.5)]"
+                      unoptimized
+                    />
+                  </motion.div>
+                </div>
+              );
+            })}
+
+            {/* Desktop Pets - 6 pets spread out */}
             {SHOWCASE_PETS.map((pet, index) => {
               const pos = PET_POSITIONS[index];
               return (
@@ -577,51 +687,52 @@ export function CharacterReveal() {
             </div>
           </div>
 
-          {/* Stat Bars Panel - hidden on mobile/tablet, positioned to the right on desktop */}
+          {/* Stat Bars Panel - Mobile: below avatar, Desktop: positioned to the right */}
           <div
             ref={statBarsRef}
-            className="hidden lg:block lg:absolute lg:right-[-440px] lg:top-1/2 lg:-translate-y-1/2 w-80 space-y-4 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
+            className="w-full max-w-[280px] mx-auto mt-4 lg:mt-0 lg:absolute lg:right-[-440px] lg:top-1/2 lg:-translate-y-1/2 lg:w-80 lg:max-w-none space-y-2 lg:space-y-4 bg-white/5 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-white/10"
             style={{ opacity: 0 }}
           >
-            <h3 className="text-xl font-bold text-white mb-5">Character Stats</h3>
+            <h3 className="text-base lg:text-xl font-bold text-white mb-2 lg:mb-5">Character Stats</h3>
             {STAT_BARS.map((stat, index) => (
-              <div key={stat.name} className="space-y-2">
+              <div key={stat.name} className="space-y-1 lg:space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-white/90 flex items-center gap-2 font-medium">
-                    <span className="text-lg">{stat.icon}</span>
-                    <span>{stat.name}</span>
-                    <span className="text-xs text-white/40 font-normal">({stat.shortName})</span>
+                  <span className="text-white/90 flex items-center gap-1 lg:gap-2 font-medium text-sm lg:text-base">
+                    <span className="text-sm lg:text-lg">{stat.icon}</span>
+                    <span className="hidden lg:inline">{stat.name}</span>
+                    <span className="lg:hidden">{stat.shortName}</span>
+                    <span className="text-xs text-white/40 font-normal hidden lg:inline">({stat.shortName})</span>
                   </span>
-                  <span className="text-white font-bold" style={{ color: stat.color }}>{stat.value}</span>
+                  <span className="text-sm lg:text-base text-white font-bold" style={{ color: stat.color }}>{stat.value}</span>
                 </div>
-                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-2 lg:h-3 bg-white/10 rounded-full overflow-hidden">
                   <div
                     ref={el => { statBarFillRefs.current[index] = el; }}
                     className="h-full rounded-full transition-all"
                     style={{ width: '0%', backgroundColor: stat.color }}
                   />
                 </div>
-                <p className="text-xs text-white/40">{stat.description}</p>
+                <p className="text-xs text-white/40 hidden lg:block">{stat.description}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats - Hide achievements on mobile */}
         <div
           ref={statsRef}
-          className="flex gap-12 mt-6 text-center lg:-translate-x-[60px]"
+          className="flex gap-8 md:gap-12 mt-6 text-center lg:-translate-x-[60px]"
           style={{ opacity: 0 }}
         >
           <div>
-            <div className="text-3xl font-bold text-purple-400">156</div>
-            <div className="text-sm text-white/50">Quests Complete</div>
+            <div className="text-2xl md:text-3xl font-bold text-purple-400">156</div>
+            <div className="text-xs md:text-sm text-white/50">Quests Complete</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-cyan-400">23</div>
-            <div className="text-sm text-white/50">Day Streak</div>
+            <div className="text-2xl md:text-3xl font-bold text-cyan-400">23</div>
+            <div className="text-xs md:text-sm text-white/50">Day Streak</div>
           </div>
-          <div>
+          <div className="hidden md:block">
             <div className="text-3xl font-bold text-emerald-400">12</div>
             <div className="text-sm text-white/50">Achievements</div>
           </div>

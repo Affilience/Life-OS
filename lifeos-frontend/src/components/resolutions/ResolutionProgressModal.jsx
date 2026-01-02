@@ -118,7 +118,7 @@ export default function ResolutionProgressModal({ resolution, isOpen, onClose })
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4"
         onClick={onClose}
       >
         <motion.div

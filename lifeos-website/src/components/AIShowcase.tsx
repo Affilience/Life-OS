@@ -422,7 +422,7 @@ export function AIShowcase() {
 
         {/* Nova Visualization Container - centered properly, scaled on mobile */}
         <div
-          className="relative flex-shrink-0 scale-50 md:scale-75 lg:scale-100 origin-center"
+          className="relative flex-shrink-0 scale-[0.65] md:scale-75 lg:scale-100 origin-center -mt-16 md:-mt-8 lg:mt-0"
           style={{ width: CONTAINER_SIZE, height: CONTAINER_SIZE }}
         >
           {/* SVG for connection paths - properly centered */}
@@ -666,11 +666,12 @@ export function AIShowcase() {
               <div
                 key={source.id}
                 ref={el => { sourceRefs.current[i] = el; }}
-                className="absolute flex flex-col items-center"
+                className="absolute flex flex-col items-center text-center"
                 style={{
                   opacity: 0,
                   left: CENTER - 36, // Half of node width (72/2)
                   top: CENTER - 36, // Center the icon (72/2)
+                  width: 72,
                 }}
               >
                 {/* Source Icon with enhanced styling - larger */}
@@ -690,8 +691,8 @@ export function AIShowcase() {
                   <span className="relative z-10">{source.icon}</span>
                 </motion.div>
                 {/* Source Label - larger */}
-                <span className="text-xs text-white/90 font-semibold">{source.label}</span>
-                <span className="text-[10px] text-white/50">{source.insight}</span>
+                <span className="text-xs text-white/90 font-semibold whitespace-nowrap">{source.label}</span>
+                <span className="text-[10px] text-white/50 whitespace-nowrap hidden md:block">{source.insight}</span>
               </div>
             );
           })}
@@ -740,6 +741,7 @@ export function AIShowcase() {
             </div>
           ))}
         </div>
+
       </div>
 
       <style jsx>{`

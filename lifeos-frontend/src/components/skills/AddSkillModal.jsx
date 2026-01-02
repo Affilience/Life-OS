@@ -59,7 +59,7 @@ const AddSkillModal = ({ onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4" onClick={onClose}>
       <div className="add-skill-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="header-content">

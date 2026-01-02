@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles } from 'lucide-react';
 import './LoadingScreen.css';
 
 // Hardcoded quotes for initial load (before quotesStore is available)
@@ -54,7 +53,7 @@ const InitialLoadingScreen = ({ message = 'Preparing your journey' }) => {
           <div className="loading-ring">
             <div className="loading-ring-inner" />
           </div>
-          <Sparkles className="loading-sparkle" size={24} />
+          <img src="/logo.png" alt="Ascnd" className="loading-logo" style={{ width: '32px', height: 'auto', filter: 'drop-shadow(0 0 10px rgba(167,139,250,0.5))' }} />
         </div>
 
         {/* Loading message */}
@@ -71,7 +70,7 @@ const InitialLoadingScreen = ({ message = 'Preparing your journey' }) => {
 
       {/* Bottom branding */}
       <div className="loading-branding">
-        <span className="loading-brand-text">Ascynt</span>
+        <span className="loading-brand-text">Ascnd</span>
       </div>
     </div>
   );

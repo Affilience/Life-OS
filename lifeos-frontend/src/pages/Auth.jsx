@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useSignIn, useSignUp, useOAuthSignIn } from '../hooks/useAuth';
-import { Sparkles, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 // OAuth Provider Icons
 const GoogleIcon = () => (
@@ -97,12 +97,12 @@ export default function Auth() {
       {/* Logo and Title */}
       <div className="relative z-10 text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-2">
-          <Sparkles className="w-10 h-10 text-purple-400" />
+          <img src="/logo.png" alt="Ascnd" className="w-12 h-auto drop-shadow-[0_0_15px_rgba(167,139,250,0.5)]" />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            Ascynt
+            Ascnd
           </h1>
         </div>
-        <p className="text-white/60">Your Personal Operating System</p>
+        <p className="text-white/60">Level up your life</p>
       </div>
 
       {/* Auth Card */}

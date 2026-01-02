@@ -25,7 +25,7 @@ export default function PvPInviteModal({ invites, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 pt-8 sm:pt-4 px-4 pb-4">
       <div className="bg-[#1a1724] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">

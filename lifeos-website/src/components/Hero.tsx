@@ -45,12 +45,32 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
     const runEntryAnimations = () => {
       // First, animate the hero logo in
       if (logoRef.current) {
-        animate(logoRef.current, {
-          opacity: [0, 1],
-          scale: [0.6, 1],
-          duration: 800,
-          easing: 'easeOutExpo',
-        });
+        // Make container visible
+        logoRef.current.style.opacity = '1';
+
+        const logoImg = logoRef.current.querySelector('img');
+        const logoGlow = logoRef.current.querySelector('div > div:first-child');
+
+        // Animate glow expanding
+        if (logoGlow) {
+          animate(logoGlow, {
+            opacity: [0, 1],
+            scale: [0.5, 1.5],
+            duration: 1000,
+            easing: 'easeOutQuad',
+          });
+        }
+
+        // Animate logo image
+        if (logoImg) {
+          animate(logoImg, {
+            opacity: [0, 1],
+            scale: [0.6, 1],
+            duration: 800,
+            delay: 200,
+            easing: 'easeOutBack',
+          });
+        }
       }
 
       const headline = headlineRef.current;
@@ -162,11 +182,8 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
 
       // Get all elements we'll animate
       const textLines = headlineRef.current?.querySelectorAll('.headline-line');
-      const logoSvg = logoRef.current?.querySelector('svg');
-      const logoL = logoSvg?.querySelector('#hero-logo-l');
-      const logoOrbit = logoSvg?.querySelector('#hero-logo-orbit');
-      const logoDot = logoSvg?.querySelector('#hero-logo-dot');
-      const logoAccent = logoSvg?.querySelector('#hero-logo-accent');
+      const logoImg = logoRef.current?.querySelector('img');
+      const logoGlow = logoRef.current?.querySelector('div > div:first-child');
       const buttons = ctaRef.current?.querySelectorAll('.cta-button');
       const scrollIndicator = section.querySelector('.scroll-indicator');
 
@@ -236,45 +253,19 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
         }, 0);
       }
 
-      // Logo dismantling - each piece flies in different direction
-      if (logoL) {
-        tl.to(logoL, {
-          y: -300,
-          x: -200,
-          rotation: -20,
-          scale: 0.6,
-          opacity: 0,
-          duration: 1,
-        }, 0);
-      }
-
-      if (logoOrbit) {
-        tl.to(logoOrbit, {
+      // Logo animation - scale up and fade out with glow expansion
+      if (logoImg) {
+        tl.to(logoImg, {
           y: -200,
-          x: 300,
-          rotation: 60,
-          scale: 1.1,
+          scale: 1.3,
           opacity: 0,
           duration: 1,
         }, 0);
       }
 
-      if (logoDot) {
-        tl.to(logoDot, {
-          y: -500,
-          x: 150,
-          scale: 2,
-          opacity: 0,
-          duration: 1,
-        }, 0);
-      }
-
-      if (logoAccent) {
-        tl.to(logoAccent, {
-          y: 200,
-          x: -150,
-          rotation: -45,
-          scale: 0.4,
+      if (logoGlow) {
+        tl.to(logoGlow, {
+          scale: 3,
           opacity: 0,
           duration: 1,
         }, 0);
@@ -393,7 +384,7 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
               Earn XP, level up your avatar, unlock gear. Become who you're meant to be.
             </p>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons - App Store Links */}
             <div
               ref={ctaRef}
               className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4"
@@ -404,9 +395,20 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link href="/signup" className="btn-primary text-lg px-8 py-4 inline-block">
-                  Start Your Journey
-                </Link>
+                <a
+                  href="https://apps.apple.com/app/ascnd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-white/90 transition-colors"
+                >
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-[10px] leading-tight opacity-70">Download on the</div>
+                    <div className="text-base leading-tight">App Store</div>
+                  </div>
+                </a>
               </motion.div>
               <motion.div
                 className="cta-button"
@@ -414,9 +416,20 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link href="#screenshots" className="btn-secondary text-lg px-8 py-4 inline-block">
-                  See it in Action
-                </Link>
+                <a
+                  href="https://play.google.com/store/apps/details?id=app.ascnd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/20 transition-colors"
+                >
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 010 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-[10px] leading-tight opacity-70">Get it on</div>
+                    <div className="text-base leading-tight">Google Play</div>
+                  </div>
+                </a>
               </motion.div>
             </div>
           </div>
@@ -427,77 +440,16 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero({ showInitia
             className="flex-1 flex items-center justify-center"
             style={{ opacity: 0 }}
           >
-            <svg
-              viewBox="0 0 200 200"
-              className="w-64 h-64 md:w-80 md:h-80 lg:w-[420px] lg:h-[420px]"
-              style={{ overflow: 'visible' }}
-            >
-              <defs>
-                <linearGradient id="heroLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#a78bfa"/>
-                  <stop offset="100%" stopColor="#22d3ee"/>
-                </linearGradient>
-                <filter id="logoGlow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="4" result="blur"/>
-                  <feMerge>
-                    <feMergeNode in="blur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
-
-              {/* Main L shape - will move up-left */}
-              <path
-                id="hero-logo-l"
-                d="M60 40 L60 140 L140 140"
-                fill="none"
-                stroke="url(#heroLogoGradient)"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#logoGlow)"
-                style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
+            <div className="relative">
+              {/* Glow effect behind logo */}
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/30 via-purple-500/20 to-cyan-500/30 blur-[80px] scale-150" />
+              {/* Logo image */}
+              <img
+                src="/logo.png"
+                alt="Ascnd"
+                className="relative w-32 md:w-44 lg:w-56 h-auto drop-shadow-[0_0_40px_rgba(167,139,250,0.5)]"
               />
-
-              {/* Orbital ring around the L - will move up-right and rotate */}
-              <ellipse
-                id="hero-logo-orbit"
-                cx="100"
-                cy="100"
-                rx="70"
-                ry="30"
-                fill="none"
-                stroke="url(#heroLogoGradient)"
-                strokeWidth="3"
-                transform="rotate(-30 100 100)"
-                filter="url(#logoGlow)"
-                style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
-              />
-
-              {/* Accent dot on orbit - will shoot up fast */}
-              <circle
-                id="hero-logo-dot"
-                cx="165"
-                cy="85"
-                r="6"
-                fill="#22d3ee"
-                filter="url(#logoGlow)"
-                style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
-              />
-
-              {/* Inner corner accent - will move down-left */}
-              <path
-                id="hero-logo-accent"
-                d="M75 125 L75 115 L85 115"
-                fill="none"
-                stroke="#22d3ee"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#logoGlow)"
-                style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
-              />
-            </svg>
+            </div>
           </div>
         </div>
       </div>

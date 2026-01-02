@@ -122,32 +122,9 @@ export function Pricing() {
     const section = sectionRef.current;
     const isMobile = window.innerWidth < 768;
 
-    // On mobile, show content immediately without pinned scrolling
+    // On mobile, content is visible via CSS (opacity-100 md:opacity-0) - no GSAP needed
     if (isMobile) {
-      if (titleRef.current) {
-        titleRef.current.style.opacity = '1';
-        titleRef.current.style.transform = 'none';
-        titleRef.current.style.filter = 'none';
-      }
-      if (subtitleRef.current) {
-        subtitleRef.current.style.opacity = '1';
-        subtitleRef.current.style.transform = 'none';
-        subtitleRef.current.style.filter = 'none';
-      }
-      if (cardsContainerRef.current) {
-        cardsContainerRef.current.style.opacity = '1';
-        cardsContainerRef.current.style.transform = 'none';
-        const cards = cardsContainerRef.current.querySelectorAll('.pricing-card');
-        cards.forEach((card) => {
-          (card as HTMLElement).style.opacity = '1';
-          (card as HTMLElement).style.transform = 'none';
-        });
-      }
-      if (guaranteeRef.current) {
-        guaranteeRef.current.style.opacity = '1';
-        guaranteeRef.current.style.transform = 'none';
-      }
-      return;
+      return; // Exit early - no GSAP on mobile
     }
 
     const ctx = gsap.context(() => {
@@ -378,8 +355,7 @@ export function Pricing() {
         <div className="text-center mb-12" style={{ transformStyle: 'preserve-3d' }}>
           <h2
             ref={titleRef}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
-            style={{ opacity: 0 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 opacity-100 md:opacity-0"
           >
             Simple{' '}
             <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-amber-400 bg-clip-text text-transparent">
@@ -388,8 +364,7 @@ export function Pricing() {
           </h2>
           <p
             ref={subtitleRef}
-            className="text-white/50 text-lg max-w-xl mx-auto"
-            style={{ opacity: 0 }}
+            className="text-white/50 text-lg max-w-xl mx-auto opacity-100 md:opacity-0"
           >
             Free forever. Pay only when you want the full experience.
           </p>
@@ -398,14 +373,14 @@ export function Pricing() {
         {/* Pricing Cards */}
         <div
           ref={cardsContainerRef}
-          className="flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-6 lg:gap-8 w-full max-w-5xl"
-          style={{ opacity: 0, transformStyle: 'preserve-3d' }}
+          className="flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-3 lg:gap-8 w-full max-w-5xl opacity-100 md:opacity-0 px-4 md:px-0"
+          style={{ transformStyle: 'preserve-3d' }}
         >
           {PRICING_TIERS.map((tier, index) => (
             <motion.div
               key={tier.id}
               data-card-id={tier.id}
-              className={`pricing-card relative w-full max-w-sm lg:w-1/3 rounded-2xl p-6 lg:p-8 backdrop-blur-sm transition-all duration-300
+              className={`pricing-card relative w-full max-w-[200px] md:max-w-sm lg:w-1/3 rounded-lg md:rounded-2xl p-2.5 md:p-6 lg:p-8 backdrop-blur-sm transition-all duration-300
                 ${tier.popular
                   ? 'bg-gradient-to-b from-white/15 to-white/5 border-2 lg:-mt-4 lg:mb-4 lg:scale-105'
                   : 'bg-white/5 border border-white/10'
@@ -433,17 +408,17 @@ export function Pricing() {
               )}
 
               {/* Tier Header */}
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-white mb-1">{tier.name}</h3>
-                <p className="text-white/40 text-sm">{tier.description}</p>
+              <div className="text-center mb-2 md:mb-6">
+                <h3 className="text-base md:text-xl font-bold text-white mb-0.5">{tier.name}</h3>
+                <p className="text-white/40 text-[10px] md:text-sm">{tier.description}</p>
               </div>
 
               {/* Price */}
-              <div className="text-center mb-6">
+              <div className="text-center mb-2 md:mb-6">
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-white/50 text-xl">£</span>
+                  <span className="text-white/50 text-base md:text-xl">£</span>
                   <span
-                    className="text-5xl font-bold"
+                    className="text-3xl md:text-5xl font-bold"
                     style={{ color: tier.color }}
                   >
                     {tier.price}
@@ -458,11 +433,11 @@ export function Pricing() {
               </div>
 
               {/* Features */}
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-1 md:space-y-3 mb-3 md:mb-8">
                 {tier.features.map((feature, fIndex) => (
                   <li
                     key={fIndex}
-                    className="feature-item flex items-center gap-3 text-white/70 text-sm"
+                    className="feature-item flex items-center gap-1.5 md:gap-3 text-white/70 text-[10px] md:text-sm"
                   >
                     <span style={{ color: tier.color }}>✓</span>
                     <span>{feature}</span>
@@ -472,7 +447,7 @@ export function Pricing() {
 
               {/* CTA Button */}
               <motion.button
-                className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
+                className={`w-full py-2 md:py-3 rounded-lg md:rounded-xl font-semibold text-sm md:text-base transition-all duration-300 ${
                   tier.popular
                     ? 'text-white shadow-lg'
                     : 'bg-white/10 text-white hover:bg-white/20'

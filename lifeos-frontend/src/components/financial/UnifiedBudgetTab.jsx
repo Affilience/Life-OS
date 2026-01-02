@@ -661,8 +661,8 @@ function CreateBudgetModal({ selectedMonth, monthBudgets, onClose, onSave, onCop
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-[#12101a] border border-slate-700 rounded-t-2xl sm:rounded-2xl max-w-2xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4">
+      <div className="bg-[#12101a] border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-700/50 bg-gradient-to-r from-purple-500/10 to-pink-500/5">
           <div>

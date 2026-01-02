@@ -92,37 +92,47 @@ export function CTA() {
 
     // On mobile, show content immediately without pinned scrolling
     if (isMobile) {
-      if (headlineRef.current) {
-        const words = headlineRef.current.querySelectorAll('.word');
-        words.forEach((word) => {
-          (word as HTMLElement).style.opacity = '1';
-          (word as HTMLElement).style.transform = 'none';
-          (word as HTMLElement).style.filter = 'none';
+      const initMobile = () => {
+        if (headlineRef.current) {
+          const words = headlineRef.current.querySelectorAll('.word');
+          words.forEach((word) => {
+            (word as HTMLElement).style.opacity = '1';
+            (word as HTMLElement).style.transform = 'none';
+            (word as HTMLElement).style.filter = 'none';
+          });
+        }
+        if (subtitleRef.current) {
+          subtitleRef.current.style.opacity = '1';
+          subtitleRef.current.style.transform = 'none';
+        }
+        if (buttonsRef.current) {
+          buttonsRef.current.style.opacity = '1';
+          buttonsRef.current.style.transform = 'none';
+        }
+        if (benefitsRef.current) {
+          benefitsRef.current.style.opacity = '1';
+          const items = benefitsRef.current.querySelectorAll('.benefit-item');
+          items.forEach((item) => {
+            (item as HTMLElement).style.opacity = '1';
+            (item as HTMLElement).style.transform = 'none';
+          });
+        }
+        if (testimonialRef.current) {
+          testimonialRef.current.style.opacity = '1';
+          testimonialRef.current.style.transform = 'none';
+        }
+        // Start count animation on mobile
+        startCountAnimation();
+      };
+
+      // Double RAF + small delay ensures DOM is fully settled after hydration
+      const timer = setTimeout(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(initMobile);
         });
-      }
-      if (subtitleRef.current) {
-        subtitleRef.current.style.opacity = '1';
-        subtitleRef.current.style.transform = 'none';
-      }
-      if (buttonsRef.current) {
-        buttonsRef.current.style.opacity = '1';
-        buttonsRef.current.style.transform = 'none';
-      }
-      if (benefitsRef.current) {
-        benefitsRef.current.style.opacity = '1';
-        const items = benefitsRef.current.querySelectorAll('.benefit-item');
-        items.forEach((item) => {
-          (item as HTMLElement).style.opacity = '1';
-          (item as HTMLElement).style.transform = 'none';
-        });
-      }
-      if (testimonialRef.current) {
-        testimonialRef.current.style.opacity = '1';
-        testimonialRef.current.style.transform = 'none';
-      }
-      // Start count animation on mobile
-      startCountAnimation();
-      return;
+      }, 50);
+
+      return () => clearTimeout(timer);
     }
 
     const ctx = gsap.context(() => {

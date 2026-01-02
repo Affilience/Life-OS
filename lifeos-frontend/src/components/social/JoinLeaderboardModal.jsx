@@ -128,7 +128,7 @@ export default function JoinLeaderboardModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-start sm:items-center justify-center z-[60] pt-8 sm:pt-4 px-4 pb-4">
       <div className="bg-[#1a1724] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[85vh] sm:max-h-[90vh] overflow-hidden animate-scale-in flex flex-col">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-purple-600/20 to-pink-600/20 px-6 py-5 border-b border-white/10">

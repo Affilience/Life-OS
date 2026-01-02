@@ -155,37 +155,37 @@ export default function Resolutions() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-indigo-400 mb-1">
-              <Target className="w-4 h-4" />
-              <span className="text-2xl font-bold">{stats.activeResolutions}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4 text-center overflow-hidden">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-indigo-400 mb-1">
+              <Target className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xl sm:text-2xl font-bold">{stats.activeResolutions}</span>
             </div>
-            <div className="text-xs text-white/50">Active</div>
+            <div className="text-xs text-white/50 truncate">Active</div>
           </div>
 
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-orange-400 mb-1">
-              <Flame className="w-4 h-4" />
-              <span className="text-2xl font-bold">{stats.longestStreak}</span>
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4 text-center overflow-hidden">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-orange-400 mb-1">
+              <Flame className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xl sm:text-2xl font-bold">{stats.longestStreak}</span>
             </div>
-            <div className="text-xs text-white/50">Best Streak</div>
+            <div className="text-xs text-white/50 truncate">Best Streak</div>
           </div>
 
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-green-400 mb-1">
-              <CheckCircle2 className="w-4 h-4" />
-              <span className="text-2xl font-bold">{stats.totalCheckIns}</span>
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4 text-center overflow-hidden">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-green-400 mb-1">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xl sm:text-2xl font-bold">{stats.totalCheckIns}</span>
             </div>
-            <div className="text-xs text-white/50">Check-ins</div>
+            <div className="text-xs text-white/50 truncate">Check-ins</div>
           </div>
 
-          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-yellow-400 mb-1">
-              <Trophy className="w-4 h-4" />
-              <span className="text-2xl font-bold">{stats.achievementsEarned}</span>
+          <div className="bg-[#1a1724] border border-white/10 rounded-xl p-3 sm:p-4 text-center overflow-hidden">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-yellow-400 mb-1">
+              <Trophy className="w-4 h-4 flex-shrink-0" />
+              <span className="text-xl sm:text-2xl font-bold">{stats.achievementsEarned}</span>
             </div>
-            <div className="text-xs text-white/50">Achievements</div>
+            <div className="text-xs text-white/50 truncate">Achievements</div>
           </div>
         </div>
 

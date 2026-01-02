@@ -108,7 +108,7 @@ export function StreakDetailModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4"
         onClick={onClose}
       >
         {/* Backdrop */}

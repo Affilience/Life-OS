@@ -237,7 +237,7 @@ export default function AddBookModal({ isOpen, onClose }) {
   ];
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4">
       <div className="w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] bg-[#12101a]/95 backdrop-blur-md border border-white/10/50 rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/10/50 bg-[#12101a]/50 flex-shrink-0">

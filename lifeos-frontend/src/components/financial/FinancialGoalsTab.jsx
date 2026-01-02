@@ -754,7 +754,7 @@ export default function FinancialGoalsTab() {
 
       {/* Add Goal Modal */}
       {showAddGoal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4">
           <div className="bg-[#12101a] border border-slate-700 rounded-t-2xl sm:rounded-2xl max-w-lg w-full shadow-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 border-b border-slate-700/50 sticky top-0 bg-[#12101a]">

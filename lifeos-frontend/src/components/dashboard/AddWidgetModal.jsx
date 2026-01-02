@@ -42,7 +42,7 @@ export default function AddWidgetModal({ isOpen, onClose }) {
   const hiddenWidgets = availableWidgets.filter(w => !widgetVisibility[w.id]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"

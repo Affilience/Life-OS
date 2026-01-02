@@ -173,7 +173,7 @@ export default function MicronutrientGoalsModal({ onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-4 px-4 pb-4 bg-black/60 backdrop-blur-sm">
       <div className="w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-hidden bg-surface border border-border-subtle rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-subtle">

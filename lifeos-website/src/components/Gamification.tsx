@@ -869,6 +869,12 @@ export function Gamification() {
   const hintRef = useRef<HTMLParagraphElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Set isMobile after mount to avoid hydration mismatch
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
 
   // GSAP ScrollTrigger - scroll controls carousel progression
   useEffect(() => {
@@ -876,6 +882,7 @@ export function Gamification() {
 
     const section = sectionRef.current;
     const numCards = DEMOS.length;
+
     const isMobile = window.innerWidth < 768;
 
     // On mobile, show content immediately without pinned scrolling
@@ -889,15 +896,16 @@ export function Gamification() {
       if (dotsRef.current) dotsRef.current.style.opacity = '1';
       if (hintRef.current) hintRef.current.style.opacity = '1';
       if (progressRef.current) progressRef.current.style.opacity = '1';
-      return;
+      return; // Exit early - no GSAP on mobile
     }
 
+    // Desktop - full ScrollTrigger animations
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: 'top top',
-          end: '+=500%', // Original scroll distance
+          end: '+=500%',
           scrub: 1,
           pin: true,
           pinSpacing: false,
@@ -1062,7 +1070,7 @@ export function Gamification() {
     <section
       id="gamification"
       ref={sectionRef}
-      className="relative min-h-screen overflow-hidden"
+      className="relative min-h-screen overflow-hidden mt-16 md:mt-0 pb-48 md:pb-0 mb-[100vh] md:mb-0"
     >
 
       {/* Ambient Background */}
@@ -1096,80 +1104,166 @@ export function Gamification() {
           </p>
         </div>
 
-        {/* 3D Carousel - scroll controlled, stacked on mobile */}
+        {/* 3D Carousel - scroll controlled on desktop, swipeable on mobile */}
         <div
           ref={carouselRef}
-          className="relative w-full h-auto md:h-[480px] flex flex-col md:block"
+          className="relative w-full"
           style={{ opacity: 0, perspective: '1200px' }}
         >
-          <div className="relative md:absolute md:inset-0 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-0 px-4 md:px-0">
-            {DEMOS.map((demo, i) => {
-              const offset = i - currentIndex;
-              const angle = offset * ANGLE_PER_CARD;
-              const isActive = i === currentIndex;
-              const isVisible = Math.abs(offset) <= 2;
+          {/* Mobile Carousel - single card with navigation */}
+          <div className="md:hidden px-4">
+            <AnimatePresence mode="wait">
+              {DEMOS.map((demo, i) => {
+                if (i !== currentIndex) return null;
+                const DemoComponent = DemoComponents[demo.id];
 
-              // On mobile, show all cards stacked
-              const isMobileView = typeof window !== 'undefined' && window.innerWidth < 768;
+                return (
+                  <motion.div
+                    key={demo.id}
+                    className="w-full max-w-[320px] mx-auto"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div
+                      className="p-5 rounded-2xl border-2 bg-gradient-to-br from-white/10 to-white/5 border-white/20 shadow-2xl"
+                      style={{ boxShadow: `0 0 40px ${demo.color}30` }}
+                    >
+                      {/* Card Header */}
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center p-1.5"
+                          style={{ background: `${demo.color}30` }}
+                        >
+                          <img
+                            src={demo.icon}
+                            alt={demo.title}
+                            className="w-full h-full object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-white text-sm">{demo.title}</h3>
+                          <p className="text-xs text-white/50">{demo.description}</p>
+                        </div>
+                      </div>
 
-              if (!isVisible && !isMobileView) return null;
+                      {/* Demo Content */}
+                      <div className="h-[280px]">
+                        <DemoComponent isActive={true} />
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
 
-              const DemoComponent = DemoComponents[demo.id];
-
-              return (
-                <motion.div
-                  key={demo.id}
-                  className="relative md:absolute w-full max-w-[320px]"
-                  initial={false}
-                  animate={isMobileView ? {} : {
-                    rotateY: angle,
-                    z: isActive ? 0 : -200,
-                    opacity: isActive ? 1 : Math.abs(offset) === 1 ? 0.5 : 0.2,
-                    scale: isActive ? 1 : 0.85,
-                  }}
-                  transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                  style={{
-                    transformStyle: 'preserve-3d',
-                    transformOrigin: 'center center -320px',
-                  }}
-                >
-                  <div
-                    className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
-                      isActive
-                        ? 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 shadow-2xl'
-                        : 'bg-white/5 border-white/10'
+            {/* Mobile Navigation */}
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <button
+                onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+                disabled={currentIndex === 0}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                  currentIndex === 0 ? 'bg-white/5 text-white/20' : 'bg-white/10 text-white hover:bg-white/20'
+                }`}
+              >
+                ←
+              </button>
+              <div className="flex gap-1.5">
+                {DEMOS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentIndex(i)}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${
+                      i === currentIndex ? 'bg-purple-500 scale-125' : 'bg-white/30'
                     }`}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentIndex(prev => Math.min(DEMOS.length - 1, prev + 1))}
+                disabled={currentIndex === DEMOS.length - 1}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                  currentIndex === DEMOS.length - 1 ? 'bg-white/5 text-white/20' : 'bg-white/10 text-white hover:bg-white/20'
+                }`}
+              >
+                →
+              </button>
+            </div>
+            <p className="text-center text-white/40 text-xs mt-2">
+              {currentIndex + 1} of {DEMOS.length}
+            </p>
+          </div>
+
+          {/* Desktop 3D Carousel */}
+          <div className="hidden md:block relative h-[480px]">
+            <div className="absolute inset-0 flex items-center justify-center">
+              {DEMOS.map((demo, i) => {
+                const offset = i - currentIndex;
+                const angle = offset * ANGLE_PER_CARD;
+                const isActive = i === currentIndex;
+                const isVisible = Math.abs(offset) <= 2;
+
+                if (!isVisible) return null;
+
+                const DemoComponent = DemoComponents[demo.id];
+
+                return (
+                  <motion.div
+                    key={demo.id}
+                    className="absolute w-full max-w-[320px]"
+                    initial={false}
+                    animate={{
+                      rotateY: angle,
+                      z: isActive ? 0 : -200,
+                      opacity: isActive ? 1 : Math.abs(offset) === 1 ? 0.5 : 0.2,
+                      scale: isActive ? 1 : 0.85,
+                    }}
+                    transition={{ type: 'spring', stiffness: 100, damping: 20 }}
                     style={{
-                      boxShadow: isActive ? `0 0 60px ${demo.color}30` : 'none',
+                      transformStyle: 'preserve-3d',
+                      transformOrigin: 'center center -320px',
                     }}
                   >
-                    {/* Card Header */}
-                    <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center p-2"
-                        style={{ background: `${demo.color}30` }}
-                      >
-                        <img
-                          src={demo.icon}
-                          alt={demo.title}
-                          className="w-full h-full object-contain pixelated"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
+                    <div
+                      className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
+                        isActive
+                          ? 'bg-gradient-to-br from-white/10 to-white/5 border-white/20 shadow-2xl'
+                          : 'bg-white/5 border-white/10'
+                      }`}
+                      style={{
+                        boxShadow: isActive ? `0 0 60px ${demo.color}30` : 'none',
+                      }}
+                    >
+                      {/* Card Header */}
+                      <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center p-2"
+                          style={{ background: `${demo.color}30` }}
+                        >
+                          <img
+                            src={demo.icon}
+                            alt={demo.title}
+                            className="w-full h-full object-contain pixelated"
+                            style={{ imageRendering: 'pixelated' }}
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-white">{demo.title}</h3>
+                          <p className="text-xs text-white/50">{demo.description}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-white">{demo.title}</h3>
-                        <p className="text-xs text-white/50">{demo.description}</p>
-                      </div>
-                    </div>
 
-                    {/* Demo Content */}
-                    <div className="h-[300px]">
-                      <DemoComponent isActive={isActive} />
+                      {/* Demo Content */}
+                      <div className="h-[300px]">
+                        <DemoComponent isActive={isActive} />
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -1205,7 +1299,7 @@ export function Gamification() {
         {/* Progress bar - hidden on mobile */}
         <div
           ref={progressRef}
-          className="hidden md:block max-w-md mx-auto mt-4"
+          className="hidden md:block max-w-md mr-auto ml-0 mt-4"
           style={{ opacity: 0 }}
         >
           <div className="h-1 bg-white/10 rounded-full overflow-hidden">

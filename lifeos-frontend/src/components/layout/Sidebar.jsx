@@ -1,10 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  Sparkles,
-  X,
-  Menu
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import { useGamificationModeStore, VISIBILITY } from '../../stores/gamificationModeStore';
 
 // Pixel art nav icons
@@ -100,9 +96,11 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="p-6 border-b border-border-subtle">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-2 flex items-center justify-center shadow-glow">
-                <Sparkles size={18} className="text-white" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="Ascnd"
+                className="w-8 h-auto drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]"
+              />
               <h1 className="text-xl font-bold text-text-high tracking-tighter">
                 Ascnd
               </h1>

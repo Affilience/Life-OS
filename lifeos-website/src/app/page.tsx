@@ -119,7 +119,9 @@ export default function Home() {
         <Pricing />
         <BetaCTA />
         {/* Spacer to provide scroll height for pinned animations to complete */}
-        <div className="h-[1100vh]" />
+        {/* Desktop: large spacer for pinned animations */}
+        <div className="hidden md:block h-[1100vh]" />
+        {/* Mobile: no spacer needed - BetaCTA is the end */}
       </main>
     </SmoothScrollProvider>
   );
